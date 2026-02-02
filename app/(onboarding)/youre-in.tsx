@@ -69,7 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
   },
   headline: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.semiBold,
     fontSize: 32,
     color: '#FFFFFF',
     textAlign: 'center',

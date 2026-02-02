@@ -22,7 +22,7 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      <AnimatedBackground images={heroImages} delay={2500} />
+      <AnimatedBackground images={heroImages} delay={4000} />
 
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.logoBlock}>

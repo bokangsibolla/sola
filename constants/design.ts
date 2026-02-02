@@ -38,8 +38,8 @@ export const fonts = {
 };
 
 export const typography = {
-  h1: { fontFamily: fonts.serif, fontSize: 32, lineHeight: 40 },
-  h2: { fontFamily: fonts.serif, fontSize: 28, lineHeight: 36 },
+  h1: { fontFamily: fonts.semiBold, fontSize: 32, lineHeight: 40 },
+  h2: { fontFamily: fonts.semiBold, fontSize: 28, lineHeight: 36 },
   body: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24 },
   bodyMuted: { fontFamily: fonts.regular, fontSize: 16, lineHeight: 24, color: colors.textMuted },
   label: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 24 },

@@ -145,7 +145,7 @@ export default function ProfileScreen() {
         />
 
         {/* Country section */}
-        <Text style={styles.sectionLabel}>Where are you based?</Text>
+        <Text style={styles.sectionLabel}>Where are you from?</Text>
 
         {/* Popular country pills */}
         <View style={styles.pillGrid}>
