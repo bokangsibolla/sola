@@ -29,13 +29,10 @@ export default function RootLayout() {
 
   // IMPORTANT: update filenames below to match exactly what’s in `assets/fonts/`
   const [fontsLoaded, fontError] = useFonts({
-    // Inter (18pt family files you uploaded)
-    'Inter-Regular': require('../assets/fonts/Inter_18pt-Regular.ttf'),
-    'Inter-Medium': require('../assets/fonts/Inter_18pt-Medium.ttf'),
-    'Inter-SemiBold': require('../assets/fonts/Inter_18pt-SemiBold.ttf'),
-
-    // Headline font
-    'PlayfairDisplay-Bold': require('../assets/fonts/PlayfairDisplay-Bold.ttf'),
+    'PlusJakartaSans-Regular': require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
+    'PlusJakartaSans-Medium': require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
+    'PlusJakartaSans-SemiBold': require('../assets/fonts/PlusJakartaSans-SemiBold.ttf'),
+    'InstrumentSerif-Regular': require('../assets/fonts/InstrumentSerif-Regular.ttf'),
   });
 
   useEffect(() => {
