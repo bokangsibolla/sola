@@ -37,7 +37,7 @@ export default function ExploreScreen() {
 
         <Pressable 
           style={styles.pillButton}
-          onPress={() => console.log('Explore destinations')}
+          onPress={() => {}}
         >
           <Text style={styles.pillButtonText}>Explore destinations</Text>
         </Pressable>
@@ -53,7 +53,7 @@ export default function ExploreScreen() {
               <ImageCard
                 title={country.name}
                 imageUrl={country.heroImageUrl}
-                onPress={() => console.log('country:', country.slug)}
+                onPress={() => {}}
               />
             </View>
           ))}
