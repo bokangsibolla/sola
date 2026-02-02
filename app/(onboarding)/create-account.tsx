@@ -30,7 +30,7 @@ export default function CreateAccountScreen() {
       <View style={styles.fields}>
         <TextInput
           style={styles.input}
-          placeholder="Email"
+          placeholder="Your email"
           placeholderTextColor={colors.textMuted}
           value={email}
           onChangeText={setEmail}
@@ -38,15 +38,18 @@ export default function CreateAccountScreen() {
           autoCapitalize="none"
           autoFocus={false}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoFocus={false}
-        />
+        <View>
+          <TextInput
+            style={styles.input}
+            placeholder="Create a password"
+            placeholderTextColor={colors.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoFocus={false}
+          />
+          <Text style={styles.passwordHint}>Make it stronger than airport wifi</Text>
+        </View>
       </View>
       <View style={styles.loginRow}>
         <Text style={styles.loginLabel}>Already have an account? </Text>
@@ -86,5 +89,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: colors.textPrimary,
+  },
+  passwordHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 8,
+    marginLeft: 4,
   },
 });
