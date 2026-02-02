@@ -1,6 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { colors, fonts, radius } from '@/constants/design';
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface PillProps {
   label: string;
@@ -9,15 +16,31 @@ interface PillProps {
   onPress: () => void;
 }
 
+const SPRING = { damping: 14, stiffness: 200 };
+
 export default function Pill({ label, subtitle, selected, onPress }: PillProps) {
+  const scale = useSharedValue(1);
+
+  useEffect(() => {
+    if (selected) {
+      scale.value = withSpring(1.05, SPRING, () => {
+        scale.value = withSpring(1, SPRING);
+      });
+    }
+  }, [selected]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
   return (
-    <Pressable
-      style={[styles.pill, selected && styles.pillSelected]}
+    <AnimatedPressable
+      style={[styles.pill, selected && styles.pillSelected, animatedStyle]}
       onPress={onPress}
     >
       <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 

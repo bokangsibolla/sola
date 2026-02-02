@@ -60,7 +60,7 @@ const styles = StyleSheet.create({
   pillGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: 6,
     justifyContent: 'center',
   },
 });
