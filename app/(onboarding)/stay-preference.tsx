@@ -25,7 +25,7 @@ export default function StayPreferenceScreen() {
   return (
     <OnboardingScreen
       stage={4}
-      headline="Where do you usually crash?"
+      headline="Where do you like to stay?"
       ctaLabel="Continue"
       ctaDisabled={!selected}
       onCtaPress={handleContinue}

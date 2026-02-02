@@ -29,7 +29,7 @@ export default function CreateAccountScreen() {
     <OnboardingScreen
       stage={1}
       headline="Let's get you in."
-      subtitle="Travel smarter, made for women who move."
+      subtitle="Travel information designed for how women travel."
       ctaLabel="Create account"
       ctaDisabled={!canContinue}
       onCtaPress={handleContinue}

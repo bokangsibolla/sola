@@ -23,7 +23,7 @@ export default function SpendingStyleScreen() {
   return (
     <OnboardingScreen
       stage={4}
-      headline="How do you like to roll?"
+      headline="What's your travel style?"
       ctaLabel="Continue"
       ctaDisabled={!selected}
       onCtaPress={handleContinue}
