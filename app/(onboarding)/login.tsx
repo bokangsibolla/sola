@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { supabase } from '@/lib/supabase';
+import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function LoginScreen() {
@@ -27,6 +28,7 @@ export default function LoginScreen() {
       return;
     }
 
+    await onboardingStore.set('onboardingCompleted', true);
     router.replace('/(tabs)/home');
   };
 

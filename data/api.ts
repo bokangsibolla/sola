@@ -25,6 +25,11 @@ import type {
 // Helpers
 // ---------------------------------------------------------------------------
 
+/** Escape special characters for Postgres ILIKE patterns. */
+function escapeIlike(str: string): string {
+  return str.replace(/[%_\\]/g, '\\$&');
+}
+
 /** Convert snake_case row to camelCase type. Supabase returns snake_case. */
 function toCamel<T>(row: Record<string, any>): T {
   const out: Record<string, any> = {};
@@ -417,7 +422,7 @@ interface DestinationResult {
 }
 
 export async function searchDestinations(query: string): Promise<DestinationResult[]> {
-  const q = query.toLowerCase().trim();
+  const q = escapeIlike(query.toLowerCase().trim());
   if (!q) return [];
 
   const results: DestinationResult[] = [];
@@ -460,7 +465,7 @@ export async function searchDestinations(query: string): Promise<DestinationResu
 }
 
 export async function searchPlaces(query: string, cityId?: string): Promise<Place[]> {
-  const q = query.toLowerCase().trim();
+  const q = escapeIlike(query.toLowerCase().trim());
   if (!q) return [];
 
   let qb = supabase

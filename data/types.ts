@@ -57,7 +57,12 @@ export interface Place {
   cityAreaId: string | null;
   slug: string;
   name: string;
-  placeType: 'hotel' | 'hostel' | 'restaurant' | 'cafe' | 'bar' | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop' | 'wellness';
+  placeType:
+    | 'hotel' | 'hostel' | 'homestay'
+    | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'club' | 'rooftop'
+    | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop'
+    | 'wellness' | 'spa' | 'salon' | 'gym'
+    | 'laundry' | 'pharmacy' | 'clinic' | 'atm' | 'police' | 'tour';
   primaryCategoryId: string | null;
   lat: number | null;
   lng: number | null;
@@ -99,7 +104,7 @@ export interface Tag {
   tagGroupId: string | null;
   slug: string;
   label: string;
-  filterGroup: 'vibe' | 'good_for' | 'amenity' | 'safety' | 'cuisine' | 'style';
+  filterGroup: 'vibe' | 'good_for' | 'amenity' | 'safety' | 'cuisine' | 'style' | 'music' | 'physical_level' | 'diet';
   scope: 'global';
   tagType: 'place' | 'profile';
   icon: string | null;
@@ -178,6 +183,18 @@ export interface GeoContent {
   language: string | null;
   visaNote: string | null;
   highlights: string[];
+  internetQuality: 'excellent' | 'good' | 'fair' | 'poor' | null;
+  englishFriendliness: 'high' | 'moderate' | 'low' | null;
+  soloLevel: 'beginner' | 'intermediate' | 'expert' | null;
+  goodForInterests: string[];
+  gettingThereMd: string | null;
+  visaEntryMd: string | null;
+  simConnectivityMd: string | null;
+  moneyMd: string | null;
+  cultureEtiquetteMd: string | null;
+  safetyWomenMd: string | null;
+  transportMd: string | null;
+  topThingsToDo: string[];
   updatedBy: string | null;
   publishedAt: string | null;
   createdAt: string;
