@@ -7,7 +7,7 @@ import { onboardingStore } from '@/state/onboardingStore';
 
 const OPTIONS = [
   { title: 'Around other people', subtitle: 'Common rooms, shared energy', value: 'hostels' },
-  { title: 'Something with character', subtitle: 'Small, cosy, a bit different', value: 'boutique' },
+  { title: 'Something with character', subtitle: 'Small hotels, unique stays', value: 'boutique' },
   { title: 'My own space', subtitle: 'A kitchen, a couch, a front door', value: 'apartments' },
   { title: 'Fully taken care of', subtitle: 'Someone else handles the details', value: 'luxury' },
 ];
