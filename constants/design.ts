@@ -5,7 +5,15 @@ export const colors = {
   orange: '#E5653A',
   orangeFill: '#FFF5F1',
   borderDefault: '#E8E8E8',
+  warning: '#D4940A',
+  warningFill: '#FDF8EC',
   overlayDark: 'rgba(0,0,0,0.45)',
+  textSecondary: '#6B6B6B',
+  borderSubtle: '#F0F0F0',
+  greenSoft: '#2D8A4E',
+  greenFill: '#EEFBF3',
+  blueSoft: '#3B82F6',
+  blueFill: '#EFF6FF',
 };
 
 export const spacing = {
