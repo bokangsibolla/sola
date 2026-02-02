@@ -1,0 +1,223 @@
+export interface Country {
+  id: string;
+  slug: string;
+  name: string;
+  iso2: string;
+  iso3: string | null;
+  currencyCode: string | null;
+  isActive: boolean;
+  orderIndex: number;
+  heroImageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface City {
+  id: string;
+  countryId: string;
+  slug: string;
+  name: string;
+  timezone: string;
+  centerLat: number | null;
+  centerLng: number | null;
+  isActive: boolean;
+  orderIndex: number;
+  heroImageUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CityArea {
+  id: string;
+  cityId: string;
+  slug: string;
+  name: string;
+  areaKind: 'neighborhood' | 'beach' | 'island' | 'district';
+  isPrimary: boolean;
+  isActive: boolean;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaceCategory {
+  id: string;
+  slug: string;
+  name: string;
+  parentId: string | null;
+  icon: string | null;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Place {
+  id: string;
+  cityId: string;
+  cityAreaId: string | null;
+  slug: string;
+  name: string;
+  placeType: 'hotel' | 'hostel' | 'restaurant' | 'cafe' | 'bar' | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop' | 'wellness';
+  primaryCategoryId: string | null;
+  lat: number | null;
+  lng: number | null;
+  address: string | null;
+  googlePlaceId: string | null;
+  phone: string | null;
+  website: string | null;
+  priceLevel: number | null;
+  hoursText: string | null;
+  description: string | null;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaceMedia {
+  id: string;
+  placeId: string;
+  url: string;
+  mediaType: 'image' | 'video';
+  caption: string | null;
+  source: 'editorial' | 'google' | 'user';
+  orderIndex: number;
+  createdAt: string;
+}
+
+export interface TagGroup {
+  id: string;
+  slug: string;
+  label: string;
+  scope: 'global' | 'city' | 'country';
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface Tag {
+  id: string;
+  tagGroupId: string | null;
+  slug: string;
+  label: string;
+  filterGroup: 'vibe' | 'good_for' | 'amenity' | 'safety' | 'cuisine' | 'style';
+  scope: 'global';
+  tagType: 'place' | 'profile';
+  icon: string | null;
+  orderIndex: number;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export interface PlaceTag {
+  placeId: string;
+  tagId: string;
+  weight: number;
+  source: 'editorial' | 'model' | 'user';
+  createdAt: string;
+}
+
+export interface PlaceSignal {
+  id: string;
+  userId: string | null;
+  placeId: string;
+  signalType: 'liked' | 'disliked' | 'visited' | 'rated' | 'hidden';
+  rating: number | null;
+  note: string | null;
+  createdAt: string;
+}
+
+export interface Profile {
+  id: string;
+  username: string | null;
+  firstName: string;
+  bio: string | null;
+  avatarUrl: string | null;
+  homeCountryIso2: string;
+  homeCountryName: string;
+  homeCityId: string | null;
+  currentCityId: string | null;
+  currentCityName: string | null;
+  interests: string[];
+  travelStyle: string | null;
+  isOnline: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface SavedPlace {
+  id: string;
+  userId: string;
+  placeId: string;
+  collectionId: string | null;
+  createdAt: string;
+}
+
+export interface Collection {
+  id: string;
+  userId: string;
+  name: string;
+  emoji: string;
+  isPublic: boolean;
+  createdAt: string;
+}
+
+export interface GeoContent {
+  id: string;
+  scope: 'country' | 'city';
+  countryId: string | null;
+  cityId: string | null;
+  title: string;
+  subtitle: string | null;
+  summary: string | null;
+  contentMd: string | null;
+  heroImageUrl: string | null;
+  safetyRating: 'very_safe' | 'generally_safe' | 'use_caution' | 'exercise_caution';
+  soloFriendly: boolean;
+  bestMonths: string | null;
+  currency: string | null;
+  language: string | null;
+  visaNote: string | null;
+  highlights: string[];
+  updatedBy: string | null;
+  publishedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Trip {
+  id: string;
+  userId: string;
+  destinationCityId: string;
+  destinationName: string;
+  countryIso2: string;
+  arriving: string;
+  leaving: string;
+  nights: number;
+  status: 'planned' | 'active' | 'completed';
+  notes: string | null;
+  createdAt: string;
+}
+
+export interface TripPlace {
+  tripId: string;
+  placeId: string;
+  dayNumber: number | null;
+  notes: string | null;
+}
+
+export interface Conversation {
+  id: string;
+  participantIds: string[];
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+}
+
+export interface Message {
+  id: string;
+  conversationId: string;
+  senderId: string;
+  text: string;
+  sentAt: string;
+  readAt: string | null;
+}
