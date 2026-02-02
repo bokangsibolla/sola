@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 const queryClient = new QueryClient();
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
@@ -86,6 +87,12 @@ function AuthGate() {
 
   usePushNotifications(userId);
 
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (userId) posthog.identify(userId);
+  }, [userId, posthog]);
+
   useEffect(() => {
     if (authLoading) return;
     if (!router || !segments || segments.length < 1) return;
@@ -137,13 +144,21 @@ function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <SafeAreaProvider>
-          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <AuthGate />
-          </ThemeProvider>
-        </SafeAreaProvider>
-      </AuthProvider>
+      <PostHogProvider
+        apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
+        options={{
+          host: 'https://us.i.posthog.com',
+          enableSessionReplay: false,
+        }}
+      >
+        <AuthProvider>
+          <SafeAreaProvider>
+            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+              <AuthGate />
+            </ThemeProvider>
+          </SafeAreaProvider>
+        </AuthProvider>
+      </PostHogProvider>
     </QueryClientProvider>
   );
 }
