@@ -1,10 +1,13 @@
 import { useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { searchDestinations } from '@/data/api';
+import type { DestinationResult } from '@/data/api';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
@@ -22,12 +25,14 @@ function nightsBetween(a: Date, b: Date): number {
 export default function NewTripScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { userId } = useAuth();
 
   const [destination, setDestination] = useState('');
-  const [selectedCityId, setSelectedCityId] = useState<string | null>(null);
+  const [selectedResult, setSelectedResult] = useState<DestinationResult | null>(null);
   const [search, setSearch] = useState('');
   const [notes, setNotes] = useState('');
   const [flexible, setFlexible] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const tomorrow = new Date(Date.now() + DAY_MS);
   const [arriving, setArriving] = useState<Date | null>(null);
@@ -41,9 +46,9 @@ export default function NewTripScreen() {
     [search],
   );
 
-  const handleSelect = (name: string, id: string) => {
-    setDestination(name);
-    setSelectedCityId(id);
+  const handleSelect = (result: DestinationResult) => {
+    setDestination(result.name);
+    setSelectedResult(result);
     setSearch('');
   };
 
@@ -66,10 +71,31 @@ export default function NewTripScreen() {
     }
   };
 
-  const canSave = destination.length > 0 || search.trim().length > 0;
+  const canSave = selectedResult?.type === 'city' && arriving && leaving && !saving;
 
-  const handleSave = () => {
-    // In a real app, persist to store/DB
+  const handleSave = async () => {
+    if (!userId || !selectedResult || !arriving || !leaving) return;
+    if (selectedResult.type !== 'city') {
+      Alert.alert('Select a city', 'Please pick a specific city as your destination.');
+      return;
+    }
+    setSaving(true);
+    const { error } = await supabase.from('trips').insert({
+      user_id: userId,
+      destination_city_id: selectedResult.id,
+      destination_name: selectedResult.name,
+      country_iso2: selectedResult.countryIso2,
+      arriving: arriving.toISOString().split('T')[0],
+      leaving: leaving.toISOString().split('T')[0],
+      nights,
+      status: 'planned',
+      notes: notes.trim() || null,
+    });
+    setSaving(false);
+    if (error) {
+      Alert.alert('Save failed', error.message);
+      return;
+    }
     router.back();
   };
 
@@ -101,13 +127,13 @@ export default function NewTripScreen() {
             value={destination || search}
             onChangeText={(t) => {
               setDestination('');
-              setSelectedCityId(null);
+              setSelectedResult(null);
               setSearch(t);
             }}
           />
           {(destination || search).length > 0 && (
             <Pressable
-              onPress={() => { setDestination(''); setSelectedCityId(null); setSearch(''); }}
+              onPress={() => { setDestination(''); setSelectedResult(null); setSearch(''); }}
               hitSlop={8}
             >
               <Ionicons name="close-circle" size={18} color={colors.textMuted} />
@@ -121,7 +147,7 @@ export default function NewTripScreen() {
               <Pressable
                 key={`${r.id}-${i}`}
                 style={styles.resultRow}
-                onPress={() => handleSelect(r.name, r.id)}
+                onPress={() => handleSelect(r)}
               >
                 <Text style={styles.resultName}>{r.name}</Text>
                 <Text style={styles.resultDetail}>
@@ -243,7 +269,7 @@ export default function NewTripScreen() {
           onPress={handleSave}
           disabled={!canSave}
         >
-          <Text style={styles.saveButtonText}>Save trip</Text>
+          <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save trip'}</Text>
         </Pressable>
       </ScrollView>
 

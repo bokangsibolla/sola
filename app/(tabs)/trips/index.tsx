@@ -1,5 +1,7 @@
+import { useCallback } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
@@ -34,6 +36,12 @@ export default function TripsScreen() {
   const router = useRouter();
   const { userId } = useAuth();
   const { data: trips, loading, error, refetch } = useData(() => userId ? getTrips(userId) : Promise.resolve([]), [userId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      refetch();
+    }, [refetch]),
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;

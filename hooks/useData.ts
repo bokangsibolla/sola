@@ -1,54 +1,44 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useCallback } from 'react';
 
 /**
- * Generic data-fetching hook that works with both sync and async fetchers.
- * Returns { data, loading, error, refetch }.
+ * Drop-in replacement for the old useData hook, now backed by React Query.
+ *
+ * - Results are cached and shared across components using the same fetcher+deps.
+ * - Stale data is shown instantly while refetching in the background.
+ * - The return shape { data, loading, error, refetch } is unchanged.
  */
 export function useData<T>(
   fetcher: () => T | Promise<T>,
   deps: any[] = [],
 ): { data: T | null; loading: boolean; error: Error | null; refetch: () => void } {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const mountedRef = useRef(true);
+  // Build a stable query key from the stringified deps.
+  // We also include the fetcher's toString() as a rough identity when no deps differ.
+  const queryKey = ['useData', fetcher.toString().slice(0, 80), ...deps];
 
-  const run = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    try {
+  const queryClient = useQueryClient();
+
+  const { data, isLoading, error } = useQuery<T, Error>({
+    queryKey,
+    queryFn: async () => {
       const result = fetcher();
       if (result instanceof Promise) {
-        result
-          .then((value) => {
-            if (mountedRef.current) {
-              setData(value);
-              setLoading(false);
-            }
-          })
-          .catch((err) => {
-            if (mountedRef.current) {
-              setError(err instanceof Error ? err : new Error(String(err)));
-              setLoading(false);
-            }
-          });
-      } else {
-        setData(result);
-        setLoading(false);
+        return await result;
       }
-    } catch (err) {
-      setError(err instanceof Error ? err : new Error(String(err)));
-      setLoading(false);
-    }
-  }, deps);
+      return result;
+    },
+    // Show stale data while refetching
+    staleTime: 30_000,
+  });
 
-  useEffect(() => {
-    mountedRef.current = true;
-    run();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, [run]);
+  const refetch = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey });
+  }, [queryClient, ...deps]);
 
-  return { data, loading, error, refetch: run };
+  return {
+    data: data ?? null,
+    loading: isLoading,
+    error: error ?? null,
+    refetch,
+  };
 }

@@ -1,4 +1,5 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
@@ -9,6 +10,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
+
+const queryClient = new QueryClient();
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { onboardingStore } from '@/state/onboardingStore';
@@ -124,12 +127,14 @@ export default function RootLayout() {
   if (!fontsLoaded || !storeReady) return null;
 
   return (
-    <AuthProvider>
-      <SafeAreaProvider>
-        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-          <AuthGate />
-        </ThemeProvider>
-      </SafeAreaProvider>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <SafeAreaProvider>
+          <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+            <AuthGate />
+          </ThemeProvider>
+        </SafeAreaProvider>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

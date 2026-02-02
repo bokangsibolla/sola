@@ -30,7 +30,6 @@ export default function CreateAccountScreen() {
     }
 
     onboardingStore.set('email', email);
-    onboardingStore.set('password', password);
     router.push('/(onboarding)/profile');
   };
 
@@ -98,7 +97,7 @@ export default function CreateAccountScreen() {
 
       <View style={styles.loginRow}>
         <Text style={styles.loginLabel}>Already have an account? </Text>
-        <Pressable>
+        <Pressable onPress={() => router.push('/(onboarding)/login')}>
           <Text style={styles.loginLink}>Log in</Text>
         </Pressable>
       </View>

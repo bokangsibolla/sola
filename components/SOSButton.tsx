@@ -10,11 +10,10 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import { getTrips } from '@/data/api';
+import { getTrips, getProfileById } from '@/data/api';
 import { getEmergencyNumbers } from '@/data/safety';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
-import { onboardingStore } from '@/state/onboardingStore';
 
 interface SOSButtonProps {
   externalVisible: boolean;
@@ -27,10 +26,14 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
     () => userId ? getTrips(userId) : Promise.resolve([]),
     [userId],
   );
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    [userId],
+  );
   const activeTrip = (trips ?? []).find(
     (t) => t.status === 'active' || t.status === 'planned',
   );
-  const countryIso2 = activeTrip?.countryIso2 ?? onboardingStore.get('countryIso2') ?? 'US';
+  const countryIso2 = activeTrip?.countryIso2 ?? profile?.homeCountryIso2 ?? 'US';
   const numbers = getEmergencyNumbers(countryIso2);
 
   const call = async (number: string) => {

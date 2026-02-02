@@ -1,12 +1,11 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { onboardingStore } from '@/state/onboardingStore';
-import { getCollections, getSavedPlaces } from '@/data/api';
+import { getCollections, getProfileById, getSavedPlaces } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -14,24 +13,36 @@ import { useAuth } from '@/state/AuthContext';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
+function countryFlag(iso2: string): string {
+  return [...iso2.toUpperCase()]
+    .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
+    .join('');
+}
+
 export default function ProfileScreen() {
   const router = useRouter();
-  const [, setTick] = useState(0);
+  const { userId } = useAuth();
 
-  // Re-read store every time tab is focused
-  useFocusEffect(
-    useCallback(() => {
-      setTick((t) => t + 1);
-    }, []),
+  const { data: profile, loading: loadingProfile, error: errorProfile, refetch: refetchProfile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    [userId],
   );
 
-  const { userId } = useAuth();
-  const data = onboardingStore.getData();
-  const country = countries.find((c) => c.iso2 === data.countryIso2);
+  // Re-fetch profile every time tab is focused (picks up edits)
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+    }, [refetchProfile]),
+  );
+
+  const country = profile?.homeCountryIso2
+    ? countries.find((c) => c.iso2 === profile.homeCountryIso2)
+    : undefined;
   const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), [userId]);
   const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), [userId]);
 
-  if (loadingCol || loadingSaved) return <LoadingScreen />;
+  if (loadingProfile || loadingCol || loadingSaved) return <LoadingScreen />;
+  if (errorProfile) return <ErrorScreen message={errorProfile.message} onRetry={refetchProfile} />;
   if (errorCol) return <ErrorScreen message={errorCol.message} onRetry={refetchCol} />;
   if (errorSaved) return <ErrorScreen message={errorSaved.message} onRetry={refetchSaved} />;
 
@@ -42,29 +53,29 @@ export default function ProfileScreen() {
         {/* Avatar + info */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
-            {data.photoUri ? (
-              <Image source={{ uri: data.photoUri }} style={styles.avatar} />
+            {profile?.avatarUrl ? (
+              <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={32} color={colors.textMuted} />
               </View>
             )}
           </View>
-          <Text style={styles.name}>{data.firstName || 'Traveler'}</Text>
+          <Text style={styles.name}>{profile?.firstName || 'Traveler'}</Text>
           {country && (
             <Text style={styles.origin}>
-              {country.flag ?? ''} {country.name}
+              {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}{country.name}
             </Text>
           )}
-          {data.bio ? <Text style={styles.bio}>{data.bio}</Text> : null}
+          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
         </View>
 
         {/* Interests */}
-        {data.dayStyle.length > 0 && (
+        {(profile?.interests ?? []).length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interests</Text>
             <View style={styles.tags}>
-              {data.dayStyle.map((interest) => (
+              {(profile?.interests ?? []).map((interest) => (
                 <View key={interest} style={styles.tag}>
                   <Text style={styles.tagText}>{interest}</Text>
                 </View>

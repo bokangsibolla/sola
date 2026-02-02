@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
@@ -15,7 +15,13 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { onboardingStore } from '@/state/onboardingStore';
+import { supabase } from '@/lib/supabase';
+import { uploadAvatar } from '@/lib/uploadAvatar';
+import { getProfileById } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import { useAuth } from '@/state/AuthContext';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
@@ -35,12 +41,34 @@ const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT']
 export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { userId } = useAuth();
 
-  const [photoUri, setPhotoUri] = useState<string | null>(onboardingStore.get('photoUri'));
-  const [firstName, setFirstName] = useState(onboardingStore.get('firstName'));
-  const [bio, setBio] = useState(onboardingStore.get('bio'));
-  const [selectedCountry, setSelectedCountry] = useState(onboardingStore.get('countryIso2'));
-  const [interests, setInterests] = useState<string[]>([...onboardingStore.get('dayStyle')]);
+  const { data: profile, loading, error, refetch } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    [userId],
+  );
+
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [bio, setBio] = useState('');
+  const [selectedCountry, setSelectedCountry] = useState('');
+  const [interests, setInterests] = useState<string[]>([]);
+  const [initialized, setInitialized] = useState(false);
+
+  // Populate form once profile loads
+  useEffect(() => {
+    if (profile && !initialized) {
+      setPhotoUri(profile.avatarUrl);
+      setFirstName(profile.firstName);
+      setBio(profile.bio ?? '');
+      setSelectedCountry(profile.homeCountryIso2 ?? '');
+      setInterests([...(profile.interests ?? [])]);
+      setInitialized(true);
+    }
+  }, [profile, initialized]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
   const [countrySearch, setCountrySearch] = useState('');
 
   const displayedCountries = useMemo(() => {
@@ -93,15 +121,33 @@ export default function EditProfileScreen() {
     );
   };
 
-  const handleSave = () => {
-    const country = countries.find((c) => c.iso2 === selectedCountry);
-    onboardingStore.set('photoUri', photoUri);
-    onboardingStore.set('firstName', firstName.trim());
-    onboardingStore.set('bio', bio.trim());
-    onboardingStore.set('countryIso2', selectedCountry);
-    onboardingStore.set('countryName', country?.name ?? '');
-    onboardingStore.set('dayStyle', interests);
-    router.back();
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async () => {
+    if (!userId) return;
+    setSaving(true);
+    try {
+      const avatarUrl = await uploadAvatar(userId, photoUri);
+      const country = countries.find((c) => c.iso2 === selectedCountry);
+      const { error: upsertError } = await supabase.from('profiles').upsert({
+        id: userId,
+        first_name: firstName.trim(),
+        bio: bio.trim() || null,
+        avatar_url: avatarUrl,
+        home_country_iso2: selectedCountry || null,
+        home_country_name: country?.name ?? null,
+        interests,
+      });
+      if (upsertError) {
+        Alert.alert('Save failed', upsertError.message);
+        return;
+      }
+      router.back();
+    } catch (err: any) {
+      Alert.alert('Upload failed', err.message ?? 'Could not upload photo.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -229,8 +275,8 @@ export default function EditProfileScreen() {
         )}
 
         {/* Save */}
-        <Pressable style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>Save changes</Text>
+        <Pressable style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
+          <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save changes'}</Text>
         </Pressable>
 
         <View style={{ height: spacing.xxl }} />

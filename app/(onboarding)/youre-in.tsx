@@ -7,6 +7,7 @@ import ProgressBar from '@/components/onboarding/ProgressIndicator';
 import { onboardingStore } from '@/state/onboardingStore';
 import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
+import { uploadAvatar } from '@/lib/uploadAvatar';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, spacing } from '@/constants/design';
 
@@ -26,10 +27,12 @@ export default function YoureInScreen() {
     // Persist profile data to Supabase
     if (userId) {
       const data = onboardingStore.getData();
+      const avatarUrl = await uploadAvatar(userId, data.photoUri).catch(() => null);
       await supabase.from('profiles').upsert({
         id: userId,
         first_name: data.firstName,
         bio: data.bio || null,
+        avatar_url: avatarUrl,
         home_country_iso2: data.countryIso2 || null,
         home_country_name: data.countryName || null,
         travel_style: data.spendingStyle || null,

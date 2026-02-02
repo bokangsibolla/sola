@@ -26,12 +26,12 @@ import type {
 // ---------------------------------------------------------------------------
 
 /** Escape special characters for Postgres ILIKE patterns. */
-function escapeIlike(str: string): string {
+export function escapeIlike(str: string): string {
   return str.replace(/[%_\\]/g, '\\$&');
 }
 
 /** Convert snake_case row to camelCase type. Supabase returns snake_case. */
-function toCamel<T>(row: Record<string, any>): T {
+export function toCamel<T>(row: Record<string, any>): T {
   const out: Record<string, any> = {};
   for (const [k, v] of Object.entries(row)) {
     const camel = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
@@ -40,7 +40,7 @@ function toCamel<T>(row: Record<string, any>): T {
   return out as T;
 }
 
-function rowsToCamel<T>(rows: Record<string, any>[]): T[] {
+export function rowsToCamel<T>(rows: Record<string, any>[]): T[] {
   return rows.map((r) => toCamel<T>(r));
 }
 
@@ -409,16 +409,88 @@ export async function getMessages(conversationId: string): Promise<Message[]> {
   return rowsToCamel<Message>(data ?? []);
 }
 
+/**
+ * Find an existing conversation between two users, or create one.
+ * Returns the conversation ID.
+ */
+export async function getOrCreateConversation(
+  userId: string,
+  otherId: string,
+): Promise<string> {
+  // Look for an existing conversation containing both participants
+  const { data: existing, error: fetchError } = await supabase
+    .from('conversations')
+    .select('id, participant_ids')
+    .contains('participant_ids', [userId, otherId]);
+  if (fetchError) throw fetchError;
+
+  // Filter to conversations with exactly these two participants
+  const match = (existing ?? []).find(
+    (c: any) =>
+      c.participant_ids.length === 2 &&
+      c.participant_ids.includes(userId) &&
+      c.participant_ids.includes(otherId),
+  );
+  if (match) return match.id;
+
+  // Create a new conversation
+  const { data: created, error: insertError } = await supabase
+    .from('conversations')
+    .insert({
+      participant_ids: [userId, otherId],
+      last_message: null,
+      last_message_at: new Date().toISOString(),
+      unread_count: 0,
+    })
+    .select('id')
+    .single();
+  if (insertError) throw insertError;
+  return created.id;
+}
+
+/**
+ * Send a message in a conversation.
+ * Also updates the conversation's last_message and last_message_at.
+ */
+export async function sendMessage(
+  conversationId: string,
+  senderId: string,
+  text: string,
+): Promise<Message> {
+  const now = new Date().toISOString();
+
+  const { data, error } = await supabase
+    .from('messages')
+    .insert({
+      conversation_id: conversationId,
+      sender_id: senderId,
+      text,
+      sent_at: now,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+
+  // Update conversation metadata (best-effort)
+  await supabase
+    .from('conversations')
+    .update({ last_message: text, last_message_at: now })
+    .eq('id', conversationId);
+
+  return toCamel<Message>(data);
+}
+
 // ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------
 
-interface DestinationResult {
+export interface DestinationResult {
   type: 'country' | 'city';
   id: string;
   name: string;
   slug: string;
   parentName: string | null;
+  countryIso2: string | null;
 }
 
 export async function searchDestinations(query: string): Promise<DestinationResult[]> {
@@ -429,7 +501,7 @@ export async function searchDestinations(query: string): Promise<DestinationResu
 
   const { data: countries } = await supabase
     .from('countries')
-    .select('id, name, slug')
+    .select('id, name, slug, iso2')
     .eq('is_active', true)
     .ilike('name', `%${q}%`)
     .limit(5);
@@ -441,12 +513,13 @@ export async function searchDestinations(query: string): Promise<DestinationResu
       name: c.name,
       slug: c.slug,
       parentName: null,
+      countryIso2: c.iso2,
     });
   }
 
   const { data: cities } = await supabase
     .from('cities')
-    .select('id, name, slug, country_id, countries(name)')
+    .select('id, name, slug, country_id, countries(name, iso2)')
     .eq('is_active', true)
     .ilike('name', `%${q}%`)
     .limit(5);
@@ -458,6 +531,7 @@ export async function searchDestinations(query: string): Promise<DestinationResu
       name: c.name,
       slug: c.slug,
       parentName: (c as any).countries?.name ?? null,
+      countryIso2: (c as any).countries?.iso2 ?? null,
     });
   }
 

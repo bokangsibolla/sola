@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getConversations, getMessages, getProfileById } from '@/data/api';
+import { getConversations, getMessages, getProfileById, sendMessage as apiSendMessage } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -50,18 +50,22 @@ export default function DMThreadScreen() {
     if (fetchedMessages) setMessages(fetchedMessages);
   }, [fetchedMessages]);
 
-  const sendMessage = () => {
-    if (!text.trim()) return;
-    const msg: Message = {
-      id: `msg-${Date.now()}`,
-      conversationId: conversationId ?? 'new',
-      senderId: userId!,
-      text: text.trim(),
-      sentAt: new Date().toISOString(),
-      readAt: null,
-    };
-    setMessages((prev) => [...prev, msg]);
+  const [sending, setSending] = useState(false);
+
+  const sendMessage = async () => {
+    const body = text.trim();
+    if (!body || !conversationId || !userId) return;
+    setSending(true);
     setText('');
+    try {
+      const msg = await apiSendMessage(conversationId, userId, body);
+      setMessages((prev) => [...prev, msg]);
+    } catch {
+      // Restore text on failure so user can retry
+      setText(body);
+    } finally {
+      setSending(false);
+    }
   };
 
   const showMenu = () => {

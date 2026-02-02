@@ -21,10 +21,10 @@ import {
   getPlaceTags,
   getCategory,
   getCityById,
+  getProfileById,
   isPlaceSaved,
   toggleSavePlace,
 } from '@/data/api';
-import { onboardingStore } from '@/state/onboardingStore';
 import { useAuth } from '@/state/AuthContext';
 import type { Tag } from '@/data/types';
 
@@ -97,6 +97,10 @@ export default function PlaceDetailScreen() {
   );
 
   const { userId } = useAuth();
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    [userId],
+  );
   const { data: isSaved } = useData(() => isPlaceSaved(userId!, id ?? ''), [userId, id]);
   const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -123,9 +127,7 @@ export default function PlaceDetailScreen() {
 
   // "Why this fits you" matching
   const fitMessage = useMemo(() => {
-    const dayStyle = onboardingStore.get('dayStyle');
-    const priorities = onboardingStore.get('priorities');
-    const userInterests = [...dayStyle, ...priorities].map((s) =>
+    const userInterests = (profile?.interests ?? []).map((s) =>
       s.toLowerCase(),
     );
     if (userInterests.length === 0) return null;
@@ -150,7 +152,7 @@ export default function PlaceDetailScreen() {
         : lastTag;
 
     return `Based on your preferences, this place matches your interest in ${tagStr}.`;
-  }, [tags]);
+  }, [tags, profile]);
 
   const images = (media ?? []).filter((m) => m.mediaType === 'image');
 

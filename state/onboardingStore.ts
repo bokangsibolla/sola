@@ -5,7 +5,6 @@ const STORAGE_KEY = 'onboarding';
 interface OnboardingData {
   onboardingCompleted: boolean;
   email: string;
-  password: string;
   firstName: string;
   bio: string;
   photoUri: string | null;
@@ -32,7 +31,6 @@ interface OnboardingData {
 const defaults: OnboardingData = {
   onboardingCompleted: false,
   email: '',
-  password: '',
   firstName: '',
   bio: '',
   photoUri: null,

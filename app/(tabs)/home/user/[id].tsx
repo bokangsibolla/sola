@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getProfileById, getSavedPlaces, getPlaceById, getPlaceFirstImage, getCityById } from '@/data/api';
+import { getProfileById, getSavedPlaces, getPlaceById, getPlaceFirstImage, getCityById, getOrCreateConversation } from '@/data/api';
 import { useData } from '@/hooks/useData';
+import { useAuth } from '@/state/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
@@ -12,6 +14,21 @@ export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { userId } = useAuth();
+  const [startingChat, setStartingChat] = useState(false);
+
+  const handleMessage = async () => {
+    if (!userId || !id) return;
+    setStartingChat(true);
+    try {
+      const convoId = await getOrCreateConversation(userId, id);
+      router.push(`/home/dm/${convoId}`);
+    } catch {
+      // Silently fail — user can retry
+    } finally {
+      setStartingChat(false);
+    }
+  };
   const { data: profile, loading, error, refetch } = useData(() => getProfileById(id ?? ''), [id]);
 
   if (loading) return <LoadingScreen />;
@@ -102,11 +119,12 @@ export default function UserProfileScreen() {
       {/* Message button */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         <Pressable
-          style={styles.messageButton}
-          onPress={() => router.push(`/home/dm/${profile.id}`)}
+          style={[styles.messageButton, startingChat && { opacity: 0.6 }]}
+          onPress={handleMessage}
+          disabled={startingChat}
         >
           <Ionicons name="chatbubble-outline" size={18} color={colors.background} />
-          <Text style={styles.messageButtonText}>Message</Text>
+          <Text style={styles.messageButtonText}>{startingChat ? 'Opening...' : 'Message'}</Text>
         </Pressable>
       </View>
     </View>

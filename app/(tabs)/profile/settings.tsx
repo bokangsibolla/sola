@@ -14,6 +14,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const VISIBILITY_OPTIONS = ['Private', 'Connections', 'Public'] as const;
@@ -69,6 +70,7 @@ function showPicker(
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { signOut } = useAuth();
 
   const [privacy, setPrivacy] = useState(onboardingStore.get('privacyDefaults'));
   const [notifMessages, setNotifMessages] = useState(true);
@@ -90,7 +92,8 @@ export default function SettingsScreen() {
       {
         text: 'Log out',
         style: 'destructive',
-        onPress: () => {
+        onPress: async () => {
+          await signOut();
           onboardingStore.reset();
           router.replace('/(onboarding)/welcome');
         },
