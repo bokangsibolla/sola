@@ -38,32 +38,40 @@ export default function ProfileScreen() {
   // Prefill from auth on mount
   useEffect(() => {
     const loadAuthData = async () => {
-      const authData = await getAuthUserData();
-      if (authData.name && !firstName) {
-        setFirstName(authData.name);
-      }
-      if (authData.avatarUrl && !profilePhoto) {
-        setProfilePhoto(authData.avatarUrl);
+      try {
+        const authData = await getAuthUserData();
+        if (authData.name && !firstName) {
+          setFirstName(authData.name);
+        }
+        if (authData.avatarUrl && !profilePhoto) {
+          setProfilePhoto(authData.avatarUrl);
+        }
+      } catch {
+        // Auth prefill is non-critical; silently continue
       }
     };
     loadAuthData();
   }, []);
 
   const handlePickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      return;
-    }
+    try {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        return;
+      }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.8,
-    });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
 
-    if (!result.canceled && result.assets[0]) {
-      setProfilePhoto(result.assets[0].uri);
+      if (!result.canceled && result.assets[0]) {
+        setProfilePhoto(result.assets[0].uri);
+      }
+    } catch {
+      // Image picker failure is non-critical
     }
   };
 
