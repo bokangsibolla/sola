@@ -1,15 +1,17 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { getConversations, getProfileById } from '@/data/api';
+import { getConversationsPaginated, getProfileById, getBlockedUserIds } from '@/data/api';
 import { useData } from '@/hooks/useData';
+import { usePaginatedData } from '@/hooks/usePaginatedData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import type { Conversation } from '@/data/types';
+import { getImageUrl } from '@/lib/image';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -25,7 +27,18 @@ function timeAgo(iso: string): string {
 export default function DMListScreen() {
   const router = useRouter();
   const { userId } = useAuth();
-  const { data: conversations, loading, error, refetch } = useData(() => getConversations());
+  const { data: allConvos, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
+    queryKey: ['conversations'],
+    fetcher: (page) => getConversationsPaginated(page),
+  });
+  const { data: blockedIds } = useData(
+    () => (userId ? getBlockedUserIds(userId) : Promise.resolve([])),
+    [userId],
+  );
+
+  const visibleConversations = allConvos.filter(
+    (c) => !c.participantIds.some((pid) => (blockedIds ?? []).includes(pid)),
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -41,20 +54,24 @@ export default function DMListScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {(conversations ?? []).length === 0 ? (
-          <View style={styles.empty}>
-            <Ionicons name="chatbubbles-outline" size={32} color={colors.textMuted} />
-            <Text style={styles.emptyText}>
-              No conversations yet. Say hi to a fellow traveler.
-            </Text>
-          </View>
-        ) : (
-          (conversations ?? []).map((convo) => (
-            <ConversationRow key={convo.id} convo={convo} userId={userId} />
-          ))
-        )}
-      </ScrollView>
+      {visibleConversations.length === 0 ? (
+        <View style={styles.empty}>
+          <Ionicons name="chatbubbles-outline" size={32} color={colors.textMuted} />
+          <Text style={styles.emptyText}>
+            No conversations yet. Say hi to a fellow traveler.
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={visibleConversations}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => <ConversationRow convo={item} userId={userId} />}
+          onEndReached={() => { if (hasMore) fetchMore(); }}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ padding: 16 }} /> : null}
+        />
+      )}
     </AppScreen>
   );
 }
@@ -75,7 +92,7 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
       onPress={() => router.push(`/home/dm/${convo.id}`)}
     >
       {other.avatarUrl ? (
-        <Image source={{ uri: other.avatarUrl }} style={styles.avatar} />
+        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 })! }} style={styles.avatar} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
           <Ionicons name="person" size={18} color={colors.textMuted} />
