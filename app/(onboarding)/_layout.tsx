@@ -7,14 +7,13 @@ export default function OnboardingLayout() {
       initialRouteName="welcome"
     >
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="login" />
       <Stack.Screen name="create-account" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="intent" />
       <Stack.Screen name="trip-details" />
       <Stack.Screen name="day-style" />
-      <Stack.Screen name="priorities" />
       <Stack.Screen name="stay-preference" />
-      <Stack.Screen name="spending-style" />
       <Stack.Screen name="youre-in" />
     </Stack>
   );

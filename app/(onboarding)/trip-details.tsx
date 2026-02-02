@@ -1,46 +1,51 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
 import { searchDestinations } from '@/data/cities';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius } from '@/constants/design';
 
-const MONTHS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-];
+const DAY_MS = 86_400_000;
 
-const currentYear = new Date().getFullYear();
-const YEARS = [currentYear, currentYear + 1, currentYear + 2];
+function formatDate(date: Date): string {
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
+}
+
+function nightsBetween(a: Date, b: Date): number {
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / DAY_MS));
+}
 
 export default function TripDetailsScreen() {
   const router = useRouter();
   const [destination, setDestination] = useState('');
   const [search, setSearch] = useState('');
-  const [selectedMonth, setSelectedMonth] = useState('');
-  const [selectedYear, setSelectedYear] = useState(currentYear);
+
+  const tomorrow = new Date(Date.now() + DAY_MS);
+  const [arriving, setArriving] = useState<Date | null>(null);
+  const [leaving, setLeaving] = useState<Date | null>(null);
+  const [showPicker, setShowPicker] = useState<'arriving' | 'leaving' | null>(null);
+
+  const nights = arriving && leaving ? nightsBetween(arriving, leaving) : 0;
 
   const results = useMemo(() => {
     if (search.length < 2) return [];
     const cityResults = searchDestinations(search);
-
-    // Also search countries as fallback
     const q = search.toLowerCase();
     const countryResults = countries
       .filter((c) => c.name.toLowerCase().includes(q))
       .slice(0, 4)
       .map((c) => ({ name: c.name, detail: `${c.flag ?? ''} Country` }));
-
-    // Merge: cities first, then countries not already covered
     const seen = new Set(cityResults.map((r) => r.name.toLowerCase()));
     const merged = [
       ...cityResults,
       ...countryResults.filter((r) => !seen.has(r.name.toLowerCase())),
     ];
-    return merged.slice(0, 8);
+    return merged.slice(0, 6);
   }, [search]);
 
   const handleSelect = (name: string) => {
@@ -48,100 +53,194 @@ export default function TripDetailsScreen() {
     setSearch('');
   };
 
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setShowPicker(null);
+    if (event.type === 'dismissed') {
+      setShowPicker(null);
+      return;
+    }
+    if (!date) return;
+
+    if (showPicker === 'arriving') {
+      setArriving(date);
+      // Auto-clear leaving if it's before the new arrival
+      if (leaving && date >= leaving) setLeaving(null);
+      if (Platform.OS === 'ios') return;
+      // On Android, auto-open leaving picker after arriving
+      setTimeout(() => setShowPicker('leaving'), 300);
+    } else {
+      setLeaving(date);
+      if (Platform.OS === 'android') setShowPicker(null);
+    }
+  };
+
   const handleContinue = () => {
     onboardingStore.set('tripDestination', destination || search.trim());
-    const dateStr = selectedMonth ? `${selectedMonth} ${selectedYear}` : '';
-    onboardingStore.set('tripDates', dateStr);
+    onboardingStore.set('tripArriving', arriving ? arriving.toISOString() : '');
+    onboardingStore.set('tripLeaving', leaving ? leaving.toISOString() : '');
+    onboardingStore.set('tripNights', nights);
+    onboardingStore.set('tripDates', arriving ? formatDate(arriving) : '');
     router.push('/(onboarding)/day-style');
   };
 
-  // Can continue even without filling anything (it's optional)
   const hasDestination = destination.length > 0 || search.trim().length > 0;
 
   return (
     <OnboardingScreen
       stage={3}
       headline="Where to next?"
-      subtitle="No pressure — you can always add this later"
+      subtitle="You can always change this later"
       ctaLabel={hasDestination ? 'Continue' : 'Skip'}
       onCtaPress={handleContinue}
+      onSkip={() => router.push('/(onboarding)/day-style')}
     >
-      {/* Destination search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="location-outline" size={18} color={colors.textMuted} style={styles.icon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="City or country..."
-          placeholderTextColor={colors.textMuted}
-          value={destination || search}
-          onChangeText={(text) => {
-            setDestination('');
-            setSearch(text);
-          }}
-          autoFocus={false}
-        />
-        {(destination || search).length > 0 && (
-          <Pressable onPress={() => { setDestination(''); setSearch(''); }} hitSlop={8}>
-            <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-          </Pressable>
-        )}
-      </View>
-
-      {/* Search results */}
-      {results.length > 0 && !destination && (
-        <View style={styles.results}>
-          {results.map((r, i) => (
-            <Pressable
-              key={`${r.name}-${i}`}
-              style={styles.resultItem}
-              onPress={() => handleSelect(r.name)}
-            >
-              <Text style={styles.resultName}>{r.name}</Text>
-              <Text style={styles.resultDetail}>{r.detail}</Text>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Destination search */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="location-outline" size={18} color={colors.textMuted} style={styles.icon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="City or country..."
+            placeholderTextColor={colors.textMuted}
+            value={destination || search}
+            onChangeText={(text) => {
+              setDestination('');
+              setSearch(text);
+            }}
+            autoFocus={false}
+          />
+          {(destination || search).length > 0 && (
+            <Pressable onPress={() => { setDestination(''); setSearch(''); }} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
             </Pressable>
-          ))}
+          )}
         </View>
-      )}
 
-      {/* No results message */}
-      {search.length >= 2 && results.length === 0 && !destination && (
-        <Text style={styles.noResults}>
-          No matches — just type your destination and continue
-        </Text>
-      )}
-
-      {/* Month picker */}
-      {(destination || search.trim()) ? (
-        <View style={styles.dateSection}>
-          <Text style={styles.dateLabel}>When are you going?</Text>
-          <View style={styles.monthGrid}>
-            {MONTHS.map((m) => (
+        {/* Search results */}
+        {results.length > 0 && !destination && (
+          <View style={styles.results}>
+            {results.map((r, i) => (
               <Pressable
-                key={m}
-                style={[styles.monthPill, selectedMonth === m && styles.monthPillSelected]}
-                onPress={() => setSelectedMonth(selectedMonth === m ? '' : m)}
+                key={`${r.name}-${i}`}
+                style={styles.resultItem}
+                onPress={() => handleSelect(r.name)}
               >
-                <Text style={[styles.monthText, selectedMonth === m && styles.monthTextSelected]}>
-                  {m}
-                </Text>
+                <Text style={styles.resultName}>{r.name}</Text>
+                <Text style={styles.resultDetail}>{r.detail}</Text>
               </Pressable>
             ))}
           </View>
-          <View style={styles.yearRow}>
-            {YEARS.map((y) => (
+        )}
+
+        {search.length >= 2 && results.length === 0 && !destination && (
+          <Text style={styles.noResults}>
+            No matches found. Type your destination and continue.
+          </Text>
+        )}
+
+        {/* Date section — appears after destination is picked */}
+        {(destination || search.trim()) ? (
+          <View style={styles.dateSection}>
+            <Text style={styles.dateLabel}>When are you going?</Text>
+
+            <View style={styles.dateRow}>
               <Pressable
-                key={y}
-                style={[styles.yearPill, selectedYear === y && styles.yearPillSelected]}
-                onPress={() => setSelectedYear(y)}
+                style={[styles.dateCard, arriving && styles.dateCardFilled]}
+                onPress={() => setShowPicker('arriving')}
               >
-                <Text style={[styles.yearText, selectedYear === y && styles.yearTextSelected]}>
-                  {y}
+                <Text style={styles.dateCardLabel}>Arriving</Text>
+                <Text style={[styles.dateCardValue, arriving && styles.dateCardValueFilled]}>
+                  {arriving ? formatDate(arriving) : 'Pick a date'}
                 </Text>
               </Pressable>
-            ))}
+
+              <Pressable
+                style={[styles.dateCard, leaving && styles.dateCardFilled]}
+                onPress={() => {
+                  if (!arriving) {
+                    setShowPicker('arriving');
+                    return;
+                  }
+                  setShowPicker('leaving');
+                }}
+              >
+                <Text style={styles.dateCardLabel}>Leaving</Text>
+                <Text style={[styles.dateCardValue, leaving && styles.dateCardValueFilled]}>
+                  {leaving ? formatDate(leaving) : 'Pick a date'}
+                </Text>
+              </Pressable>
+            </View>
+
+            {/* Nights badge */}
+            {nights > 0 && (
+              <View style={styles.nightsBadge}>
+                <Text style={styles.nightsText}>
+                  {nights} {nights === 1 ? 'night' : 'nights'}
+                </Text>
+              </View>
+            )}
+
+            {/* iOS inline picker */}
+            {Platform.OS === 'ios' && showPicker && (
+              <View style={styles.pickerContainer}>
+                <View style={styles.pickerHeader}>
+                  <Text style={styles.pickerTitle}>
+                    {showPicker === 'arriving' ? 'Arriving' : 'Leaving'}
+                  </Text>
+                  <Pressable
+                    onPress={() => {
+                      if (showPicker === 'arriving' && arriving && !leaving) {
+                        setShowPicker('leaving');
+                      } else {
+                        setShowPicker(null);
+                      }
+                    }}
+                  >
+                    <Text style={styles.pickerDone}>
+                      {showPicker === 'arriving' && arriving && !leaving ? 'Next' : 'Done'}
+                    </Text>
+                  </Pressable>
+                </View>
+                <DateTimePicker
+                  value={
+                    showPicker === 'arriving'
+                      ? arriving || tomorrow
+                      : leaving || new Date((arriving?.getTime() || Date.now()) + DAY_MS)
+                  }
+                  mode="date"
+                  display="inline"
+                  minimumDate={
+                    showPicker === 'arriving'
+                      ? tomorrow
+                      : new Date((arriving?.getTime() || Date.now()) + DAY_MS)
+                  }
+                  onChange={handleDateChange}
+                  accentColor={colors.orange}
+                />
+              </View>
+            )}
           </View>
-        </View>
-      ) : null}
+        ) : null}
+      </ScrollView>
+
+      {/* Android picker modal */}
+      {Platform.OS === 'android' && showPicker && (
+        <DateTimePicker
+          value={
+            showPicker === 'arriving'
+              ? arriving || tomorrow
+              : leaving || new Date((arriving?.getTime() || Date.now()) + DAY_MS)
+          }
+          mode="date"
+          display="default"
+          minimumDate={
+            showPicker === 'arriving'
+              ? tomorrow
+              : new Date((arriving?.getTime() || Date.now()) + DAY_MS)
+          }
+          onChange={handleDateChange}
+        />
+      )}
     </OnboardingScreen>
   );
 }
@@ -207,52 +306,72 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 12,
   },
-  monthGrid: {
+  dateRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginBottom: 12,
+    gap: 10,
   },
-  monthPill: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
+  dateCard: {
+    flex: 1,
+    height: 64,
+    borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.borderDefault,
+    paddingHorizontal: 14,
+    justifyContent: 'center',
   },
-  monthPillSelected: {
+  dateCardFilled: {
+    borderWidth: 2,
     borderColor: colors.orange,
     backgroundColor: colors.orangeFill,
   },
-  monthText: {
+  dateCardLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginBottom: 2,
+  },
+  dateCardValue: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 15,
+    color: colors.textMuted,
+  },
+  dateCardValueFilled: {
     color: colors.textPrimary,
   },
-  monthTextSelected: {
+  nightsBadge: {
+    alignSelf: 'center',
+    marginTop: 12,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+  },
+  nightsText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
     color: colors.orange,
   },
-  yearRow: {
+  pickerContainer: {
+    marginTop: 16,
+    backgroundColor: '#FAFAFA',
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  pickerHeader: {
     flexDirection: 'row',
-    gap: 8,
-  },
-  yearPill: {
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
+    paddingVertical: 12,
   },
-  yearPillSelected: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orangeFill,
-  },
-  yearText: {
+  pickerTitle: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 15,
     color: colors.textPrimary,
   },
-  yearTextSelected: {
+  pickerDone: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
     color: colors.orange,
   },
 });

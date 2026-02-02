@@ -1,7 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, {
+  Easing,
+  FadeIn,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withTiming,
+} from 'react-native-reanimated';
 import AnimatedBackground from '@/components/onboarding/AnimatedBackground';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -16,33 +24,65 @@ const heroImages = [
   require('@/assets/images/welcome-background.png'),
 ];
 
+const TAGLINE = 'Because women travel differently.';
+
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  // Animate tagline: width reveal (typewriter feel)
+  const revealWidth = useSharedValue(0);
+
+  useEffect(() => {
+    revealWidth.value = withDelay(
+      600,
+      withTiming(1, { duration: 1200, easing: Easing.out(Easing.cubic) }),
+    );
+  }, []);
+
+  const taglineStyle = useAnimatedStyle(() => ({
+    width: `${revealWidth.value * 100}%`,
+    overflow: 'hidden',
+  }));
 
   return (
     <View style={styles.container}>
       <AnimatedBackground images={heroImages} delay={4000} />
 
       <View style={[styles.content, { paddingTop: insets.top }]}>
-        <View style={styles.logoBlock}>
+        <Animated.View
+          entering={FadeIn.duration(800)}
+          style={styles.logoBlock}
+        >
           <Image
             source={require('@/assets/images/sola-logo.png')}
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.tagline}>Because women travel differently.</Text>
-        </View>
+          <View style={styles.taglineContainer}>
+            <Animated.View style={taglineStyle}>
+              <Text style={styles.tagline} numberOfLines={1}>
+                {TAGLINE}
+              </Text>
+            </Animated.View>
+          </View>
+        </Animated.View>
 
-        <View style={[styles.bottomBlock, { paddingBottom: insets.bottom + 24 }]}>
-          <Pressable onPress={() => router.push('/(onboarding)/create-account')}>
-            <Text style={styles.loginText}>Log in</Text>
-          </Pressable>
+        <Animated.View
+          entering={FadeIn.delay(1000).duration(600)}
+          style={[styles.bottomBlock, { paddingBottom: insets.bottom + 24 }]}
+        >
           <PrimaryButton
             label="Create account"
             onPress={() => router.push('/(onboarding)/create-account')}
           />
-        </View>
+          <Pressable
+            style={styles.loginButton}
+            onPress={() => router.push('/(onboarding)/login')}
+          >
+            <Text style={styles.loginText}>Log in</Text>
+          </Pressable>
+        </Animated.View>
       </View>
     </View>
   );
@@ -69,21 +109,33 @@ const styles = StyleSheet.create({
     height: 80,
     tintColor: '#FFFFFF',
   },
+  taglineContainer: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
   tagline: {
     fontFamily: fonts.regular,
     fontSize: 16,
     color: '#FFFFFF',
     textAlign: 'center',
-    marginTop: 12,
   },
   bottomBlock: {
     paddingHorizontal: spacing.screenX,
-    gap: 16,
+    gap: 12,
     alignItems: 'center',
   },
+  loginButton: {
+    height: 48,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'stretch',
+  },
   loginText: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
+    fontFamily: fonts.medium,
+    fontSize: 15,
     color: '#FFFFFF',
   },
 });

@@ -31,7 +31,9 @@ export default function YoureInScreen() {
 
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.progressRow}>
-          <ProgressBar stage={5} />
+          <View style={styles.progressPadding}>
+            <ProgressBar stage={5} />
+          </View>
         </View>
 
         <View style={styles.center}>
@@ -62,7 +64,9 @@ const styles = StyleSheet.create({
   },
   progressRow: {
     paddingTop: 16,
-    alignItems: 'center',
+  },
+  progressPadding: {
+    paddingHorizontal: spacing.screenX,
   },
   center: {
     alignItems: 'center',

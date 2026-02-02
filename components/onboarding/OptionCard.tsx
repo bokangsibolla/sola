@@ -46,7 +46,8 @@ export default function OptionCard({ title, subtitle, selected, onPress }: Optio
 
 const styles = StyleSheet.create({
   card: {
-    height: 72,
+    minHeight: 64,
+    paddingVertical: 14,
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.borderDefault,

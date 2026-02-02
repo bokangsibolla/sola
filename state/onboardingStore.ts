@@ -12,6 +12,9 @@ interface OnboardingData {
   priorities: string[];
   tripDestination: string;
   tripDates: string;
+  tripArriving: string;
+  tripLeaving: string;
+  tripNights: number;
   stayPreference: string;
   spendingStyle: string;
 }
@@ -30,6 +33,9 @@ const store: OnboardingData = {
   priorities: [],
   tripDestination: '',
   tripDates: '',
+  tripArriving: '',
+  tripLeaving: '',
+  tripNights: 0,
   stayPreference: '',
   spendingStyle: '',
 };
@@ -55,6 +61,9 @@ export const onboardingStore = {
       priorities: [],
       tripDestination: '',
       tripDates: '',
+      tripArriving: '',
+      tripLeaving: '',
+      tripNights: 0,
       stayPreference: '',
       spendingStyle: '',
     });

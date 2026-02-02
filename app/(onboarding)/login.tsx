@@ -1,0 +1,243 @@
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PrimaryButton from '@/components/ui/PrimaryButton';
+import { colors, fonts, spacing } from '@/constants/design';
+
+export default function LoginScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  const canLogin = email.includes('@') && password.length >= 6;
+
+  const handleLogin = () => {
+    // TODO: Supabase auth — supabase.auth.signInWithPassword({ email, password })
+    router.replace('/(tabs)');
+  };
+
+  const handleSocialLogin = (provider: string) => {
+    // TODO: Supabase OAuth
+    router.replace('/(tabs)');
+  };
+
+  return (
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      {/* Back */}
+      <View style={styles.navRow}>
+        <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
+          <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
+        </Pressable>
+      </View>
+
+      {/* Headline */}
+      <View style={styles.headlineBlock}>
+        <Text style={styles.headline}>Welcome back</Text>
+        <Text style={styles.subtitle}>Log in to your account</Text>
+      </View>
+
+      {/* Content */}
+      <View style={styles.content}>
+        {/* Social login */}
+        <View style={styles.socialButtons}>
+          <Pressable
+            style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
+            onPress={() => handleSocialLogin('google')}
+          >
+            <Text style={styles.googleIcon}>G</Text>
+            <Text style={styles.socialText}>Continue with Google</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
+            onPress={() => handleSocialLogin('apple')}
+          >
+            <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+            <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+          </Pressable>
+        </View>
+
+        {/* Divider */}
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>or</Text>
+          <View style={styles.dividerLine} />
+        </View>
+
+        {/* Fields */}
+        <View style={styles.fields}>
+          <TextInput
+            style={styles.input}
+            placeholder="Email"
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Password"
+            placeholderTextColor={colors.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
+        </View>
+
+        <Pressable style={styles.forgotRow}>
+          <Text style={styles.forgotText}>Forgot password?</Text>
+        </Pressable>
+      </View>
+
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+        <PrimaryButton label="Log in" onPress={handleLogin} disabled={!canLogin} />
+        <View style={styles.signupRow}>
+          <Text style={styles.signupLabel}>New here? </Text>
+          <Pressable onPress={() => router.back()}>
+            <Text style={styles.signupLink}>Create account</Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  navRow: {
+    paddingHorizontal: spacing.screenX,
+    marginBottom: 8,
+  },
+  backButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F3F3',
+  },
+  headlineBlock: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: 28,
+    paddingBottom: 8,
+  },
+  headline: {
+    fontFamily: fonts.semiBold,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.textPrimary,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textMuted,
+    marginTop: 8,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: spacing.screenX,
+    paddingTop: 28,
+  },
+  socialButtons: {
+    gap: 10,
+    marginBottom: 28,
+  },
+  socialButton: {
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 10,
+    backgroundColor: colors.background,
+  },
+  appleButton: {
+    backgroundColor: '#000000',
+    borderColor: '#000000',
+  },
+  socialPressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.99 }],
+  },
+  googleIcon: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
+    color: '#4285F4',
+  },
+  socialText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  appleText: {
+    color: '#FFFFFF',
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 28,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.borderDefault,
+  },
+  dividerText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    paddingHorizontal: 16,
+  },
+  fields: {
+    gap: 14,
+  },
+  input: {
+    height: 50,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    paddingHorizontal: 16,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  forgotRow: {
+    alignSelf: 'flex-end',
+    marginTop: 14,
+  },
+  forgotText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  footer: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: 16,
+    alignItems: 'center',
+  },
+  signupRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginTop: 16,
+  },
+  signupLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  signupLink: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+});

@@ -30,12 +30,12 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 200,
+          "image": "./assets/images/sola-logo.png",
+          "imageWidth": 160,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#E5653A",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#E5653A"
           }
         }
       ]

@@ -3,9 +3,10 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 import ProgressBar from './ProgressIndicator';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { colors, spacing, typography } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 
 interface OnboardingScreenProps {
   stage: number;
@@ -14,6 +15,7 @@ interface OnboardingScreenProps {
   ctaLabel: string;
   ctaDisabled?: boolean;
   onCtaPress: () => void;
+  onSkip?: () => void;
   showBack?: boolean;
   children: React.ReactNode;
 }
@@ -25,6 +27,7 @@ export default function OnboardingScreen({
   ctaLabel,
   ctaDisabled = false,
   onCtaPress,
+  onSkip,
   showBack = true,
   children,
 }: OnboardingScreenProps) {
@@ -32,28 +35,47 @@ export default function OnboardingScreen({
   const router = useRouter();
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.header}>
+    <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      {/* Navigation row */}
+      <View style={styles.navRow}>
         {showBack ? (
           <Pressable onPress={() => router.back()} style={styles.backButton} hitSlop={12}>
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
           </Pressable>
         ) : (
           <View style={styles.backPlaceholder} />
         )}
-        <ProgressBar stage={stage} />
+        <View style={styles.progressWrapper}>
+          <ProgressBar stage={stage} />
+        </View>
         <View style={styles.backPlaceholder} />
       </View>
 
-      <View style={styles.headlineBlock}>
+      {/* Headline */}
+      <Animated.View
+        entering={FadeInDown.duration(350).damping(20)}
+        style={styles.headlineBlock}
+      >
         <Text style={styles.headline}>{headline}</Text>
         {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-      </View>
+      </Animated.View>
 
-      <View style={styles.content}>{children}</View>
+      {/* Content */}
+      <Animated.View
+        entering={FadeInDown.delay(80).duration(350).damping(20)}
+        style={styles.content}
+      >
+        {children}
+      </Animated.View>
 
-      <View style={[styles.ctaContainer, { paddingBottom: insets.bottom + 24 }]}>
+      {/* Footer */}
+      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
         <PrimaryButton label={ctaLabel} onPress={onCtaPress} disabled={ctaDisabled} />
+        {onSkip && (
+          <Pressable onPress={onSkip} style={styles.skipButton} hitSlop={8}>
+            <Text style={styles.skipText}>Skip for now</Text>
+          </Pressable>
+        )}
       </View>
     </View>
   );
@@ -64,40 +86,61 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
+  navRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.screenX,
-    paddingTop: 8,
+    marginBottom: 8,
   },
   backButton: {
     width: 32,
-    alignItems: 'flex-start',
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F3F3F3',
   },
   backPlaceholder: {
     width: 32,
   },
+  progressWrapper: {
+    flex: 1,
+    marginHorizontal: 16,
+  },
   headlineBlock: {
     paddingHorizontal: spacing.screenX,
-    paddingTop: 32,
-    alignItems: 'center',
+    paddingTop: 28,
+    paddingBottom: 8,
   },
   headline: {
-    ...typography.h2,
+    fontFamily: fonts.semiBold,
+    fontSize: 24,
+    lineHeight: 30,
     color: colors.textPrimary,
-    textAlign: 'center',
   },
   subtitle: {
-    ...typography.caption,
-    textAlign: 'center',
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textMuted,
     marginTop: 8,
   },
   content: {
     flex: 1,
     paddingHorizontal: spacing.screenX,
-    paddingTop: 32,
+    paddingTop: 28,
   },
-  ctaContainer: {
+  footer: {
     paddingHorizontal: spacing.screenX,
+    paddingTop: 16,
+    alignItems: 'center',
+  },
+  skipButton: {
+    marginTop: 14,
+  },
+  skipText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
   },
 });

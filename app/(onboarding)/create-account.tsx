@@ -27,7 +27,7 @@ export default function CreateAccountScreen() {
 
   return (
     <OnboardingScreen
-      stage={1}
+      stage={2}
       headline="Let's get you in."
       subtitle="Travel information designed for how women travel."
       ctaLabel="Create account"
@@ -95,11 +95,11 @@ export default function CreateAccountScreen() {
 const styles = StyleSheet.create({
   socialButtons: {
     gap: 10,
-    marginBottom: 20,
+    marginBottom: 28,
   },
   socialButton: {
-    height: 48,
-    borderRadius: radius.input,
+    height: 50,
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     flexDirection: 'row',
@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 28,
   },
   dividerLine: {
     flex: 1,
@@ -146,11 +146,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   fields: {
-    gap: 12,
+    gap: 14,
   },
   input: {
-    height: 48,
-    borderRadius: radius.input,
+    height: 50,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   loginRow: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 28,
   },
   loginLabel: {
     fontFamily: fonts.regular,

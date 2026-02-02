@@ -13,12 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSequence,
-  withSpring,
-} from 'react-native-reanimated';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
@@ -36,10 +31,7 @@ export default function ProfileScreen() {
   const [bio, setBio] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [search, setSearch] = useState('');
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const photoScale = useSharedValue(1);
 
-  // When searching, show filtered results as pills. Otherwise show popular.
   const displayedCountries = useMemo(() => {
     if (search.length < 2) {
       return POPULAR_ISO
@@ -50,7 +42,6 @@ export default function ProfileScreen() {
     return countries.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
   }, [search]);
 
-  // If selected country isn't in the displayed list, show it as a standalone pill
   const selectedCountryData = selectedCountry
     ? countries.find((c) => c.iso2 === selectedCountry)
     : null;
@@ -69,13 +60,6 @@ export default function ProfileScreen() {
 
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
-      photoScale.value = withSequence(
-        withSpring(0.8, { damping: 15, stiffness: 150 }),
-        withSpring(1.05, { damping: 15, stiffness: 150 }),
-        withSpring(1, { damping: 15, stiffness: 150 }),
-      );
-      setShowConfirmation(true);
-      setTimeout(() => setShowConfirmation(false), 2000);
     }
   };
 
@@ -112,64 +96,60 @@ export default function ProfileScreen() {
     router.push('/(onboarding)/intent');
   };
 
-  const photoAnimatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: photoScale.value }],
-  }));
-
   return (
     <OnboardingScreen
-      stage={2}
+      stage={3}
       headline="Tell us about you"
       ctaLabel="Continue"
       ctaDisabled={!canContinue}
       onCtaPress={handleContinue}
     >
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Photo circle */}
-        <View style={styles.photoSection}>
-          <Pressable onPress={handlePhotoPress}>
-            <Animated.View style={[styles.photoCircle, photoAnimatedStyle]}>
+        {/* Photo + name row */}
+        <View style={styles.topRow}>
+          <Pressable onPress={handlePhotoPress} style={styles.photoWrapper}>
+            <View style={styles.photoCircle}>
               {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                <Animated.Image
+                  entering={FadeIn.duration(300)}
+                  source={{ uri: photoUri }}
+                  style={styles.photoImage}
+                />
               ) : (
-                <Ionicons name="add" size={36} color={colors.textMuted} />
+                <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
               )}
-            </Animated.View>
+            </View>
+            <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add photo'}</Text>
           </Pressable>
-          {showConfirmation && (
-            <Text style={styles.confirmText}>Looking great</Text>
-          )}
-        </View>
 
-        {/* First name */}
-        <TextInput
-          style={styles.input}
-          placeholder="First name"
-          placeholderTextColor={colors.textMuted}
-          value={firstName}
-          onChangeText={setFirstName}
-          autoFocus={false}
-        />
-
-        {/* Bio */}
-        <View style={styles.bioContainer}>
-          <TextInput
-            style={styles.bioInput}
-            placeholder="A little about you..."
-            placeholderTextColor={colors.textMuted}
-            value={bio}
-            onChangeText={handleBioChange}
-            multiline
-            maxLength={BIO_MAX}
-            autoFocus={false}
-          />
-          <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
+          <View style={styles.nameColumn}>
+            <TextInput
+              style={styles.input}
+              placeholder="First name"
+              placeholderTextColor={colors.textMuted}
+              value={firstName}
+              onChangeText={setFirstName}
+              autoFocus={false}
+            />
+            <View style={styles.bioContainer}>
+              <TextInput
+                style={styles.bioInput}
+                placeholder="A little about you..."
+                placeholderTextColor={colors.textMuted}
+                value={bio}
+                onChangeText={handleBioChange}
+                multiline
+                maxLength={BIO_MAX}
+                autoFocus={false}
+              />
+              <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
+            </View>
+          </View>
         </View>
 
         {/* Country section */}
         <Text style={styles.sectionLabel}>Where are you from?</Text>
 
-        {/* Search field */}
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
           <TextInput
@@ -187,7 +167,6 @@ export default function ProfileScreen() {
           )}
         </View>
 
-        {/* Selected country badge (if not visible in pills below) */}
         {selectedCountryData && !selectedInList && (
           <View style={styles.selectedBadge}>
             <Pill
@@ -198,7 +177,6 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        {/* Country pills */}
         <View style={styles.pillGrid}>
           {displayedCountries.map((country) => (
             <Pill
@@ -218,28 +196,36 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
-  photoSection: {
+  topRow: {
+    flexDirection: 'row',
+    gap: 16,
+    marginBottom: 24,
+  },
+  photoWrapper: {
     alignItems: 'center',
-    marginBottom: 16,
+    gap: 6,
   },
   photoCircle: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   photoImage: {
-    width: 88,
-    height: 88,
+    width: 80,
+    height: 80,
   },
-  confirmText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-    marginTop: 6,
+  photoLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  nameColumn: {
+    flex: 1,
+    gap: 8,
   },
   input: {
     height: 48,
@@ -250,7 +236,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.textPrimary,
-    marginBottom: 12,
   },
   bioContainer: {
     borderRadius: radius.input,
@@ -259,19 +244,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 12,
     paddingBottom: 8,
-    marginBottom: 16,
     minHeight: 56,
   },
   bioInput: {
     fontFamily: fonts.regular,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textPrimary,
     minHeight: 24,
     padding: 0,
   },
   bioCounter: {
     fontFamily: fonts.regular,
-    fontSize: 12,
+    fontSize: 11,
     textAlign: 'right',
     marginTop: 4,
   },

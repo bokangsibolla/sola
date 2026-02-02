@@ -8,32 +8,25 @@ interface ProgressBarProps {
 }
 
 export default function ProgressBar({ stage }: ProgressBarProps) {
+  const percent = (stage / 5) * 100;
+
   return (
-    <View style={styles.container}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <View
-          key={s}
-          style={[styles.segment, s <= stage && styles.segmentFilled]}
-        />
-      ))}
+    <View style={styles.track}>
+      <View style={[styles.fill, { width: `${percent}%` }]} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 4,
-    paddingTop: 16,
-  },
-  segment: {
-    width: 48,
-    height: 4,
-    borderRadius: 2,
+  track: {
+    height: 2,
     backgroundColor: colors.borderDefault,
+    borderRadius: 1,
+    overflow: 'hidden',
   },
-  segmentFilled: {
+  fill: {
+    height: 2,
     backgroundColor: colors.orange,
+    borderRadius: 1,
   },
 });
