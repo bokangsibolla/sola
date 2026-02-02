@@ -3,6 +3,7 @@ interface OnboardingData {
   email: string;
   password: string;
   firstName: string;
+  bio: string;
   photoUri: string | null;
   countryIso2: string;
   countryName: string;
@@ -18,6 +19,7 @@ const store: OnboardingData = {
   email: '',
   password: '',
   firstName: '',
+  bio: '',
   photoUri: null,
   countryIso2: '',
   countryName: '',
@@ -40,6 +42,7 @@ export const onboardingStore = {
       email: '',
       password: '',
       firstName: '',
+      bio: '',
       photoUri: null,
       countryIso2: '',
       countryName: '',
