@@ -10,6 +10,8 @@ interface OnboardingData {
   tripIntent: 'planning' | 'exploring' | '';
   dayStyle: string[];
   priorities: string[];
+  tripDestination: string;
+  tripDates: string;
   stayPreference: string;
   spendingStyle: string;
 }
@@ -26,6 +28,8 @@ const store: OnboardingData = {
   tripIntent: '',
   dayStyle: [],
   priorities: [],
+  tripDestination: '',
+  tripDates: '',
   stayPreference: '',
   spendingStyle: '',
 };
@@ -49,6 +53,8 @@ export const onboardingStore = {
       tripIntent: '',
       dayStyle: [],
       priorities: [],
+      tripDestination: '',
+      tripDates: '',
       stayPreference: '',
       spendingStyle: '',
     });

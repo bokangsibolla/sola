@@ -12,7 +12,11 @@ export default function IntentScreen() {
   const handleContinue = () => {
     if (!selected) return;
     onboardingStore.set('tripIntent', selected);
-    router.push('/(onboarding)/day-style');
+    if (selected === 'planning') {
+      router.push('/(onboarding)/trip-details');
+    } else {
+      router.push('/(onboarding)/day-style');
+    }
   };
 
   return (
