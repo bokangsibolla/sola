@@ -1,23 +1,164 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useState } from 'react';
+import {
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { mockCountryGuides, type CityGuide, type PlaceEntry } from '@/data/mock';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import {
+  getCityBySlug,
+  getCityContent,
+  getAreasByCity,
+  getPlacesByCity,
+  getPlacesByArea,
+  getPlaceFirstImage,
+  getPlaceTags,
+  isPlaceSaved,
+  toggleSavePlace,
+} from '@/data/api';
+import type { Place, Tag } from '@/data/types';
 
-function findCity(slug: string): CityGuide | undefined {
-  for (const guide of mockCountryGuides) {
-    const city = guide.cities.find((c) => c.slug === slug);
-    if (city) return city;
+// ---------------------------------------------------------------------------
+// Category grouping
+// ---------------------------------------------------------------------------
+
+const SECTIONS: { title: string; types: Place['placeType'][] }[] = [
+  { title: 'Where to stay', types: ['hotel', 'hostel'] },
+  { title: 'Eat & Drink', types: ['restaurant', 'cafe', 'bar'] },
+  { title: 'Things to do', types: ['activity', 'landmark', 'wellness'] },
+  { title: 'Coworking', types: ['coworking'] },
+];
+
+// ---------------------------------------------------------------------------
+// Tag pill color helpers
+// ---------------------------------------------------------------------------
+
+function tagColors(filterGroup: Tag['filterGroup']): {
+  bg: string;
+  fg: string;
+} {
+  switch (filterGroup) {
+    case 'safety':
+      return { bg: colors.greenFill, fg: colors.greenSoft };
+    case 'good_for':
+      return { bg: colors.blueFill, fg: colors.blueSoft };
+    case 'vibe':
+      return { bg: colors.orangeFill, fg: colors.orange };
+    default:
+      return { bg: colors.borderSubtle, fg: colors.textSecondary };
   }
-  return undefined;
 }
+
+// ---------------------------------------------------------------------------
+// Price dots
+// ---------------------------------------------------------------------------
+
+function PriceDots({ level }: { level: number | null }) {
+  if (!level) return null;
+  const max = 4;
+  const dots: string[] = [];
+  for (let i = 0; i < max; i++) {
+    dots.push(i < level ? '\u25CF' : '\u25CB');
+  }
+  return <Text style={styles.priceDots}>{dots.join('')}</Text>;
+}
+
+// ---------------------------------------------------------------------------
+// Place Card
+// ---------------------------------------------------------------------------
+
+function PlaceCard({ place }: { place: Place }) {
+  const imageUrl = getPlaceFirstImage(place.id);
+  const tags = getPlaceTags(place.id).slice(0, 3);
+  const [saved, setSaved] = useState(() => isPlaceSaved('me', place.id));
+
+  const handleSave = useCallback(() => {
+    const next = toggleSavePlace('me', place.id);
+    setSaved(next);
+  }, [place.id]);
+
+  return (
+    <View style={styles.card}>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+      ) : (
+        <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
+      )}
+
+      <View style={styles.cardBody}>
+        {/* Top row: name + price */}
+        <View style={styles.cardTopRow}>
+          <Text style={styles.cardName} numberOfLines={1}>
+            {place.name}
+          </Text>
+          <PriceDots level={place.priceLevel} />
+        </View>
+
+        {/* Tag pills */}
+        {tags.length > 0 && (
+          <View style={styles.tagRow}>
+            {tags.map((tag) => {
+              const tc = tagColors(tag.filterGroup);
+              return (
+                <View
+                  key={tag.id}
+                  style={[styles.tagPill, { backgroundColor: tc.bg }]}
+                >
+                  <Text style={[styles.tagText, { color: tc.fg }]}>
+                    {tag.label}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        )}
+
+        {/* Description */}
+        {place.description ? (
+          <Text style={styles.cardDesc} numberOfLines={2}>
+            {place.description}
+          </Text>
+        ) : null}
+
+        {/* Save button */}
+        <Pressable onPress={handleSave} style={styles.saveBtn} hitSlop={8}>
+          <Ionicons
+            name={saved ? 'heart' : 'heart-outline'}
+            size={18}
+            color={saved ? colors.orange : colors.textMuted}
+          />
+          <Text
+            style={[
+              styles.saveText,
+              { color: saved ? colors.orange : colors.textMuted },
+            ]}
+          >
+            {saved ? 'Saved' : 'Save'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Screen
+// ---------------------------------------------------------------------------
 
 export default function PlaceScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const city = findCity(slug ?? '');
+
+  const city = getCityBySlug(slug ?? '');
+
+  const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
   if (!city) {
     return (
@@ -27,8 +168,19 @@ export default function PlaceScreen() {
     );
   }
 
+  const content = getCityContent(city.id);
+  const areas = getAreasByCity(city.id);
+
+  const allPlaces = selectedAreaId
+    ? getPlacesByArea(selectedAreaId)
+    : getPlacesByCity(city.id);
+
+  const heroUrl = city.heroImageUrl ?? content?.heroImageUrl ?? null;
+  const tagline = content?.subtitle ?? null;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Navigation */}
       <View style={styles.nav}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -36,75 +188,89 @@ export default function PlaceScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <Image source={{ uri: city.heroImageUrl }} style={styles.hero} />
+        {/* Hero */}
+        {heroUrl && (
+          <Image source={{ uri: heroUrl }} style={styles.hero} />
+        )}
 
         <View style={styles.content}>
           <Text style={styles.cityName}>{city.name}</Text>
-          <Text style={styles.tagline}>{city.tagline}</Text>
+          {tagline && (
+            <Text style={styles.tagline}>{tagline}</Text>
+          )}
 
-          {/* Neighborhoods */}
-          <Text style={styles.sectionTitle}>Neighborhoods</Text>
-          <View style={styles.pills}>
-            {city.neighborhoods.map((n) => (
-              <View key={n} style={styles.pill}>
-                <Text style={styles.pillText}>{n}</Text>
+          {/* Neighborhood pills */}
+          {areas.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.pillScroll}
+              contentContainerStyle={styles.pillRow}
+            >
+              <Pressable
+                onPress={() => setSelectedAreaId(null)}
+                style={[
+                  styles.pill,
+                  !selectedAreaId && styles.pillActive,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.pillText,
+                    !selectedAreaId && styles.pillTextActive,
+                  ]}
+                >
+                  All
+                </Text>
+              </Pressable>
+              {areas.map((area) => {
+                const active = selectedAreaId === area.id;
+                return (
+                  <Pressable
+                    key={area.id}
+                    onPress={() =>
+                      setSelectedAreaId(active ? null : area.id)
+                    }
+                    style={[styles.pill, active && styles.pillActive]}
+                  >
+                    <Text
+                      style={[
+                        styles.pillText,
+                        active && styles.pillTextActive,
+                      ]}
+                    >
+                      {area.name}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          )}
+
+          {/* Categorized sections */}
+          {SECTIONS.map((section) => {
+            const places = allPlaces.filter((p) =>
+              section.types.includes(p.placeType),
+            );
+            if (places.length === 0) return null;
+            return (
+              <View key={section.title}>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                {places.map((place) => (
+                  <PlaceCard key={place.id} place={place} />
+                ))}
               </View>
-            ))}
-          </View>
-
-          {/* Must-do */}
-          {city.mustDo.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Must-do</Text>
-              {city.mustDo.map((entry) => (
-                <PlaceEntryCard key={entry.id} entry={entry} />
-              ))}
-            </>
-          )}
-
-          {/* Eats */}
-          {city.eats.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Where to eat</Text>
-              {city.eats.map((entry) => (
-                <PlaceEntryCard key={entry.id} entry={entry} />
-              ))}
-            </>
-          )}
-
-          {/* Stays */}
-          {city.stays.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Where to stay</Text>
-              {city.stays.map((entry) => (
-                <PlaceEntryCard key={entry.id} entry={entry} />
-              ))}
-            </>
-          )}
+            );
+          })}
         </View>
       </ScrollView>
     </View>
   );
 }
 
-function PlaceEntryCard({ entry }: { entry: PlaceEntry }) {
-  return (
-    <View style={styles.entryCard}>
-      <Image source={{ uri: entry.imageUrl }} style={styles.entryImage} />
-      <View style={styles.entryText}>
-        <Text style={styles.entryName}>{entry.name}</Text>
-        <Text style={styles.entryCategory}>
-          {entry.category}
-          {entry.priceLevel ? ` · ${entry.priceLevel}` : ''}
-        </Text>
-        <Text style={styles.entryDesc} numberOfLines={2}>{entry.description}</Text>
-        {entry.tip && (
-          <Text style={styles.entryTip}>Tip: {entry.tip}</Text>
-        )}
-      </View>
-    </View>
-  );
-}
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
@@ -138,31 +304,47 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textMuted,
     marginTop: spacing.xs,
-    marginBottom: spacing.xl,
   },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-    marginTop: spacing.lg,
+
+  // Neighborhood pills
+  pillScroll: {
+    marginTop: spacing.xl,
   },
-  pills: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
+  pillRow: {
+    gap: 8,
+    paddingRight: spacing.lg,
   },
   pill: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
+  },
+  pillActive: {
     backgroundColor: colors.orangeFill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
+    borderColor: colors.orange,
   },
   pillText: {
     fontFamily: fonts.medium,
     fontSize: 13,
+    color: colors.textSecondary,
+  },
+  pillTextActive: {
     color: colors.orange,
   },
-  entryCard: {
+
+  // Section
+  sectionTitle: {
+    ...typography.label,
+    color: colors.textPrimary,
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
+  },
+
+  // Place card
+  card: {
     flexDirection: 'row',
     borderWidth: 1,
     borderColor: colors.borderDefault,
@@ -170,36 +352,73 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.md,
   },
-  entryImage: {
+  cardImage: {
     width: 88,
     height: 88,
   },
-  entryText: {
+  cardImagePlaceholder: {
+    backgroundColor: colors.borderSubtle,
+  },
+  cardBody: {
     flex: 1,
     padding: spacing.md,
+    justifyContent: 'center',
   },
-  entryName: {
+  cardTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  cardName: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  entryCategory: {
+  priceDots: {
     fontFamily: fonts.regular,
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 2,
+    letterSpacing: 1,
   },
-  entryDesc: {
+
+  // Tags
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 4,
+    marginTop: 4,
+  },
+  tagPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+  },
+  tagText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+  },
+
+  // Description
+  cardDesc: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textPrimary,
-    marginTop: 4,
     lineHeight: 18,
+    marginTop: 4,
   },
-  entryTip: {
+
+  // Save
+  saveBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    gap: 4,
+    marginTop: 4,
+  },
+  saveText: {
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: colors.orange,
-    marginTop: 4,
   },
 });
