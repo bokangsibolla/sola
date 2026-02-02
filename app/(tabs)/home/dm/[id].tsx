@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -13,13 +13,15 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getConversations, getMessages, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser } from '@/data/api';
+import { getConversations, getMessagesPaginated, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser } from '@/data/api';
 import { useData } from '@/hooks/useData';
+import { usePaginatedData } from '@/hooks/usePaginatedData';
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import type { Message } from '@/data/types';
 import { useAuth } from '@/state/AuthContext';
+import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 export default function DMThreadScreen() {
@@ -28,10 +30,11 @@ export default function DMThreadScreen() {
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
 
-  const { data: fetchedMessages, loading, error, refetch } = useData(
-    () => (conversationId ? getMessages(conversationId) : []),
-    [conversationId],
-  );
+  const { data: olderMessages, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
+    queryKey: ['messages', conversationId ?? ''],
+    fetcher: (page) => getMessagesPaginated(conversationId!, page),
+    enabled: !!conversationId,
+  });
 
   // Resolve the other participant
   const { data: other } = useData(
@@ -44,19 +47,29 @@ export default function DMThreadScreen() {
     [conversationId, userId],
   );
 
-  const [messages, setMessages] = useState<Message[]>([]);
+  const posthog = usePostHog();
+  const [realtimeMessages, setRealtimeMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
 
-  useEffect(() => {
-    if (fetchedMessages) setMessages(fetchedMessages);
-  }, [fetchedMessages]);
-
   const handleRealtimeMessage = useCallback((msg: Message) => {
-    setMessages((prev) => {
+    setRealtimeMessages((prev) => {
       if (prev.some((m) => m.id === msg.id)) return prev;
       return [...prev, msg];
     });
   }, []);
+
+  // olderMessages are newest-first from API; realtimeMessages are chronological (oldest first).
+  // For inverted FlatList, data must be newest-first.
+  const messages = useMemo(() => {
+    const realtimeNewestFirst = [...realtimeMessages].reverse();
+    const all = [...realtimeNewestFirst, ...olderMessages];
+    const seen = new Set<string>();
+    return all.filter((m) => {
+      if (seen.has(m.id)) return false;
+      seen.add(m.id);
+      return true;
+    });
+  }, [olderMessages, realtimeMessages]);
 
   useRealtimeMessages(conversationId, userId, handleRealtimeMessage);
 
@@ -69,7 +82,8 @@ export default function DMThreadScreen() {
     setText('');
     try {
       const msg = await apiSendMessage(conversationId, userId, body);
-      setMessages((prev) => [...prev, msg]);
+      setRealtimeMessages((prev) => [...prev, msg]);
+      posthog.capture('message_sent', { conversation_id: conversationId });
     } catch {
       // Restore text on failure so user can retry
       setText(body);
@@ -155,6 +169,9 @@ export default function DMThreadScreen() {
         data={messages}
         keyExtractor={(m) => m.id}
         contentContainerStyle={styles.messageList}
+        inverted
+        onEndReached={() => { if (hasMore) fetchMore(); }}
+        onEndReachedThreshold={0.3}
         renderItem={({ item }) => {
           const isMe = item.senderId === userId;
           return (
