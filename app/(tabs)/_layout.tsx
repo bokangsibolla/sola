@@ -7,7 +7,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HapticTab } from '@/components/haptic-tab';
 import { colors } from '@/constants/design';
 
-const ACTIVE_ORANGE = '#E56536';
+const ACTIVE_ORANGE = colors.orange;
 const INACTIVE_ICON_COLOR = colors.textPrimary;
 const INACTIVE_LABEL_COLOR = colors.textSecondary;
 
