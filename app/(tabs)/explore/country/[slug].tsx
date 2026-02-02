@@ -2,17 +2,25 @@ import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { mockCountryGuides } from '@/data/mock';
+import { getCountryBySlug, getCountryContent, getCitiesByCountry, getCityContent } from '@/data/api';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+
+function formatSafetyRating(rating: string | undefined): string {
+  if (!rating) return '—';
+  return rating.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
+}
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const guide = mockCountryGuides.find((g) => g.slug === slug);
 
-  if (!guide) {
+  const country = getCountryBySlug(slug);
+  const content = country ? getCountryContent(country.id) : undefined;
+  const cities = country ? getCitiesByCountry(country.id) : [];
+
+  if (!country) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <Text style={styles.notFound}>Guide not found</Text>
@@ -20,7 +28,8 @@ export default function CountryGuideScreen() {
     );
   }
 
-  const emergency = getEmergencyNumbers(guide.iso2);
+  const emergency = getEmergencyNumbers(country.iso2);
+  const heroImage = country.heroImageUrl ?? content?.heroImageUrl;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -33,49 +42,64 @@ export default function CountryGuideScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.hero}>
-          <Image source={{ uri: guide.heroImageUrl }} style={styles.heroImage} />
+          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} />}
           <View style={styles.heroOverlay}>
-            <Text style={styles.heroName}>{guide.name}</Text>
-            <Text style={styles.heroTagline}>{guide.tagline}</Text>
+            <Text style={styles.heroName}>{country.name}</Text>
+            {content?.subtitle ? <Text style={styles.heroTagline}>{content.subtitle}</Text> : null}
           </View>
         </View>
 
         <View style={styles.content}>
           {/* Quick facts */}
           <View style={styles.factsGrid}>
-            <Fact icon="shield-checkmark-outline" label="Safety" value={guide.safetyRating} />
-            <Fact icon="calendar-outline" label="Best time" value={guide.bestMonths} />
-            <Fact icon="cash-outline" label="Currency" value={guide.currency} />
-            <Fact icon="language-outline" label="Language" value={guide.language} />
+            <Fact icon="shield-checkmark-outline" label="Safety" value={formatSafetyRating(content?.safetyRating)} />
+            <Fact icon="calendar-outline" label="Best time" value={content?.bestMonths ?? '—'} />
+            <Fact icon="cash-outline" label="Currency" value={content?.currency ?? '—'} />
+            <Fact icon="language-outline" label="Language" value={content?.language ?? '—'} />
           </View>
 
-          <Text style={styles.visaNote}>{guide.visaNote}</Text>
+          {content?.visaNote ? <Text style={styles.visaNote}>{content.visaNote}</Text> : null}
 
           {/* Highlights */}
-          <Text style={styles.sectionTitle}>Highlights</Text>
-          {guide.highlights.map((h, i) => (
-            <View key={i} style={styles.highlightRow}>
-              <Text style={styles.highlightBullet}>·</Text>
-              <Text style={styles.highlightText}>{h}</Text>
-            </View>
-          ))}
+          {content?.highlights && content.highlights.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>Highlights</Text>
+              {content.highlights.map((h, i) => (
+                <View key={i} style={styles.highlightRow}>
+                  <Text style={styles.highlightBullet}>·</Text>
+                  <Text style={styles.highlightText}>{h}</Text>
+                </View>
+              ))}
+            </>
+          )}
 
           {/* Cities */}
-          <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities</Text>
-          {guide.cities.map((city) => (
-            <Pressable
-              key={city.slug}
-              style={styles.cityCard}
-              onPress={() => router.push(`/explore/place/${city.slug}`)}
-            >
-              <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} />
-              <View style={styles.cityText}>
-                <Text style={styles.cityName}>{city.name}</Text>
-                <Text style={styles.cityTagline}>{city.tagline}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-            </Pressable>
-          ))}
+          {cities.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities</Text>
+              {cities.map((city) => {
+                const cityContent = getCityContent(city.id);
+                return (
+                  <Pressable
+                    key={city.slug}
+                    style={styles.cityCard}
+                    onPress={() => router.push(`/explore/place/${city.slug}`)}
+                  >
+                    {city.heroImageUrl && (
+                      <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} />
+                    )}
+                    <View style={styles.cityText}>
+                      <Text style={styles.cityName}>{city.name}</Text>
+                      {cityContent?.subtitle ? (
+                        <Text style={styles.cityTagline}>{cityContent.subtitle}</Text>
+                      ) : null}
+                    </View>
+                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                  </Pressable>
+                );
+              })}
+            </>
+          )}
 
           {/* Emergency numbers */}
           <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Emergency numbers</Text>
