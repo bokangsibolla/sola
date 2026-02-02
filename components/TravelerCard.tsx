@@ -1,7 +1,16 @@
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import type { User } from '@/data/mock';
+interface User {
+  id: string;
+  firstName: string;
+  bio: string;
+  photoUrl: string | null;
+  countryName: string;
+  currentCity: string | null;
+  interests: string[];
+  isOnline: boolean;
+}
 
 interface TravelerCardProps {
   user: User;

@@ -1,11 +1,4 @@
-// Legacy exports (kept for backward compatibility until Task 17 cleanup)
-export { mockUsers, type User } from './users';
-export { mockTrips } from './trips';
-export { mockConversations, mockMessages } from './messages';
-export { mockCountryGuides, type CountryGuide, type CityGuide, type PlaceEntry } from './guides';
-export { mockCollections } from './collections';
-
-// ─── New normalized data ──────────────────────────────────────
+// ─── Normalized data ──────────────────────────────────────────
 export { mockCountries } from './countries';
 export { mockCities } from './cities';
 export { mockCityAreas } from './cityAreas';

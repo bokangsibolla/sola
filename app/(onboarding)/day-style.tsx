@@ -79,7 +79,7 @@ export default function DayStyleScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionHeadline}>What matters most when you're there?</Text>
+        <Text style={styles.sectionHeadline}>What would make this trip feel right?</Text>
         <Text style={styles.sectionLabel}>Pick up to 2</Text>
         <View style={styles.pillGrid}>
           {PRIORITIES.map((option) => (

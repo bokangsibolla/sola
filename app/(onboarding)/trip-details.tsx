@@ -11,6 +11,16 @@ import { colors, fonts, radius } from '@/constants/design';
 
 const DAY_MS = 86_400_000;
 
+function durationLabel(nights: number): string {
+  if (nights <= 0) return '';
+  if (nights <= 2) return 'A quick getaway';
+  if (nights <= 4) return 'A long weekend';
+  if (nights <= 8) return 'About a week';
+  if (nights <= 14) return 'A couple of weeks';
+  if (nights <= 21) return 'About three weeks';
+  return 'A proper adventure';
+}
+
 function formatDate(date: Date): string {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
@@ -29,6 +39,7 @@ export default function TripDetailsScreen() {
   const [arriving, setArriving] = useState<Date | null>(null);
   const [leaving, setLeaving] = useState<Date | null>(null);
   const [showPicker, setShowPicker] = useState<'arriving' | 'leaving' | null>(null);
+  const [flexible, setFlexible] = useState(false);
 
   const nights = arriving && leaving ? nightsBetween(arriving, leaving) : 0;
 
@@ -80,6 +91,7 @@ export default function TripDetailsScreen() {
     onboardingStore.set('tripLeaving', leaving ? leaving.toISOString() : '');
     onboardingStore.set('tripNights', nights);
     onboardingStore.set('tripDates', arriving ? formatDate(arriving) : '');
+    onboardingStore.set('tripFlexibleDates', flexible);
     router.push('/(onboarding)/day-style');
   };
 
@@ -171,14 +183,32 @@ export default function TripDetailsScreen() {
               </Pressable>
             </View>
 
-            {/* Nights badge */}
+            {/* Nights badge + duration */}
             {nights > 0 && (
-              <View style={styles.nightsBadge}>
-                <Text style={styles.nightsText}>
-                  {nights} {nights === 1 ? 'night' : 'nights'}
-                </Text>
+              <View style={styles.nightsGroup}>
+                <View style={styles.nightsBadge}>
+                  <Text style={styles.nightsText}>
+                    {nights} {nights === 1 ? 'night' : 'nights'}
+                  </Text>
+                </View>
+                <Text style={styles.durationLabel}>{durationLabel(nights)}</Text>
               </View>
             )}
+
+            {/* Flexible dates */}
+            <Pressable
+              style={[styles.flexibleRow, flexible && styles.flexibleRowActive]}
+              onPress={() => setFlexible((f) => !f)}
+            >
+              <Ionicons
+                name={flexible ? 'checkmark-circle' : 'ellipse-outline'}
+                size={20}
+                color={flexible ? colors.orange : colors.textMuted}
+              />
+              <Text style={[styles.flexibleText, flexible && styles.flexibleTextActive]}>
+                I'm flexible on dates
+              </Text>
+            </Pressable>
 
             {/* iOS inline picker */}
             {Platform.OS === 'ios' && showPicker && (
@@ -338,9 +368,12 @@ const styles = StyleSheet.create({
   dateCardValueFilled: {
     color: colors.textPrimary,
   },
-  nightsBadge: {
-    alignSelf: 'center',
+  nightsGroup: {
+    alignItems: 'center',
     marginTop: 12,
+    gap: 4,
+  },
+  nightsBadge: {
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 14,
     paddingVertical: 6,
@@ -350,6 +383,34 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 13,
     color: colors.orange,
+  },
+  durationLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  flexibleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginTop: 16,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  flexibleRowActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orangeFill,
+  },
+  flexibleText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  flexibleTextActive: {
+    color: colors.textPrimary,
   },
   pickerContainer: {
     marginTop: 16,

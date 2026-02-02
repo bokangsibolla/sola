@@ -17,6 +17,12 @@ interface OnboardingData {
   tripNights: number;
   stayPreference: string;
   spendingStyle: string;
+  tripFlexibleDates: boolean;
+  privacyDefaults: {
+    profileVisibility: 'private' | 'connections' | 'public';
+    tripVisibility: 'private' | 'connections' | 'public';
+    locationPrecision: 'city' | 'neighborhood' | 'exact';
+  };
 }
 
 const store: OnboardingData = {
@@ -38,6 +44,12 @@ const store: OnboardingData = {
   tripNights: 0,
   stayPreference: '',
   spendingStyle: '',
+  tripFlexibleDates: false,
+  privacyDefaults: {
+    profileVisibility: 'private',
+    tripVisibility: 'private',
+    locationPrecision: 'city',
+  },
 };
 
 export const onboardingStore = {
@@ -66,6 +78,12 @@ export const onboardingStore = {
       tripNights: 0,
       stayPreference: '',
       spendingStyle: '',
+      tripFlexibleDates: false,
+      privacyDefaults: {
+        profileVisibility: 'private',
+        tripVisibility: 'private',
+        locationPrecision: 'city',
+      },
     });
   },
 };

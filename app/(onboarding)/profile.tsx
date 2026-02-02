@@ -119,7 +119,7 @@ export default function ProfileScreen() {
                 <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
               )}
             </View>
-            <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add photo'}</Text>
+            <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</Text>
           </Pressable>
 
           <View style={styles.nameColumn}>
@@ -134,7 +134,7 @@ export default function ProfileScreen() {
             <View style={styles.bioContainer}>
               <TextInput
                 style={styles.bioInput}
-                placeholder="A little about you..."
+                placeholder="Something you'd want a fellow traveler to know..."
                 placeholderTextColor={colors.textMuted}
                 value={bio}
                 onChangeText={handleBioChange}
