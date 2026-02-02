@@ -2,14 +2,19 @@ import { Stack } from 'expo-router';
 
 export default function OnboardingLayout() {
   return (
-    <Stack initialRouteName="splash" screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="splash" />
+    <Stack
+      screenOptions={{ headerShown: false, animation: 'slide_from_right' }}
+      initialRouteName="welcome"
+    >
       <Stack.Screen name="welcome" />
+      <Stack.Screen name="create-account" />
       <Stack.Screen name="profile" />
       <Stack.Screen name="intent" />
-      <Stack.Screen name="destination" />
-      <Stack.Screen name="trip-dates" />
-      <Stack.Screen name="privacy" />
+      <Stack.Screen name="day-style" />
+      <Stack.Screen name="priorities" />
+      <Stack.Screen name="stay-preference" />
+      <Stack.Screen name="spending-style" />
+      <Stack.Screen name="youre-in" />
     </Stack>
   );
 }
