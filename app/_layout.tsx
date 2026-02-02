@@ -1,3 +1,4 @@
+import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
@@ -8,6 +9,11 @@ import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import * as SplashScreen from 'expo-splash-screen';
+
+Sentry.init({
+  dsn: 'https://bf62d1b51ae95e83475cebaed3c1222f@o4510818443001856.ingest.us.sentry.io/4510818444115968',
+  tracesSampleRate: 0.2,
+});
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -102,7 +108,7 @@ function AuthGate() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const colorScheme = useColorScheme();
 
   const [storeReady, setStoreReady] = useState(false);
@@ -138,3 +144,5 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+export default Sentry.wrap(RootLayout);

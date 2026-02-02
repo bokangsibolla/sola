@@ -9,9 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "app.solatravel.sola",
+      "usesAppleSignIn": true
     },
     "android": {
+      "package": "app.solatravel.sola",
       "adaptiveIcon": {
         "backgroundColor": "#FFFFFF",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -39,7 +42,16 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-apple-authentication",
+      "expo-crypto",
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "sola",
+          "project": "sola"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

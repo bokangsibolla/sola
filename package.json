@@ -18,7 +18,16 @@
       "**/__tests__/*.test.(ts|tsx)"
     ],
     "transform": {
-      "\\.[jt]sx?$": ["babel-jest", { "caller": { "name": "metro", "bundler": "metro", "platform": "ios" } }]
+      "\\.[jt]sx?$": [
+        "babel-jest",
+        {
+          "caller": {
+            "name": "metro",
+            "bundler": "metro",
+            "platform": "ios"
+          }
+        }
+      ]
     },
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|@supabase/.*)"
@@ -37,10 +46,14 @@
     "@react-navigation/bottom-tabs": "^7.4.0",
     "@react-navigation/elements": "^2.6.3",
     "@react-navigation/native": "^7.1.8",
+    "@sentry/react-native": "~7.2.0",
     "@supabase/supabase-js": "^2.93.3",
     "@tanstack/react-query": "^5.90.20",
     "expo": "~54.0.32",
+    "expo-apple-authentication": "~8.0.8",
+    "expo-auth-session": "~7.0.10",
     "expo-constants": "~18.0.13",
+    "expo-crypto": "~15.0.8",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
