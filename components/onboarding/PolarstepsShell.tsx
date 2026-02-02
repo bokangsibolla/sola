@@ -7,8 +7,8 @@ interface PolarstepsShellProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   scrollable?: boolean;
-  backgroundImage?: any; // Require path for blurred map background
-  animatedImages?: any[]; // Array of images for animated background
+  backgroundImage?: number; // require() returns a number for local images
+  animatedImages?: number[]; // Array of require() image sources
   blurAmount?: number; // Optional blur amount, default lighter
   showOrangeGradient?: boolean; // Show orange gradient in bottom half
 }

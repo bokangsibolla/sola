@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 
 interface AnimatedBackgroundProps {
-  images: any[];
+  images: number[];
   delay?: number; // Delay in milliseconds between image changes
 }
 
