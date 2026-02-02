@@ -1,22 +1,22 @@
 import React from 'react';
 import { StyleSheet, TextInput, TextInputProps, View } from 'react-native';
-import { theme } from '@/constants/theme';
+import { colors, fonts, radius, typography } from '@/constants/design';
 
 interface TextFieldProps extends TextInputProps {
   leftAccessory?: React.ReactNode;
 }
 
-export default function TextField({ 
-  style, 
+export default function TextField({
+  style,
   leftAccessory,
-  ...props 
+  ...props
 }: TextFieldProps) {
   return (
     <View style={styles.container}>
       {leftAccessory && <View style={styles.leftAccessory}>{leftAccessory}</View>}
       <TextInput
         style={[styles.input, leftAccessory && styles.inputWithAccessory, style]}
-        placeholderTextColor={theme.colors.muted}
+        placeholderTextColor={colors.textMuted}
         {...props}
       />
     </View>
@@ -34,15 +34,14 @@ const styles = StyleSheet.create({
     zIndex: 1,
   },
   input: {
-    height: 52,
-    borderRadius: theme.radii.input,
+    height: 56,
+    borderRadius: radius.input,
     borderWidth: 1,
-    borderColor: theme.colors.border,
-    backgroundColor: theme.colors.card,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
     paddingHorizontal: 16,
-    ...theme.typography.body,
-    color: theme.colors.text,
-    fontFamily: 'Inter-Regular',
+    ...typography.body,
+    color: colors.textPrimary,
   },
   inputWithAccessory: {
     paddingLeft: 48,

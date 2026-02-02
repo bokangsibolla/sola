@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { theme } from '@/constants/theme';
+import { colors, fonts, spacing } from '@/constants/design';
 
 interface SecondaryButtonProps {
   label: string;
@@ -9,11 +9,11 @@ interface SecondaryButtonProps {
   disabled?: boolean;
 }
 
-export default function SecondaryButton({ 
-  label, 
-  onPress, 
+export default function SecondaryButton({
+  label,
+  onPress,
   style,
-  disabled = false 
+  disabled = false
 }: SecondaryButtonProps) {
   return (
     <Pressable
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     height: 52,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.screenX,
+    paddingHorizontal: spacing.screenX,
   },
   buttonPressed: {
     opacity: 0.7,
@@ -47,10 +47,11 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    ...theme.typography.button,
-    color: theme.colors.text,
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
   },
   buttonTextDisabled: {
-    color: theme.colors.muted,
+    color: colors.textMuted,
   },
 });

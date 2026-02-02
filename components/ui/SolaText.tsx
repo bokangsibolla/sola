@@ -1,5 +1,5 @@
-import { theme } from '@/constants/theme';
 import { StyleSheet, Text, TextProps, TextStyle } from 'react-native';
+import { colors, fonts, typography } from '@/constants/design';
 
 interface SolaTextProps extends Omit<TextProps, 'style'> {
   style?: TextStyle | TextStyle[];
@@ -39,20 +39,19 @@ export function Label({ children, style, ...props }: SolaTextProps) {
 
 const styles = StyleSheet.create({
   title: {
-    ...theme.typography.h1,
-    color: theme.colors.text,
+    ...typography.h1,
+    color: colors.textPrimary,
   },
   subtitle: {
-    ...theme.typography.body,
-    color: theme.colors.muted,
+    ...typography.body,
+    color: colors.textMuted,
   },
   body: {
-    ...theme.typography.body,
-    color: theme.colors.text,
+    ...typography.body,
+    color: colors.textPrimary,
   },
   label: {
-    ...theme.typography.helper,
-    color: theme.colors.muted,
-    fontWeight: '500',
+    ...typography.caption,
+    fontFamily: fonts.medium,
   },
 });

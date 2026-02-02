@@ -1,6 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { theme } from '@/constants/theme';
+import { colors, fonts, radius } from '@/constants/design';
 
 interface PrimaryButtonProps {
   label: string;
@@ -9,11 +9,11 @@ interface PrimaryButtonProps {
   disabled?: boolean;
 }
 
-export default function PrimaryButton({ 
-  label, 
-  onPress, 
+export default function PrimaryButton({
+  label,
+  onPress,
   style,
-  disabled = false 
+  disabled = false,
 }: PrimaryButtonProps) {
   return (
     <Pressable
@@ -35,12 +35,11 @@ export default function PrimaryButton({
 
 const styles = StyleSheet.create({
   button: {
-    backgroundColor: theme.colors.brand,
-    height: 52,
-    borderRadius: theme.radii.button,
+    backgroundColor: colors.orange,
+    height: 56,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: theme.spacing.screenX,
     width: '100%',
   },
   buttonPressed: {
@@ -48,15 +47,14 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.98 }],
   },
   buttonDisabled: {
-    backgroundColor: theme.colors.brand,
-    opacity: 0.6, // Subtle opacity, not full blur
+    opacity: 0.5,
   },
   buttonText: {
-    ...theme.typography.button,
-    color: theme.colors.card,
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: '#FFFFFF',
   },
   buttonTextDisabled: {
-    color: theme.colors.card,
     opacity: 0.8,
   },
 });
