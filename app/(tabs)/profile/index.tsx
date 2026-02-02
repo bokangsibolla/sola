@@ -12,6 +12,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { getImageUrl } from '@/lib/image';
 
 function countryFlag(iso2: string): string {
   return [...iso2.toUpperCase()]
@@ -54,7 +55,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             {profile?.avatarUrl ? (
-              <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 })! }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={32} color={colors.textMuted} />

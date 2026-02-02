@@ -9,6 +9,7 @@ import { useAuth } from '@/state/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { getImageUrl } from '@/lib/image';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -61,7 +62,7 @@ export default function UserProfileScreen() {
         {/* Avatar + name */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 })! }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Ionicons name="person" size={36} color={colors.textMuted} />
