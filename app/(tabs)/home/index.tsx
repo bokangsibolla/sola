@@ -45,63 +45,70 @@ export default function HomeScreen() {
         <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
 
         <View style={styles.feed}>
-          {(profiles ?? []).map((profile) => {
-            const city = profile.currentCityId ? getCityById(profile.currentCityId) : null;
-            return (
-              <Pressable
-                key={profile.id}
-                style={styles.card}
-                onPress={() => router.push(`/home/user/${profile.id}`)}
-              >
-                <View style={styles.cardTop}>
-                  <View style={styles.avatarWrap}>
-                    {profile.avatarUrl ? (
-                      <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
-                    ) : (
-                      <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                        <Feather name="user" size={24} color={colors.textMuted} />
-                      </View>
-                    )}
-                    {profile.isOnline && <View style={styles.onlineDot} />}
-                  </View>
-
-                  <View style={styles.cardInfo}>
-                    <Text style={styles.cardName}>
-                      {profile.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}
-                      {profile.firstName}
-                    </Text>
-                    {(city || profile.currentCityName) && (
-                      <View style={styles.locationRow}>
-                        <Feather name="map-pin" size={12} color={colors.orange} />
-                        <Text style={styles.locationText}>
-                          {city?.name ?? profile.currentCityName}
-                        </Text>
-                      </View>
-                    )}
-                    {profile.bio && (
-                      <Text style={styles.cardBio} numberOfLines={1}>
-                        {profile.bio}
-                      </Text>
-                    )}
-                  </View>
-                </View>
-
-                {profile.interests.length > 0 && (
-                  <View style={styles.tags}>
-                    {profile.interests.map((interest) => (
-                      <View key={interest} style={styles.tag}>
-                        <Text style={styles.tagText}>{interest}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
-
-              </Pressable>
-            );
-          })}
+          {(profiles ?? []).map((profile) => (
+            <ProfileCard key={profile.id} profile={profile} />
+          ))}
         </View>
       </ScrollView>
     </AppScreen>
+  );
+}
+
+function ProfileCard({ profile }: { profile: Awaited<ReturnType<typeof getProfiles>>[number] }) {
+  const router = useRouter();
+  const { data: city } = useData(
+    () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
+    [profile.currentCityId],
+  );
+
+  return (
+    <Pressable
+      style={styles.card}
+      onPress={() => router.push(`/home/user/${profile.id}`)}
+    >
+      <View style={styles.cardTop}>
+        <View style={styles.avatarWrap}>
+          {profile.avatarUrl ? (
+            <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Feather name="user" size={24} color={colors.textMuted} />
+            </View>
+          )}
+          {profile.isOnline && <View style={styles.onlineDot} />}
+        </View>
+
+        <View style={styles.cardInfo}>
+          <Text style={styles.cardName}>
+            {profile.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}
+            {profile.firstName}
+          </Text>
+          {(city || profile.currentCityName) && (
+            <View style={styles.locationRow}>
+              <Feather name="map-pin" size={12} color={colors.orange} />
+              <Text style={styles.locationText}>
+                {city?.name ?? profile.currentCityName}
+              </Text>
+            </View>
+          )}
+          {profile.bio && (
+            <Text style={styles.cardBio} numberOfLines={1}>
+              {profile.bio}
+            </Text>
+          )}
+        </View>
+      </View>
+
+      {profile.interests.length > 0 && (
+        <View style={styles.tags}>
+          {profile.interests.map((interest) => (
+            <View key={interest} style={styles.tag}>
+              <Text style={styles.tagText}>{interest}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </Pressable>
   );
 }
 

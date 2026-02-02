@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
+import { supabase } from '@/lib/supabase';
 import { colors, fonts, radius } from '@/constants/design';
 
 export default function CreateAccountScreen() {
@@ -11,18 +12,31 @@ export default function CreateAccountScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const canContinue = email.includes('@') && password.length >= 6;
+  const [loading, setLoading] = useState(false);
 
-  const handleContinue = () => {
+  const canContinue = email.includes('@') && password.length >= 6 && !loading;
+
+  const handleContinue = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Sign up failed', error.message);
+      return;
+    }
+
     onboardingStore.set('email', email);
     onboardingStore.set('password', password);
     router.push('/(onboarding)/profile');
   };
 
   const handleSocialLogin = (provider: string) => {
-    // TODO: Supabase OAuth — supabase.auth.signInWithOAuth({ provider })
-    // For now, skip to profile
-    router.push('/(onboarding)/profile');
+    // TODO: Wire OAuth with expo-auth-session when ready
+    Alert.alert('Coming soon', `${provider} sign-in will be available soon.`);
   };
 
   return (

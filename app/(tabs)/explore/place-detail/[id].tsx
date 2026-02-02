@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
   Image,
@@ -85,26 +85,35 @@ export default function PlaceDetailScreen() {
   const insets = useSafeAreaInsets();
 
   const { data: place, loading, error, refetch } = useData(() => getPlaceById(id ?? ''), [id]);
-  const media = getPlaceMedia(id ?? '');
-  const tags = getPlaceTags(id ?? '');
-  const category = place?.primaryCategoryId
-    ? getCategory(place.primaryCategoryId)
-    : undefined;
-  const city = place ? getCityById(place.cityId) : undefined;
+  const { data: media } = useData(() => getPlaceMedia(id ?? ''), [id]);
+  const { data: tags } = useData(() => getPlaceTags(id ?? ''), [id]);
+  const { data: category } = useData(
+    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(undefined),
+    [place?.primaryCategoryId],
+  );
+  const { data: city } = useData(
+    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(undefined),
+    [place?.cityId],
+  );
 
   const { userId } = useAuth();
-  const [saved, setSaved] = useState(() => isPlaceSaved(userId, id ?? ''));
+  const { data: isSaved } = useData(() => isPlaceSaved(userId!, id ?? ''), [userId, id]);
+  const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const handleSave = useCallback(() => {
-    const next = toggleSavePlace(userId, id ?? '');
-    setSaved(next);
-  }, [id]);
+  useEffect(() => {
+    if (isSaved !== null) setSaved(isSaved);
+  }, [isSaved]);
+
+  const handleSave = useCallback(async () => {
+    setSaved((prev) => !prev);
+    await toggleSavePlace(userId!, id ?? '');
+  }, [userId, id]);
 
   // Group tags by filterGroup
   const groupedTags = useMemo(() => {
     const groups: Record<string, Tag[]> = {};
-    for (const tag of tags) {
+    for (const tag of (tags ?? [])) {
       const key = tag.filterGroup;
       if (!groups[key]) groups[key] = [];
       groups[key].push(tag);
@@ -121,7 +130,7 @@ export default function PlaceDetailScreen() {
     );
     if (userInterests.length === 0) return null;
 
-    const matchingTags = tags.filter((t) =>
+    const matchingTags = (tags ?? []).filter((t) =>
       userInterests.some(
         (interest) =>
           t.label.toLowerCase().includes(interest) ||
@@ -143,7 +152,7 @@ export default function PlaceDetailScreen() {
     return `Based on your preferences, this place matches your interest in ${tagStr}.`;
   }, [tags]);
 
-  const images = media.filter((m) => m.mediaType === 'image');
+  const images = (media ?? []).filter((m) => m.mediaType === 'image');
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;

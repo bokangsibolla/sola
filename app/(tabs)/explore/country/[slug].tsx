@@ -24,8 +24,10 @@ export default function CountryGuideScreen() {
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
-  const content = country ? getCountryContent(country.id) : undefined;
-  const cities = country ? getCitiesByCountry(country.id) : [];
+  const { data: contentData } = useData(() => country ? getCountryContent(country.id) : Promise.resolve(null), [country?.id]);
+  const { data: citiesData } = useData(() => country ? getCitiesByCountry(country.id) : Promise.resolve(null), [country?.id]);
+  const content = contentData ?? undefined;
+  const cities = citiesData ?? [];
 
   if (!country) {
     return (
@@ -84,27 +86,9 @@ export default function CountryGuideScreen() {
           {cities.length > 0 && (
             <>
               <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities</Text>
-              {cities.map((city) => {
-                const cityContent = getCityContent(city.id);
-                return (
-                  <Pressable
-                    key={city.slug}
-                    style={styles.cityCard}
-                    onPress={() => router.push(`/explore/place/${city.slug}`)}
-                  >
-                    {city.heroImageUrl && (
-                      <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} />
-                    )}
-                    <View style={styles.cityText}>
-                      <Text style={styles.cityName}>{city.name}</Text>
-                      {cityContent?.subtitle ? (
-                        <Text style={styles.cityTagline}>{cityContent.subtitle}</Text>
-                      ) : null}
-                    </View>
-                    <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-                  </Pressable>
-                );
-              })}
+              {cities.map((city) => (
+                <CityCard key={city.slug} city={city} />
+              ))}
             </>
           )}
 
@@ -119,6 +103,28 @@ export default function CountryGuideScreen() {
         </View>
       </ScrollView>
     </View>
+  );
+}
+
+function CityCard({ city }: { city: any }) {
+  const router = useRouter();
+  const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
+  return (
+    <Pressable
+      style={styles.cityCard}
+      onPress={() => router.push(`/explore/place/${city.slug}`)}
+    >
+      {city.heroImageUrl && (
+        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} />
+      )}
+      <View style={styles.cityText}>
+        <Text style={styles.cityName}>{city.name}</Text>
+        {cityContent?.subtitle ? (
+          <Text style={styles.cityTagline}>{cityContent.subtitle}</Text>
+        ) : null}
+      </View>
+      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+    </Pressable>
   );
 }
 

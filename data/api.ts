@@ -1,8 +1,9 @@
 /**
  * API query layer — the single import point for all screens.
- * Currently reads from mock data; when Supabase is wired up only this file changes.
+ * All functions query Supabase. Types match data/types.ts.
  */
 
+import { supabase } from '@/lib/supabase';
 import type {
   Country,
   City,
@@ -20,185 +21,300 @@ import type {
   Message,
 } from './types';
 
-import { mockCountries } from './mock/countries';
-import { mockCities } from './mock/cities';
-import { mockCityAreas } from './mock/cityAreas';
-import { mockPlaces } from './mock/places';
-import { mockPlaceMedia } from './mock/placeMedia';
-import { mockPlaceCategories } from './mock/placeCategories';
-import { mockTags, mockTagGroups } from './mock/tags';
-import { mockPlaceTags } from './mock/placeTags';
-import { mockProfiles } from './mock/profiles';
-import { mockSavedPlaces } from './mock/savedPlaces';
-import { mockGeoContent } from './mock/geoContent';
-import { mockTripsV2 } from './mock/trips';
-import { mockCollectionsV2 } from './mock/collections';
-import { mockConversationsV2, mockMessagesV2 } from './mock/messages';
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
-// ---------------------------------------------------------------------------
-// Mutable state (saved places — will be replaced by Supabase mutations)
-// ---------------------------------------------------------------------------
-let savedPlaces: SavedPlace[] = [...mockSavedPlaces];
+/** Convert snake_case row to camelCase type. Supabase returns snake_case. */
+function toCamel<T>(row: Record<string, any>): T {
+  const out: Record<string, any> = {};
+  for (const [k, v] of Object.entries(row)) {
+    const camel = k.replace(/_([a-z])/g, (_, c) => c.toUpperCase());
+    out[camel] = v;
+  }
+  return out as T;
+}
+
+function rowsToCamel<T>(rows: Record<string, any>[]): T[] {
+  return rows.map((r) => toCamel<T>(r));
+}
 
 // ---------------------------------------------------------------------------
 // Geography
 // ---------------------------------------------------------------------------
 
-export function getCountries(): Country[] {
-  return mockCountries
-    .filter((c) => c.isActive)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+export async function getCountries(): Promise<Country[]> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<Country>(data ?? []);
 }
 
-export function getCountryBySlug(slug: string): Country | undefined {
-  return mockCountries.find((c) => c.slug === slug);
+export async function getCountryBySlug(slug: string): Promise<Country | undefined> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Country>(data) : undefined;
 }
 
-export function getCountryByIso2(iso2: string): Country | undefined {
-  return mockCountries.find((c) => c.iso2 === iso2);
+export async function getCountryByIso2(iso2: string): Promise<Country | undefined> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('iso2', iso2)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Country>(data) : undefined;
 }
 
-export function getCitiesByCountry(countryId: string): City[] {
-  return mockCities
-    .filter((c) => c.countryId === countryId && c.isActive)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+export async function getCitiesByCountry(countryId: string): Promise<City[]> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('country_id', countryId)
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<City>(data ?? []);
 }
 
-export function getCityBySlug(slug: string): City | undefined {
-  return mockCities.find((c) => c.slug === slug);
+export async function getCityBySlug(slug: string): Promise<City | undefined> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<City>(data) : undefined;
 }
 
-export function getCityById(id: string): City | undefined {
-  return mockCities.find((c) => c.id === id);
+export async function getCityById(id: string): Promise<City | undefined> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<City>(data) : undefined;
 }
 
-export function getAreasByCity(cityId: string): CityArea[] {
-  return mockCityAreas
-    .filter((a) => a.cityId === cityId && a.isActive)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+export async function getAreasByCity(cityId: string): Promise<CityArea[]> {
+  const { data, error } = await supabase
+    .from('city_areas')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<CityArea>(data ?? []);
 }
 
 // ---------------------------------------------------------------------------
 // Places
 // ---------------------------------------------------------------------------
 
-export function getPlacesByCity(cityId: string): Place[] {
-  return mockPlaces.filter((p) => p.cityId === cityId && p.isActive);
+export async function getPlacesByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true);
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
 }
 
-export function getPlacesByCityAndType(
+export async function getPlacesByCityAndType(
   cityId: string,
   placeType: Place['placeType'],
-): Place[] {
-  return mockPlaces.filter(
-    (p) => p.cityId === cityId && p.placeType === placeType && p.isActive,
-  );
+): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('place_type', placeType)
+    .eq('is_active', true);
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
 }
 
-export function getPlacesByArea(cityAreaId: string): Place[] {
-  return mockPlaces.filter(
-    (p) => p.cityAreaId === cityAreaId && p.isActive,
-  );
+export async function getPlacesByArea(cityAreaId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_area_id', cityAreaId)
+    .eq('is_active', true);
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
 }
 
-export function getPlaceById(id: string): Place | undefined {
-  return mockPlaces.find((p) => p.id === id);
+export async function getPlaceById(id: string): Promise<Place | undefined> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Place>(data) : undefined;
 }
 
-export function getPlaceBySlug(slug: string): Place | undefined {
-  return mockPlaces.find((p) => p.slug === slug);
+export async function getPlaceBySlug(slug: string): Promise<Place | undefined> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('slug', slug)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Place>(data) : undefined;
 }
 
-export function getPlaceMedia(placeId: string): PlaceMedia[] {
-  return mockPlaceMedia
-    .filter((m) => m.placeId === placeId)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+export async function getPlaceMedia(placeId: string): Promise<PlaceMedia[]> {
+  const { data, error } = await supabase
+    .from('place_media')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<PlaceMedia>(data ?? []);
 }
 
-export function getPlaceFirstImage(placeId: string): string | null {
-  const media = mockPlaceMedia
-    .filter((m) => m.placeId === placeId && m.mediaType === 'image')
-    .sort((a, b) => a.orderIndex - b.orderIndex);
-  return media.length > 0 ? media[0].url : null;
+export async function getPlaceFirstImage(placeId: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('place_media')
+    .select('url')
+    .eq('place_id', placeId)
+    .eq('media_type', 'image')
+    .order('order_index')
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.url ?? null;
 }
 
-export function getPlaceTags(placeId: string): Tag[] {
-  const tagIds = mockPlaceTags
-    .filter((pt) => pt.placeId === placeId)
-    .map((pt) => pt.tagId);
-  return mockTags.filter((t) => tagIds.includes(t.id));
+export async function getPlaceTags(placeId: string): Promise<Tag[]> {
+  const { data, error } = await supabase
+    .from('place_tags')
+    .select('tag_id, tags(*)')
+    .eq('place_id', placeId);
+  if (error) throw error;
+  return (data ?? [])
+    .map((row: any) => row.tags)
+    .filter(Boolean)
+    .map((t: any) => toCamel<Tag>(t));
 }
 
-export function getCategory(categoryId: string): PlaceCategory | undefined {
-  return mockPlaceCategories.find((c) => c.id === categoryId);
+export async function getCategory(categoryId: string): Promise<PlaceCategory | undefined> {
+  const { data, error } = await supabase
+    .from('place_categories')
+    .select('*')
+    .eq('id', categoryId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<PlaceCategory>(data) : undefined;
 }
 
-export function getCategories(): PlaceCategory[] {
-  return mockPlaceCategories
-    .filter((c) => c.isActive)
-    .sort((a, b) => a.orderIndex - b.orderIndex);
+export async function getCategories(): Promise<PlaceCategory[]> {
+  const { data, error } = await supabase
+    .from('place_categories')
+    .select('*')
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<PlaceCategory>(data ?? []);
 }
 
 // ---------------------------------------------------------------------------
 // Geo Content
 // ---------------------------------------------------------------------------
 
-export function getCountryContent(countryId: string): GeoContent | undefined {
-  return mockGeoContent.find(
-    (gc) => gc.scope === 'country' && gc.countryId === countryId,
-  );
+export async function getCountryContent(countryId: string): Promise<GeoContent | undefined> {
+  const { data, error } = await supabase
+    .from('geo_content')
+    .select('*')
+    .eq('scope', 'country')
+    .eq('country_id', countryId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<GeoContent>(data) : undefined;
 }
 
-export function getCityContent(cityId: string): GeoContent | undefined {
-  return mockGeoContent.find(
-    (gc) => gc.scope === 'city' && gc.cityId === cityId,
-  );
+export async function getCityContent(cityId: string): Promise<GeoContent | undefined> {
+  const { data, error } = await supabase
+    .from('geo_content')
+    .select('*')
+    .eq('scope', 'city')
+    .eq('city_id', cityId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<GeoContent>(data) : undefined;
 }
 
 // ---------------------------------------------------------------------------
 // Profiles
 // ---------------------------------------------------------------------------
 
-export function getProfiles(): Profile[] {
-  return mockProfiles;
+export async function getProfiles(): Promise<Profile[]> {
+  const { data, error } = await supabase.from('profiles').select('*');
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
 }
 
-export function getProfileById(id: string): Profile | undefined {
-  return mockProfiles.find((p) => p.id === id);
+export async function getProfileById(id: string): Promise<Profile | undefined> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Profile>(data) : undefined;
 }
 
 // ---------------------------------------------------------------------------
-// Saved Places (mutable in-memory)
+// Saved Places
 // ---------------------------------------------------------------------------
 
-export function getSavedPlaces(userId: string): SavedPlace[] {
-  return savedPlaces.filter((sp) => sp.userId === userId);
+export async function getSavedPlaces(userId: string): Promise<SavedPlace[]> {
+  const { data, error } = await supabase
+    .from('saved_places')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return rowsToCamel<SavedPlace>(data ?? []);
 }
 
-export function isPlaceSaved(userId: string, placeId: string): boolean {
-  return savedPlaces.some(
-    (sp) => sp.userId === userId && sp.placeId === placeId,
-  );
+export async function isPlaceSaved(userId: string, placeId: string): Promise<boolean> {
+  const { count, error } = await supabase
+    .from('saved_places')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+  return (count ?? 0) > 0;
 }
 
-export function toggleSavePlace(
+export async function toggleSavePlace(
   userId: string,
   placeId: string,
   collectionId?: string,
-): boolean {
-  const idx = savedPlaces.findIndex(
-    (sp) => sp.userId === userId && sp.placeId === placeId,
-  );
-  if (idx >= 0) {
-    savedPlaces.splice(idx, 1);
+): Promise<boolean> {
+  const alreadySaved = await isPlaceSaved(userId, placeId);
+  if (alreadySaved) {
+    await supabase
+      .from('saved_places')
+      .delete()
+      .eq('user_id', userId)
+      .eq('place_id', placeId);
     return false; // unsaved
   }
-  savedPlaces.push({
-    id: `sp-${Date.now()}`,
-    userId,
-    placeId,
-    collectionId: collectionId ?? null,
-    createdAt: new Date().toISOString(),
+  await supabase.from('saved_places').insert({
+    user_id: userId,
+    place_id: placeId,
+    collection_id: collectionId ?? null,
   });
   return true; // saved
 }
@@ -207,54 +323,85 @@ export function toggleSavePlace(
 // Collections
 // ---------------------------------------------------------------------------
 
-export function getCollections(userId: string): Collection[] {
-  return mockCollectionsV2.filter((c) => c.userId === userId);
+export async function getCollections(userId: string): Promise<Collection[]> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return rowsToCamel<Collection>(data ?? []);
 }
 
-export function getCollectionById(id: string): Collection | undefined {
-  return mockCollectionsV2.find((c) => c.id === id);
+export async function getCollectionById(id: string): Promise<Collection | undefined> {
+  const { data, error } = await supabase
+    .from('collections')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Collection>(data) : undefined;
 }
 
-export function getCollectionPlaces(
+export async function getCollectionPlaces(
   collectionId: string,
   userId: string,
-): Place[] {
-  const placeIds = savedPlaces
-    .filter((sp) => sp.userId === userId && sp.collectionId === collectionId)
-    .map((sp) => sp.placeId);
-  return mockPlaces.filter((p) => placeIds.includes(p.id));
+): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('saved_places')
+    .select('place_id, places(*)')
+    .eq('user_id', userId)
+    .eq('collection_id', collectionId);
+  if (error) throw error;
+  return (data ?? [])
+    .map((row: any) => row.places)
+    .filter(Boolean)
+    .map((p: any) => toCamel<Place>(p));
 }
 
 // ---------------------------------------------------------------------------
 // Trips
 // ---------------------------------------------------------------------------
 
-export function getTrips(userId: string): Trip[] {
-  return mockTripsV2.filter((t) => t.userId === userId);
+export async function getTrips(userId: string): Promise<Trip[]> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return rowsToCamel<Trip>(data ?? []);
 }
 
-export function getTripById(id: string): Trip | undefined {
-  return mockTripsV2.find((t) => t.id === id);
+export async function getTripById(id: string): Promise<Trip | undefined> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Trip>(data) : undefined;
 }
 
 // ---------------------------------------------------------------------------
 // Messages
 // ---------------------------------------------------------------------------
 
-export function getConversations(): Conversation[] {
-  return [...mockConversationsV2].sort(
-    (a, b) =>
-      new Date(b.lastMessageAt).getTime() -
-      new Date(a.lastMessageAt).getTime(),
-  );
+export async function getConversations(): Promise<Conversation[]> {
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .order('last_message_at', { ascending: false });
+  if (error) throw error;
+  return rowsToCamel<Conversation>(data ?? []);
 }
 
-export function getMessages(conversationId: string): Message[] {
-  return mockMessagesV2
-    .filter((m) => m.conversationId === conversationId)
-    .sort(
-      (a, b) => new Date(a.sentAt).getTime() - new Date(b.sentAt).getTime(),
-    );
+export async function getMessages(conversationId: string): Promise<Message[]> {
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('sent_at');
+  if (error) throw error;
+  return rowsToCamel<Message>(data ?? []);
 }
 
 // ---------------------------------------------------------------------------
@@ -266,53 +413,67 @@ interface DestinationResult {
   id: string;
   name: string;
   slug: string;
-  /** Country name for cities, null for countries */
   parentName: string | null;
 }
 
-export function searchDestinations(query: string): DestinationResult[] {
+export async function searchDestinations(query: string): Promise<DestinationResult[]> {
   const q = query.toLowerCase().trim();
   if (!q) return [];
 
   const results: DestinationResult[] = [];
 
-  for (const country of mockCountries) {
-    if (country.isActive && country.name.toLowerCase().includes(q)) {
-      results.push({
-        type: 'country',
-        id: country.id,
-        name: country.name,
-        slug: country.slug,
-        parentName: null,
-      });
-    }
+  const { data: countries } = await supabase
+    .from('countries')
+    .select('id, name, slug')
+    .eq('is_active', true)
+    .ilike('name', `%${q}%`)
+    .limit(5);
+
+  for (const c of countries ?? []) {
+    results.push({
+      type: 'country',
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      parentName: null,
+    });
   }
 
-  for (const city of mockCities) {
-    if (city.isActive && city.name.toLowerCase().includes(q)) {
-      const country = mockCountries.find((c) => c.id === city.countryId);
-      results.push({
-        type: 'city',
-        id: city.id,
-        name: city.name,
-        slug: city.slug,
-        parentName: country?.name ?? null,
-      });
-    }
+  const { data: cities } = await supabase
+    .from('cities')
+    .select('id, name, slug, country_id, countries(name)')
+    .eq('is_active', true)
+    .ilike('name', `%${q}%`)
+    .limit(5);
+
+  for (const c of cities ?? []) {
+    results.push({
+      type: 'city',
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+      parentName: (c as any).countries?.name ?? null,
+    });
   }
 
   return results.slice(0, 10);
 }
 
-export function searchPlaces(query: string, cityId?: string): Place[] {
+export async function searchPlaces(query: string, cityId?: string): Promise<Place[]> {
   const q = query.toLowerCase().trim();
   if (!q) return [];
 
-  return mockPlaces.filter((p) => {
-    if (!p.isActive) return false;
-    if (cityId && p.cityId !== cityId) return false;
-    const inName = p.name.toLowerCase().includes(q);
-    const inDesc = p.description?.toLowerCase().includes(q) ?? false;
-    return inName || inDesc;
-  });
+  let qb = supabase
+    .from('places')
+    .select('*')
+    .eq('is_active', true)
+    .or(`name.ilike.%${q}%,description.ilike.%${q}%`);
+
+  if (cityId) {
+    qb = qb.eq('city_id', cityId);
+  }
+
+  const { data, error } = await qb;
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
 }

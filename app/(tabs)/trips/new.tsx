@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { searchDestinations } from '@/data/api';
+import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const DAY_MS = 86_400_000;
@@ -35,10 +36,10 @@ export default function NewTripScreen() {
 
   const nights = arriving && leaving ? nightsBetween(arriving, leaving) : 0;
 
-  const results = useMemo(() => {
-    if (search.length < 2) return [];
-    return searchDestinations(search).slice(0, 6);
-  }, [search]);
+  const { data: results } = useData(
+    () => search.length < 2 ? Promise.resolve([]) : searchDestinations(search).then((r) => r.slice(0, 6)),
+    [search],
+  );
 
   const handleSelect = (name: string, id: string) => {
     setDestination(name);
@@ -114,9 +115,9 @@ export default function NewTripScreen() {
           )}
         </View>
 
-        {results.length > 0 && !destination && (
+        {(results ?? []).length > 0 && !destination && (
           <View style={styles.results}>
-            {results.map((r, i) => (
+            {(results ?? []).map((r, i) => (
               <Pressable
                 key={`${r.id}-${i}`}
                 style={styles.resultRow}

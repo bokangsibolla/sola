@@ -11,7 +11,7 @@ export default function AnimatedBackground({
   delay = 2500
 }: AnimatedBackgroundProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     // Clear any existing interval

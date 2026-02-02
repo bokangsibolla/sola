@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,21 +23,22 @@ export default function ExploreScreen() {
 
   const { data: countries, loading, error, refetch } = useData(() => getCountries());
 
-  const countriesWithContent = useMemo(
-    () =>
-      (countries ?? []).map((c) => ({
-        country: c,
-        content: getCountryContent(c.id),
-      })),
+  const { data: countriesWithContent } = useData(
+    async () => {
+      const list = countries ?? [];
+      const contents = await Promise.all(list.map((c) => getCountryContent(c.id)));
+      return list.map((c, i) => ({ country: c, content: contents[i] }));
+    },
     [countries],
   );
 
-  const searchResults = useMemo(() => {
-    if (!search.trim()) return null;
-    return searchDestinations(search);
-  }, [search]);
+  const debouncedSearch = search.trim();
+  const { data: searchResults, loading: searchLoading } = useData(
+    () => (debouncedSearch ? searchDestinations(debouncedSearch) : Promise.resolve(null)),
+    [debouncedSearch],
+  );
 
-  const isSearching = searchResults !== null;
+  const isSearching = debouncedSearch.length > 0;
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -64,7 +65,9 @@ export default function ExploreScreen() {
         </View>
 
         {isSearching ? (
-          searchResults.length > 0 ? (
+          searchLoading ? (
+            <LoadingScreen />
+          ) : searchResults && searchResults.length > 0 ? (
             searchResults.map((result) => (
               <Pressable
                 key={`${result.type}-${result.id}`}
@@ -97,7 +100,7 @@ export default function ExploreScreen() {
             <Text style={styles.noResults}>No results for "{search}"</Text>
           )
         ) : (
-          countriesWithContent.map(({ country, content }) => {
+          (countriesWithContent ?? []).map(({ country, content }) => {
             const safety = content ? SAFETY_COLORS[content.safetyRating] : null;
             return (
               <Pressable

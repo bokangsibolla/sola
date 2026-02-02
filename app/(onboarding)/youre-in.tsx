@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Image, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,8 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import ProgressBar from '@/components/onboarding/ProgressIndicator';
 import { onboardingStore } from '@/state/onboardingStore';
 import { getGreeting } from '@/data/greetings';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function YoureInScreen() {
@@ -15,8 +17,28 @@ export default function YoureInScreen() {
   const countryIso2 = onboardingStore.get('countryIso2');
   const greeting = countryIso2 ? getGreeting(countryIso2) : null;
 
-  const handleFinish = () => {
+  const { userId } = useAuth();
+  const [saving, setSaving] = useState(false);
+
+  const handleFinish = async () => {
+    setSaving(true);
+
+    // Persist profile data to Supabase
+    if (userId) {
+      const data = onboardingStore.getData();
+      await supabase.from('profiles').upsert({
+        id: userId,
+        first_name: data.firstName,
+        bio: data.bio || null,
+        home_country_iso2: data.countryIso2 || null,
+        home_country_name: data.countryName || null,
+        travel_style: data.spendingStyle || null,
+        interests: data.dayStyle,
+      });
+    }
+
     onboardingStore.set('onboardingCompleted', true);
+    setSaving(false);
     router.replace('/(tabs)/home');
   };
 

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,15 +58,21 @@ function tagColors(filterGroup: Tag['filterGroup']): { bg: string; fg: string } 
 
 function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
-  const imageUrl = getPlaceFirstImage(place.id);
-  const tags = getPlaceTags(place.id).slice(0, 3);
+  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
+  const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
   const { userId } = useAuth();
-  const [saved, setSaved] = useState(() => isPlaceSaved(userId, place.id));
+  const { data: isSaved, refetch: refetchSaved } = useData(() => isPlaceSaved(userId!, place.id), [userId, place.id]);
+  const [saved, setSaved] = useState(false);
 
-  const handleSave = useCallback(() => {
-    const next = toggleSavePlace(userId, place.id);
-    setSaved(next);
-  }, [place.id]);
+  // Sync saved state when data loads
+  useEffect(() => {
+    if (isSaved !== null) setSaved(isSaved);
+  }, [isSaved]);
+
+  const handleSave = useCallback(async () => {
+    setSaved((prev) => !prev);
+    await toggleSavePlace(userId!, place.id);
+  }, [userId, place.id]);
 
   return (
     <Pressable
@@ -84,9 +90,9 @@ function PlaceCard({ place }: { place: Place }) {
           {place.name}
         </Text>
 
-        {tags.length > 0 && (
+        {(tags ?? []).length > 0 && (
           <View style={styles.tagRow}>
-            {tags.map((tag) => {
+            {(tags ?? []).slice(0, 3).map((tag) => {
               const tc = tagColors(tag.filterGroup);
               return (
                 <View key={tag.id} style={[styles.tagPill, { backgroundColor: tc.bg }]}>
@@ -126,14 +132,24 @@ export default function TripDetailScreen() {
   const insets = useSafeAreaInsets();
 
   const { data: trip, loading, error, refetch } = useData(() => getTripById(id ?? ''), [id]);
+  const { data: city } = useData(
+    () => trip ? getCityById(trip.destinationCityId) : Promise.resolve(undefined),
+    [trip?.destinationCityId],
+  );
+  const { data: country } = useData(
+    () => trip ? getCountryByIso2(trip.countryIso2) : Promise.resolve(undefined),
+    [trip?.countryIso2],
+  );
+  const { data: cityPlaces } = useData(
+    () => city ? getPlacesByCity(city.id) : Promise.resolve([]),
+    [city?.id],
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
-  const city = trip ? getCityById(trip.destinationCityId) : undefined;
-  const country = trip ? getCountryByIso2(trip.countryIso2) : undefined;
   const emergency = trip ? getEmergencyNumbers(trip.countryIso2) : null;
-  const places = city ? getPlacesByCity(city.id).slice(0, 4) : [];
+  const places = (cityPlaces ?? []).slice(0, 4);
   const heroUrl = city?.heroImageUrl ?? null;
   const flag = trip ? getFlag(trip.countryIso2) : '';
 

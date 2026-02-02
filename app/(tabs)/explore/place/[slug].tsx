@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   Pressable,
@@ -79,15 +79,20 @@ function PriceDots({ level }: { level: number | null }) {
 
 function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
-  const imageUrl = getPlaceFirstImage(place.id);
+  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
   const { userId } = useAuth();
-  const tags = getPlaceTags(place.id).slice(0, 3);
-  const [saved, setSaved] = useState(() => isPlaceSaved(userId, place.id));
+  const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
+  const { data: isSaved } = useData(() => isPlaceSaved(userId!, place.id), [userId, place.id]);
+  const [saved, setSaved] = useState(false);
 
-  const handleSave = useCallback(() => {
-    const next = toggleSavePlace(userId, place.id);
-    setSaved(next);
-  }, [place.id]);
+  useEffect(() => {
+    if (isSaved !== null) setSaved(isSaved);
+  }, [isSaved]);
+
+  const handleSave = useCallback(async () => {
+    setSaved((prev) => !prev);
+    await toggleSavePlace(userId!, place.id);
+  }, [userId, place.id]);
 
   return (
     <Pressable
@@ -110,9 +115,9 @@ function PlaceCard({ place }: { place: Place }) {
         </View>
 
         {/* Tag pills */}
-        {tags.length > 0 && (
+        {(tags ?? []).length > 0 && (
           <View style={styles.tagRow}>
-            {tags.map((tag) => {
+            {(tags ?? []).map((tag) => {
               const tc = tagColors(tag.filterGroup);
               return (
                 <View
@@ -166,8 +171,25 @@ export default function PlaceScreen() {
   const insets = useSafeAreaInsets();
 
   const { data: city, loading, error, refetch } = useData(() => getCityBySlug(slug ?? ''), [slug]);
+  const { data: content } = useData(
+    () => city ? getCityContent(city.id) : Promise.resolve(undefined),
+    [city?.id],
+  );
+  const { data: areas } = useData(
+    () => city ? getAreasByCity(city.id) : Promise.resolve([]),
+    [city?.id],
+  );
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+
+  const { data: allPlaces } = useData(
+    () => {
+      if (selectedAreaId) return getPlacesByArea(selectedAreaId);
+      if (city) return getPlacesByCity(city.id);
+      return Promise.resolve([]);
+    },
+    [selectedAreaId, city?.id],
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -179,13 +201,6 @@ export default function PlaceScreen() {
       </View>
     );
   }
-
-  const content = getCityContent(city.id);
-  const areas = getAreasByCity(city.id);
-
-  const allPlaces = selectedAreaId
-    ? getPlacesByArea(selectedAreaId)
-    : getPlacesByCity(city.id);
 
   const heroUrl = city.heroImageUrl ?? content?.heroImageUrl ?? null;
   const tagline = content?.subtitle ?? null;
@@ -212,7 +227,7 @@ export default function PlaceScreen() {
           )}
 
           {/* Neighborhood pills */}
-          {areas.length > 0 && (
+          {(areas ?? []).length > 0 && (
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -235,7 +250,7 @@ export default function PlaceScreen() {
                   All
                 </Text>
               </Pressable>
-              {areas.map((area) => {
+              {(areas ?? []).map((area) => {
                 const active = selectedAreaId === area.id;
                 return (
                   <Pressable
@@ -261,7 +276,7 @@ export default function PlaceScreen() {
 
           {/* Categorized sections */}
           {SECTIONS.map((section) => {
-            const places = allPlaces.filter((p) =>
+            const places = (allPlaces ?? []).filter((p) =>
               section.types.includes(p.placeType),
             );
             if (places.length === 0) return null;

@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { supabase } from '@/lib/supabase';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function LoginScreen() {
@@ -12,16 +13,25 @@ export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const canLogin = email.includes('@') && password.length >= 6;
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = () => {
-    // TODO: Supabase auth — supabase.auth.signInWithPassword({ email, password })
+  const canLogin = email.includes('@') && password.length >= 6 && !loading;
+
+  const handleLogin = async () => {
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+
+    if (error) {
+      Alert.alert('Login failed', error.message);
+      return;
+    }
+
     router.replace('/(tabs)/home');
   };
 
   const handleSocialLogin = (provider: string) => {
-    // TODO: Supabase OAuth
-    router.replace('/(tabs)/home');
+    Alert.alert('Coming soon', `${provider} sign-in will be available soon.`);
   };
 
   return (

@@ -25,16 +25,11 @@ export default function UserProfileScreen() {
     );
   }
 
-  const currentCity = profile.currentCityId ? getCityById(profile.currentCityId) : null;
-  const savedPlaces = getSavedPlaces(profile.id);
-  const resolvedPlaces = savedPlaces
-    .map((sp) => {
-      const place = getPlaceById(sp.placeId);
-      if (!place) return null;
-      const image = getPlaceFirstImage(place.id);
-      return { ...place, imageUrl: image };
-    })
-    .filter(Boolean) as (ReturnType<typeof getPlaceById> & { imageUrl: string | null })[];
+  const { data: currentCity } = useData(
+    () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
+    [profile.currentCityId],
+  );
+  const { data: savedPlaces } = useData(() => getSavedPlaces(profile.id), [profile.id]);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -88,7 +83,7 @@ export default function UserProfileScreen() {
         )}
 
         {/* Saved places */}
-        {resolvedPlaces.length > 0 && (
+        {(savedPlaces ?? []).length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Saved places</Text>
             <ScrollView
@@ -96,19 +91,8 @@ export default function UserProfileScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.placesRow}
             >
-              {resolvedPlaces.map((place) => (
-                <View key={place.id} style={styles.placeCard}>
-                  {place.imageUrl ? (
-                    <Image source={{ uri: place.imageUrl }} style={styles.placeImage} />
-                  ) : (
-                    <View style={[styles.placeImage, styles.placeImagePlaceholder]}>
-                      <Ionicons name="image-outline" size={20} color={colors.textMuted} />
-                    </View>
-                  )}
-                  <Text style={styles.placeName} numberOfLines={1}>
-                    {place.name}
-                  </Text>
-                </View>
+              {(savedPlaces ?? []).map((sp) => (
+                <SavedPlaceCard key={sp.placeId} placeId={sp.placeId} />
               ))}
             </ScrollView>
           </>
@@ -125,6 +109,31 @@ export default function UserProfileScreen() {
           <Text style={styles.messageButtonText}>Message</Text>
         </Pressable>
       </View>
+    </View>
+  );
+}
+
+function SavedPlaceCard({ placeId }: { placeId: string }) {
+  const { data: place } = useData(() => getPlaceById(placeId), [placeId]);
+  const { data: imageUrl } = useData(
+    () => place ? getPlaceFirstImage(place.id) : Promise.resolve(null),
+    [place?.id],
+  );
+
+  if (!place) return null;
+
+  return (
+    <View style={styles.placeCard}>
+      {imageUrl ? (
+        <Image source={{ uri: imageUrl }} style={styles.placeImage} />
+      ) : (
+        <View style={[styles.placeImage, styles.placeImagePlaceholder]}>
+          <Ionicons name="image-outline" size={20} color={colors.textMuted} />
+        </View>
+      )}
+      <Text style={styles.placeName} numberOfLines={1}>
+        {place.name}
+      </Text>
     </View>
   );
 }

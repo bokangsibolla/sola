@@ -9,6 +9,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import type { Conversation } from '@/data/types';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -49,47 +50,55 @@ export default function DMListScreen() {
             </Text>
           </View>
         ) : (
-          (conversations ?? []).map((convo) => {
-            const otherId = convo.participantIds.find((pid) => pid !== userId);
-            const other = otherId ? getProfileById(otherId) : null;
-            if (!other) return null;
-
-            return (
-              <Pressable
-                key={convo.id}
-                style={styles.row}
-                onPress={() => router.push(`/home/dm/${convo.id}`)}
-              >
-                {other.avatarUrl ? (
-                  <Image source={{ uri: other.avatarUrl }} style={styles.avatar} />
-                ) : (
-                  <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                    <Ionicons name="person" size={18} color={colors.textMuted} />
-                  </View>
-                )}
-                <View style={styles.rowText}>
-                  <View style={styles.rowTop}>
-                    <Text style={styles.rowName}>{other.firstName}</Text>
-                    <Text style={styles.rowTime}>{timeAgo(convo.lastMessageAt)}</Text>
-                  </View>
-                  <Text
-                    style={[styles.rowMessage, convo.unreadCount > 0 && styles.rowMessageUnread]}
-                    numberOfLines={1}
-                  >
-                    {convo.lastMessage}
-                  </Text>
-                </View>
-                {convo.unreadCount > 0 && (
-                  <View style={styles.badge}>
-                    <Text style={styles.badgeText}>{convo.unreadCount}</Text>
-                  </View>
-                )}
-              </Pressable>
-            );
-          })
+          (conversations ?? []).map((convo) => (
+            <ConversationRow key={convo.id} convo={convo} userId={userId} />
+          ))
         )}
       </ScrollView>
     </AppScreen>
+  );
+}
+
+function ConversationRow({ convo, userId }: { convo: Conversation; userId: string | null }) {
+  const router = useRouter();
+  const otherId = convo.participantIds.find((pid) => pid !== userId);
+  const { data: other } = useData(
+    () => (otherId ? getProfileById(otherId) : Promise.resolve(null)),
+    [otherId],
+  );
+
+  if (!other) return null;
+
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={() => router.push(`/home/dm/${convo.id}`)}
+    >
+      {other.avatarUrl ? (
+        <Image source={{ uri: other.avatarUrl }} style={styles.avatar} />
+      ) : (
+        <View style={[styles.avatar, styles.avatarPlaceholder]}>
+          <Ionicons name="person" size={18} color={colors.textMuted} />
+        </View>
+      )}
+      <View style={styles.rowText}>
+        <View style={styles.rowTop}>
+          <Text style={styles.rowName}>{other.firstName}</Text>
+          <Text style={styles.rowTime}>{timeAgo(convo.lastMessageAt)}</Text>
+        </View>
+        <Text
+          style={[styles.rowMessage, convo.unreadCount > 0 && styles.rowMessageUnread]}
+          numberOfLines={1}
+        >
+          {convo.lastMessage}
+        </Text>
+      </View>
+      {convo.unreadCount > 0 && (
+        <View style={styles.badge}>
+          <Text style={styles.badgeText}>{convo.unreadCount}</Text>
+        </View>
+      )}
+    </Pressable>
   );
 }
 

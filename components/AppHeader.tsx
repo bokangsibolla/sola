@@ -20,7 +20,7 @@ export default function AppHeader({ title, subtitle, rightAction, rightComponent
     <View style={styles.container}>
       {leftComponent && <View style={styles.leftContainer}>{leftComponent}</View>}
       {hasTitle && (
-        <View style={[styles.textContainer, leftComponent && styles.textContainerWithLeft]}>
+        <View style={[styles.textContainer, !!leftComponent && styles.textContainerWithLeft]}>
           <Text style={styles.title}>{title}</Text>
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
@@ -40,14 +40,12 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    alignItems: 'center',
     paddingTop: spacing.md,
     paddingBottom: spacing.lg,
   },
   leftContainer: {
     marginRight: spacing.md,
-    alignSelf: 'flex-start',
-    paddingTop: 0,
   },
   textContainer: {
     flex: 1,
@@ -55,10 +53,7 @@ const styles = StyleSheet.create({
   textContainerWithLeft: {
     marginLeft: 0,
   },
-  rightContainer: {
-    alignSelf: 'flex-start',
-    paddingTop: 0,
-  },
+  rightContainer: {},
   spacer: {
     flex: 1,
   },

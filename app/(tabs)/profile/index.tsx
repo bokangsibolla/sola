@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { onboardingStore } from '@/state/onboardingStore';
-import { getCollections, getSavedPlaces, getCollectionPlaces } from '@/data/api';
+import { getCollections, getSavedPlaces } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -28,8 +28,8 @@ export default function ProfileScreen() {
   const { userId } = useAuth();
   const data = onboardingStore.getData();
   const country = countries.find((c) => c.iso2 === data.countryIso2);
-  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => getCollections(userId), [userId]);
-  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => getSavedPlaces(userId), [userId]);
+  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), [userId]);
+  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), [userId]);
 
   if (loadingCol || loadingSaved) return <LoadingScreen />;
   if (errorCol) return <ErrorScreen message={errorCol.message} onRetry={refetchCol} />;
@@ -89,7 +89,7 @@ export default function ProfileScreen() {
             </Text>
           ) : (
             (collections ?? []).map((col) => {
-              const placeCount = getCollectionPlaces(col.id, userId).length;
+              const placeCount = (saved ?? []).filter((s) => s.collectionId === col.id).length;
               return (
                 <Pressable
                   key={col.id}

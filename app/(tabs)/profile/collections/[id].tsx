@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,13 +17,79 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { Place } from '@/data/types';
+
+function PlaceRow({ place, userId, collectionId }: { place: Place; userId: string; collectionId: string }) {
+  const router = useRouter();
+  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
+  const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
+  const { data: category } = useData(
+    () => place.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(null),
+    [place.primaryCategoryId],
+  );
+  const { data: isSaved } = useData(() => isPlaceSaved(userId, place.id), [userId, place.id]);
+  const [saved, setSaved] = useState(isSaved ?? false);
+
+  useEffect(() => {
+    if (isSaved !== null && isSaved !== undefined) setSaved(isSaved);
+  }, [isSaved]);
+
+  return (
+    <Pressable
+      style={styles.placeCard}
+      onPress={() => router.push(`/explore/place-detail/${place.id}`)}
+    >
+      {imageUrl && (
+        <Image source={{ uri: imageUrl }} style={styles.placeImage} />
+      )}
+      <View style={styles.placeInfo}>
+        <View style={styles.placeHeader}>
+          <Text style={styles.placeName} numberOfLines={1}>
+            {place.name}
+          </Text>
+          <Pressable
+            hitSlop={8}
+            onPress={(e) => {
+              e.stopPropagation?.();
+              setSaved(!saved);
+              toggleSavePlace(userId, place.id, collectionId);
+            }}
+          >
+            <Ionicons
+              name={saved ? 'bookmark' : 'bookmark-outline'}
+              size={20}
+              color={saved ? colors.orange : colors.textMuted}
+            />
+          </Pressable>
+        </View>
+        {category && (
+          <Text style={styles.placeCategory}>{category.name}</Text>
+        )}
+        {tags && tags.length > 0 && (
+          <View style={styles.tagRow}>
+            {tags.slice(0, 3).map((tag) => (
+              <View key={tag.id} style={styles.tag}>
+                <Text style={styles.tagText}>{tag.label}</Text>
+              </View>
+            ))}
+          </View>
+        )}
+      </View>
+    </Pressable>
+  );
+}
 
 export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
+  const { userId } = useAuth();
   const { data: collection, loading, error, refetch } = useData(() => getCollectionById(id ?? ''), [id]);
+  const { data: places } = useData(
+    () => collection?.id && userId ? getCollectionPlaces(collection.id, userId) : Promise.resolve([]),
+    [collection?.id, userId],
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -40,9 +106,7 @@ export default function CollectionDetailScreen() {
       </View>
     );
   }
-
-  const { userId } = useAuth();
-  const places = getCollectionPlaces(collection.id, userId);
+  const placeList = places ?? [];
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -56,65 +120,18 @@ export default function CollectionDetailScreen() {
         <Text style={styles.emoji}>{collection.emoji}</Text>
         <Text style={styles.title}>{collection.name}</Text>
         <Text style={styles.count}>
-          {places.length} {places.length === 1 ? 'place' : 'places'}
+          {placeList.length} {placeList.length === 1 ? 'place' : 'places'}
         </Text>
 
-        {places.length === 0 ? (
+        {placeList.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="bookmark-outline" size={40} color={colors.textMuted} />
             <Text style={styles.emptyText}>No places in this collection yet.</Text>
           </View>
         ) : (
-          places.map((place) => {
-            const imageUrl = getPlaceFirstImage(place.id);
-            const tags = getPlaceTags(place.id);
-            const category = place.primaryCategoryId ? getCategory(place.primaryCategoryId) : null;
-            const saved = isPlaceSaved(userId, place.id);
-
-            return (
-              <Pressable
-                key={place.id}
-                style={styles.placeCard}
-                onPress={() => router.push(`/explore/place-detail/${place.id}`)}
-              >
-                {imageUrl && (
-                  <Image source={{ uri: imageUrl }} style={styles.placeImage} />
-                )}
-                <View style={styles.placeInfo}>
-                  <View style={styles.placeHeader}>
-                    <Text style={styles.placeName} numberOfLines={1}>
-                      {place.name}
-                    </Text>
-                    <Pressable
-                      hitSlop={8}
-                      onPress={(e) => {
-                        e.stopPropagation?.();
-                        toggleSavePlace(userId, place.id, collection.id);
-                      }}
-                    >
-                      <Ionicons
-                        name={saved ? 'bookmark' : 'bookmark-outline'}
-                        size={20}
-                        color={saved ? colors.orange : colors.textMuted}
-                      />
-                    </Pressable>
-                  </View>
-                  {category && (
-                    <Text style={styles.placeCategory}>{category.name}</Text>
-                  )}
-                  {tags.length > 0 && (
-                    <View style={styles.tagRow}>
-                      {tags.slice(0, 3).map((tag) => (
-                        <View key={tag.id} style={styles.tag}>
-                          <Text style={styles.tagText}>{tag.label}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              </Pressable>
-            );
-          })
+          placeList.map((place) => (
+            <PlaceRow key={place.id} place={place} userId={userId!} collectionId={collection.id} />
+          ))
         )}
 
         <View style={{ height: spacing.xxl }} />

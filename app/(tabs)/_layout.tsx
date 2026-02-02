@@ -1,22 +1,23 @@
 import { Tabs } from 'expo-router';
 import React from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { HapticTab } from '@/components/haptic-tab';
-import { colors } from '@/constants/design';
+import { colors, fonts } from '@/constants/design';
 import SOSButton from '@/components/SOSButton';
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, 8);
+  const [sosVisible, setSosVisible] = React.useState(false);
 
   return (
     <View style={{ flex: 1 }}>
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.orange,
-        tabBarInactiveTintColor: colors.textPrimary,
+        tabBarInactiveTintColor: colors.textMuted,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarStyle: [
@@ -28,7 +29,7 @@ export default function TabLayout() {
         ],
         tabBarIconStyle: styles.tabBarIcon,
         tabBarLabel: ({ focused, children }) => (
-          <Text style={[styles.tabBarLabel, { color: focused ? colors.orange : colors.textSecondary }]}>
+          <Text style={[styles.tabBarLabel, { color: focused ? colors.orange : colors.textMuted }]}>
             {children}
           </Text>
         ),
@@ -37,8 +38,8 @@ export default function TabLayout() {
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'home' : 'home-outline'} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="home" size={22} color={color} />
           ),
         }}
       />
@@ -46,8 +47,22 @@ export default function TabLayout() {
         name="explore"
         options={{
           title: 'Explore',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'compass' : 'compass-outline'} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="search" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sos"
+        options={{
+          title: 'SOS',
+          tabBarButton: () => (
+            <Pressable style={styles.sosTab} onPress={() => setSosVisible(true)}>
+              <View style={styles.sosCircle}>
+                <Feather name="shield" size={18} color="#FFFFFF" />
+              </View>
+              <Text style={styles.sosLabel}>SOS</Text>
+            </Pressable>
           ),
         }}
       />
@@ -55,8 +70,8 @@ export default function TabLayout() {
         name="trips"
         options={{
           title: 'Trips',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'airplane' : 'airplane-outline'} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="map" size={22} color={color} />
           ),
         }}
       />
@@ -64,13 +79,13 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons name={focused ? 'person' : 'person-outline'} size={24} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Feather name="user" size={22} color={color} />
           ),
         }}
       />
     </Tabs>
-    <SOSButton />
+    <SOSButton externalVisible={sosVisible} onClose={() => setSosVisible(false)} />
     </View>
   );
 }
@@ -78,26 +93,48 @@ export default function TabLayout() {
 const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: colors.background,
-    borderTopWidth: 0,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
     paddingTop: 8,
     elevation: 0,
     ...Platform.select({
       ios: {
         shadowColor: '#000000',
         shadowOffset: { width: 0, height: -1 },
-        shadowOpacity: 0.02,
-        shadowRadius: 3,
+        shadowOpacity: 0.04,
+        shadowRadius: 4,
       },
       android: { elevation: 0 },
     }),
   },
   tabBarLabel: {
+    fontFamily: fonts.medium,
     fontSize: 10,
-    fontWeight: '500',
     marginTop: 2,
     letterSpacing: 0.2,
   },
   tabBarIcon: {
     marginTop: 2,
+  },
+  sosTab: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 6,
+  },
+  sosCircle: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#D32F2F',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  sosLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: '#D32F2F',
+    marginTop: 2,
+    letterSpacing: 0.2,
   },
 });

@@ -33,10 +33,15 @@ export default function DMThreadScreen() {
   );
 
   // Resolve the other participant
-  const conversations = getConversations();
-  const convo = conversations.find((c) => c.id === conversationId);
-  const otherId = convo?.participantIds.find((pid) => pid !== userId);
-  const other = otherId ? getProfileById(otherId) : null;
+  const { data: other } = useData(
+    async () => {
+      const conversations = await getConversations();
+      const convo = conversations.find((c) => c.id === conversationId);
+      const otherId = convo?.participantIds.find((pid) => pid !== userId);
+      return otherId ? getProfileById(otherId) : null;
+    },
+    [conversationId, userId],
+  );
 
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
@@ -50,7 +55,7 @@ export default function DMThreadScreen() {
     const msg: Message = {
       id: `msg-${Date.now()}`,
       conversationId: conversationId ?? 'new',
-      senderId: userId,
+      senderId: userId!,
       text: text.trim(),
       sentAt: new Date().toISOString(),
       readAt: null,

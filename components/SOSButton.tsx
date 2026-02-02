@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
+  Alert,
   Linking,
   Modal,
   Pressable,
@@ -7,125 +8,119 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getTrips } from '@/data/api';
 import { getEmergencyNumbers } from '@/data/safety';
+import { useAuth } from '@/state/AuthContext';
+import { useData } from '@/hooks/useData';
 import { onboardingStore } from '@/state/onboardingStore';
 
-function getCountryIso2(): string {
-  // Check for active/planned trip first
-  const trips = getTrips('me');
-  const activeTrip = trips.find(
-    (t) => t.status === 'active' || t.status === 'planned',
-  );
-  if (activeTrip) return activeTrip.countryIso2;
-
-  // Fallback to home country
-  return onboardingStore.get('countryIso2') || 'US';
+interface SOSButtonProps {
+  externalVisible: boolean;
+  onClose: () => void;
 }
 
-export default function SOSButton() {
-  const [visible, setVisible] = useState(false);
+export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) {
+  const { userId } = useAuth();
+  const { data: trips } = useData(
+    () => userId ? getTrips(userId) : Promise.resolve([]),
+    [userId],
+  );
+  const activeTrip = (trips ?? []).find(
+    (t) => t.status === 'active' || t.status === 'planned',
+  );
+  const countryIso2 = activeTrip?.countryIso2 ?? onboardingStore.get('countryIso2') ?? 'US';
+  const numbers = getEmergencyNumbers(countryIso2);
 
-  const handleOpen = () => setVisible(true);
-  const handleClose = () => setVisible(false);
-
-  const numbers = getEmergencyNumbers(getCountryIso2());
-
-  const call = (number: string) => {
-    Linking.openURL(`tel:${number}`);
+  const call = async (number: string) => {
+    const url = `tel:${number}`;
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      Linking.openURL(url).catch(() =>
+        Alert.alert('Call failed', `Could not dial ${number}. Try manually.`),
+      );
+    } else {
+      Alert.alert('Calling not available', `Dial ${number} manually.`);
+    }
   };
 
-  const shareLocation = () => {
-    Linking.openURL('sms:&body=I need help. My location: ');
+  const shareLocation = async () => {
+    const url = 'sms:&body=I need help. My location: ';
+    const supported = await Linking.canOpenURL(url);
+    if (supported) {
+      Linking.openURL(url).catch(() =>
+        Alert.alert('SMS failed', 'Could not open messaging app.'),
+      );
+    } else {
+      Alert.alert('SMS not available', 'Open your messaging app manually.');
+    }
   };
 
   return (
-    <>
-      <Pressable style={styles.fab} onPress={handleOpen}>
-        <Ionicons name="shield" size={24} color="#FFFFFF" />
-      </Pressable>
+    <Modal
+      visible={externalVisible}
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <View style={styles.backdrop}>
+        <View style={styles.modal}>
+          <Pressable style={styles.closeBtn} onPress={onClose}>
+            <Feather name="x" size={22} color={colors.textPrimary} />
+          </Pressable>
 
-      <Modal
-        visible={visible}
-        transparent
-        animationType="fade"
-        onRequestClose={handleClose}
-      >
-        <View style={styles.backdrop}>
-          <View style={styles.modal}>
-            <Pressable style={styles.closeBtn} onPress={handleClose}>
-              <Ionicons name="close" size={24} color={colors.textPrimary} />
+          <View style={styles.header}>
+            <View style={styles.headerIcon}>
+              <Feather name="shield" size={24} color="#D32F2F" />
+            </View>
+            <Text style={styles.title}>Emergency</Text>
+            <Text style={styles.subtitle}>Tap to call local emergency services</Text>
+          </View>
+
+          <View style={styles.buttons}>
+            <Pressable
+              style={styles.callBtn}
+              onPress={() => call(numbers.police)}
+            >
+              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Text style={styles.callBtnText}>
+                Police — {numbers.police}
+              </Text>
             </Pressable>
 
-            <Text style={styles.title}>Emergency</Text>
+            <Pressable
+              style={styles.callBtn}
+              onPress={() => call(numbers.ambulance)}
+            >
+              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Text style={styles.callBtnText}>
+                Ambulance — {numbers.ambulance}
+              </Text>
+            </Pressable>
 
-            <View style={styles.buttons}>
-              <Pressable
-                style={styles.callBtn}
-                onPress={() => call(numbers.police)}
-              >
-                <Ionicons name="call" size={20} color="#FFFFFF" />
-                <Text style={styles.callBtnText}>
-                  Call Police ({numbers.police})
-                </Text>
-              </Pressable>
+            <Pressable
+              style={styles.callBtn}
+              onPress={() => call(numbers.fire)}
+            >
+              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Text style={styles.callBtnText}>
+                Fire — {numbers.fire}
+              </Text>
+            </Pressable>
 
-              <Pressable
-                style={styles.callBtn}
-                onPress={() => call(numbers.ambulance)}
-              >
-                <Ionicons name="call" size={20} color="#FFFFFF" />
-                <Text style={styles.callBtnText}>
-                  Call Ambulance ({numbers.ambulance})
-                </Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.callBtn}
-                onPress={() => call(numbers.fire)}
-              >
-                <Ionicons name="call" size={20} color="#FFFFFF" />
-                <Text style={styles.callBtnText}>
-                  Call Fire ({numbers.fire})
-                </Text>
-              </Pressable>
-
-              <Pressable style={styles.shareBtn} onPress={shareLocation}>
-                <Ionicons
-                  name="location"
-                  size={20}
-                  color={colors.orange}
-                />
-                <Text style={styles.shareBtnText}>Share my location</Text>
-              </Pressable>
-            </View>
+            <Pressable style={styles.shareBtn} onPress={shareLocation}>
+              <Feather name="send" size={18} color={colors.orange} />
+              <Text style={styles.shareBtnText}>Share my location</Text>
+            </Pressable>
           </View>
         </View>
-      </Modal>
-    </>
+      </View>
+    </Modal>
   );
 }
 
 const styles = StyleSheet.create({
-  fab: {
-    position: 'absolute',
-    bottom: 90,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-    elevation: 6,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    zIndex: 100,
-  },
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
@@ -146,12 +141,29 @@ const styles = StyleSheet.create({
     zIndex: 1,
     padding: spacing.xs,
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: spacing.xl,
+  },
+  headerIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#FDEAEA',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.sm,
+  },
   title: {
     fontFamily: fonts.semiBold,
-    fontSize: 24,
+    fontSize: 22,
     color: '#D32F2F',
-    textAlign: 'center',
-    marginBottom: spacing.xl,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
   },
   buttons: {
     gap: spacing.md,
@@ -167,7 +179,7 @@ const styles = StyleSheet.create({
   },
   callBtnText: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
   },
   shareBtn: {
@@ -181,7 +193,7 @@ const styles = StyleSheet.create({
   },
   shareBtnText: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.orange,
   },
 });

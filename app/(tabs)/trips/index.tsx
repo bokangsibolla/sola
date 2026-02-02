@@ -3,7 +3,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { getTrips, getCountryByIso2 } from '@/data/api';
+import { getTrips } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -23,9 +23,6 @@ function formatDate(iso: string): string {
 }
 
 function getFlag(iso2: string): string {
-  const country = getCountryByIso2(iso2);
-  if (!country) return '';
-  // Convert ISO2 to flag emoji via regional indicator symbols
   return iso2
     .toUpperCase()
     .split('')
@@ -36,7 +33,7 @@ function getFlag(iso2: string): string {
 export default function TripsScreen() {
   const router = useRouter();
   const { userId } = useAuth();
-  const { data: trips, loading, error, refetch } = useData(() => getTrips(userId), [userId]);
+  const { data: trips, loading, error, refetch } = useData(() => userId ? getTrips(userId) : Promise.resolve([]), [userId]);
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
