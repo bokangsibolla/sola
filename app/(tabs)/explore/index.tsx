@@ -4,22 +4,37 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { mockCountryGuides } from '@/data/mock';
+import { getCountries, getCountryContent, searchDestinations } from '@/data/api';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+
+const SAFETY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
+  very_safe: { bg: colors.greenFill, text: colors.greenSoft, label: 'Very Safe' },
+  generally_safe: { bg: colors.blueFill, text: colors.blueSoft, label: 'Generally Safe' },
+  use_caution: { bg: colors.warningFill, text: colors.warning, label: 'Use Caution' },
+  exercise_caution: { bg: colors.warningFill, text: colors.warning, label: 'Exercise Caution' },
+};
 
 export default function ExploreScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
 
-  const filtered = useMemo(() => {
-    if (!search.trim()) return mockCountryGuides;
-    const q = search.toLowerCase();
-    return mockCountryGuides.filter(
-      (g) =>
-        g.name.toLowerCase().includes(q) ||
-        g.cities.some((c) => c.name.toLowerCase().includes(q)),
-    );
+  const countries = useMemo(() => getCountries(), []);
+
+  const countriesWithContent = useMemo(
+    () =>
+      countries.map((c) => ({
+        country: c,
+        content: getCountryContent(c.id),
+      })),
+    [countries],
+  );
+
+  const searchResults = useMemo(() => {
+    if (!search.trim()) return null;
+    return searchDestinations(search);
   }, [search]);
+
+  const isSearching = searchResults !== null;
 
   return (
     <AppScreen>
@@ -42,33 +57,76 @@ export default function ExploreScreen() {
           )}
         </View>
 
-        {/* Country guide cards */}
-        {filtered.map((guide) => (
-          <Pressable
-            key={guide.slug}
-            style={styles.guideCard}
-            onPress={() => router.push(`/explore/country/${guide.slug}`)}
-          >
-            <Image source={{ uri: guide.heroImageUrl }} style={styles.guideImage} />
-            <View style={styles.guideOverlay}>
-              <Text style={styles.guideName}>{guide.name}</Text>
-              <Text style={styles.guideTagline}>{guide.tagline}</Text>
-              <View style={styles.guideMeta}>
-                {guide.soloFriendly && (
-                  <View style={styles.guideBadge}>
-                    <Text style={styles.guideBadgeText}>Solo-friendly</Text>
-                  </View>
-                )}
-                <View style={styles.guideBadge}>
-                  <Text style={styles.guideBadgeText}>{guide.safetyRating}</Text>
+        {isSearching ? (
+          searchResults.length > 0 ? (
+            searchResults.map((result) => (
+              <Pressable
+                key={`${result.type}-${result.id}`}
+                style={styles.searchItem}
+                onPress={() => {
+                  if (result.type === 'country') {
+                    router.push(`/(tabs)/explore/country/${result.slug}`);
+                  } else {
+                    router.push(`/(tabs)/explore/place/${result.slug}`);
+                  }
+                }}
+              >
+                <View style={styles.searchItemIcon}>
+                  <Ionicons
+                    name={result.type === 'country' ? 'flag' : 'location'}
+                    size={18}
+                    color={colors.textSecondary}
+                  />
                 </View>
-              </View>
-            </View>
-          </Pressable>
-        ))}
-
-        {filtered.length === 0 && (
-          <Text style={styles.noResults}>No guides found for "{search}"</Text>
+                <View style={styles.searchItemText}>
+                  <Text style={styles.searchItemName}>{result.name}</Text>
+                  {result.parentName && (
+                    <Text style={styles.searchItemParent}>{result.parentName}</Text>
+                  )}
+                </View>
+                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+              </Pressable>
+            ))
+          ) : (
+            <Text style={styles.noResults}>No results for "{search}"</Text>
+          )
+        ) : (
+          countriesWithContent.map(({ country, content }) => {
+            const safety = content ? SAFETY_COLORS[content.safetyRating] : null;
+            return (
+              <Pressable
+                key={country.slug}
+                style={styles.guideCard}
+                onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
+              >
+                {country.heroImageUrl && (
+                  <Image source={{ uri: country.heroImageUrl }} style={styles.guideImage} />
+                )}
+                <View style={styles.guideOverlay}>
+                  <Text style={styles.guideName}>{country.name}</Text>
+                  {content?.subtitle && (
+                    <Text style={styles.guideSubtitle}>{content.subtitle}</Text>
+                  )}
+                  <View style={styles.guideMeta}>
+                    {safety && (
+                      <View style={[styles.badge, { backgroundColor: safety.bg }]}>
+                        <Text style={[styles.badgeText, { color: safety.text }]}>
+                          {safety.label}
+                        </Text>
+                      </View>
+                    )}
+                    {content?.soloFriendly && (
+                      <View style={[styles.badge, { backgroundColor: colors.orangeFill }]}>
+                        <Text style={[styles.badgeText, { color: colors.orange }]}>
+                          Solo-friendly
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })
         )}
       </ScrollView>
     </AppScreen>
@@ -98,6 +156,7 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.lg,
     height: 200,
+    backgroundColor: colors.borderSubtle,
   },
   guideImage: {
     width: '100%',
@@ -109,14 +168,14 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.lg,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: colors.overlayDark,
   },
   guideName: {
     fontFamily: fonts.semiBold,
     fontSize: 22,
     color: '#FFFFFF',
   },
-  guideTagline: {
+  guideSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: 'rgba(255,255,255,0.85)',
@@ -127,16 +186,44 @@ const styles = StyleSheet.create({
     gap: 6,
     marginTop: spacing.sm,
   },
-  guideBadge: {
-    backgroundColor: 'rgba(255,255,255,0.2)',
+  badge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 8,
   },
-  guideBadgeText: {
+  badgeText: {
     fontFamily: fonts.medium,
     fontSize: 11,
-    color: '#FFFFFF',
+  },
+  searchItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+    gap: spacing.md,
+  },
+  searchItemIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.sm,
+    backgroundColor: colors.borderSubtle,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  searchItemText: {
+    flex: 1,
+  },
+  searchItemName: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  searchItemParent: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   noResults: {
     ...typography.body,
