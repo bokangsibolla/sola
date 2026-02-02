@@ -45,7 +45,7 @@ export default function RootLayout() {
     // Wait for router to be mounted before attempting navigation
     if (!router || !segments || segments.length < 1) return;
 
-    const isOnboardingCompleted = onboardingStore.getOnboardingCompleted();
+    const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
     const currentGroup = segments[0];
 
     // Only redirect if user has completed onboarding and is in onboarding group
