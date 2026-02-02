@@ -4,6 +4,7 @@ import {
   Image,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -27,8 +28,7 @@ import { colors, fonts, radius } from '@/constants/design';
 const BIO_MAX = 140;
 
 const POPULAR_COUNTRIES = [
-  'TH', 'JP', 'ID', 'PT', 'IT', 'ES', 'MX', 'KR', 'VN', 'GR',
-  'FR', 'DE', 'TR', 'BR', 'CO', 'PH', 'US', 'GB', 'AU', 'NL',
+  'US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT',
 ];
 
 export default function ProfileScreen() {
@@ -127,6 +127,7 @@ export default function ProfileScreen() {
       ctaDisabled={!canContinue}
       onCtaPress={handleContinue}
     >
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
       {/* Photo circle */}
       <View style={styles.photoSection}>
         <Pressable onPress={handlePhotoPress}>
@@ -216,6 +217,7 @@ export default function ProfileScreen() {
           ))}
         </View>
       )}
+      </ScrollView>
     </OnboardingScreen>
   );
 }
