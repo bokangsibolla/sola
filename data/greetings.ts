@@ -1,0 +1,45 @@
+// Native feminine greetings for countries with a single dominant language.
+// Used on country pills (profile screen) and the "you're in" final screen.
+const greetings: Record<string, string> = {
+  JP: 'ようこそ',
+  TH: 'ยินดีต้อนรับ',
+  PT: 'Bem-vinda',
+  ES: 'Bienvenida',
+  IT: 'Benvenuta',
+  MX: 'Bienvenida',
+  FR: 'Bienvenue',
+  KR: '환영합니다',
+  VN: 'Chào mừng',
+  GR: 'Καλώς ήρθες',
+  ID: 'Selamat datang',
+  DE: 'Willkommen',
+  NL: 'Welkom',
+  TR: 'Hoş geldin',
+  PL: 'Witaj',
+  SE: 'Välkommen',
+  NO: 'Velkommen',
+  DK: 'Velkommen',
+  FI: 'Tervetuloa',
+  CZ: 'Vítej',
+  RO: 'Bine ai venit',
+  HU: 'Üdvözöllek',
+  HR: 'Dobrodošla',
+  BG: 'Добре дошла',
+  RS: 'Добродошла',
+  UA: 'Ласкаво просимо',
+  RU: 'Добро пожаловать',
+  BR: 'Bem-vinda',
+  AR: 'Bienvenida',
+  CL: 'Bienvenida',
+  CO: 'Bienvenida',
+  PE: 'Bienvenida',
+  PH: 'Maligayang pagdating',
+  EG: 'أهلاً وسهلاً',
+  MA: 'مرحبا',
+  CN: '欢迎',
+  TW: '歡迎',
+};
+
+export function getGreeting(iso2: string): string | null {
+  return greetings[iso2] ?? null;
+}
