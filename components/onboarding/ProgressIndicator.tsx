@@ -1,21 +1,19 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
+import { colors } from '@/constants/design';
 
-interface ProgressIndicatorProps {
-  currentStep: number;
-  totalSteps: number;
+interface ProgressBarProps {
+  /** Current stage 1-5 */
+  stage: number;
 }
 
-export default function ProgressIndicator({ currentStep, totalSteps }: ProgressIndicatorProps) {
+export default function ProgressBar({ stage }: ProgressBarProps) {
   return (
     <View style={styles.container}>
-      {Array.from({ length: totalSteps }).map((_, index) => (
+      {[1, 2, 3, 4, 5].map((s) => (
         <View
-          key={index}
-          style={[
-            styles.segment,
-            index < currentStep && styles.segmentActive,
-          ]}
+          key={s}
+          style={[styles.segment, s <= stage && styles.segmentFilled]}
         />
       ))}
     </View>
@@ -25,17 +23,17 @@ export default function ProgressIndicator({ currentStep, totalSteps }: ProgressI
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    paddingTop: 16,
   },
   segment: {
+    width: 48,
     height: 4,
-    flex: 1,
     borderRadius: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    maxWidth: 40,
+    backgroundColor: colors.borderDefault,
   },
-  segmentActive: {
-    backgroundColor: '#FFFFFF',
+  segmentFilled: {
+    backgroundColor: colors.orange,
   },
 });

@@ -76,8 +76,6 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     overflow: 'hidden',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
   },
   image: {
     width: '100%',
@@ -89,8 +87,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
+    backgroundColor: 'rgba(0,0,0,0.45)',
   },
 });
