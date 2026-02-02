@@ -238,3 +238,8 @@ export interface Message {
   sentAt: string;
   readAt: string | null;
 }
+
+export interface PaginatedResult<T> {
+  data: T[];
+  hasMore: boolean;
+}

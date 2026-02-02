@@ -19,6 +19,7 @@ import type {
   Trip,
   Conversation,
   Message,
+  PaginatedResult,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -481,6 +482,52 @@ export async function sendMessage(
 }
 
 // ---------------------------------------------------------------------------
+// Block & Report
+// ---------------------------------------------------------------------------
+
+export async function blockUser(blockerId: string, blockedId: string): Promise<void> {
+  const { error } = await supabase
+    .from('blocked_users')
+    .insert({ blocker_id: blockerId, blocked_id: blockedId });
+  if (error && error.code !== '23505') throw error; // ignore duplicate
+}
+
+export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
+  const { error } = await supabase
+    .from('blocked_users')
+    .delete()
+    .eq('blocker_id', blockerId)
+    .eq('blocked_id', blockedId);
+  if (error) throw error;
+}
+
+export async function getBlockedUserIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('blocked_users')
+    .select('blocked_id')
+    .eq('blocker_id', userId);
+  if (error) throw error;
+  return (data ?? []).map((r) => r.blocked_id);
+}
+
+export async function reportUser(
+  reporterId: string,
+  reportedId: string,
+  reason: string,
+  details?: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('user_reports')
+    .insert({
+      reporter_id: reporterId,
+      reported_id: reportedId,
+      reason,
+      details: details ?? null,
+    });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------
 
@@ -537,6 +584,88 @@ export async function searchDestinations(query: string): Promise<DestinationResu
 
   return results.slice(0, 10);
 }
+
+// ---------------------------------------------------------------------------
+// Pagination
+// ---------------------------------------------------------------------------
+
+export function buildRange(page: number, pageSize: number) {
+  const from = page * pageSize;
+  const to = from + pageSize - 1;
+  return { from, to };
+}
+
+const DEFAULT_PAGE_SIZE = 20;
+
+export async function getProfilesPaginated(
+  page = 0,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<Profile>> {
+  const { from, to } = buildRange(page, pageSize);
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .range(from, to + 1);
+  if (error) throw error;
+  const hasMore = (data?.length ?? 0) > pageSize;
+  const rows = (data || []).slice(0, pageSize);
+  return { data: rowsToCamel<Profile>(rows), hasMore };
+}
+
+export async function getConversationsPaginated(
+  page = 0,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<Conversation>> {
+  const { from, to } = buildRange(page, pageSize);
+  const { data, error } = await supabase
+    .from('conversations')
+    .select('*')
+    .order('last_message_at', { ascending: false })
+    .range(from, to + 1);
+  if (error) throw error;
+  const hasMore = (data?.length ?? 0) > pageSize;
+  const rows = (data || []).slice(0, pageSize);
+  return { data: rowsToCamel<Conversation>(rows), hasMore };
+}
+
+export async function getMessagesPaginated(
+  conversationId: string,
+  page = 0,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<Message>> {
+  const { from, to } = buildRange(page, pageSize);
+  const { data, error } = await supabase
+    .from('messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('sent_at', { ascending: false })
+    .range(from, to + 1);
+  if (error) throw error;
+  const hasMore = (data?.length ?? 0) > pageSize;
+  const rows = (data || []).slice(0, pageSize);
+  return { data: rowsToCamel<Message>(rows), hasMore };
+}
+
+export async function getPlacesByCityPaginated(
+  cityId: string,
+  page = 0,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PaginatedResult<Place>> {
+  const { from, to } = buildRange(page, pageSize);
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .range(from, to + 1);
+  if (error) throw error;
+  const hasMore = (data?.length ?? 0) > pageSize;
+  const rows = (data || []).slice(0, pageSize);
+  return { data: rowsToCamel<Place>(rows), hasMore };
+}
+
+// ---------------------------------------------------------------------------
+// Search
+// ---------------------------------------------------------------------------
 
 export async function searchPlaces(query: string, cityId?: string): Promise<Place[]> {
   const q = escapeIlike(query.toLowerCase().trim());
