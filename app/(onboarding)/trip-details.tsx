@@ -61,8 +61,8 @@ export default function TripDetailsScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="Where are you headed?"
-      subtitle="Optional — you can always add this later"
+      headline="Where to next?"
+      subtitle="No pressure — you can always add this later"
       ctaLabel={hasDestination ? 'Continue' : 'Skip'}
       onCtaPress={handleContinue}
     >

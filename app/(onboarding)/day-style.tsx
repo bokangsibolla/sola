@@ -36,7 +36,7 @@ export default function DayStyleScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="How do you like to spend your days?"
+      headline="What's your kind of day?"
       subtitle="Pick up to 2"
       ctaLabel="Continue"
       ctaDisabled={selected.length === 0}

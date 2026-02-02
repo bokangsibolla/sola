@@ -22,19 +22,19 @@ export default function IntentScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="What brings you to Sola?"
+      headline="So, what's the plan?"
       ctaLabel="Continue"
       ctaDisabled={!selected}
       onCtaPress={handleContinue}
     >
       <View style={styles.cards}>
         <OptionCard
-          title="I'm planning a trip"
+          title="I've got a trip coming up"
           selected={selected === 'planning'}
           onPress={() => setSelected('planning')}
         />
         <OptionCard
-          title="Just exploring for now"
+          title="Just dreaming for now"
           selected={selected === 'exploring'}
           onPress={() => setSelected('exploring')}
         />

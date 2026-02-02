@@ -36,7 +36,7 @@ export default function PrioritiesScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="What matters most when you travel?"
+      headline="What do you look for in a place?"
       subtitle="Pick up to 2"
       ctaLabel="Continue"
       ctaDisabled={selected.length === 0}
