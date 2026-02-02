@@ -9,6 +9,7 @@ import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
 import { useAuth } from '@/state/AuthContext';
+import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function YoureInScreen() {
@@ -19,6 +20,7 @@ export default function YoureInScreen() {
   const greeting = countryIso2 ? getGreeting(countryIso2) : null;
 
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const [saving, setSaving] = useState(false);
 
   const handleFinish = async () => {
@@ -41,6 +43,7 @@ export default function YoureInScreen() {
     }
 
     onboardingStore.set('onboardingCompleted', true);
+    posthog.capture('onboarding_completed');
     setSaving(false);
     router.replace('/(tabs)/home');
   };

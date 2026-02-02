@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Alert,
   Linking,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Text,
   View,
+  Platform,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
@@ -14,6 +15,7 @@ import { getTrips, getProfileById } from '@/data/api';
 import { getEmergencyNumbers } from '@/data/safety';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
+import { usePostHog } from 'posthog-react-native';
 
 interface SOSButtonProps {
   externalVisible: boolean;
@@ -22,6 +24,7 @@ interface SOSButtonProps {
 
 export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) {
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const { data: trips } = useData(
     () => userId ? getTrips(userId) : Promise.resolve([]),
     [userId],
@@ -36,6 +39,12 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
   const countryIso2 = activeTrip?.countryIso2 ?? profile?.homeCountryIso2 ?? 'US';
   const numbers = getEmergencyNumbers(countryIso2);
 
+  useEffect(() => {
+    if (externalVisible) {
+      posthog.capture('sos_tapped', { country: countryIso2 });
+    }
+  }, [externalVisible]);
+
   const call = async (number: string) => {
     const url = `tel:${number}`;
     const supported = await Linking.canOpenURL(url);
@@ -48,8 +57,11 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
     }
   };
 
-  const shareLocation = async () => {
-    const url = 'sms:&body=I need help. My location: ';
+  const sendEmergencySMS = async () => {
+    const body = encodeURIComponent(
+      'I need help. Please check on me. I am using the Sola travel app.',
+    );
+    const url = Platform.OS === 'ios' ? `sms:&body=${body}` : `sms:?body=${body}`;
     const supported = await Linking.canOpenURL(url);
     if (supported) {
       Linking.openURL(url).catch(() =>
@@ -112,9 +124,9 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
               </Text>
             </Pressable>
 
-            <Pressable style={styles.shareBtn} onPress={shareLocation}>
+            <Pressable style={styles.shareBtn} onPress={sendEmergencySMS}>
               <Feather name="send" size={18} color={colors.orange} />
-              <Text style={styles.shareBtnText}>Share my location</Text>
+              <Text style={styles.shareBtnText}>Send emergency SMS</Text>
             </Pressable>
           </View>
         </View>
