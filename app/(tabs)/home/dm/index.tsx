@@ -3,12 +3,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { mockConversations, mockUsers } from '@/data/mock';
+import { getConversations, getProfileById } from '@/data/api';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+
+const CURRENT_USER = 'profile-u1';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'now';
   if (mins < 60) return `${mins}m`;
   const hours = Math.floor(mins / 60);
   if (hours < 24) return `${hours}h`;
@@ -18,12 +21,21 @@ function timeAgo(iso: string): string {
 
 export default function DMListScreen() {
   const router = useRouter();
+  const conversations = getConversations();
 
   return (
     <AppScreen>
-      <AppHeader title="Messages" />
+      <AppHeader
+        title="Messages"
+        leftComponent={
+          <Pressable onPress={() => router.back()} hitSlop={12}>
+            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {mockConversations.length === 0 ? (
+        {conversations.length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="chatbubbles-outline" size={32} color={colors.textMuted} />
             <Text style={styles.emptyText}>
@@ -31,17 +43,19 @@ export default function DMListScreen() {
             </Text>
           </View>
         ) : (
-          mockConversations.map((convo) => {
-            const user = mockUsers.find((u) => u.id === convo.withUserId);
-            if (!user) return null;
+          conversations.map((convo) => {
+            const otherId = convo.participantIds.find((pid) => pid !== CURRENT_USER);
+            const other = otherId ? getProfileById(otherId) : null;
+            if (!other) return null;
+
             return (
               <Pressable
                 key={convo.id}
                 style={styles.row}
-                onPress={() => router.push(`/home/dm/${convo.withUserId}`)}
+                onPress={() => router.push(`/home/dm/${convo.id}`)}
               >
-                {user.photoUrl ? (
-                  <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+                {other.avatarUrl ? (
+                  <Image source={{ uri: other.avatarUrl }} style={styles.avatar} />
                 ) : (
                   <View style={[styles.avatar, styles.avatarPlaceholder]}>
                     <Ionicons name="person" size={18} color={colors.textMuted} />
@@ -49,7 +63,7 @@ export default function DMListScreen() {
                 )}
                 <View style={styles.rowText}>
                   <View style={styles.rowTop}>
-                    <Text style={styles.rowName}>{user.firstName}</Text>
+                    <Text style={styles.rowName}>{other.firstName}</Text>
                     <Text style={styles.rowTime}>{timeAgo(convo.lastMessageAt)}</Text>
                   </View>
                   <Text
@@ -89,7 +103,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+    borderBottomColor: colors.borderSubtle,
   },
   avatar: {
     width: 48,

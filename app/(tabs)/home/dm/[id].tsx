@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import {
+  Alert,
   FlatList,
   KeyboardAvoidingView,
   Platform,
@@ -12,31 +13,63 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { mockConversations, mockMessages, mockUsers, type Message } from '@/data/mock';
+import { getConversations, getMessages, getProfileById } from '@/data/api';
+import type { Message } from '@/data/types';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
+const CURRENT_USER = 'profile-u1';
+
 export default function DMThreadScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const user = mockUsers.find((u) => u.id === id);
-  const convo = mockConversations.find((c) => c.withUserId === id);
-  const [messages, setMessages] = useState<Message[]>(
-    convo ? mockMessages.filter((m) => m.conversationId === convo.id) : [],
-  );
+
+  // Resolve the other participant
+  const conversations = getConversations();
+  const convo = conversations.find((c) => c.id === conversationId);
+  const otherId = convo?.participantIds.find((pid) => pid !== CURRENT_USER);
+  const other = otherId ? getProfileById(otherId) : null;
+
+  const initialMessages = conversationId ? getMessages(conversationId!) : [];
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [text, setText] = useState('');
 
   const sendMessage = () => {
     if (!text.trim()) return;
     const msg: Message = {
-      id: `m-${Date.now()}`,
-      conversationId: convo?.id ?? 'new',
-      senderId: 'me',
+      id: `msg-${Date.now()}`,
+      conversationId: conversationId ?? 'new',
+      senderId: CURRENT_USER,
       text: text.trim(),
       sentAt: new Date().toISOString(),
+      readAt: null,
     };
     setMessages((prev) => [...prev, msg]);
     setText('');
+  };
+
+  const showMenu = () => {
+    Alert.alert(undefined as any, undefined as any, [
+      {
+        text: 'Block',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Block user', `Are you sure you want to block ${other?.firstName ?? 'this user'}?`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Block', style: 'destructive', onPress: () => {} },
+          ]),
+      },
+      {
+        text: 'Report',
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert('Report user', `Are you sure you want to report ${other?.firstName ?? 'this user'}?`, [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Report', style: 'destructive', onPress: () => {} },
+          ]),
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   };
 
   return (
@@ -49,9 +82,9 @@ export default function DMThreadScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.headerName}>{user?.firstName ?? 'Chat'}</Text>
-        <Pressable onPress={() => user && router.push(`/home/user/${user.id}`)} hitSlop={12}>
-          <Ionicons name="person-circle-outline" size={24} color={colors.textMuted} />
+        <Text style={styles.headerName}>{other?.firstName ?? 'Chat'}</Text>
+        <Pressable onPress={showMenu} hitSlop={12}>
+          <Ionicons name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
         </Pressable>
       </View>
 
@@ -61,7 +94,7 @@ export default function DMThreadScreen() {
         keyExtractor={(m) => m.id}
         contentContainerStyle={styles.messageList}
         renderItem={({ item }) => {
-          const isMe = item.senderId === 'me';
+          const isMe = item.senderId === CURRENT_USER;
           return (
             <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
               <Text style={[styles.bubbleText, isMe ? styles.bubbleTextMe : styles.bubbleTextThem]}>
