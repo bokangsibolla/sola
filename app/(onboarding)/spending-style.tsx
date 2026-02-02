@@ -6,9 +6,9 @@ import OptionCard from '@/components/onboarding/OptionCard';
 import { onboardingStore } from '@/state/onboardingStore';
 
 const OPTIONS = [
-  { title: 'Backpacker vibes', subtitle: 'Street food and shared dorms', value: 'budget' },
-  { title: 'Comfortable explorer', subtitle: 'Nice spots without overthinking it', value: 'mid-range' },
-  { title: 'Treat yourself', subtitle: 'Life's short, book the suite', value: 'luxury' },
+  { title: 'Keep it simple', subtitle: 'More money for the actual experience', value: 'budget' },
+  { title: 'Somewhere in the middle', subtitle: "Nice enough without stressing about it", value: 'mid-range' },
+  { title: 'Go all out', subtitle: "If it feels amazing, it's worth it", value: 'luxury' },
 ];
 
 export default function SpendingStyleScreen() {
@@ -23,7 +23,7 @@ export default function SpendingStyleScreen() {
   return (
     <OnboardingScreen
       stage={4}
-      headline="What's your travel style?"
+      headline="How do you like to spend on a trip?"
       ctaLabel="Continue"
       ctaDisabled={!selected}
       onCtaPress={handleContinue}

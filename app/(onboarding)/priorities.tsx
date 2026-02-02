@@ -6,14 +6,14 @@ import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
 
 const OPTIONS = [
-  '🛡️ Safety & comfort',
-  '🤝 Meeting locals',
-  '🗺️ Off the beaten path',
+  '🛡️ Feeling safe & at ease',
+  '🤝 Connecting with locals',
+  '🗺️ Finding hidden gems',
   '📸 Great photo spots',
-  '💰 Budget-friendly',
-  '✨ Luxury experiences',
-  '🚶‍♀️ Solo-friendly',
-  '👩 Female-friendly spaces',
+  '💰 Getting more for less',
+  '✨ Treating myself',
+  '🚶‍♀️ Easy to do alone',
+  '👩 Welcoming spaces',
 ];
 
 export default function PrioritiesScreen() {
@@ -36,7 +36,7 @@ export default function PrioritiesScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="What do you look for in a place?"
+      headline="What matters most when you're there?"
       subtitle="Pick up to 2"
       ctaLabel="Continue"
       ctaDisabled={selected.length === 0}

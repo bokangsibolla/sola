@@ -6,10 +6,10 @@ import OptionCard from '@/components/onboarding/OptionCard';
 import { onboardingStore } from '@/state/onboardingStore';
 
 const OPTIONS = [
-  { title: 'Hostels & social stays', subtitle: 'Meet people, share stories', value: 'hostels' },
-  { title: 'Boutique hotels & B&Bs', subtitle: 'Charming spots with character', value: 'boutique' },
-  { title: 'Apartments & homestays', subtitle: 'Live like a local', value: 'apartments' },
-  { title: 'Luxury hotels & resorts', subtitle: 'Robes and room service', value: 'luxury' },
+  { title: 'Around other people', subtitle: 'Common rooms, shared energy', value: 'hostels' },
+  { title: 'Something with character', subtitle: 'Small, cosy, a bit different', value: 'boutique' },
+  { title: 'My own space', subtitle: 'A kitchen, a couch, a front door', value: 'apartments' },
+  { title: 'Fully taken care of', subtitle: 'Someone else handles the details', value: 'luxury' },
 ];
 
 export default function StayPreferenceScreen() {
@@ -25,7 +25,7 @@ export default function StayPreferenceScreen() {
   return (
     <OnboardingScreen
       stage={4}
-      headline="Where do you like to stay?"
+      headline="What makes you feel at home away from home?"
       ctaLabel="Continue"
       ctaDisabled={!selected}
       onCtaPress={handleContinue}

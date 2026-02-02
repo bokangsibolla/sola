@@ -6,14 +6,14 @@ import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
 
 const OPTIONS = [
-  '🏛️ Culture & history',
-  '🌿 Nature & outdoors',
-  '🍜 Food & markets',
-  '🌙 Nightlife & social',
-  '🧘 Wellness & relaxation',
-  '🧗 Adventure & sports',
-  '🛍️ Shopping & fashion',
-  '🎨 Art & creativity',
+  '🏛️ History and culture',
+  '🌿 Being outdoors',
+  '🍜 Trying the food',
+  '🌙 Going out at night',
+  '🧘 Rest and wellness',
+  '🧗 Adventure and sports',
+  '🛍️ Shopping and markets',
+  '🎨 Art and creative spaces',
 ];
 
 export default function DayStyleScreen() {
@@ -36,7 +36,7 @@ export default function DayStyleScreen() {
   return (
     <OnboardingScreen
       stage={3}
-      headline="What's your kind of day?"
+      headline="What gets you excited about a new place?"
       subtitle="Pick up to 2"
       ctaLabel="Continue"
       ctaDisabled={selected.length === 0}
