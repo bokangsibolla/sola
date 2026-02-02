@@ -74,6 +74,7 @@ function PriceDots({ level }: { level: number | null }) {
 // ---------------------------------------------------------------------------
 
 function PlaceCard({ place }: { place: Place }) {
+  const router = useRouter();
   const imageUrl = getPlaceFirstImage(place.id);
   const tags = getPlaceTags(place.id).slice(0, 3);
   const [saved, setSaved] = useState(() => isPlaceSaved('me', place.id));
@@ -84,7 +85,10 @@ function PlaceCard({ place }: { place: Place }) {
   }, [place.id]);
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      onPress={() => router.push(`/explore/place-detail/${place.id}`)}
+      style={styles.card}
+    >
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.cardImage} />
       ) : (
@@ -143,7 +147,7 @@ function PlaceCard({ place }: { place: Place }) {
           </Text>
         </Pressable>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
