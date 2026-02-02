@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -13,8 +13,9 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getConversations, getMessages, getProfileById, sendMessage as apiSendMessage } from '@/data/api';
+import { getConversations, getMessages, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser } from '@/data/api';
 import { useData } from '@/hooks/useData';
+import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import type { Message } from '@/data/types';
@@ -50,6 +51,15 @@ export default function DMThreadScreen() {
     if (fetchedMessages) setMessages(fetchedMessages);
   }, [fetchedMessages]);
 
+  const handleRealtimeMessage = useCallback((msg: Message) => {
+    setMessages((prev) => {
+      if (prev.some((m) => m.id === msg.id)) return prev;
+      return [...prev, msg];
+    });
+  }, []);
+
+  useRealtimeMessages(conversationId, userId, handleRealtimeMessage);
+
   const [sending, setSending] = useState(false);
 
   const sendMessage = async () => {
@@ -68,25 +78,54 @@ export default function DMThreadScreen() {
     }
   };
 
+  const otherId = other?.id;
+
+  const handleBlock = async () => {
+    if (!userId || !otherId) return;
+    try {
+      await blockUser(userId, otherId);
+      Alert.alert('Blocked', `${other?.firstName ?? 'User'} has been blocked.`);
+      router.back();
+    } catch {
+      Alert.alert('Error', 'Could not block user. Please try again.');
+    }
+  };
+
+  const handleReport = async (reason: string) => {
+    if (!userId || !otherId) return;
+    try {
+      await reportUser(userId, otherId, reason);
+      Alert.alert('Reported', 'Thank you. We will review this report.');
+    } catch {
+      Alert.alert('Error', 'Could not submit report. Please try again.');
+    }
+  };
+
+  const showReportReasons = () => {
+    Alert.alert('Why are you reporting?', undefined, [
+      { text: 'Harassment', onPress: () => handleReport('harassment') },
+      { text: 'Spam', onPress: () => handleReport('spam') },
+      { text: 'Inappropriate content', onPress: () => handleReport('inappropriate') },
+      { text: 'Makes me feel unsafe', onPress: () => handleReport('safety') },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
+  };
+
   const showMenu = () => {
     Alert.alert(undefined as any, undefined as any, [
       {
         text: 'Block',
         style: 'destructive',
         onPress: () =>
-          Alert.alert('Block user', `Are you sure you want to block ${other?.firstName ?? 'this user'}?`, [
+          Alert.alert('Block user', `Are you sure you want to block ${other?.firstName ?? 'this user'}? You will no longer see their messages.`, [
             { text: 'Cancel', style: 'cancel' },
-            { text: 'Block', style: 'destructive', onPress: () => {} },
+            { text: 'Block', style: 'destructive', onPress: handleBlock },
           ]),
       },
       {
         text: 'Report',
         style: 'destructive',
-        onPress: () =>
-          Alert.alert('Report user', `Are you sure you want to report ${other?.firstName ?? 'this user'}?`, [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Report', style: 'destructive', onPress: () => {} },
-          ]),
+        onPress: showReportReasons,
       },
       { text: 'Cancel', style: 'cancel' },
     ]);
