@@ -1,21 +1,36 @@
+import React, { useCallback, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
+import AppHeader from '@/components/AppHeader';
 import { onboardingStore } from '@/state/onboardingStore';
-import { mockCollections } from '@/data/mock';
+import { getCollections, getSavedPlaces, getCollectionPlaces } from '@/data/api';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const [, setTick] = useState(0);
+
+  // Re-read store every time tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      setTick((t) => t + 1);
+    }, []),
+  );
+
   const data = onboardingStore.getData();
   const country = countries.find((c) => c.iso2 === data.countryIso2);
+  const collections = getCollections('me');
+  const saved = getSavedPlaces('me');
 
   return (
     <AppScreen>
+      <AppHeader title="Profile" />
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Profile header */}
+        {/* Avatar + info */}
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             {data.photoUri ? (
@@ -28,19 +43,11 @@ export default function ProfileScreen() {
           </View>
           <Text style={styles.name}>{data.firstName || 'Traveler'}</Text>
           {country && (
-            <Text style={styles.origin}>{country.flag ?? ''} {country.name}</Text>
+            <Text style={styles.origin}>
+              {country.flag ?? ''} {country.name}
+            </Text>
           )}
-          {data.bio ? (
-            <Text style={styles.bio}>{data.bio}</Text>
-          ) : null}
-
-          <Pressable
-            style={styles.editButton}
-            onPress={() => router.push('/profile/edit')}
-          >
-            <Ionicons name="create-outline" size={16} color={colors.orange} />
-            <Text style={styles.editButtonText}>Edit profile</Text>
-          </Pressable>
+          {data.bio ? <Text style={styles.bio}>{data.bio}</Text> : null}
         </View>
 
         {/* Interests */}
@@ -57,52 +64,69 @@ export default function ProfileScreen() {
           </View>
         )}
 
+        {/* Stats */}
+        <Text style={styles.stats}>
+          {saved.length} {saved.length === 1 ? 'place' : 'places'} saved
+          {'  ·  '}
+          {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+        </Text>
+
         {/* Collections */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Collections</Text>
-          {mockCollections.length === 0 ? (
+          {collections.length === 0 ? (
             <Text style={styles.emptyText}>
               Save places into collections as you explore.
             </Text>
           ) : (
-            mockCollections.map((col) => (
-              <Pressable
-                key={col.id}
-                style={styles.collectionRow}
-                onPress={() => router.push(`/profile/collections/${col.id}`)}
-              >
-                <Text style={styles.collectionEmoji}>{col.emoji}</Text>
-                <View style={styles.collectionText}>
-                  <Text style={styles.collectionName}>{col.name}</Text>
-                  <Text style={styles.collectionCount}>
-                    {col.placeIds.length} {col.placeIds.length === 1 ? 'place' : 'places'}
-                  </Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-              </Pressable>
-            ))
+            collections.map((col) => {
+              const placeCount = getCollectionPlaces(col.id, 'me').length;
+              return (
+                <Pressable
+                  key={col.id}
+                  style={styles.collectionRow}
+                  onPress={() => router.push(`/profile/collections/${col.id}`)}
+                >
+                  <Text style={styles.collectionEmoji}>{col.emoji}</Text>
+                  <View style={styles.collectionText}>
+                    <Text style={styles.collectionName}>{col.name}</Text>
+                    <Text style={styles.collectionCount}>
+                      {placeCount} {placeCount === 1 ? 'place' : 'places'}
+                    </Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </Pressable>
+              );
+            })
           )}
         </View>
 
-        {/* Settings link */}
-        <Pressable
-          style={styles.settingsRow}
-          onPress={() => router.push('/profile/settings')}
-        >
-          <Ionicons name="settings-outline" size={20} color={colors.textPrimary} />
-          <Text style={styles.settingsText}>Privacy & settings</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
+        {/* Action buttons */}
+        <View style={styles.actionRow}>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => router.push('/profile/edit')}
+          >
+            <Ionicons name="create-outline" size={18} color={colors.orange} />
+            <Text style={styles.actionLabel}>Edit profile</Text>
+          </Pressable>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => router.push('/profile/settings')}
+          >
+            <Ionicons name="settings-outline" size={18} color={colors.orange} />
+            <Text style={styles.actionLabel}>Settings</Text>
+          </Pressable>
+          <Pressable
+            style={styles.actionButton}
+            onPress={() => router.push('/home/dm')}
+          >
+            <Ionicons name="chatbubbles-outline" size={18} color={colors.orange} />
+            <Text style={styles.actionLabel}>Messages</Text>
+          </Pressable>
+        </View>
 
-        {/* Messages link */}
-        <Pressable
-          style={styles.settingsRow}
-          onPress={() => router.push('/home/dm')}
-        >
-          <Ionicons name="chatbubbles-outline" size={20} color={colors.textPrimary} />
-          <Text style={styles.settingsText}>Messages</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
+        <View style={{ height: spacing.xxl }} />
       </ScrollView>
     </AppScreen>
   );
@@ -111,16 +135,15 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   header: {
     alignItems: 'center',
-    paddingTop: spacing.xl,
     paddingBottom: spacing.xl,
   },
   avatarContainer: {
     marginBottom: spacing.md,
   },
   avatar: {
-    width: 96,
-    height: 96,
-    borderRadius: 48,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
   },
   avatarPlaceholder: {
     backgroundColor: colors.borderDefault,
@@ -143,21 +166,12 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     paddingHorizontal: spacing.xl,
   },
-  editButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.orange,
-    borderRadius: radius.button,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  editButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.orange,
+  stats: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xl,
   },
   section: {
     marginBottom: spacing.xl,
@@ -211,17 +225,26 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
-  settingsRow: {
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  actionButton: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+    justifyContent: 'center',
+    gap: 6,
+    borderWidth: 1,
+    borderColor: colors.orange,
+    borderRadius: radius.button,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.sm,
   },
-  settingsText: {
-    ...typography.body,
-    color: colors.textPrimary,
-    flex: 1,
+  actionLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.orange,
   },
 });
