@@ -10,11 +10,10 @@ export default function ProfileScreen() {
   const router = useRouter();
   const data = onboardingStore.getData();
 
-  const formatValue = (value: string | null): string => {
+  const formatValue = (value: string | string[] | null): string => {
+    if (Array.isArray(value)) return value.length > 0 ? value.join(', ') : 'Not set';
     return value || 'Not set';
   };
-
-  const fullName = [data.firstName, data.middleName, data.lastName].filter(Boolean).join(' ');
 
   return (
     <AppScreen>
@@ -25,31 +24,37 @@ export default function ProfileScreen() {
 
           <View style={styles.item}>
             <Label>Name</Label>
-            <Body>{formatValue(fullName || null)}</Body>
+            <Body>{formatValue(data.firstName || null)}</Body>
           </View>
 
           <View style={styles.item}>
             <Label>Home country</Label>
-            <Body>{formatValue(data.homeCountryName)}</Body>
+            <Body>{formatValue(data.countryName || null)}</Body>
           </View>
 
           <View style={styles.item}>
             <Label>Travel intent</Label>
-            <Body>{formatValue(data.intent)}</Body>
+            <Body>{formatValue(data.tripIntent || null)}</Body>
           </View>
 
           <View style={styles.item}>
-            <Label>Trip destination</Label>
-            <Body>{formatValue(data.tripLocationName)}</Body>
+            <Label>Day style</Label>
+            <Body>{formatValue(data.dayStyle)}</Body>
           </View>
 
           <View style={styles.item}>
-            <Label>Trip dates</Label>
-            <Body>
-              {data.tripStartDate
-                ? `${data.tripStartDate}${data.tripEndDate ? ` — ${data.tripEndDate}` : ''}`
-                : 'Not set'}
-            </Body>
+            <Label>Priorities</Label>
+            <Body>{formatValue(data.priorities)}</Body>
+          </View>
+
+          <View style={styles.item}>
+            <Label>Stay preference</Label>
+            <Body>{formatValue(data.stayPreference || null)}</Body>
+          </View>
+
+          <View style={styles.item}>
+            <Label>Spending style</Label>
+            <Body>{formatValue(data.spendingStyle || null)}</Body>
           </View>
         </View>
 
@@ -78,7 +83,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orange,
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
-    borderRadius: radius.md,
+    borderRadius: radius.card,
     alignItems: 'center',
     marginTop: spacing.md,
     marginBottom: spacing.xl,
