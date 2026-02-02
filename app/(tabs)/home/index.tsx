@@ -1,13 +1,17 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { getProfiles, getCityById } from '@/data/api';
+import { getProfilesPaginated, getCityById, getBlockedUserIds } from '@/data/api';
 import { useData } from '@/hooks/useData';
+import { usePaginatedData } from '@/hooks/usePaginatedData';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { getImageUrl } from '@/lib/image';
+import type { Profile } from '@/data/types';
 
 function countryFlag(iso2: string): string {
   return [...iso2.toUpperCase()]
@@ -17,7 +21,19 @@ function countryFlag(iso2: string): string {
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { data: profiles, loading, error, refetch } = useData(() => getProfiles());
+  const { userId } = useAuth();
+  const { data: allProfiles, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
+    queryKey: ['profiles'],
+    fetcher: (page) => getProfilesPaginated(page),
+  });
+  const { data: blockedIds } = useData(
+    () => (userId ? getBlockedUserIds(userId) : Promise.resolve([])),
+    [userId],
+  );
+
+  const visibleProfiles = allProfiles.filter(
+    (p) => p.id !== userId && !(blockedIds ?? []).includes(p.id),
+  );
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -40,21 +56,27 @@ export default function HomeScreen() {
         }
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Travelers near you</Text>
-        <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
-
-        <View style={styles.feed}>
-          {(profiles ?? []).map((profile) => (
-            <ProfileCard key={profile.id} profile={profile} />
-          ))}
-        </View>
-      </ScrollView>
+      <FlatList
+        data={visibleProfiles}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        ListHeaderComponent={
+          <>
+            <Text style={styles.sectionTitle}>Travelers near you</Text>
+            <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
+          </>
+        }
+        contentContainerStyle={styles.feed}
+        renderItem={({ item }) => <ProfileCard profile={item} />}
+        onEndReached={() => { if (hasMore) fetchMore(); }}
+        onEndReachedThreshold={0.5}
+        ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ padding: 16 }} /> : null}
+      />
     </AppScreen>
   );
 }
 
-function ProfileCard({ profile }: { profile: Awaited<ReturnType<typeof getProfiles>>[number] }) {
+function ProfileCard({ profile }: { profile: Profile }) {
   const router = useRouter();
   const { data: city } = useData(
     () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
@@ -69,7 +91,7 @@ function ProfileCard({ profile }: { profile: Awaited<ReturnType<typeof getProfil
       <View style={styles.cardTop}>
         <View style={styles.avatarWrap}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 })! }} style={styles.avatar} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Feather name="user" size={24} color={colors.textMuted} />
