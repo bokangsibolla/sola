@@ -51,7 +51,7 @@ export default function RootLayout() {
     // Only redirect if user has completed onboarding and is in onboarding group
     // Don't interfere with navigation within onboarding flow
     if (currentGroup === '(onboarding)' && isOnboardingCompleted) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/home');
     }
   }, [segments, router]);
 

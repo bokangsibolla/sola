@@ -17,7 +17,7 @@ export default function YoureInScreen() {
 
   const handleFinish = () => {
     onboardingStore.set('onboardingCompleted', true);
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   };
 
   return (

@@ -16,12 +16,12 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     // TODO: Supabase auth — supabase.auth.signInWithPassword({ email, password })
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   };
 
   const handleSocialLogin = (provider: string) => {
     // TODO: Supabase OAuth
-    router.replace('/(tabs)');
+    router.replace('/(tabs)/home');
   };
 
   return (
