@@ -20,6 +20,7 @@ import { Ionicons } from '@expo/vector-icons';
 const queryClient = new QueryClient();
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
 
@@ -82,6 +83,8 @@ function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
   const { userId, loading: authLoading } = useAuth();
+
+  usePushNotifications(userId);
 
   useEffect(() => {
     if (authLoading) return;
