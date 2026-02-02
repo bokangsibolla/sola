@@ -4,6 +4,10 @@ import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getTrips, getCountryByIso2 } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const STATUS_COLORS = {
@@ -31,7 +35,11 @@ function getFlag(iso2: string): string {
 
 export default function TripsScreen() {
   const router = useRouter();
-  const trips = getTrips('me');
+  const { userId } = useAuth();
+  const { data: trips, loading, error, refetch } = useData(() => getTrips(userId), [userId]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   return (
     <AppScreen>
@@ -48,7 +56,7 @@ export default function TripsScreen() {
         }
       />
       <ScrollView showsVerticalScrollIndicator={false}>
-        {trips.length === 0 ? (
+        {(trips ?? []).length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="airplane-outline" size={48} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No trips yet</Text>
@@ -60,7 +68,7 @@ export default function TripsScreen() {
             </Pressable>
           </View>
         ) : (
-          trips.map((trip) => {
+          (trips ?? []).map((trip) => {
             const flag = getFlag(trip.countryIso2);
             const statusStyle = STATUS_COLORS[trip.status];
             return (

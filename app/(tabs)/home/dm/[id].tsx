@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -14,32 +14,43 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getConversations, getMessages, getProfileById } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import type { Message } from '@/data/types';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-
-const CURRENT_USER = 'profile-u1';
 
 export default function DMThreadScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { userId } = useAuth();
+
+  const { data: fetchedMessages, loading, error, refetch } = useData(
+    () => (conversationId ? getMessages(conversationId) : []),
+    [conversationId],
+  );
 
   // Resolve the other participant
   const conversations = getConversations();
   const convo = conversations.find((c) => c.id === conversationId);
-  const otherId = convo?.participantIds.find((pid) => pid !== CURRENT_USER);
+  const otherId = convo?.participantIds.find((pid) => pid !== userId);
   const other = otherId ? getProfileById(otherId) : null;
 
-  const initialMessages = conversationId ? getMessages(conversationId!) : [];
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
+
+  useEffect(() => {
+    if (fetchedMessages) setMessages(fetchedMessages);
+  }, [fetchedMessages]);
 
   const sendMessage = () => {
     if (!text.trim()) return;
     const msg: Message = {
       id: `msg-${Date.now()}`,
       conversationId: conversationId ?? 'new',
-      senderId: CURRENT_USER,
+      senderId: userId,
       text: text.trim(),
       sentAt: new Date().toISOString(),
       readAt: null,
@@ -72,6 +83,9 @@ export default function DMThreadScreen() {
     ]);
   };
 
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
+
   return (
     <KeyboardAvoidingView
       style={[styles.container, { paddingTop: insets.top }]}
@@ -94,7 +108,7 @@ export default function DMThreadScreen() {
         keyExtractor={(m) => m.id}
         contentContainerStyle={styles.messageList}
         renderItem={({ item }) => {
-          const isMe = item.senderId === CURRENT_USER;
+          const isMe = item.senderId === userId;
           return (
             <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
               <Text style={[styles.bubbleText, isMe ? styles.bubbleTextMe : styles.bubbleTextThem]}>

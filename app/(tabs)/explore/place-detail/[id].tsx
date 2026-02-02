@@ -12,6 +12,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useData } from '@/hooks/useData';
 import {
   getPlaceById,
   getPlaceMedia,
@@ -22,6 +25,7 @@ import {
   toggleSavePlace,
 } from '@/data/api';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useAuth } from '@/state/AuthContext';
 import type { Tag } from '@/data/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -80,7 +84,7 @@ export default function PlaceDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const place = getPlaceById(id ?? '');
+  const { data: place, loading, error, refetch } = useData(() => getPlaceById(id ?? ''), [id]);
   const media = getPlaceMedia(id ?? '');
   const tags = getPlaceTags(id ?? '');
   const category = place?.primaryCategoryId
@@ -88,11 +92,12 @@ export default function PlaceDetailScreen() {
     : undefined;
   const city = place ? getCityById(place.cityId) : undefined;
 
-  const [saved, setSaved] = useState(() => isPlaceSaved('me', id ?? ''));
+  const { userId } = useAuth();
+  const [saved, setSaved] = useState(() => isPlaceSaved(userId, id ?? ''));
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const handleSave = useCallback(() => {
-    const next = toggleSavePlace('me', id ?? '');
+    const next = toggleSavePlace(userId, id ?? '');
     setSaved(next);
   }, [id]);
 
@@ -139,6 +144,9 @@ export default function PlaceDetailScreen() {
   }, [tags]);
 
   const images = media.filter((m) => m.mediaType === 'image');
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!place) {
     return (

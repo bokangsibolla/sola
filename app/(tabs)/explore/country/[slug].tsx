@@ -3,6 +3,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getCountryBySlug, getCountryContent, getCitiesByCountry, getCityContent } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
@@ -16,7 +19,11 @@ export default function CountryGuideScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const country = getCountryBySlug(slug);
+  const { data: country, loading, error, refetch } = useData(() => getCountryBySlug(slug), [slug]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
+
   const content = country ? getCountryContent(country.id) : undefined;
   const cities = country ? getCitiesByCountry(country.id) : [];
 

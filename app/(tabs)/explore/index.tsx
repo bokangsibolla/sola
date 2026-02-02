@@ -5,6 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getCountries, getCountryContent, searchDestinations } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const SAFETY_COLORS: Record<string, { bg: string; text: string; label: string }> = {
@@ -18,11 +21,11 @@ export default function ExploreScreen() {
   const router = useRouter();
   const [search, setSearch] = useState('');
 
-  const countries = useMemo(() => getCountries(), []);
+  const { data: countries, loading, error, refetch } = useData(() => getCountries());
 
   const countriesWithContent = useMemo(
     () =>
-      countries.map((c) => ({
+      (countries ?? []).map((c) => ({
         country: c,
         content: getCountryContent(c.id),
       })),
@@ -35,6 +38,9 @@ export default function ExploreScreen() {
   }, [search]);
 
   const isSearching = searchResults !== null;
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   return (
     <AppScreen>

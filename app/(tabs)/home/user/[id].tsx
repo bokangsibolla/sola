@@ -3,13 +3,19 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { getProfileById, getSavedPlaces, getPlaceById, getPlaceFirstImage, getCityById } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const profile = getProfileById(id!);
+  const { data: profile, loading, error, refetch } = useData(() => getProfileById(id ?? ''), [id]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!profile) {
     return (
@@ -81,14 +87,6 @@ export default function UserProfileScreen() {
           </>
         )}
 
-        {/* Travel style */}
-        {profile.travelStyle && (
-          <>
-            <Text style={styles.sectionTitle}>Travel style</Text>
-            <Text style={styles.travelStyle}>{profile.travelStyle}</Text>
-          </>
-        )}
-
         {/* Saved places */}
         {resolvedPlaces.length > 0 && (
           <>
@@ -99,16 +97,16 @@ export default function UserProfileScreen() {
               contentContainerStyle={styles.placesRow}
             >
               {resolvedPlaces.map((place) => (
-                <View key={place!.id} style={styles.placeCard}>
-                  {place!.imageUrl ? (
-                    <Image source={{ uri: place!.imageUrl }} style={styles.placeImage} />
+                <View key={place.id} style={styles.placeCard}>
+                  {place.imageUrl ? (
+                    <Image source={{ uri: place.imageUrl }} style={styles.placeImage} />
                   ) : (
                     <View style={[styles.placeImage, styles.placeImagePlaceholder]}>
                       <Ionicons name="image-outline" size={20} color={colors.textMuted} />
                     </View>
                   )}
                   <Text style={styles.placeName} numberOfLines={1}>
-                    {place!.name}
+                    {place.name}
                   </Text>
                 </View>
               ))}
@@ -219,11 +217,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.orange,
-  },
-  travelStyle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
   },
   placesRow: {
     gap: spacing.md,

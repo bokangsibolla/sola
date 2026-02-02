@@ -7,6 +7,10 @@ import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { onboardingStore } from '@/state/onboardingStore';
 import { getCollections, getSavedPlaces, getCollectionPlaces } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useAuth } from '@/state/AuthContext';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
@@ -21,10 +25,15 @@ export default function ProfileScreen() {
     }, []),
   );
 
+  const { userId } = useAuth();
   const data = onboardingStore.getData();
   const country = countries.find((c) => c.iso2 === data.countryIso2);
-  const collections = getCollections('me');
-  const saved = getSavedPlaces('me');
+  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => getCollections(userId), [userId]);
+  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => getSavedPlaces(userId), [userId]);
+
+  if (loadingCol || loadingSaved) return <LoadingScreen />;
+  if (errorCol) return <ErrorScreen message={errorCol.message} onRetry={refetchCol} />;
+  if (errorSaved) return <ErrorScreen message={errorSaved.message} onRetry={refetchSaved} />;
 
   return (
     <AppScreen>
@@ -66,21 +75,21 @@ export default function ProfileScreen() {
 
         {/* Stats */}
         <Text style={styles.stats}>
-          {saved.length} {saved.length === 1 ? 'place' : 'places'} saved
+          {(saved ?? []).length} {(saved ?? []).length === 1 ? 'place' : 'places'} saved
           {'  ·  '}
-          {collections.length} {collections.length === 1 ? 'collection' : 'collections'}
+          {(collections ?? []).length} {(collections ?? []).length === 1 ? 'collection' : 'collections'}
         </Text>
 
         {/* Collections */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Collections</Text>
-          {collections.length === 0 ? (
+          {(collections ?? []).length === 0 ? (
             <Text style={styles.emptyText}>
               Save places into collections as you explore.
             </Text>
           ) : (
-            collections.map((col) => {
-              const placeCount = getCollectionPlaces(col.id, 'me').length;
+            (collections ?? []).map((col) => {
+              const placeCount = getCollectionPlaces(col.id, userId).length;
               return (
                 <Pressable
                   key={col.id}

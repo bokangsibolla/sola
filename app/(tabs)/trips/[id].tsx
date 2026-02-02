@@ -13,8 +13,12 @@ import {
   isPlaceSaved,
   toggleSavePlace,
 } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { getEmergencyNumbers } from '@/data/safety';
 import type { Place, Tag } from '@/data/types';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -56,10 +60,11 @@ function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
   const imageUrl = getPlaceFirstImage(place.id);
   const tags = getPlaceTags(place.id).slice(0, 3);
-  const [saved, setSaved] = useState(() => isPlaceSaved('me', place.id));
+  const { userId } = useAuth();
+  const [saved, setSaved] = useState(() => isPlaceSaved(userId, place.id));
 
   const handleSave = useCallback(() => {
-    const next = toggleSavePlace('me', place.id);
+    const next = toggleSavePlace(userId, place.id);
     setSaved(next);
   }, [place.id]);
 
@@ -120,7 +125,11 @@ export default function TripDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const trip = getTripById(id ?? '');
+  const { data: trip, loading, error, refetch } = useData(() => getTripById(id ?? ''), [id]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
+
   const city = trip ? getCityById(trip.destinationCityId) : undefined;
   const country = trip ? getCountryByIso2(trip.countryIso2) : undefined;
   const emergency = trip ? getEmergencyNumbers(trip.countryIso2) : null;

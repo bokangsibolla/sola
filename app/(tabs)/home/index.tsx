@@ -1,14 +1,26 @@
 import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 import { getProfiles, getCityById } from '@/data/api';
+import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+
+function countryFlag(iso2: string): string {
+  return [...iso2.toUpperCase()]
+    .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
+    .join('');
+}
 
 export default function HomeScreen() {
   const router = useRouter();
-  const profiles = getProfiles();
+  const { data: profiles, loading, error, refetch } = useData(() => getProfiles());
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   return (
     <AppScreen>
@@ -22,8 +34,8 @@ export default function HomeScreen() {
           />
         }
         rightComponent={
-          <Pressable onPress={() => router.push('/home/dm')} hitSlop={12}>
-            <Ionicons name="chatbubble-outline" size={22} color={colors.textPrimary} />
+          <Pressable onPress={() => router.push('/home/dm')} hitSlop={12} style={styles.inboxBtn}>
+            <Feather name="message-circle" size={20} color={colors.orange} />
           </Pressable>
         }
       />
@@ -33,7 +45,7 @@ export default function HomeScreen() {
         <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
 
         <View style={styles.feed}>
-          {profiles.map((profile) => {
+          {(profiles ?? []).map((profile) => {
             const city = profile.currentCityId ? getCityById(profile.currentCityId) : null;
             return (
               <Pressable
@@ -47,17 +59,20 @@ export default function HomeScreen() {
                       <Image source={{ uri: profile.avatarUrl }} style={styles.avatar} />
                     ) : (
                       <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                        <Ionicons name="person" size={24} color={colors.textMuted} />
+                        <Feather name="user" size={24} color={colors.textMuted} />
                       </View>
                     )}
                     {profile.isOnline && <View style={styles.onlineDot} />}
                   </View>
 
                   <View style={styles.cardInfo}>
-                    <Text style={styles.cardName}>{profile.firstName}</Text>
+                    <Text style={styles.cardName}>
+                      {profile.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}
+                      {profile.firstName}
+                    </Text>
                     {(city || profile.currentCityName) && (
                       <View style={styles.locationRow}>
-                        <Ionicons name="location" size={12} color={colors.orange} />
+                        <Feather name="map-pin" size={12} color={colors.orange} />
                         <Text style={styles.locationText}>
                           {city?.name ?? profile.currentCityName}
                         </Text>
@@ -81,9 +96,6 @@ export default function HomeScreen() {
                   </View>
                 )}
 
-                {profile.travelStyle && (
-                  <Text style={styles.travelStyle}>{profile.travelStyle}</Text>
-                )}
               </Pressable>
             );
           })}
@@ -95,8 +107,16 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   logo: {
-    height: 22,
-    width: 60,
+    height: 30,
+    width: 90,
+  },
+  inboxBtn: {
+    backgroundColor: colors.orangeFill,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   sectionTitle: {
     ...typography.h2,
@@ -187,11 +207,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12,
     color: colors.orange,
-  },
-  travelStyle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: spacing.sm,
   },
 });

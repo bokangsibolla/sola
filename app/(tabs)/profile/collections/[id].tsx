@@ -12,6 +12,10 @@ import {
   toggleSavePlace,
   isPlaceSaved,
 } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 export default function CollectionDetailScreen() {
@@ -19,7 +23,10 @@ export default function CollectionDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const collection = getCollectionById(id ?? '');
+  const { data: collection, loading, error, refetch } = useData(() => getCollectionById(id ?? ''), [id]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!collection) {
     return (
@@ -34,7 +41,8 @@ export default function CollectionDetailScreen() {
     );
   }
 
-  const places = getCollectionPlaces(collection.id, 'me');
+  const { userId } = useAuth();
+  const places = getCollectionPlaces(collection.id, userId);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -61,7 +69,7 @@ export default function CollectionDetailScreen() {
             const imageUrl = getPlaceFirstImage(place.id);
             const tags = getPlaceTags(place.id);
             const category = place.primaryCategoryId ? getCategory(place.primaryCategoryId) : null;
-            const saved = isPlaceSaved('me', place.id);
+            const saved = isPlaceSaved(userId, place.id);
 
             return (
               <Pressable
@@ -81,7 +89,7 @@ export default function CollectionDetailScreen() {
                       hitSlop={8}
                       onPress={(e) => {
                         e.stopPropagation?.();
-                        toggleSavePlace('me', place.id, collection.id);
+                        toggleSavePlace(userId, place.id, collection.id);
                       }}
                     >
                       <Ionicons

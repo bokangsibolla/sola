@@ -4,9 +4,11 @@ import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getConversations, getProfileById } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-
-const CURRENT_USER = 'profile-u1';
 
 function timeAgo(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
@@ -21,7 +23,11 @@ function timeAgo(iso: string): string {
 
 export default function DMListScreen() {
   const router = useRouter();
-  const conversations = getConversations();
+  const { userId } = useAuth();
+  const { data: conversations, loading, error, refetch } = useData(() => getConversations());
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   return (
     <AppScreen>
@@ -35,7 +41,7 @@ export default function DMListScreen() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {conversations.length === 0 ? (
+        {(conversations ?? []).length === 0 ? (
           <View style={styles.empty}>
             <Ionicons name="chatbubbles-outline" size={32} color={colors.textMuted} />
             <Text style={styles.emptyText}>
@@ -43,8 +49,8 @@ export default function DMListScreen() {
             </Text>
           </View>
         ) : (
-          conversations.map((convo) => {
-            const otherId = convo.participantIds.find((pid) => pid !== CURRENT_USER);
+          (conversations ?? []).map((convo) => {
+            const otherId = convo.participantIds.find((pid) => pid !== userId);
             const other = otherId ? getProfileById(otherId) : null;
             if (!other) return null;
 

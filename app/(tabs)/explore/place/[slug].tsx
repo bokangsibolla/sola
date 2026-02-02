@@ -11,6 +11,9 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useData } from '@/hooks/useData';
 import {
   getCityBySlug,
   getCityContent,
@@ -22,6 +25,7 @@ import {
   isPlaceSaved,
   toggleSavePlace,
 } from '@/data/api';
+import { useAuth } from '@/state/AuthContext';
 import type { Place, Tag } from '@/data/types';
 
 // ---------------------------------------------------------------------------
@@ -76,11 +80,12 @@ function PriceDots({ level }: { level: number | null }) {
 function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
   const imageUrl = getPlaceFirstImage(place.id);
+  const { userId } = useAuth();
   const tags = getPlaceTags(place.id).slice(0, 3);
-  const [saved, setSaved] = useState(() => isPlaceSaved('me', place.id));
+  const [saved, setSaved] = useState(() => isPlaceSaved(userId, place.id));
 
   const handleSave = useCallback(() => {
-    const next = toggleSavePlace('me', place.id);
+    const next = toggleSavePlace(userId, place.id);
     setSaved(next);
   }, [place.id]);
 
@@ -160,9 +165,12 @@ export default function PlaceScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const city = getCityBySlug(slug ?? '');
+  const { data: city, loading, error, refetch } = useData(() => getCityBySlug(slug ?? ''), [slug]);
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!city) {
     return (
