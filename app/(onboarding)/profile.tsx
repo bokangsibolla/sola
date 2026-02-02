@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   Image,
@@ -27,9 +27,7 @@ import { colors, fonts, radius } from '@/constants/design';
 
 const BIO_MAX = 140;
 
-const POPULAR_COUNTRIES = [
-  'US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT',
-];
+const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -37,16 +35,26 @@ export default function ProfileScreen() {
   const [firstName, setFirstName] = useState('');
   const [bio, setBio] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
-  const [countrySearch, setCountrySearch] = useState('');
+  const [search, setSearch] = useState('');
   const [showConfirmation, setShowConfirmation] = useState(false);
   const photoScale = useSharedValue(1);
 
-  const filteredCountries =
-    countrySearch.length >= 2
-      ? countries.filter((c) =>
-          c.name.toLowerCase().includes(countrySearch.toLowerCase()),
-        )
-      : [];
+  // When searching, show filtered results as pills. Otherwise show popular.
+  const displayedCountries = useMemo(() => {
+    if (search.length < 2) {
+      return POPULAR_ISO
+        .map((iso) => countries.find((c) => c.iso2 === iso))
+        .filter(Boolean) as typeof countries;
+    }
+    const q = search.toLowerCase();
+    return countries.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
+  }, [search]);
+
+  // If selected country isn't in the displayed list, show it as a standalone pill
+  const selectedCountryData = selectedCountry
+    ? countries.find((c) => c.iso2 === selectedCountry)
+    : null;
+  const selectedInList = displayedCountries.some((c) => c.iso2 === selectedCountry);
 
   const remaining = BIO_MAX - bio.length;
   const counterColor =
@@ -56,16 +64,8 @@ export default function ProfileScreen() {
 
   const pickImage = async (fromCamera: boolean) => {
     const result = fromCamera
-      ? await ImagePicker.launchCameraAsync({
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        })
-      : await ImagePicker.launchImageLibraryAsync({
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.8,
-        });
+      ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
+      : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
 
     if (!result.canceled && result.assets[0]) {
       setPhotoUri(result.assets[0].uri);
@@ -82,10 +82,7 @@ export default function ProfileScreen() {
   const handlePhotoPress = () => {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: ['Cancel', 'Take photo', 'Choose from library'],
-          cancelButtonIndex: 0,
-        },
+        { options: ['Cancel', 'Take photo', 'Choose from library'], cancelButtonIndex: 0 },
         (index) => {
           if (index === 1) pickImage(true);
           if (index === 2) pickImage(false);
@@ -98,7 +95,7 @@ export default function ProfileScreen() {
 
   const handleCountrySelect = (iso2: string) => {
     setSelectedCountry(iso2);
-    setCountrySearch('');
+    setSearch('');
   };
 
   const handleBioChange = (text: string) => {
@@ -128,95 +125,93 @@ export default function ProfileScreen() {
       onCtaPress={handleContinue}
     >
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-      {/* Photo circle */}
-      <View style={styles.photoSection}>
-        <Pressable onPress={handlePhotoPress}>
-          <Animated.View style={[styles.photoCircle, photoAnimatedStyle]}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.photoImage} />
-            ) : (
-              <Ionicons name="add" size={36} color={colors.textMuted} />
-            )}
-          </Animated.View>
-        </Pressable>
-        {showConfirmation && (
-          <Text style={styles.confirmText}>Looking great</Text>
-        )}
-      </View>
-
-      {/* First name */}
-      <TextInput
-        style={styles.input}
-        placeholder="First name"
-        placeholderTextColor={colors.textMuted}
-        value={firstName}
-        onChangeText={setFirstName}
-        autoFocus={false}
-      />
-
-      {/* Bio */}
-      <View style={styles.bioContainer}>
-        <TextInput
-          style={styles.bioInput}
-          placeholder="A little about you..."
-          placeholderTextColor={colors.textMuted}
-          value={bio}
-          onChangeText={handleBioChange}
-          multiline
-          maxLength={BIO_MAX}
-          autoFocus={false}
-        />
-        <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
-      </View>
-
-      {/* Country section */}
-      <Text style={styles.sectionLabel}>Where are you from?</Text>
-
-      {/* Popular country pills */}
-      <View style={styles.pillGrid}>
-        {POPULAR_COUNTRIES.map((iso2) => {
-          const country = countries.find((c) => c.iso2 === iso2);
-          if (!country) return null;
-          return (
-            <Pill
-              key={iso2}
-              label={`${country.flag ?? ''} ${country.name}`}
-              selected={selectedCountry === iso2}
-              onPress={() => handleCountrySelect(iso2)}
-            />
-          );
-        })}
-      </View>
-
-      {/* Country search */}
-      <View style={styles.searchContainer}>
-        <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search countries..."
-          placeholderTextColor={colors.textMuted}
-          value={countrySearch}
-          onChangeText={setCountrySearch}
-          autoFocus={false}
-        />
-      </View>
-
-      {/* Search results */}
-      {filteredCountries.length > 0 && (
-        <View style={styles.searchResults}>
-          {filteredCountries.slice(0, 5).map((country) => (
-            <Pressable
-              key={country.iso2}
-              style={styles.searchResultItem}
-              onPress={() => handleCountrySelect(country.iso2)}
-            >
-              <Text style={styles.searchResultText}>
-                {country.flag ?? ''} {country.name}
-              </Text>
-            </Pressable>
-          ))}
+        {/* Photo circle */}
+        <View style={styles.photoSection}>
+          <Pressable onPress={handlePhotoPress}>
+            <Animated.View style={[styles.photoCircle, photoAnimatedStyle]}>
+              {photoUri ? (
+                <Image source={{ uri: photoUri }} style={styles.photoImage} />
+              ) : (
+                <Ionicons name="add" size={36} color={colors.textMuted} />
+              )}
+            </Animated.View>
+          </Pressable>
+          {showConfirmation && (
+            <Text style={styles.confirmText}>Looking great</Text>
+          )}
         </View>
-      )}
+
+        {/* First name */}
+        <TextInput
+          style={styles.input}
+          placeholder="First name"
+          placeholderTextColor={colors.textMuted}
+          value={firstName}
+          onChangeText={setFirstName}
+          autoFocus={false}
+        />
+
+        {/* Bio */}
+        <View style={styles.bioContainer}>
+          <TextInput
+            style={styles.bioInput}
+            placeholder="A little about you..."
+            placeholderTextColor={colors.textMuted}
+            value={bio}
+            onChangeText={handleBioChange}
+            multiline
+            maxLength={BIO_MAX}
+            autoFocus={false}
+          />
+          <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
+        </View>
+
+        {/* Country section */}
+        <Text style={styles.sectionLabel}>Where are you from?</Text>
+
+        {/* Search field */}
+        <View style={styles.searchContainer}>
+          <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search countries..."
+            placeholderTextColor={colors.textMuted}
+            value={search}
+            onChangeText={setSearch}
+            autoFocus={false}
+          />
+          {search.length > 0 && (
+            <Pressable onPress={() => setSearch('')} hitSlop={8}>
+              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            </Pressable>
+          )}
+        </View>
+
+        {/* Selected country badge (if not visible in pills below) */}
+        {selectedCountryData && !selectedInList && (
+          <View style={styles.selectedBadge}>
+            <Pill
+              label={`${selectedCountryData.flag ?? ''} ${selectedCountryData.name}`}
+              selected={true}
+              onPress={() => setSelectedCountry('')}
+            />
+          </View>
+        )}
+
+        {/* Country pills */}
+        <View style={styles.pillGrid}>
+          {displayedCountries.map((country) => (
+            <Pill
+              key={country.iso2}
+              label={`${country.flag ?? ''} ${country.name}`}
+              selected={selectedCountry === country.iso2}
+              onPress={() => handleCountrySelect(country.iso2)}
+            />
+          ))}
+          {search.length >= 2 && displayedCountries.length === 0 && (
+            <Text style={styles.noResults}>No countries found</Text>
+          )}
+        </View>
       </ScrollView>
     </OnboardingScreen>
   );
@@ -286,13 +281,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: 10,
   },
-  pillGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -301,6 +289,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,
+    marginBottom: 12,
   },
   searchIcon: {
     marginRight: 8,
@@ -311,22 +300,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  searchResults: {
-    marginTop: 8,
-    borderRadius: radius.input,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    overflow: 'hidden',
+  selectedBadge: {
+    flexDirection: 'row',
+    marginBottom: 8,
   },
-  searchResultItem: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+  pillGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    justifyContent: 'center',
   },
-  searchResultText: {
+  noResults: {
     fontFamily: fonts.regular,
-    fontSize: 16,
-    color: colors.textPrimary,
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: 8,
   },
 });
