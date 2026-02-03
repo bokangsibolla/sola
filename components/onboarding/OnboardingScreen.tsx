@@ -6,10 +6,14 @@ import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import ProgressBar from './ProgressIndicator';
 import PrimaryButton from '@/components/ui/PrimaryButton';
+import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface OnboardingScreenProps {
+  /** Current stage (1-based) - used for progress indicator */
   stage: number;
+  /** Screen name for dynamic progress calculation (overrides stage if A/B config exists) */
+  screenName?: string;
   headline: string;
   subtitle?: string;
   ctaLabel: string;
@@ -22,6 +26,7 @@ interface OnboardingScreenProps {
 
 export default function OnboardingScreen({
   stage,
+  screenName,
   headline,
   subtitle,
   ctaLabel,
@@ -33,6 +38,21 @@ export default function OnboardingScreen({
 }: OnboardingScreenProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+
+  // Calculate dynamic progress if screenName is provided and A/B config exists
+  const screens = onboardingStore.get('screensToShow');
+  let effectiveStage = stage;
+  let totalStages = 5;
+
+  if (screenName && screens.length > 0) {
+    const screenIndex = screens.indexOf(screenName);
+    if (screenIndex !== -1) {
+      effectiveStage = screenIndex + 1;
+      totalStages = screens.length;
+    }
+  } else if (screens.length > 0) {
+    totalStages = screens.length;
+  }
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
@@ -46,7 +66,7 @@ export default function OnboardingScreen({
           <View style={styles.backPlaceholder} />
         )}
         <View style={styles.progressWrapper}>
-          <ProgressBar stage={stage} />
+          <ProgressBar stage={effectiveStage} totalStages={totalStages} />
         </View>
         <View style={styles.backPlaceholder} />
       </View>

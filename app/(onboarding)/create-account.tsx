@@ -2,23 +2,89 @@ import React, { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
 import { supabase } from '@/lib/supabase';
+import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
+import {
+  fetchOnboardingConfig,
+  calculateOnboardingFlow,
+  createOnboardingSession,
+} from '@/lib/onboardingConfig';
 import { colors, fonts, radius } from '@/constants/design';
+
+/** Initialize the A/B testing flow for a new user */
+async function initializeOnboardingFlow(userId: string, posthog: ReturnType<typeof usePostHog>) {
+  try {
+    // Fetch config from Supabase (with fallback to defaults)
+    const config = await fetchOnboardingConfig();
+
+    // Calculate which questions/screens to show based on user ID
+    const flowResult = calculateOnboardingFlow(config, userId);
+
+    // Store in onboardingStore for use throughout onboarding
+    onboardingStore.set('questionsToShow', flowResult.questionsToShow);
+    onboardingStore.set('screensToShow', flowResult.screensToShow);
+    onboardingStore.set('profileOptionalFields', flowResult.profileOptionalFields);
+    onboardingStore.set('configSnapshot', flowResult.configSnapshot);
+
+    // Create session record in database
+    const sessionId = await createOnboardingSession(userId, flowResult);
+    if (sessionId) {
+      onboardingStore.set('abTestSessionId', sessionId);
+    }
+
+    // Track flow started in PostHog
+    posthog.capture('onboarding_flow_started', {
+      questions_shown: flowResult.questionsToShow,
+      screens_shown: flowResult.screensToShow,
+      session_id: sessionId,
+    });
+  } catch {
+    // Non-blocking: if A/B setup fails, onboarding still works with defaults
+  }
+}
 
 export default function CreateAccountScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
 
+  const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
+
   const canContinue = email.includes('@') && password.length >= 6 && !loading;
+
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    setLoading(true);
+    try {
+      const result =
+        provider === 'google' ? await signInWithGoogle() : await signInWithApple();
+
+      if (result.isNewUser) {
+        // Initialize A/B testing flow for new user
+        if (result.userId) {
+          await initializeOnboardingFlow(result.userId, posthog);
+        }
+        router.push('/(onboarding)/profile');
+      } else {
+        await onboardingStore.set('onboardingCompleted', true);
+        router.replace('/(tabs)/home');
+      }
+    } catch (e: any) {
+      if (e.message?.includes('cancelled')) return; // user dismissed
+      Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleContinue = async () => {
     setLoading(true);
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
     });
@@ -30,12 +96,13 @@ export default function CreateAccountScreen() {
     }
 
     onboardingStore.set('email', email);
-    router.push('/(onboarding)/profile');
-  };
 
-  const handleSocialLogin = (provider: string) => {
-    // TODO: Wire OAuth with expo-auth-session when ready
-    Alert.alert('Coming soon', `${provider} sign-in will be available soon.`);
+    // Initialize A/B testing flow for new user
+    if (data.user?.id) {
+      await initializeOnboardingFlow(data.user.id, posthog);
+    }
+
+    router.push('/(onboarding)/profile');
   };
 
   return (
@@ -51,14 +118,16 @@ export default function CreateAccountScreen() {
       <View style={styles.socialButtons}>
         <Pressable
           style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-          onPress={() => handleSocialLogin('google')}
+          disabled={!googleRequest || loading}
+          onPress={() => handleOAuth('google')}
         >
           <Text style={styles.socialIcon}>G</Text>
           <Text style={styles.socialText}>Continue with Google</Text>
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
-          onPress={() => handleSocialLogin('apple')}
+          disabled={loading}
+          onPress={() => handleOAuth('apple')}
         >
           <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
           <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>

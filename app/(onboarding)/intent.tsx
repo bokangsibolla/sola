@@ -1,27 +1,38 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import OptionCard from '@/components/onboarding/OptionCard';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 
 export default function IntentScreen() {
   const router = useRouter();
+  const { navigateToNextScreen, checkScreenAccess, trackScreenView } = useOnboardingNavigation();
   const [selected, setSelected] = useState<'planning' | 'exploring' | ''>('');
+
+  // Check if this screen should be shown (A/B testing)
+  useEffect(() => {
+    const shouldShow = checkScreenAccess('intent');
+    if (shouldShow) {
+      trackScreenView('intent');
+    }
+  }, [checkScreenAccess, trackScreenView]);
 
   const handleContinue = () => {
     if (!selected) return;
     onboardingStore.set('tripIntent', selected);
-    if (selected === 'planning') {
-      router.push('/(onboarding)/trip-details');
-    } else {
-      router.push('/(onboarding)/day-style');
-    }
+
+    navigateToNextScreen('intent', {
+      tripIntent: selected,
+      answeredQuestions: ['trip_intent'],
+    });
   };
 
   return (
     <OnboardingScreen
       stage={3}
+      screenName="intent"
       headline="So, what's the plan?"
       ctaLabel="Continue"
       ctaDisabled={!selected}

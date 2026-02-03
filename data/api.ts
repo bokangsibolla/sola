@@ -743,3 +743,19 @@ export async function searchPlaces(query: string, cityId?: string): Promise<Plac
   if (error) throw error;
   return rowsToCamel<Place>(data ?? []);
 }
+
+// ---------------------------------------------------------------------------
+// Onboarding A/B Testing
+// ---------------------------------------------------------------------------
+
+// Re-export from onboardingConfig for API consistency
+export {
+  fetchOnboardingConfig,
+  calculateOnboardingFlow,
+  createOnboardingSession,
+  updateOnboardingSession,
+  completeOnboardingSession,
+  type OnboardingQuestionConfig,
+  type OnboardingFlowResult,
+  type OnboardingSession,
+} from '@/lib/onboardingConfig';

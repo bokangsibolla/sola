@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   Image,
@@ -17,6 +17,7 @@ import Animated, { FadeIn } from 'react-native-reanimated';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius } from '@/constants/design';
 
@@ -26,11 +27,21 @@ const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT']
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { navigateToNextScreen, trackScreenView } = useOnboardingNavigation();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
   const [bio, setBio] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [search, setSearch] = useState('');
+
+  // A/B Testing: Check which optional fields to show
+  const showBio = onboardingStore.shouldShowQuestion('bio');
+  const showPhoto = onboardingStore.shouldShowQuestion('photo');
+
+  // Track screen view
+  useEffect(() => {
+    trackScreenView('profile');
+  }, [trackScreenView]);
 
   const displayedCountries = useMemo(() => {
     if (search.length < 2) {
@@ -93,12 +104,37 @@ export default function ProfileScreen() {
     onboardingStore.set('photoUri', photoUri);
     onboardingStore.set('countryIso2', selectedCountry);
     onboardingStore.set('countryName', country?.name ?? '');
-    router.push('/(onboarding)/intent');
+
+    // Track which questions were answered vs skipped
+    const answered: string[] = ['first_name', 'country']; // Always required
+    const skipped: string[] = [];
+
+    if (showBio) {
+      if (bio.trim()) {
+        answered.push('bio');
+      } else {
+        skipped.push('bio');
+      }
+    }
+
+    if (showPhoto) {
+      if (photoUri) {
+        answered.push('photo');
+      } else {
+        skipped.push('photo');
+      }
+    }
+
+    navigateToNextScreen('profile', {
+      answeredQuestions: answered,
+      skippedQuestions: skipped,
+    });
   };
 
   return (
     <OnboardingScreen
       stage={3}
+      screenName="profile"
       headline="Tell us about you"
       ctaLabel="Continue"
       ctaDisabled={!canContinue}
@@ -107,22 +143,24 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Photo + name row */}
         <View style={styles.topRow}>
-          <Pressable onPress={handlePhotoPress} style={styles.photoWrapper}>
-            <View style={styles.photoCircle}>
-              {photoUri ? (
-                <Animated.Image
-                  entering={FadeIn.duration(300)}
-                  source={{ uri: photoUri }}
-                  style={styles.photoImage}
-                />
-              ) : (
-                <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
-              )}
-            </View>
-            <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</Text>
-          </Pressable>
+          {showPhoto && (
+            <Pressable onPress={handlePhotoPress} style={styles.photoWrapper}>
+              <View style={styles.photoCircle}>
+                {photoUri ? (
+                  <Animated.Image
+                    entering={FadeIn.duration(300)}
+                    source={{ uri: photoUri }}
+                    style={styles.photoImage}
+                  />
+                ) : (
+                  <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
+                )}
+              </View>
+              <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</Text>
+            </Pressable>
+          )}
 
-          <View style={styles.nameColumn}>
+          <View style={[styles.nameColumn, !showPhoto && styles.nameColumnFull]}>
             <TextInput
               style={styles.input}
               placeholder="First name"
@@ -131,19 +169,21 @@ export default function ProfileScreen() {
               onChangeText={setFirstName}
               autoFocus={false}
             />
-            <View style={styles.bioContainer}>
-              <TextInput
-                style={styles.bioInput}
-                placeholder="Something you'd want a fellow traveler to know..."
-                placeholderTextColor={colors.textMuted}
-                value={bio}
-                onChangeText={handleBioChange}
-                multiline
-                maxLength={BIO_MAX}
-                autoFocus={false}
-              />
-              <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
-            </View>
+            {showBio && (
+              <View style={styles.bioContainer}>
+                <TextInput
+                  style={styles.bioInput}
+                  placeholder="Something you'd want a fellow traveler to know..."
+                  placeholderTextColor={colors.textMuted}
+                  value={bio}
+                  onChangeText={handleBioChange}
+                  multiline
+                  maxLength={BIO_MAX}
+                  autoFocus={false}
+                />
+                <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -226,6 +266,9 @@ const styles = StyleSheet.create({
   nameColumn: {
     flex: 1,
     gap: 8,
+  },
+  nameColumnFull: {
+    // When photo is hidden, name column takes full width
   },
   input: {
     height: 48,

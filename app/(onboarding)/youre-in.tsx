@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Image, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import PrimaryButton from '@/components/ui/PrimaryButton';
@@ -8,6 +9,7 @@ import { onboardingStore } from '@/state/onboardingStore';
 import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
+import { completeOnboardingSession } from '@/lib/onboardingConfig';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -19,9 +21,23 @@ export default function YoureInScreen() {
   const countryIso2 = onboardingStore.get('countryIso2');
   const greeting = countryIso2 ? getGreeting(countryIso2) : null;
 
+  // Calculate dynamic progress for youre-in screen
+  const screens = onboardingStore.get('screensToShow');
+  const totalStages = screens.length || 5;
+  const currentStage = screens.length > 0 ? screens.indexOf('youre-in') + 1 : 5;
+
   const { userId } = useAuth();
   const posthog = usePostHog();
   const [saving, setSaving] = useState(false);
+
+  // Track screen view
+  useEffect(() => {
+    const sessionId = onboardingStore.get('abTestSessionId');
+    posthog.capture('onboarding_screen_viewed', {
+      screen: 'youre-in',
+      session_id: sessionId,
+    });
+  }, [posthog]);
 
   const handleFinish = async () => {
     setSaving(true);
@@ -43,7 +59,26 @@ export default function YoureInScreen() {
     }
 
     onboardingStore.set('onboardingCompleted', true);
-    posthog.capture('onboarding_completed');
+
+    // Complete the A/B testing session
+    const sessionId = onboardingStore.get('abTestSessionId');
+    const questionsShown = onboardingStore.get('questionsToShow');
+    const questionsAnswered = onboardingStore.get('questionsAnswered');
+    const questionsSkipped = onboardingStore.get('questionsSkipped');
+
+    if (sessionId) {
+      await completeOnboardingSession(sessionId, questionsAnswered, questionsSkipped);
+    }
+
+    // Track completion with full breakdown
+    posthog.capture('onboarding_completed', {
+      session_id: sessionId,
+      questions_shown: questionsShown,
+      questions_answered: questionsAnswered,
+      questions_skipped: questionsSkipped,
+      screens_shown: onboardingStore.get('screensToShow'),
+    });
+
     setSaving(false);
     router.replace('/(tabs)/home');
   };
@@ -53,14 +88,14 @@ export default function YoureInScreen() {
       <Image
         source={require('@/assets/images/pexels-sailing.png')}
         style={StyleSheet.absoluteFillObject}
-        resizeMode="cover"
+        contentFit="cover"
       />
       <View style={[StyleSheet.absoluteFillObject, styles.overlay]} />
 
       <View style={[styles.content, { paddingTop: insets.top }]}>
         <View style={styles.progressRow}>
           <View style={styles.progressPadding}>
-            <ProgressBar stage={5} />
+            <ProgressBar stage={currentStage} totalStages={totalStages} />
           </View>
         </View>
 

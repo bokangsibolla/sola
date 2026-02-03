@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { colors, fonts, radius } from '@/constants/design';
 
 const STAY_OPTIONS = [
@@ -39,25 +40,59 @@ function Tile({ icon, label, selected, onPress }: TileProps) {
 
 export default function StayPreferenceScreen() {
   const router = useRouter();
+  const { navigateToNextScreen, skipCurrentScreen, checkScreenAccess, trackScreenView } =
+    useOnboardingNavigation();
   const [stay, setStay] = useState('');
   const [spend, setSpend] = useState('');
+
+  // Check if this screen should be shown (A/B testing)
+  useEffect(() => {
+    const shouldShow = checkScreenAccess('stay-preference');
+    if (shouldShow) {
+      trackScreenView('stay-preference');
+    }
+  }, [checkScreenAccess, trackScreenView]);
 
   const handleContinue = () => {
     const stayOption = STAY_OPTIONS.find((o) => o.value === stay);
     onboardingStore.set('stayPreference', stayOption?.label ?? stay);
     onboardingStore.set('spendingStyle', spend);
-    router.push('/(onboarding)/youre-in');
+
+    const answered: string[] = [];
+    const skipped: string[] = [];
+
+    if (stay) {
+      answered.push('stay_preference');
+    } else {
+      skipped.push('stay_preference');
+    }
+
+    if (spend) {
+      answered.push('spending_style');
+    } else {
+      skipped.push('spending_style');
+    }
+
+    navigateToNextScreen('stay-preference', {
+      answeredQuestions: answered,
+      skippedQuestions: skipped,
+    });
+  };
+
+  const handleSkip = () => {
+    skipCurrentScreen('stay-preference', ['stay_preference', 'spending_style']);
   };
 
   return (
     <OnboardingScreen
       stage={5}
+      screenName="stay-preference"
       headline="Almost done"
       subtitle="Two quick ones"
       ctaLabel="Continue"
       ctaDisabled={!stay || !spend}
       onCtaPress={handleContinue}
-      onSkip={() => router.push('/(onboarding)/youre-in')}
+      onSkip={handleSkip}
     >
       <View style={styles.section}>
         <Text style={styles.question}>Where do you feel most at home?</Text>

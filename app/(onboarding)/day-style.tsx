@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { colors, fonts } from '@/constants/design';
 
 const INTERESTS = [
@@ -30,8 +31,18 @@ const PRIORITIES = [
 
 export default function DayStyleScreen() {
   const router = useRouter();
+  const { navigateToNextScreen, skipCurrentScreen, checkScreenAccess, trackScreenView } =
+    useOnboardingNavigation();
   const [interests, setInterests] = useState<string[]>([]);
   const [priorities, setPriorities] = useState<string[]>([]);
+
+  // Check if this screen should be shown (A/B testing)
+  useEffect(() => {
+    const shouldShow = checkScreenAccess('day-style');
+    if (shouldShow) {
+      trackScreenView('day-style');
+    }
+  }, [checkScreenAccess, trackScreenView]);
 
   const toggleInterest = (option: string) => {
     setInterests((prev) => {
@@ -52,17 +63,41 @@ export default function DayStyleScreen() {
   const handleContinue = () => {
     onboardingStore.set('dayStyle', interests);
     onboardingStore.set('priorities', priorities);
-    router.push('/(onboarding)/stay-preference');
+
+    const answered: string[] = [];
+    const skipped: string[] = [];
+
+    if (interests.length > 0) {
+      answered.push('day_style');
+    } else {
+      skipped.push('day_style');
+    }
+
+    if (priorities.length > 0) {
+      answered.push('priorities');
+    } else {
+      skipped.push('priorities');
+    }
+
+    navigateToNextScreen('day-style', {
+      answeredQuestions: answered,
+      skippedQuestions: skipped,
+    });
+  };
+
+  const handleSkip = () => {
+    skipCurrentScreen('day-style', ['day_style', 'priorities']);
   };
 
   return (
     <OnboardingScreen
       stage={4}
+      screenName="day-style"
       headline="What gets you excited about a new place?"
       ctaLabel="Continue"
       ctaDisabled={interests.length === 0 || priorities.length === 0}
       onCtaPress={handleContinue}
-      onSkip={() => router.push('/(onboarding)/stay-preference')}
+      onSkip={handleSkip}
     >
       <View style={styles.section}>
         <Text style={styles.sectionLabel}>Pick up to 2</Text>

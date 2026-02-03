@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
+import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { searchDestinations } from '@/data/cities';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius } from '@/constants/design';
@@ -32,8 +33,18 @@ function nightsBetween(a: Date, b: Date): number {
 
 export default function TripDetailsScreen() {
   const router = useRouter();
+  const { navigateToNextScreen, skipCurrentScreen, checkScreenAccess, trackScreenView } =
+    useOnboardingNavigation();
   const [destination, setDestination] = useState('');
   const [search, setSearch] = useState('');
+
+  // Check if this screen should be shown (A/B testing)
+  useEffect(() => {
+    const shouldShow = checkScreenAccess('trip-details');
+    if (shouldShow) {
+      trackScreenView('trip-details');
+    }
+  }, [checkScreenAccess, trackScreenView]);
 
   const tomorrow = new Date(Date.now() + DAY_MS);
   const [arriving, setArriving] = useState<Date | null>(null);
@@ -92,7 +103,30 @@ export default function TripDetailsScreen() {
     onboardingStore.set('tripNights', nights);
     onboardingStore.set('tripDates', arriving ? formatDate(arriving) : '');
     onboardingStore.set('tripFlexibleDates', flexible);
-    router.push('/(onboarding)/day-style');
+
+    const answered: string[] = [];
+    const skipped: string[] = [];
+
+    if (destination || search.trim()) {
+      answered.push('trip_destination');
+    } else {
+      skipped.push('trip_destination');
+    }
+
+    if (arriving && leaving) {
+      answered.push('trip_dates');
+    } else {
+      skipped.push('trip_dates');
+    }
+
+    navigateToNextScreen('trip-details', {
+      answeredQuestions: answered,
+      skippedQuestions: skipped,
+    });
+  };
+
+  const handleSkip = () => {
+    skipCurrentScreen('trip-details', ['trip_destination', 'trip_dates']);
   };
 
   const hasDestination = destination.length > 0 || search.trim().length > 0;
@@ -100,11 +134,12 @@ export default function TripDetailsScreen() {
   return (
     <OnboardingScreen
       stage={3}
+      screenName="trip-details"
       headline="Where to next?"
       subtitle="You can always change this later"
       ctaLabel={hasDestination ? 'Continue' : 'Skip'}
       onCtaPress={handleContinue}
-      onSkip={() => router.push('/(onboarding)/day-style')}
+      onSkip={handleSkip}
     >
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Destination search */}
