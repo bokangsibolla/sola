@@ -1,26 +1,28 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
+const PRIVACY_POLICY_URL = 'https://solatravel.app/privacy';
+const TERMS_URL = 'https://solatravel.app/terms';
+
 const VISIBILITY_OPTIONS = ['Private', 'Connections', 'Public'] as const;
 const VISIBILITY_VALUES = ['private', 'connections', 'public'] as const;
-const PRECISION_OPTIONS = ['City', 'Neighborhood', 'Exact'] as const;
-const PRECISION_VALUES = ['city', 'neighborhood', 'exact'] as const;
 
 const VISIBILITY_LABELS: Record<string, string> = {
   private: 'Private',
@@ -28,11 +30,6 @@ const VISIBILITY_LABELS: Record<string, string> = {
   public: 'Public',
 };
 
-const PRECISION_LABELS: Record<string, string> = {
-  city: 'City',
-  neighborhood: 'Neighborhood',
-  exact: 'Exact',
-};
 
 function showPicker(
   title: string,
@@ -71,10 +68,13 @@ export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { signOut } = useAuth();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog.capture('settings_screen_viewed');
+  }, [posthog]);
 
   const [privacy, setPrivacy] = useState(onboardingStore.get('privacyDefaults'));
-  const [notifMessages, setNotifMessages] = useState(true);
-  const [notifReminders, setNotifReminders] = useState(true);
 
   const updatePrivacy = (
     key: keyof typeof privacy,
@@ -83,6 +83,7 @@ export default function SettingsScreen() {
   ) => {
     const updated = { ...privacy, [key]: values[index] };
     setPrivacy(updated);
+    posthog.capture('privacy_setting_changed', { setting: key, value: values[index] });
     onboardingStore.set('privacyDefaults', updated as typeof privacy);
   };
 
@@ -93,6 +94,8 @@ export default function SettingsScreen() {
         text: 'Log out',
         style: 'destructive',
         onPress: async () => {
+          posthog.capture('logout');
+          posthog.reset();
           await signOut();
           onboardingStore.reset();
           router.replace('/(onboarding)/welcome');
@@ -149,48 +152,6 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
-        <Pressable
-          style={styles.settingRow}
-          onPress={() =>
-            showPicker(
-              'Location precision',
-              PRECISION_OPTIONS,
-              PRECISION_VALUES.indexOf(privacy.locationPrecision),
-              (i) => updatePrivacy('locationPrecision', PRECISION_VALUES, i),
-            )
-          }
-        >
-          <Ionicons name="location-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Location precision</Text>
-          <Text style={styles.settingValue}>{PRECISION_LABELS[privacy.locationPrecision]}</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        {/* Notifications */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Notifications</Text>
-
-        <View style={styles.settingRow}>
-          <Ionicons name="chatbubble-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>New messages</Text>
-          <Switch
-            value={notifMessages}
-            onValueChange={setNotifMessages}
-            trackColor={{ false: colors.borderDefault, true: colors.orange }}
-            thumbColor={colors.background}
-          />
-        </View>
-
-        <View style={styles.settingRow}>
-          <Ionicons name="notifications-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Trip reminders</Text>
-          <Switch
-            value={notifReminders}
-            onValueChange={setNotifReminders}
-            trackColor={{ false: colors.borderDefault, true: colors.orange }}
-            thumbColor={colors.background}
-          />
-        </View>
-
         {/* About */}
         <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>About</Text>
 
@@ -205,6 +166,27 @@ export default function SettingsScreen() {
           <Text style={styles.settingLabel}>Version</Text>
           <Text style={styles.settingValue}>1.0.0</Text>
         </View>
+
+        {/* Legal */}
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Legal</Text>
+
+        <Pressable
+          style={styles.settingRow}
+          onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
+        >
+          <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
+          <Text style={styles.settingLabel}>Privacy Policy</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable
+          style={styles.settingRow}
+          onPress={() => Linking.openURL(TERMS_URL)}
+        >
+          <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
+          <Text style={styles.settingLabel}>Terms of Service</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
 
         {/* Danger zone */}
         <View style={{ marginTop: spacing.xxxl }}>

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import {
   getTripById,
   getCityById,
@@ -80,7 +82,7 @@ function PlaceCard({ place }: { place: Place }) {
       style={styles.card}
     >
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
       )}
@@ -130,6 +132,13 @@ export default function TripDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (id) {
+      posthog.capture('trip_detail_viewed', { trip_id: id });
+    }
+  }, [id, posthog]);
 
   const { data: trip, loading, error, refetch } = useData(() => getTripById(id ?? ''), [id]);
   const { data: city } = useData(
@@ -177,7 +186,7 @@ export default function TripDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero image */}
         {heroUrl && (
-          <Image source={{ uri: heroUrl }} style={styles.hero} />
+          <Image source={{ uri: heroUrl }} style={styles.hero} contentFit="cover" transition={200} />
         )}
 
         <View style={styles.content}>

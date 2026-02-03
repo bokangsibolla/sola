@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
-  Image,
   Platform,
   Pressable,
   ScrollView,
@@ -11,10 +10,12 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
 import { getProfileById } from '@/data/api';
@@ -42,6 +43,11 @@ export default function EditProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog.capture('edit_profile_screen_viewed');
+  }, [posthog]);
 
   const { data: profile, loading, error, refetch } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(undefined),
@@ -93,6 +99,7 @@ export default function EditProfileScreen() {
       ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });
     if (!result.canceled && result.assets[0]) {
+      posthog.capture('profile_photo_selected', { source: fromCamera ? 'camera' : 'gallery' });
       setPhotoUri(result.assets[0].uri);
     }
   };
@@ -142,6 +149,7 @@ export default function EditProfileScreen() {
         Alert.alert('Save failed', upsertError.message);
         return;
       }
+      posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length });
       router.back();
     } catch (err: any) {
       Alert.alert('Upload failed', err.message ?? 'Could not upload photo.');
@@ -171,7 +179,7 @@ export default function EditProfileScreen() {
           <Pressable onPress={handlePhotoPress} style={styles.photoWrapper}>
             <View style={styles.photoCircle}>
               {photoUri ? (
-                <Image source={{ uri: photoUri }} style={styles.photoImage} />
+                <Image source={{ uri: photoUri }} style={styles.photoImage} contentFit="cover" transition={200} />
               ) : (
                 <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
               )}

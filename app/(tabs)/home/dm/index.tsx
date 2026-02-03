@@ -1,6 +1,9 @@
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getConversationsPaginated, getProfileById, getBlockedUserIds } from '@/data/api';
@@ -27,6 +30,7 @@ function timeAgo(iso: string): string {
 export default function DMListScreen() {
   const router = useRouter();
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const { data: allConvos, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
     queryKey: ['conversations'],
     fetcher: (page) => getConversationsPaginated(page),
@@ -35,6 +39,10 @@ export default function DMListScreen() {
     () => (userId ? getBlockedUserIds(userId) : Promise.resolve([])),
     [userId],
   );
+
+  useEffect(() => {
+    posthog.capture('messages_screen_viewed');
+  }, [posthog]);
 
   const visibleConversations = allConvos.filter(
     (c) => !c.participantIds.some((pid) => (blockedIds ?? []).includes(pid)),
@@ -78,6 +86,7 @@ export default function DMListScreen() {
 
 function ConversationRow({ convo, userId }: { convo: Conversation; userId: string | null }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const otherId = convo.participantIds.find((pid) => pid !== userId);
   const { data: other } = useData(
     () => (otherId ? getProfileById(otherId) : Promise.resolve(null)),
@@ -89,10 +98,13 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
   return (
     <Pressable
       style={styles.row}
-      onPress={() => router.push(`/home/dm/${convo.id}`)}
+      onPress={() => {
+        posthog.capture('conversation_opened', { conversation_id: convo.id });
+        router.push(`/home/dm/${convo.id}`);
+      }}
     >
       {other.avatarUrl ? (
-        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 })! }} style={styles.avatar} />
+        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 })! }} style={styles.avatar} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
           <Ionicons name="person" size={18} color={colors.textMuted} />

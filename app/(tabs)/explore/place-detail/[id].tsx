@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Dimensions,
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -83,6 +84,13 @@ export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (id) {
+      posthog.capture('place_detail_viewed', { place_id: id });
+    }
+  }, [id, posthog]);
 
   const { data: place, loading, error, refetch } = useData(() => getPlaceById(id ?? ''), [id]);
   const { data: media } = useData(() => getPlaceMedia(id ?? ''), [id]);
@@ -110,9 +118,11 @@ export default function PlaceDetailScreen() {
   }, [isSaved]);
 
   const handleSave = useCallback(async () => {
-    setSaved((prev) => !prev);
+    const newSaved = !saved;
+    setSaved(newSaved);
+    posthog.capture(newSaved ? 'place_saved' : 'place_unsaved', { place_id: id });
     await toggleSavePlace(userId!, id ?? '');
-  }, [userId, id]);
+  }, [userId, id, saved, posthog]);
 
   // Group tags by filterGroup
   const groupedTags = useMemo(() => {
@@ -203,6 +213,8 @@ export default function PlaceDetailScreen() {
                   key={img.id}
                   source={{ uri: img.url }}
                   style={styles.carouselImage}
+                  contentFit="cover"
+                  transition={200}
                 />
               ))}
             </ScrollView>

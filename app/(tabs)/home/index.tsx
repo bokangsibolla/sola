@@ -1,6 +1,9 @@
-import { ActivityIndicator, FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useEffect } from 'react';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -22,6 +25,7 @@ function countryFlag(iso2: string): string {
 export default function HomeScreen() {
   const router = useRouter();
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const { data: allProfiles, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
     queryKey: ['profiles'],
     fetcher: (page) => getProfilesPaginated(page),
@@ -30,6 +34,10 @@ export default function HomeScreen() {
     () => (userId ? getBlockedUserIds(userId) : Promise.resolve([])),
     [userId],
   );
+
+  useEffect(() => {
+    posthog.capture('home_screen_viewed');
+  }, [posthog]);
 
   const visibleProfiles = allProfiles.filter(
     (p) => p.id !== userId && !(blockedIds ?? []).includes(p.id),
@@ -46,11 +54,14 @@ export default function HomeScreen() {
           <Image
             source={require('@/assets/images/sola-logo.png')}
             style={styles.logo}
-            resizeMode="contain"
+            contentFit="contain"
           />
         }
         rightComponent={
-          <Pressable onPress={() => router.push('/home/dm')} hitSlop={12} style={styles.inboxBtn}>
+          <Pressable onPress={() => {
+            posthog.capture('inbox_opened');
+            router.push('/home/dm');
+          }} hitSlop={12} style={styles.inboxBtn}>
             <Feather name="message-circle" size={20} color={colors.orange} />
           </Pressable>
         }
@@ -78,6 +89,7 @@ export default function HomeScreen() {
 
 function ProfileCard({ profile }: { profile: Profile }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const { data: city } = useData(
     () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
     [profile.currentCityId],
@@ -86,12 +98,15 @@ function ProfileCard({ profile }: { profile: Profile }) {
   return (
     <Pressable
       style={styles.card}
-      onPress={() => router.push(`/home/user/${profile.id}`)}
+      onPress={() => {
+        posthog.capture('traveler_profile_tapped', { profile_id: profile.id });
+        router.push(`/home/user/${profile.id}`);
+      }}
     >
       <View style={styles.cardTop}>
         <View style={styles.avatarWrap}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 })! }} style={styles.avatar} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 })! }} style={styles.avatar} contentFit="cover" transition={200} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Feather name="user" size={24} color={colors.textMuted} />

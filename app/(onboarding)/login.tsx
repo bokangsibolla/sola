@@ -1,39 +1,70 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { supabase } from '@/lib/supabase';
+import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    posthog.capture('login_screen_viewed');
+  }, [posthog]);
+
+  const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
+
+  const handleOAuth = async (provider: 'google' | 'apple') => {
+    posthog.capture('oauth_login_tapped', { provider });
+    setLoading(true);
+    try {
+      const result =
+        provider === 'google' ? await signInWithGoogle() : await signInWithApple();
+
+      posthog.capture('auth_success', { provider, is_new_user: result.isNewUser });
+      if (result.isNewUser) {
+        router.push('/(onboarding)/profile');
+      } else {
+        await onboardingStore.set('onboardingCompleted', true);
+        router.replace('/(tabs)/home');
+      }
+    } catch (e: any) {
+      if (e.message?.includes('cancelled')) return;
+      posthog.capture('auth_failed', { provider, error: e.message });
+      Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const canLogin = email.includes('@') && password.length >= 6 && !loading;
 
   const handleLogin = async () => {
+    posthog.capture('email_login_attempted');
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
 
     if (error) {
+      posthog.capture('auth_failed', { provider: 'email', error: error.message });
       Alert.alert('Login failed', error.message);
       return;
     }
 
+    posthog.capture('auth_success', { provider: 'email' });
     await onboardingStore.set('onboardingCompleted', true);
     router.replace('/(tabs)/home');
-  };
-
-  const handleSocialLogin = (provider: string) => {
-    Alert.alert('Coming soon', `${provider} sign-in will be available soon.`);
   };
 
   return (
@@ -57,14 +88,16 @@ export default function LoginScreen() {
         <View style={styles.socialButtons}>
           <Pressable
             style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-            onPress={() => handleSocialLogin('google')}
+            disabled={!googleRequest || loading}
+            onPress={() => handleOAuth('google')}
           >
             <Text style={styles.googleIcon}>G</Text>
             <Text style={styles.socialText}>Continue with Google</Text>
           </Pressable>
           <Pressable
             style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
-            onPress={() => handleSocialLogin('apple')}
+            disabled={loading}
+            onPress={() => handleOAuth('apple')}
           >
             <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
             <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
@@ -99,7 +132,21 @@ export default function LoginScreen() {
           />
         </View>
 
-        <Pressable style={styles.forgotRow}>
+        <Pressable
+          style={styles.forgotRow}
+          onPress={async () => {
+            if (!email.includes('@')) {
+              Alert.alert('Enter your email', 'Type your email address above, then tap Forgot password.');
+              return;
+            }
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+            if (resetError) {
+              Alert.alert('Error', resetError.message);
+            } else {
+              Alert.alert('Check your email', 'We sent you a password reset link.');
+            }
+          }}
+        >
           <Text style={styles.forgotText}>Forgot password?</Text>
         </Pressable>
       </View>

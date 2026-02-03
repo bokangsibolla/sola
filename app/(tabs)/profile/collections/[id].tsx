@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import {
   getCollectionById,
   getCollectionPlaces,
@@ -40,7 +42,7 @@ function PlaceRow({ place, userId, collectionId }: { place: Place; userId: strin
       onPress={() => router.push(`/explore/place-detail/${place.id}`)}
     >
       {imageUrl && (
-        <Image source={{ uri: imageUrl }} style={styles.placeImage} />
+        <Image source={{ uri: imageUrl }} style={styles.placeImage} contentFit="cover" transition={200} />
       )}
       <View style={styles.placeInfo}>
         <View style={styles.placeHeader}>
@@ -83,6 +85,13 @@ export default function CollectionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (id) {
+      posthog.capture('collection_detail_viewed', { collection_id: id });
+    }
+  }, [id, posthog]);
 
   const { userId } = useAuth();
   const { data: collection, loading, error, refetch } = useData(() => getCollectionById(id ?? ''), [id]);

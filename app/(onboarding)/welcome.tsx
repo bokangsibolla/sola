@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -10,6 +11,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import { usePostHog } from 'posthog-react-native';
 import AnimatedBackground from '@/components/onboarding/AnimatedBackground';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -29,6 +31,12 @@ const TAGLINE = 'Because women travel differently.';
 export default function WelcomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  // Track screen view
+  useEffect(() => {
+    posthog.capture('welcome_screen_viewed');
+  }, [posthog]);
 
   // Animate tagline: width reveal (typewriter feel)
   const revealWidth = useSharedValue(0);
@@ -57,7 +65,7 @@ export default function WelcomeScreen() {
           <Image
             source={require('@/assets/images/sola-logo.png')}
             style={styles.logo}
-            resizeMode="contain"
+            contentFit="contain"
           />
           <View style={styles.taglineContainer}>
             <Animated.View style={taglineStyle}>
@@ -74,11 +82,17 @@ export default function WelcomeScreen() {
         >
           <PrimaryButton
             label="Create account"
-            onPress={() => router.push('/(onboarding)/create-account')}
+            onPress={() => {
+              posthog.capture('create_account_tapped', { source: 'welcome' });
+              router.push('/(onboarding)/create-account');
+            }}
           />
           <Pressable
             style={styles.loginButton}
-            onPress={() => router.push('/(onboarding)/login')}
+            onPress={() => {
+              posthog.capture('login_tapped', { source: 'welcome' });
+              router.push('/(onboarding)/login');
+            }}
           >
             <Text style={styles.loginText}>Log in</Text>
           </Pressable>

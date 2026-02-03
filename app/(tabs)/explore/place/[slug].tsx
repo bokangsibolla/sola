@@ -1,15 +1,16 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Image,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -79,6 +80,7 @@ function PriceDots({ level }: { level: number | null }) {
 
 function PlaceCard({ place }: { place: Place }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
   const { userId } = useAuth();
   const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
@@ -90,17 +92,22 @@ function PlaceCard({ place }: { place: Place }) {
   }, [isSaved]);
 
   const handleSave = useCallback(async () => {
-    setSaved((prev) => !prev);
+    const newSaved = !saved;
+    setSaved(newSaved);
+    posthog.capture(newSaved ? 'place_saved' : 'place_unsaved', { place_id: place.id, place_name: place.name });
     await toggleSavePlace(userId!, place.id);
-  }, [userId, place.id]);
+  }, [userId, place.id, saved, posthog]);
 
   return (
     <Pressable
-      onPress={() => router.push(`/explore/place-detail/${place.id}`)}
+      onPress={() => {
+        posthog.capture('place_card_tapped', { place_id: place.id, place_name: place.name });
+        router.push(`/explore/place-detail/${place.id}`);
+      }}
       style={styles.card}
     >
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.cardImage} />
+        <Image source={{ uri: imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
       )}
@@ -169,6 +176,13 @@ export default function PlaceScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (slug) {
+      posthog.capture('city_places_viewed', { city_slug: slug });
+    }
+  }, [slug, posthog]);
 
   const { data: city, loading, error, refetch } = useData(() => getCityBySlug(slug ?? ''), [slug]);
   const { data: content } = useData(
@@ -217,7 +231,7 @@ export default function PlaceScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero */}
         {heroUrl && (
-          <Image source={{ uri: heroUrl }} style={styles.hero} />
+          <Image source={{ uri: heroUrl }} style={styles.hero} contentFit="cover" transition={200} />
         )}
 
         <View style={styles.content}>

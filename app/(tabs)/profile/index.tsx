@@ -1,8 +1,10 @@
-import React, { useCallback } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getCollections, getProfileById, getSavedPlaces } from '@/data/api';
@@ -23,6 +25,11 @@ function countryFlag(iso2: string): string {
 export default function ProfileScreen() {
   const router = useRouter();
   const { userId } = useAuth();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    posthog.capture('profile_screen_viewed');
+  }, [posthog]);
 
   const { data: profile, loading: loadingProfile, error: errorProfile, refetch: refetchProfile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(undefined),
@@ -55,7 +62,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             {profile?.avatarUrl ? (
-              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 })! }} style={styles.avatar} />
+              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 })! }} style={styles.avatar} contentFit="cover" transition={200} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={32} color={colors.textMuted} />
@@ -106,7 +113,10 @@ export default function ProfileScreen() {
                 <Pressable
                   key={col.id}
                   style={styles.collectionRow}
-                  onPress={() => router.push(`/profile/collections/${col.id}`)}
+                  onPress={() => {
+                    posthog.capture('collection_tapped', { collection_id: col.id });
+                    router.push(`/profile/collections/${col.id}`);
+                  }}
                 >
                   <Text style={styles.collectionEmoji}>{col.emoji}</Text>
                   <View style={styles.collectionText}>
@@ -126,21 +136,30 @@ export default function ProfileScreen() {
         <View style={styles.actionRow}>
           <Pressable
             style={styles.actionButton}
-            onPress={() => router.push('/profile/edit')}
+            onPress={() => {
+              posthog.capture('edit_profile_tapped');
+              router.push('/profile/edit');
+            }}
           >
             <Ionicons name="create-outline" size={18} color={colors.orange} />
             <Text style={styles.actionLabel}>Edit profile</Text>
           </Pressable>
           <Pressable
             style={styles.actionButton}
-            onPress={() => router.push('/profile/settings')}
+            onPress={() => {
+              posthog.capture('settings_tapped');
+              router.push('/profile/settings');
+            }}
           >
             <Ionicons name="settings-outline" size={18} color={colors.orange} />
             <Text style={styles.actionLabel}>Settings</Text>
           </Pressable>
           <Pressable
             style={styles.actionButton}
-            onPress={() => router.push('/home/dm')}
+            onPress={() => {
+              posthog.capture('messages_tapped', { source: 'profile' });
+              router.push('/home/dm');
+            }}
           >
             <Ionicons name="chatbubbles-outline" size={18} color={colors.orange} />
             <Text style={styles.actionLabel}>Messages</Text>

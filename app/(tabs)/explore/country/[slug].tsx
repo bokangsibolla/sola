@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { getCountryBySlug, getCountryContent, getCitiesByCountry, getCityContent } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -21,6 +22,13 @@ export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
+
+  useEffect(() => {
+    if (slug) {
+      posthog.capture('country_guide_viewed', { country_slug: slug });
+    }
+  }, [slug, posthog]);
 
   const { data: country, loading: countryLoading, error, refetch } = useData(() => getCountryBySlug(slug), [slug]);
   const { data: contentData } = useData(
@@ -196,11 +204,15 @@ function PortraitSection({ portraitMd }: { portraitMd: string }) {
 
 function CityCard({ city }: { city: any }) {
   const router = useRouter();
+  const posthog = usePostHog();
   const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
   return (
     <Pressable
       style={styles.cityCard}
-      onPress={() => router.push(`/explore/place/${city.slug}`)}
+      onPress={() => {
+        posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
+        router.push(`/explore/place/${city.slug}`);
+      }}
     >
       {city.heroImageUrl && (
         <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />

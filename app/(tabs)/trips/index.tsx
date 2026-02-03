@@ -1,8 +1,9 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import { getTrips } from '@/data/api';
@@ -35,7 +36,12 @@ function getFlag(iso2: string): string {
 export default function TripsScreen() {
   const router = useRouter();
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const { data: trips, loading, error, refetch } = useData(() => userId ? getTrips(userId) : Promise.resolve([]), [userId]);
+
+  useEffect(() => {
+    posthog.capture('trips_screen_viewed');
+  }, [posthog]);
 
   useFocusEffect(
     useCallback(() => {
@@ -54,7 +60,10 @@ export default function TripsScreen() {
         rightComponent={
           <Pressable
             style={styles.addButton}
-            onPress={() => router.push('/trips/new')}
+            onPress={() => {
+              posthog.capture('add_trip_tapped');
+              router.push('/trips/new');
+            }}
           >
             <Ionicons name="add" size={22} color={colors.orange} />
           </Pressable>
@@ -80,7 +89,10 @@ export default function TripsScreen() {
               <Pressable
                 key={trip.id}
                 style={styles.tripCard}
-                onPress={() => router.push(`/trips/${trip.id}`)}
+                onPress={() => {
+                  posthog.capture('trip_detail_tapped', { trip_id: trip.id, destination: trip.destinationName });
+                  router.push(`/trips/${trip.id}`);
+                }}
               >
                 <View style={styles.tripHeader}>
                   <Text style={styles.tripFlag}>{flag}</Text>

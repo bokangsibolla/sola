@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
 import { getProfileById, getSavedPlaces, getPlaceById, getPlaceFirstImage, getCityById, getOrCreateConversation } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
@@ -16,13 +18,22 @@ export default function UserProfileScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const posthog = usePostHog();
   const [startingChat, setStartingChat] = useState(false);
+
+  useEffect(() => {
+    if (id) {
+      posthog.capture('user_profile_viewed', { viewed_user_id: id });
+    }
+  }, [id, posthog]);
 
   const handleMessage = async () => {
     if (!userId || !id) return;
+    posthog.capture('message_button_tapped', { recipient_id: id });
     setStartingChat(true);
     try {
       const convoId = await getOrCreateConversation(userId, id);
+      posthog.capture('conversation_started', { conversation_id: convoId, recipient_id: id });
       router.push(`/home/dm/${convoId}`);
     } catch {
       // Silently fail — user can retry
@@ -62,7 +73,7 @@ export default function UserProfileScreen() {
         {/* Avatar + name */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 })! }} style={styles.avatar} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 })! }} style={styles.avatar} contentFit="cover" transition={200} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Ionicons name="person" size={36} color={colors.textMuted} />
@@ -144,7 +155,7 @@ function SavedPlaceCard({ placeId }: { placeId: string }) {
   return (
     <View style={styles.placeCard}>
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.placeImage} />
+        <Image source={{ uri: imageUrl }} style={styles.placeImage} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.placeImage, styles.placeImagePlaceholder]}>
           <Ionicons name="image-outline" size={20} color={colors.textMuted} />

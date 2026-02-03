@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Dimensions,
   Pressable,
@@ -11,6 +11,7 @@ import {
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import {
@@ -55,8 +56,13 @@ function matchesSection(content: GeoContent | undefined, sectionTags: string[]):
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const [search, setSearch] = useState('');
   const [activeTab, setActiveTab] = useState('for_you');
+
+  useEffect(() => {
+    posthog.capture('explore_screen_viewed');
+  }, [posthog]);
 
   const { data: countries, loading, error, refetch } = useData(() => getCountries());
 
@@ -114,6 +120,7 @@ export default function ExploreScreen() {
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   const navigateToCountry = (slug: string) => {
+    posthog.capture('country_guide_tapped', { country_slug: slug });
     router.push(`/(tabs)/explore/country/${slug}`);
   };
 
@@ -266,6 +273,7 @@ export default function ExploreScreen() {
                 key={`${result.type}-${result.id}`}
                 style={styles.searchItem}
                 onPress={() => {
+                  posthog.capture('search_result_tapped', { type: result.type, slug: result.slug });
                   if (result.type === 'country') {
                     router.push(`/(tabs)/explore/country/${result.slug}`);
                   } else {
@@ -306,7 +314,10 @@ export default function ExploreScreen() {
                   <Pressable
                     key={tab.key}
                     style={[styles.tab, isActive && styles.tabActive]}
-                    onPress={() => setActiveTab(tab.key)}
+                    onPress={() => {
+                      posthog.capture('explore_tab_switched', { tab: tab.key });
+                      setActiveTab(tab.key);
+                    }}
                   >
                     <Ionicons
                       name={tab.icon as any}
