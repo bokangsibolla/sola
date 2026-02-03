@@ -13,10 +13,184 @@ import MarkdownContent from '@/components/MarkdownContent';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import type { GeoContent } from '@/data/types';
+
+// ---------------------------------------------------------------------------
+// Constants & Helpers
+// ---------------------------------------------------------------------------
+
+const SOLO_LEVEL_LABELS: Record<string, string> = {
+  beginner: 'First-time solo travelers',
+  intermediate: 'Travelers with some experience',
+  expert: 'Experienced solo adventurers',
+};
+
+const SAFETY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
+  very_safe: { label: 'Very Safe', color: colors.greenSoft, bg: colors.greenFill },
+  generally_safe: { label: 'Generally Safe', color: colors.greenSoft, bg: colors.greenFill },
+  use_caution: { label: 'Use Caution', color: colors.orange, bg: colors.orangeFill },
+  exercise_caution: { label: 'Exercise Caution', color: colors.orange, bg: colors.orangeFill },
+};
 
 const ENGLISH_MAP: Record<string, string> = { high: 'Widely spoken', moderate: 'Moderate', low: 'Limited' };
 const INTERNET_MAP: Record<string, string> = { excellent: 'Excellent', good: 'Good', fair: 'Fair', poor: 'Poor' };
-const SOLO_MAP: Record<string, string> = { beginner: 'Great for beginners', intermediate: 'Some experience helps', expert: 'For experienced travellers' };
+
+// ---------------------------------------------------------------------------
+// Who This Is For Section
+// ---------------------------------------------------------------------------
+
+function WhoThisIsFor({ content }: { content: GeoContent }) {
+  const personas: string[] = [];
+
+  // Add solo level persona
+  if (content.soloLevel && SOLO_LEVEL_LABELS[content.soloLevel]) {
+    personas.push(SOLO_LEVEL_LABELS[content.soloLevel]);
+  }
+
+  // Add interest-based personas
+  if (content.goodForInterests && content.goodForInterests.length > 0) {
+    content.goodForInterests.forEach((interest) => {
+      personas.push(interest);
+    });
+  }
+
+  if (personas.length === 0) return null;
+
+  return (
+    <View style={styles.whoSection}>
+      <Text style={styles.whoTitle}>Who this is for</Text>
+      {personas.slice(0, 4).map((persona, i) => (
+        <View key={i} style={styles.personaRow}>
+          <Text style={styles.personaCheck}>✓</Text>
+          <Text style={styles.personaText}>{persona}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Safety Context Section
+// ---------------------------------------------------------------------------
+
+function SafetyContext({ content }: { content: GeoContent }) {
+  const safety = content.safetyRating ? SAFETY_LABELS[content.safetyRating] : null;
+
+  if (!safety && !content.safetyWomenMd) return null;
+
+  return (
+    <View style={styles.safetySection}>
+      <View style={styles.safetyHeader}>
+        <Ionicons name="shield-checkmark" size={20} color={colors.greenSoft} />
+        <Text style={styles.safetyTitle}>Safety for solo women</Text>
+      </View>
+
+      {safety && (
+        <View style={[styles.safetyBadge, { backgroundColor: safety.bg }]}>
+          <Text style={[styles.safetyBadgeText, { color: safety.color }]}>
+            {safety.label}
+          </Text>
+        </View>
+      )}
+
+      {content.safetyWomenMd && (
+        <Text style={styles.safetyText} numberOfLines={3}>
+          {content.safetyWomenMd.replace(/[#*_]/g, '').slice(0, 200)}
+          {content.safetyWomenMd.length > 200 ? '...' : ''}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Enhanced City Card
+// ---------------------------------------------------------------------------
+
+function CityCard({ city }: { city: any }) {
+  const router = useRouter();
+  const posthog = usePostHog();
+  const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
+
+  return (
+    <Pressable
+      style={styles.cityCard}
+      onPress={() => {
+        posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
+        router.push(`/(tabs)/explore/city/${city.slug}` as any);
+      }}
+    >
+      {/* Full-width image */}
+      {city.heroImageUrl ? (
+        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
+      ) : (
+        <View style={[styles.cityImage, styles.cityImagePlaceholder]} />
+      )}
+
+      {/* Content below image */}
+      <View style={styles.cityBody}>
+        <View style={styles.cityHeader}>
+          <Text style={styles.cityName}>{city.name}</Text>
+          <View style={styles.cityArrow}>
+            <Ionicons name="arrow-forward" size={16} color={colors.orange} />
+          </View>
+        </View>
+        {cityContent?.subtitle && (
+          <Text style={styles.cityPurpose} numberOfLines={2}>
+            {cityContent.subtitle}
+          </Text>
+        )}
+        {cityContent?.bestFor && (
+          <View style={styles.cityBestFor}>
+            <Text style={styles.cityBestForValue}>{cityContent.bestFor}</Text>
+          </View>
+        )}
+        <View style={styles.cityExploreRow}>
+          <Text style={styles.cityExploreHint}>Plan your days here</Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.orange} />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Portrait Section
+// ---------------------------------------------------------------------------
+
+function PortraitSection({ portraitMd }: { portraitMd: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <View style={styles.portraitSection}>
+      <Text style={styles.portraitTitle}>The experience</Text>
+      <View style={!expanded ? styles.portraitCollapsed : undefined}>
+        <MarkdownContent>{portraitMd}</MarkdownContent>
+      </View>
+      {!expanded && <View style={styles.portraitFade} />}
+      <Pressable onPress={() => setExpanded((v) => !v)}>
+        <Text style={styles.readMore}>{expanded ? 'Read less' : 'Read more'}</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Emergency Row
+// ---------------------------------------------------------------------------
+
+function EmergencyRow({ label, number }: { label: string; number: string }) {
+  return (
+    <View style={styles.emergencyRow}>
+      <Text style={styles.emergencyLabel}>{label}</Text>
+      <Text style={styles.emergencyNumber}>{number}</Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Screen
+// ---------------------------------------------------------------------------
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -30,18 +204,21 @@ export default function CountryGuideScreen() {
     }
   }, [slug, posthog]);
 
-  const { data: country, loading: countryLoading, error, refetch } = useData(() => getCountryBySlug(slug), [slug]);
+  const { data: country, loading: countryLoading, error, refetch } = useData(
+    () => slug ? getCountryBySlug(slug) : Promise.resolve(null),
+    [slug],
+  );
   const { data: contentData } = useData(
-    () => (country ? getCountryContent(country.id) : Promise.resolve(null)),
+    () => country ? getCountryContent(country.id) : Promise.resolve(null),
     [country?.id],
   );
   const { data: citiesData } = useData(
-    () => (country ? getCitiesByCountry(country.id) : Promise.resolve(null)),
+    () => country ? getCitiesByCountry(country.id) : Promise.resolve([]),
     [country?.id],
   );
 
   const content = contentData ?? undefined;
-  const cities = citiesData ?? [];
+  const cities = Array.isArray(citiesData) ? citiesData : [];
 
   if (countryLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -56,17 +233,17 @@ export default function CountryGuideScreen() {
   const emergency = getEmergencyNumbers(country.iso2);
   const heroImage = country.heroImageUrl ?? content?.heroImageUrl;
 
+  // Quick facts for reference section
   const quickFacts = [
     { icon: 'calendar-outline', label: 'Best time', value: content?.bestMonths },
     { icon: 'cash-outline', label: 'Currency', value: content?.currency },
     { icon: 'language-outline', label: 'Language', value: content?.language },
     { icon: 'chatbubble-outline', label: 'English', value: content?.englishFriendliness ? ENGLISH_MAP[content.englishFriendliness] : null },
     { icon: 'wifi-outline', label: 'Internet', value: content?.internetQuality ? INTERNET_MAP[content.internetQuality] : null },
-    { icon: 'compass-outline', label: 'Solo level', value: content?.soloLevel ? SOLO_MAP[content.soloLevel] : null },
   ].filter((f) => f.value);
 
+  // Collapsible practical sections (moved down)
   const collapsibleSections = [
-    { title: 'What to know', icon: 'information-circle-outline', content: content?.safetyWomenMd },
     { title: 'Getting there', icon: 'airplane-outline', content: content?.gettingThereMd },
     { title: 'Visa & entry', icon: 'document-text-outline', content: [content?.visaEntryMd, content?.visaNote].filter(Boolean).join('\n\n') || null },
     { title: 'Money & payments', icon: 'card-outline', content: content?.moneyMd },
@@ -78,69 +255,100 @@ export default function CountryGuideScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        <Pressable
+          onPress={() => router.push('/(tabs)/explore' as any)}
+          hitSlop={12}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+          <Text style={styles.backLabel}>Explore</Text>
         </Pressable>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* A. Hero */}
+        {/* 1. Hero with vibe statement */}
         <View style={styles.hero}>
           {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} />}
           <View style={styles.heroOverlay}>
             <Text style={styles.heroName}>{country.name}</Text>
-            {content?.subtitle ? <Text style={styles.heroTagline}>{content.subtitle}</Text> : null}
+            {content?.subtitle && <Text style={styles.heroTagline}>{content.subtitle}</Text>}
           </View>
         </View>
 
         <View style={styles.content}>
-          {/* B. Quick facts — horizontal scroll cards */}
-          {quickFacts.length > 0 && (
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.factsScroll}
-              style={styles.factsContainer}
-            >
-              {quickFacts.map((fact) => (
-                <View key={fact.label} style={styles.factCard}>
-                  <Ionicons name={fact.icon as any} size={18} color={colors.orange} />
-                  <Text style={styles.factLabel}>{fact.label}</Text>
-                  <Text style={styles.factValue} numberOfLines={2}>{fact.value}</Text>
-                </View>
-              ))}
-            </ScrollView>
-          )}
+          {/* 1. CITIES FIRST - Primary navigation */}
+          <View style={styles.citiesSection}>
+            <View style={styles.citiesSectionHeader}>
+              <Text style={styles.sectionTitle}>
+                {cities.length > 0 ? 'Where do you want to go?' : 'Cities coming soon'}
+              </Text>
+              {cities.length > 0 && (
+                <Text style={styles.sectionHint}>
+                  {cities.length} {cities.length === 1 ? 'city' : 'cities'}
+                </Text>
+              )}
+            </View>
+            <Text style={styles.sectionSubtitle}>
+              {cities.length > 0
+                ? 'Find restaurants, cafes, activities and places to stay'
+                : 'We are adding cities to this country'}
+            </Text>
+            {cities.map((city) => (
+              <CityCard key={city.slug} city={city} />
+            ))}
+          </View>
 
-          {/* C. "Why we love it" — editorial portrait with Read more */}
-          {content?.portraitMd && (
-            <PortraitSection portraitMd={content.portraitMd} />
-          )}
+          {/* 2. Who this is for (persona matching) */}
+          {content && <WhoThisIsFor content={content} />}
 
-          {/* D. Highlights */}
+          {/* 3. Safety context */}
+          {content && <SafetyContext content={content} />}
+
+          {/* 4. What to experience - Main activities */}
           {content?.highlights && content.highlights.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>Highlights</Text>
-              {content.highlights.map((h, i) => (
-                <View key={i} style={styles.highlightRow}>
-                  <Text style={styles.highlightBullet}>·</Text>
-                  <Text style={styles.highlightText}>{h}</Text>
-                </View>
-              ))}
-            </>
+            <View style={styles.experiencesSection}>
+              <Text style={styles.sectionTitle}>What to experience</Text>
+              <Text style={styles.sectionSubtitle}>
+                Unique things that make {country.name} special
+              </Text>
+              <View style={styles.highlightsList}>
+                {content.highlights.slice(0, 5).map((highlight, i) => (
+                  <View key={i} style={styles.highlightItem}>
+                    <View style={styles.highlightNumber}>
+                      <Text style={styles.highlightNumberText}>{i + 1}</Text>
+                    </View>
+                    <Text style={styles.highlightItemText}>{highlight}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
           )}
 
-          {/* E. Cities to explore */}
-          {cities.length > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities to explore</Text>
-              {cities.map((city) => (
-                <CityCard key={city.slug} city={city} />
-              ))}
-            </>
+          {/* 5. The experience (detailed editorial) */}
+          {content?.portraitMd && <PortraitSection portraitMd={content.portraitMd} />}
+
+          {/* 7. Quick facts (reference) */}
+          {quickFacts.length > 0 && (
+            <View style={styles.quickFactsSection}>
+              <Text style={styles.sectionTitle}>Quick facts</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.factsScroll}
+                style={styles.factsContainer}
+              >
+                {quickFacts.map((fact) => (
+                  <View key={fact.label} style={styles.factCard}>
+                    <Ionicons name={fact.icon as any} size={18} color={colors.orange} />
+                    <Text style={styles.factLabel}>{fact.label}</Text>
+                    <Text style={styles.factValue} numberOfLines={2}>{fact.value}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
           )}
 
-          {/* F. "Plan your trip" divider */}
+          {/* 8. Practical info (collapsible, secondary) */}
           {collapsibleSections.length > 0 && (
             <>
               <View style={styles.divider}>
@@ -149,7 +357,6 @@ export default function CountryGuideScreen() {
                 <View style={styles.dividerLine} />
               </View>
 
-              {/* G. Collapsible practical sections */}
               {collapsibleSections.map((section) => (
                 <CollapsibleSection key={section.title} title={section.title} icon={section.icon}>
                   <MarkdownContent>{section.content!}</MarkdownContent>
@@ -158,26 +365,15 @@ export default function CountryGuideScreen() {
             </>
           )}
 
-          {/* H. Things to do */}
-          {content?.topThingsToDo && content.topThingsToDo.length > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Things to do</Text>
-              {content.topThingsToDo.map((item, i) => (
-                <View key={i} style={styles.highlightRow}>
-                  <Text style={styles.highlightBullet}>{i + 1}.</Text>
-                  <Text style={styles.highlightText}>{item}</Text>
-                </View>
-              ))}
-            </>
-          )}
-
-          {/* I. Emergency numbers */}
-          <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Emergency numbers</Text>
-          <View style={styles.emergencyCard}>
-            <EmergencyRow label="Police" number={emergency.police} />
-            <EmergencyRow label="Ambulance" number={emergency.ambulance} />
-            <EmergencyRow label="Fire" number={emergency.fire} />
-            {emergency.general && <EmergencyRow label="General" number={emergency.general} />}
+          {/* 9. Emergency contacts (footer) */}
+          <View style={styles.emergencySection}>
+            <Text style={styles.sectionTitle}>Emergency numbers</Text>
+            <View style={styles.emergencyCard}>
+              <EmergencyRow label="Police" number={emergency.police} />
+              <EmergencyRow label="Ambulance" number={emergency.ambulance} />
+              <EmergencyRow label="Fire" number={emergency.fire} />
+              {emergency.general && <EmergencyRow label="General" number={emergency.general} />}
+            </View>
           </View>
         </View>
       </ScrollView>
@@ -185,57 +381,9 @@ export default function CountryGuideScreen() {
   );
 }
 
-function PortraitSection({ portraitMd }: { portraitMd: string }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <View style={styles.portraitSection}>
-      <Text style={styles.portraitTitle}>Why we love it</Text>
-      <View style={!expanded ? styles.portraitCollapsed : undefined}>
-        <MarkdownContent>{portraitMd}</MarkdownContent>
-      </View>
-      {!expanded && <View style={styles.portraitFade} />}
-      <Pressable onPress={() => setExpanded((v) => !v)}>
-        <Text style={styles.readMore}>{expanded ? 'Read less' : 'Read more'}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-function CityCard({ city }: { city: any }) {
-  const router = useRouter();
-  const posthog = usePostHog();
-  const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
-  return (
-    <Pressable
-      style={styles.cityCard}
-      onPress={() => {
-        posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
-        router.push(`/explore/place/${city.slug}`);
-      }}
-    >
-      {city.heroImageUrl && (
-        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
-      )}
-      <View style={styles.cityText}>
-        <Text style={styles.cityName}>{city.name}</Text>
-        {cityContent?.subtitle ? (
-          <Text style={styles.cityTagline}>{cityContent.subtitle}</Text>
-        ) : null}
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-    </Pressable>
-  );
-}
-
-function EmergencyRow({ label, number }: { label: string; number: string }) {
-  return (
-    <View style={styles.emergencyRow}>
-      <Text style={styles.emergencyLabel}>{label}</Text>
-      <Text style={styles.emergencyNumber}>{number}</Text>
-    </View>
-  );
-}
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
@@ -251,6 +399,16 @@ const styles = StyleSheet.create({
   nav: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  backLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
   hero: {
     height: 220,
@@ -285,35 +443,37 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
 
-  // Quick facts cards
-  factsContainer: {
+  // Who this is for
+  whoSection: {
     marginBottom: spacing.xl,
-    marginHorizontal: -spacing.lg,
+    paddingBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
   },
-  factsScroll: {
-    paddingHorizontal: spacing.lg,
+  whoTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: spacing.md,
+  },
+  personaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
-  factCard: {
-    width: 100,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    gap: 4,
-  },
-  factLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  factValue: {
+  personaCheck: {
     fontFamily: fonts.medium,
     fontSize: 14,
+    color: colors.greenSoft,
+  },
+  personaText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
     color: colors.textPrimary,
   },
 
-  // Portrait / "Why we love it"
+  // Portrait / "The experience"
   portraitSection: {
     marginBottom: spacing.xl,
   },
@@ -339,25 +499,209 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
 
-  // Section title
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
+  // Safety context
+  safetySection: {
+    marginBottom: spacing.xl,
+    padding: spacing.lg,
+    backgroundColor: colors.greenFill,
+    borderRadius: radius.card,
   },
-  highlightRow: {
+  safetyHeader: {
     flexDirection: 'row',
+    alignItems: 'center',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  highlightBullet: {
-    ...typography.body,
+  safetyTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  safetyBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    marginBottom: spacing.sm,
+  },
+  safetyBadgeText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+  },
+  safetyText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+  },
+
+  // Cities section
+  citiesSection: {
+    marginBottom: spacing.xl,
+  },
+  citiesSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
+  },
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  sectionHint: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
     color: colors.orange,
   },
-  highlightText: {
-    ...typography.body,
+  sectionSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+
+  // Enhanced city cards - MEDIUM treatment (between country/place)
+  cityCard: {
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  cityImage: {
+    width: '100%',
+    height: 120,
+  },
+  cityImagePlaceholder: {
+    backgroundColor: colors.borderSubtle,
+  },
+  cityBody: {
+    padding: spacing.md,
+  },
+  cityHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  cityName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
     color: colors.textPrimary,
     flex: 1,
+  },
+  cityArrow: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cityPurpose: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 4,
+  },
+  cityBestFor: {
+    flexDirection: 'row',
+    marginTop: spacing.sm,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    alignSelf: 'flex-start',
+  },
+  cityBestForLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+  cityBestForValue: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  cityExploreRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.sm,
+  },
+  cityExploreHint: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+  },
+
+  // Experiences / Highlights
+  experiencesSection: {
+    marginBottom: spacing.xl,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  highlightsList: {
+    gap: spacing.md,
+  },
+  highlightItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  highlightNumber: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  highlightNumberText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  highlightItemText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+
+  // Quick facts
+  quickFactsSection: {
+    marginBottom: spacing.xl,
+  },
+  factsContainer: {
+    marginHorizontal: -spacing.lg,
+    marginTop: spacing.sm,
+  },
+  factsScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  factCard: {
+    width: 100,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.sm,
+    padding: spacing.md,
+    gap: 4,
+  },
+  factLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  factValue: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
 
   // Divider
@@ -380,42 +724,16 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
   },
 
-  // City cards
-  cityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
-  },
-  cityImage: {
-    width: 72,
-    height: 72,
-  },
-  cityText: {
-    flex: 1,
-    paddingHorizontal: spacing.md,
-  },
-  cityName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  cityTagline: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-
   // Emergency
+  emergencySection: {
+    marginTop: spacing.xl,
+  },
   emergencyCard: {
     borderWidth: 1,
     borderColor: colors.borderDefault,
     borderRadius: radius.card,
     overflow: 'hidden',
+    marginTop: spacing.sm,
   },
   emergencyRow: {
     flexDirection: 'row',

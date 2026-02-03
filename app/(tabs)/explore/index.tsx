@@ -1,6 +1,5 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Dimensions,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,55 +16,145 @@ import AppHeader from '@/components/AppHeader';
 import {
   getCountries,
   getCountryContent,
-  getCountriesByTags,
+  getPopularCities,
+  getCityContent,
+  getCountryById,
   searchDestinations,
 } from '@/data/api';
 import { useData } from '@/hooks/useData';
-import type { Country, GeoContent } from '@/data/types';
+import type { Country, City, GeoContent } from '@/data/types';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const SMALL_CARD_WIDTH = 140;
-
-const TABS: { key: string; label: string; icon: string; tags: string[] }[] = [
-  { key: 'for_you', label: 'For you', icon: 'sparkles-outline', tags: [] },
-  { key: 'beach_nature', label: 'Beach & nature', icon: 'leaf-outline', tags: ['beach_islands', 'nature_outdoors'] },
-  { key: 'city_culture', label: 'City & culture', icon: 'business-outline', tags: ['city_culture', 'foodie'] },
-  { key: 'first_solo', label: 'First trip', icon: 'compass-outline', tags: ['first_solo_trip'] },
-  { key: 'wellness', label: 'Wellness', icon: 'flower-outline', tags: ['wellness_retreat'] },
-];
-
-const SECTIONS = [
-  { title: 'Perfect for a first solo trip', tags: ['first', 'solo', 'beginner', 'easy'] },
-  { title: 'Beach & island escapes', tags: ['beach', 'island', 'diving', 'snorkel'] },
-  { title: 'City & culture', tags: ['city', 'culture', 'history', 'art'] },
-  { title: 'Wellness retreats', tags: ['wellness', 'yoga', 'spa', 'retreat'] },
-];
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
 
 type CountryWithContent = { country: Country; content: GeoContent | undefined };
+type CityWithContext = { city: City; countryName: string; content: GeoContent | undefined };
 
-function matchesSection(content: GeoContent | undefined, sectionTags: string[]): boolean {
-  if (!content?.goodForInterests?.length) return false;
-  const interests = content.goodForInterests.map((i) => i.toLowerCase());
-  return sectionTags.some((tag) =>
-    interests.some((interest) => interest.includes(tag)),
+// ---------------------------------------------------------------------------
+// City Card Component
+// ---------------------------------------------------------------------------
+
+function CityCard({ city, countryName, content }: CityWithContext) {
+  const router = useRouter();
+  const posthog = usePostHog();
+
+  return (
+    <Pressable
+      style={styles.cityCard}
+      onPress={() => {
+        posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
+        router.push(`/(tabs)/explore/city/${city.slug}` as any);
+      }}
+    >
+      {city.heroImageUrl ? (
+        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
+      ) : (
+        <View style={[styles.cityImage, styles.cityImagePlaceholder]} />
+      )}
+      <View style={styles.cityBody}>
+        <Text style={styles.cityName} numberOfLines={1}>{city.name}</Text>
+        <Text style={styles.cityCountry} numberOfLines={1}>{countryName}</Text>
+        {content?.bestFor && (
+          <View style={styles.cityBestFor}>
+            <Text style={styles.cityBestForText} numberOfLines={1}>{content.bestFor}</Text>
+          </View>
+        )}
+      </View>
+      <View style={styles.cityArrowContainer}>
+        <Ionicons name="chevron-forward" size={14} color={colors.orange} />
+      </View>
+    </Pressable>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Country Card Component
+// ---------------------------------------------------------------------------
+
+function CountryCard({ country, content }: CountryWithContent) {
+  const router = useRouter();
+  const posthog = usePostHog();
+
+  return (
+    <Pressable
+      style={styles.countryCard}
+      onPress={() => {
+        posthog.capture('country_guide_tapped', { country_slug: country.slug });
+        router.push(`/(tabs)/explore/country/${country.slug}` as any);
+      }}
+    >
+      {country.heroImageUrl ? (
+        <Image source={{ uri: country.heroImageUrl }} style={styles.countryImage} contentFit="cover" transition={200} />
+      ) : (
+        <View style={[styles.countryImage, styles.countryImagePlaceholder]} />
+      )}
+      <View style={styles.countryOverlay}>
+        <Text style={styles.countryName}>{country.name}</Text>
+        {content?.subtitle && (
+          <Text style={styles.countrySubtitle} numberOfLines={1}>{content.subtitle}</Text>
+        )}
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Featured Country Hero
+// ---------------------------------------------------------------------------
+
+function FeaturedCountryHero({ country, content }: CountryWithContent) {
+  const router = useRouter();
+  const posthog = usePostHog();
+
+  return (
+    <Pressable
+      style={styles.featuredHero}
+      onPress={() => {
+        posthog.capture('featured_country_tapped', { country_slug: country.slug });
+        router.push(`/(tabs)/explore/country/${country.slug}` as any);
+      }}
+    >
+      {country.heroImageUrl ? (
+        <Image source={{ uri: country.heroImageUrl }} style={styles.featuredImage} contentFit="cover" transition={300} />
+      ) : (
+        <View style={[styles.featuredImage, styles.featuredImagePlaceholder]} />
+      )}
+      <View style={styles.featuredOverlay}>
+        <Text style={styles.featuredLabel}>Featured destination</Text>
+        <Text style={styles.featuredName}>{country.name}</Text>
+        {content?.subtitle && (
+          <Text style={styles.featuredSubtitle}>{content.subtitle}</Text>
+        )}
+        <View style={styles.featuredCta}>
+          <Text style={styles.featuredCtaText}>Explore</Text>
+          <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Main Screen
+// ---------------------------------------------------------------------------
 
 export default function ExploreScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('for_you');
 
   useEffect(() => {
     posthog.capture('explore_screen_viewed');
   }, [posthog]);
 
+  // Fetch countries
   const { data: countries, loading, error, refetch } = useData(() => getCountries());
 
+  // Fetch country content
   const { data: countriesWithContent } = useData(
     async () => {
       const list = countries ?? [];
@@ -75,15 +164,32 @@ export default function ExploreScreen() {
     [countries],
   );
 
-  const currentTabDef = TABS.find((t) => t.key === activeTab) ?? TABS[0];
-  const { data: filteredCountries, loading: filterLoading } = useData(
-    () =>
-      activeTab !== 'for_you' && currentTabDef.tags.length > 0
-        ? getCountriesByTags(currentTabDef.tags)
-        : Promise.resolve(null),
-    [activeTab],
+  // Fetch popular cities
+  const { data: cities } = useData(() => getPopularCities(12));
+
+  // Fetch city content and country names
+  const { data: citiesWithContext } = useData(
+    async (): Promise<CityWithContext[]> => {
+      const list = Array.isArray(cities) ? cities : [];
+      if (list.length === 0) return [];
+      const results: CityWithContext[] = [];
+      for (const city of list) {
+        const [content, country] = await Promise.all([
+          getCityContent(city.id).catch(() => undefined),
+          getCountryById(city.countryId).catch(() => undefined),
+        ]);
+        results.push({
+          city,
+          countryName: country?.name ?? '',
+          content: content ?? undefined,
+        });
+      }
+      return results;
+    },
+    [cities],
   );
 
+  // Search
   const debouncedSearch = search.trim();
   const { data: searchResults, loading: searchLoading } = useData(
     () => (debouncedSearch ? searchDestinations(debouncedSearch) : Promise.resolve(null)),
@@ -92,160 +198,12 @@ export default function ExploreScreen() {
 
   const isSearching = debouncedSearch.length > 0;
 
-  // For-you section data
-  const allItems = countriesWithContent ?? [];
-  const heroItem = allItems[0] ?? null;
-
-  const sectionData = useMemo(() => {
-    return SECTIONS.map((section) => ({
-      ...section,
-      items: allItems.filter((item) => matchesSection(item.content, section.tags)),
-    }));
-  }, [allItems]);
-
-  // Countries that appear in at least one section
-  const sectionCountryIds = useMemo(() => {
-    const ids = new Set<string>();
-    sectionData.forEach((s) => s.items.forEach((item) => ids.add(item.country.id)));
-    if (heroItem) ids.add(heroItem.country.id);
-    return ids;
-  }, [sectionData, heroItem]);
-
-  const remainingCountries = useMemo(
-    () => allItems.filter((item) => !sectionCountryIds.has(item.country.id)),
-    [allItems, sectionCountryIds],
-  );
-
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
-  const navigateToCountry = (slug: string) => {
-    posthog.capture('country_guide_tapped', { country_slug: slug });
-    router.push(`/(tabs)/explore/country/${slug}`);
-  };
-
-  const renderSmallCard = (item: CountryWithContent) => (
-    <Pressable
-      key={item.country.id}
-      style={styles.smallCard}
-      onPress={() => navigateToCountry(item.country.slug)}
-    >
-      <View style={styles.smallCardImageWrap}>
-        {item.country.heroImageUrl && (
-          <Image
-            source={{ uri: item.country.heroImageUrl }}
-            style={styles.smallCardImage}
-            contentFit="cover"
-            transition={200}
-          />
-        )}
-      </View>
-      <Text style={styles.smallCardName} numberOfLines={1}>
-        {item.country.name}
-      </Text>
-      {item.content?.subtitle && (
-        <Text style={styles.smallCardSubtitle} numberOfLines={1}>
-          {item.content.subtitle}
-        </Text>
-      )}
-    </Pressable>
-  );
-
-  const renderFullWidthCard = (item: CountryWithContent) => (
-    <Pressable
-      key={item.country.slug}
-      style={styles.guideCard}
-      onPress={() => navigateToCountry(item.country.slug)}
-    >
-      {item.country.heroImageUrl && (
-        <Image
-          source={{ uri: item.country.heroImageUrl }}
-          style={styles.guideImage}
-          contentFit="cover"
-          transition={200}
-        />
-      )}
-      <View style={styles.guideOverlay}>
-        <Text style={styles.guideName}>{item.country.name}</Text>
-        {item.content?.subtitle && (
-          <Text style={styles.guideSubtitle}>{item.content.subtitle}</Text>
-        )}
-      </View>
-    </Pressable>
-  );
-
-  const renderForYouTab = () => (
-    <>
-      {/* Hero card */}
-      {heroItem && (
-        <Pressable
-          style={styles.heroCard}
-          onPress={() => navigateToCountry(heroItem.country.slug)}
-        >
-          {heroItem.country.heroImageUrl && (
-            <Image
-              source={{ uri: heroItem.country.heroImageUrl }}
-              style={styles.heroImage}
-              contentFit="cover"
-              transition={200}
-            />
-          )}
-          <View style={styles.heroOverlay}>
-            <Text style={styles.heroName}>{heroItem.country.name}</Text>
-            {heroItem.content?.subtitle && (
-              <Text style={styles.heroSubtitle}>{heroItem.content.subtitle}</Text>
-            )}
-          </View>
-        </Pressable>
-      )}
-
-      {/* Themed sections */}
-      {sectionData.map((section) =>
-        section.items.length > 0 ? (
-          <View key={section.title} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.sectionScroll}
-            >
-              {section.items.map(renderSmallCard)}
-            </ScrollView>
-          </View>
-        ) : null,
-      )}
-
-      {/* Remaining countries */}
-      {remainingCountries.length > 0 && (
-        <View style={styles.remainingSection}>
-          {remainingCountries.map(renderFullWidthCard)}
-        </View>
-      )}
-    </>
-  );
-
-  const renderFilteredTab = () => {
-    if (filterLoading) return <LoadingScreen />;
-    if (!filteredCountries || filteredCountries.length === 0) {
-      return (
-        <Text style={styles.emptyText}>No destinations yet for this category</Text>
-      );
-    }
-    return (
-      <>
-        {filteredCountries.map((country) => {
-          const withContent = allItems.find((item) => item.country.id === country.id);
-          return renderFullWidthCard(
-            withContent ?? { country, content: undefined },
-          );
-        })}
-      </>
-    );
-  };
-
   return (
     <AppScreen>
-      <AppHeader title="Explore" subtitle="Country guides and travel inspiration" />
+      <AppHeader title="Explore" subtitle="Where are you dreaming of?" />
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
         {/* Search */}
         <View style={styles.searchBar}>
@@ -265,82 +223,100 @@ export default function ExploreScreen() {
         </View>
 
         {isSearching ? (
+          // Search Results
           searchLoading ? (
             <LoadingScreen />
           ) : searchResults && searchResults.length > 0 ? (
-            searchResults.map((result) => (
-              <Pressable
-                key={`${result.type}-${result.id}`}
-                style={styles.searchItem}
-                onPress={() => {
-                  posthog.capture('search_result_tapped', { type: result.type, slug: result.slug });
-                  if (result.type === 'country') {
-                    router.push(`/(tabs)/explore/country/${result.slug}`);
-                  } else {
-                    router.push(`/(tabs)/explore/place/${result.slug}`);
-                  }
-                }}
-              >
-                <View style={styles.searchItemIcon}>
-                  <Ionicons
-                    name={result.type === 'country' ? 'flag' : 'location'}
-                    size={18}
-                    color={colors.textSecondary}
-                  />
-                </View>
-                <View style={styles.searchItemText}>
-                  <Text style={styles.searchItemName}>{result.name}</Text>
-                  {result.parentName && (
-                    <Text style={styles.searchItemParent}>{result.parentName}</Text>
-                  )}
-                </View>
-                <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-              </Pressable>
-            ))
+            <View style={styles.searchResults}>
+              {searchResults.map((result) => (
+                <Pressable
+                  key={`${result.type}-${result.id}`}
+                  style={styles.searchItem}
+                  onPress={() => {
+                    posthog.capture('search_result_tapped', { type: result.type, slug: result.slug });
+                    if (result.type === 'country') {
+                      router.push(`/(tabs)/explore/country/${result.slug}` as any);
+                    } else {
+                      router.push(`/(tabs)/explore/city/${result.slug}` as any);
+                    }
+                  }}
+                >
+                  <View style={styles.searchItemIcon}>
+                    <Ionicons
+                      name={result.type === 'country' ? 'flag' : 'location'}
+                      size={18}
+                      color={colors.textSecondary}
+                    />
+                  </View>
+                  <View style={styles.searchItemText}>
+                    <Text style={styles.searchItemName}>{result.name}</Text>
+                    {result.parentName && (
+                      <Text style={styles.searchItemParent}>{result.parentName}</Text>
+                    )}
+                  </View>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </Pressable>
+              ))}
+            </View>
           ) : (
             <Text style={styles.noResults}>No results for &quot;{search}&quot;</Text>
           )
         ) : (
           <>
-            {/* Tabs */}
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.tabBar}
-            >
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.key;
-                return (
-                  <Pressable
-                    key={tab.key}
-                    style={[styles.tab, isActive && styles.tabActive]}
-                    onPress={() => {
-                      posthog.capture('explore_tab_switched', { tab: tab.key });
-                      setActiveTab(tab.key);
-                    }}
-                  >
-                    <Ionicons
-                      name={tab.icon as any}
-                      size={20}
-                      color={isActive ? colors.orange : colors.textMuted}
-                      style={styles.tabIcon}
-                    />
-                    <Text style={[styles.tabLabel, isActive ? styles.tabLabelActive : styles.tabLabelInactive]}>
-                      {tab.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
+            {/* Featured Country Hero */}
+            {(countriesWithContent ?? []).length > 0 && (
+              <FeaturedCountryHero
+                country={countriesWithContent![0].country}
+                content={countriesWithContent![0].content}
+              />
+            )}
 
-            {/* Tab content */}
-            {activeTab === 'for_you' ? renderForYouTab() : renderFilteredTab()}
+            {/* Popular Cities Section */}
+            {(citiesWithContext ?? []).length > 0 && (
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Jump to a city</Text>
+                <Text style={styles.sectionSubtitle}>Start planning what to do</Text>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.cityScroll}
+                >
+                  {(citiesWithContext ?? []).map((item) => (
+                    <CityCard
+                      key={item.city.id}
+                      city={item.city}
+                      countryName={item.countryName}
+                      content={item.content}
+                    />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Countries Section */}
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Browse by country</Text>
+              <Text style={styles.sectionSubtitle}>Explore cities and plan your trip</Text>
+              <View style={styles.countryGrid}>
+                {(countriesWithContent ?? []).slice(1).map((item) => (
+                  <CountryCard
+                    key={item.country.id}
+                    country={item.country}
+                    content={item.content}
+                  />
+                ))}
+              </View>
+            </View>
           </>
         )}
       </ScrollView>
     </AppScreen>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Styles
+// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   searchBar: {
@@ -351,7 +327,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.input,
     paddingHorizontal: spacing.md,
     height: 44,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.xl,
     gap: spacing.sm,
   },
   searchInput: {
@@ -360,142 +336,8 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
   },
-  tabBar: {
-    flexDirection: 'row',
-    gap: spacing.xl,
-    marginBottom: spacing.lg,
-    paddingBottom: spacing.xs,
-  },
-  tab: {
-    alignItems: 'center' as const,
-    paddingBottom: spacing.sm,
-    width: 64,
-    borderBottomWidth: 2,
-    borderBottomColor: 'transparent',
-  },
-  tabActive: {
-    borderBottomColor: colors.orange,
-  },
-  tabIcon: {
-    marginBottom: 4,
-  },
-  tabLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    textAlign: 'center' as const,
-  },
-  tabLabelActive: {
-    color: colors.textPrimary,
-  },
-  tabLabelInactive: {
-    color: colors.textMuted,
-  },
-  heroCard: {
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    marginBottom: spacing.xl,
-    height: 260,
-    backgroundColor: colors.borderSubtle,
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-  },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-    backgroundColor: colors.overlayDark,
-  },
-  heroName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 26,
-    color: '#FFFFFF',
-  },
-  heroSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  section: {
-    marginBottom: spacing.xl,
-  },
-  sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  sectionScroll: {
-    gap: spacing.md,
-  },
-  smallCard: {
-    width: SMALL_CARD_WIDTH,
-  },
-  smallCardImageWrap: {
-    width: SMALL_CARD_WIDTH,
-    height: SMALL_CARD_WIDTH,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: colors.borderSubtle,
-    marginBottom: spacing.sm,
-  },
-  smallCardImage: {
-    width: '100%',
-    height: '100%',
-  },
-  smallCardName: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  smallCardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-  remainingSection: {
-    marginTop: spacing.sm,
-  },
-  guideCard: {
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    marginBottom: spacing.lg,
-    height: 200,
-    backgroundColor: colors.borderSubtle,
-  },
-  guideImage: {
-    width: '100%',
-    height: '100%',
-  },
-  guideOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-    backgroundColor: colors.overlayDark,
-  },
-  guideName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 22,
-    color: '#FFFFFF',
-  },
-  guideSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.xl,
+  searchResults: {
+    gap: 0,
   },
   searchItem: {
     flexDirection: 'row',
@@ -532,5 +374,174 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xl,
+  },
+
+  // Sections
+  section: {
+    marginBottom: spacing.xxl,
+  },
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+
+  // City cards (horizontal scroll)
+  cityScroll: {
+    gap: spacing.md,
+    paddingRight: spacing.lg,
+  },
+  cityCard: {
+    width: 180,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  cityImage: {
+    width: '100%',
+    height: 110,
+  },
+  cityImagePlaceholder: {
+    backgroundColor: colors.borderSubtle,
+  },
+  cityBody: {
+    padding: spacing.sm,
+    paddingBottom: spacing.md,
+  },
+  cityName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  cityCountry: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  cityBestFor: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+    alignSelf: 'flex-start',
+  },
+  cityBestForText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.orange,
+  },
+  cityArrowContainer: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // Country cards (grid)
+  countryGrid: {
+    gap: spacing.md,
+  },
+  countryCard: {
+    height: 160,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    backgroundColor: colors.borderSubtle,
+  },
+  countryImage: {
+    width: '100%',
+    height: '100%',
+  },
+  countryImagePlaceholder: {
+    backgroundColor: colors.borderSubtle,
+  },
+  countryOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.lg,
+    backgroundColor: colors.overlayDark,
+  },
+  countryName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: '#FFFFFF',
+  },
+  countrySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+
+  // Featured hero
+  featuredHero: {
+    height: 280,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
+    backgroundColor: colors.borderSubtle,
+  },
+  featuredImage: {
+    width: '100%',
+    height: '100%',
+  },
+  featuredImagePlaceholder: {
+    backgroundColor: colors.borderSubtle,
+  },
+  featuredOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.xl,
+    paddingTop: spacing.xxl,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  featuredLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    marginBottom: spacing.xs,
+  },
+  featuredName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 28,
+    color: '#FFFFFF',
+  },
+  featuredSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 4,
+  },
+  featuredCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    marginTop: spacing.md,
+  },
+  featuredCtaText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: '#FFFFFF',
   },
 });
