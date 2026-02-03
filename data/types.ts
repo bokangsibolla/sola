@@ -51,6 +51,14 @@ export interface PlaceCategory {
   createdAt: string;
 }
 
+export type PlaceVerificationStatus =
+  | 'unverified'
+  | 'pending'
+  | 'baseline_passed'
+  | 'baseline_failed'
+  | 'insufficient_data'
+  | 'sola_checked';
+
 export interface Place {
   id: string;
   cityId: string;
@@ -74,6 +82,10 @@ export interface Place {
   hoursText: string | null;
   description: string | null;
   isActive: boolean;
+  verificationStatus: PlaceVerificationStatus;
+  verifiedAt: string | null;
+  solaCheckedAt: string | null;
+  solaCheckedBy: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -251,6 +263,46 @@ export interface Message {
   sentAt: string;
   readAt: string | null;
 }
+
+// ---------------------------------------------------------------------------
+// Verification System Types
+// ---------------------------------------------------------------------------
+
+export interface PlaceVerification {
+  id: string;
+  placeId: string;
+  status: PlaceVerificationStatus;
+  sourcesChecked: { source: string; url?: string; checkedAt: string }[];
+  rawFindings: Record<string, unknown>;
+  confidenceScore: number | null;
+  createdAt: string;
+}
+
+export interface PlaceVerificationSignal {
+  id: string;
+  placeId: string;
+  signalKey: string;
+  signalValue: string | null;
+  signalType: 'boolean' | 'text' | 'category';
+  confidence: number | null;
+  source: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PlaceSolaNote {
+  id: string;
+  placeId: string;
+  noteType: 'highlight' | 'context' | 'consideration';
+  noteText: string;
+  displayContext: string | null;
+  orderIndex: number;
+  createdAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// Utility Types
+// ---------------------------------------------------------------------------
 
 export interface PaginatedResult<T> {
   data: T[];

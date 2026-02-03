@@ -17,10 +17,15 @@ import type {
   SavedPlace,
   Collection,
   Trip,
+  TripPlace,
   Conversation,
   Message,
   DestinationTag,
   PaginatedResult,
+  PlaceSignal,
+  PlaceVerificationSignal,
+  PlaceSolaNote,
+  PlaceVerificationStatus,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -742,6 +747,577 @@ export async function searchPlaces(query: string, cityId?: string): Promise<Plac
   const { data, error } = await qb;
   if (error) throw error;
   return rowsToCamel<Place>(data ?? []);
+}
+
+// ---------------------------------------------------------------------------
+// Profile Management
+// ---------------------------------------------------------------------------
+
+export interface UpdateProfileInput {
+  username?: string;
+  firstName?: string;
+  bio?: string;
+  homeCountryIso2?: string;
+  homeCountryName?: string;
+  homeCityId?: string | null;
+  currentCityId?: string | null;
+  currentCityName?: string | null;
+  interests?: string[];
+  travelStyle?: string | null;
+}
+
+export async function updateProfile(
+  userId: string,
+  updates: UpdateProfileInput,
+): Promise<Profile> {
+  // Convert camelCase to snake_case for Supabase
+  const payload: Record<string, any> = {};
+  if (updates.username !== undefined) payload.username = updates.username;
+  if (updates.firstName !== undefined) payload.first_name = updates.firstName;
+  if (updates.bio !== undefined) payload.bio = updates.bio;
+  if (updates.homeCountryIso2 !== undefined) payload.home_country_iso2 = updates.homeCountryIso2;
+  if (updates.homeCountryName !== undefined) payload.home_country_name = updates.homeCountryName;
+  if (updates.homeCityId !== undefined) payload.home_city_id = updates.homeCityId;
+  if (updates.currentCityId !== undefined) payload.current_city_id = updates.currentCityId;
+  if (updates.currentCityName !== undefined) payload.current_city_name = updates.currentCityName;
+  if (updates.interests !== undefined) payload.interests = updates.interests;
+  if (updates.travelStyle !== undefined) payload.travel_style = updates.travelStyle;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(payload)
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Profile>(data);
+}
+
+export async function updateProfileAvatar(
+  userId: string,
+  avatarUrl: string,
+): Promise<Profile> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ avatar_url: avatarUrl })
+    .eq('id', userId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Profile>(data);
+}
+
+/**
+ * Upload an avatar image to Supabase Storage and update the profile.
+ * @param userId - The user's ID (used as folder name)
+ * @param fileUri - Local file URI (from image picker)
+ * @param fileName - Original file name with extension
+ * @returns The new avatar URL
+ */
+export async function uploadAvatar(
+  userId: string,
+  fileUri: string,
+  fileName: string,
+): Promise<string> {
+  // Fetch the file as a blob
+  const response = await fetch(fileUri);
+  const blob = await response.blob();
+
+  // Determine content type from extension
+  const ext = fileName.split('.').pop()?.toLowerCase() || 'jpg';
+  const contentType = ext === 'png' ? 'image/png' : 'image/jpeg';
+
+  // Upload to avatars bucket under user's folder
+  const path = `${userId}/${Date.now()}.${ext}`;
+  const { error: uploadError } = await supabase.storage
+    .from('avatars')
+    .upload(path, blob, {
+      contentType,
+      upsert: true,
+    });
+  if (uploadError) throw uploadError;
+
+  // Get the public URL
+  const { data: urlData } = supabase.storage
+    .from('avatars')
+    .getPublicUrl(path);
+
+  const avatarUrl = urlData.publicUrl;
+
+  // Update the profile with the new URL
+  await updateProfileAvatar(userId, avatarUrl);
+
+  return avatarUrl;
+}
+
+export async function setUserOnlineStatus(
+  userId: string,
+  isOnline: boolean,
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ is_online: isOnline })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Trip CRUD
+// ---------------------------------------------------------------------------
+
+export interface CreateTripInput {
+  destinationCityId: string;
+  destinationName: string;
+  countryIso2: string;
+  arriving: string; // ISO date string
+  leaving: string; // ISO date string
+  notes?: string;
+}
+
+export async function createTrip(
+  userId: string,
+  input: CreateTripInput,
+): Promise<Trip> {
+  const arriving = new Date(input.arriving);
+  const leaving = new Date(input.leaving);
+  const nights = Math.max(0, Math.ceil((leaving.getTime() - arriving.getTime()) / (1000 * 60 * 60 * 24)));
+
+  const { data, error } = await supabase
+    .from('trips')
+    .insert({
+      user_id: userId,
+      destination_city_id: input.destinationCityId,
+      destination_name: input.destinationName,
+      country_iso2: input.countryIso2,
+      arriving: input.arriving,
+      leaving: input.leaving,
+      nights,
+      status: 'planned',
+      notes: input.notes ?? null,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Trip>(data);
+}
+
+export interface UpdateTripInput {
+  destinationCityId?: string;
+  destinationName?: string;
+  countryIso2?: string;
+  arriving?: string;
+  leaving?: string;
+  status?: 'planned' | 'active' | 'completed';
+  notes?: string | null;
+}
+
+export async function updateTrip(
+  tripId: string,
+  updates: UpdateTripInput,
+): Promise<Trip> {
+  const payload: Record<string, any> = {};
+  if (updates.destinationCityId !== undefined) payload.destination_city_id = updates.destinationCityId;
+  if (updates.destinationName !== undefined) payload.destination_name = updates.destinationName;
+  if (updates.countryIso2 !== undefined) payload.country_iso2 = updates.countryIso2;
+  if (updates.arriving !== undefined) payload.arriving = updates.arriving;
+  if (updates.leaving !== undefined) payload.leaving = updates.leaving;
+  if (updates.status !== undefined) payload.status = updates.status;
+  if (updates.notes !== undefined) payload.notes = updates.notes;
+
+  // Recalculate nights if dates changed
+  if (updates.arriving || updates.leaving) {
+    const { data: current } = await supabase
+      .from('trips')
+      .select('arriving, leaving')
+      .eq('id', tripId)
+      .single();
+
+    const arriving = new Date(updates.arriving ?? current?.arriving);
+    const leaving = new Date(updates.leaving ?? current?.leaving);
+    payload.nights = Math.max(0, Math.ceil((leaving.getTime() - arriving.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+
+  const { data, error } = await supabase
+    .from('trips')
+    .update(payload)
+    .eq('id', tripId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Trip>(data);
+}
+
+export async function deleteTrip(tripId: string): Promise<void> {
+  const { error } = await supabase
+    .from('trips')
+    .delete()
+    .eq('id', tripId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Trip Places
+// ---------------------------------------------------------------------------
+
+export async function getTripPlaces(tripId: string): Promise<(TripPlace & { place: Place })[]> {
+  const { data, error } = await supabase
+    .from('trip_places')
+    .select('*, places(*)')
+    .eq('trip_id', tripId)
+    .order('day_number', { nullsFirst: false });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    tripId: row.trip_id,
+    placeId: row.place_id,
+    dayNumber: row.day_number,
+    notes: row.notes,
+    place: toCamel<Place>(row.places),
+  }));
+}
+
+export async function addTripPlace(
+  tripId: string,
+  placeId: string,
+  dayNumber?: number,
+  notes?: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('trip_places')
+    .insert({
+      trip_id: tripId,
+      place_id: placeId,
+      day_number: dayNumber ?? null,
+      notes: notes ?? null,
+    });
+  if (error && error.code !== '23505') throw error; // ignore duplicate
+}
+
+export async function updateTripPlace(
+  tripId: string,
+  placeId: string,
+  updates: { dayNumber?: number | null; notes?: string | null },
+): Promise<void> {
+  const payload: Record<string, any> = {};
+  if (updates.dayNumber !== undefined) payload.day_number = updates.dayNumber;
+  if (updates.notes !== undefined) payload.notes = updates.notes;
+
+  const { error } = await supabase
+    .from('trip_places')
+    .update(payload)
+    .eq('trip_id', tripId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+export async function removeTripPlace(tripId: string, placeId: string): Promise<void> {
+  const { error } = await supabase
+    .from('trip_places')
+    .delete()
+    .eq('trip_id', tripId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Collection CRUD
+// ---------------------------------------------------------------------------
+
+export interface CreateCollectionInput {
+  name: string;
+  emoji?: string;
+  isPublic?: boolean;
+}
+
+export async function createCollection(
+  userId: string,
+  input: CreateCollectionInput,
+): Promise<Collection> {
+  const { data, error } = await supabase
+    .from('collections')
+    .insert({
+      user_id: userId,
+      name: input.name,
+      emoji: input.emoji ?? '📌',
+      is_public: input.isPublic ?? false,
+    })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Collection>(data);
+}
+
+export interface UpdateCollectionInput {
+  name?: string;
+  emoji?: string;
+  isPublic?: boolean;
+}
+
+export async function updateCollection(
+  collectionId: string,
+  updates: UpdateCollectionInput,
+): Promise<Collection> {
+  const payload: Record<string, any> = {};
+  if (updates.name !== undefined) payload.name = updates.name;
+  if (updates.emoji !== undefined) payload.emoji = updates.emoji;
+  if (updates.isPublic !== undefined) payload.is_public = updates.isPublic;
+
+  const { data, error } = await supabase
+    .from('collections')
+    .update(payload)
+    .eq('id', collectionId)
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<Collection>(data);
+}
+
+export async function deleteCollection(collectionId: string): Promise<void> {
+  const { error } = await supabase
+    .from('collections')
+    .delete()
+    .eq('id', collectionId);
+  if (error) throw error;
+}
+
+export async function moveToCollection(
+  userId: string,
+  placeId: string,
+  collectionId: string | null,
+): Promise<void> {
+  const { error } = await supabase
+    .from('saved_places')
+    .update({ collection_id: collectionId })
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Push Tokens
+// ---------------------------------------------------------------------------
+
+export async function registerPushToken(
+  userId: string,
+  token: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('push_tokens')
+    .upsert(
+      { user_id: userId, token },
+      { onConflict: 'user_id,token' }
+    );
+  if (error) throw error;
+}
+
+export async function removePushToken(
+  userId: string,
+  token: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('push_tokens')
+    .delete()
+    .eq('user_id', userId)
+    .eq('token', token);
+  if (error) throw error;
+}
+
+export async function removeAllPushTokens(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('push_tokens')
+    .delete()
+    .eq('user_id', userId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Message Read Receipts
+// ---------------------------------------------------------------------------
+
+export async function markMessagesAsRead(
+  conversationId: string,
+  userId: string,
+): Promise<void> {
+  const now = new Date().toISOString();
+
+  // Mark all unread messages from other users as read
+  const { error } = await supabase
+    .from('messages')
+    .update({ read_at: now })
+    .eq('conversation_id', conversationId)
+    .neq('sender_id', userId)
+    .is('read_at', null);
+  if (error) throw error;
+
+  // Reset unread count on conversation
+  await supabase
+    .from('conversations')
+    .update({ unread_count: 0 })
+    .eq('id', conversationId);
+}
+
+// ---------------------------------------------------------------------------
+// Place Signals (likes, visits, ratings)
+// ---------------------------------------------------------------------------
+
+export async function getPlaceSignals(userId: string): Promise<PlaceSignal[]> {
+  const { data, error } = await supabase
+    .from('place_signals')
+    .select('*')
+    .eq('user_id', userId);
+  if (error) throw error;
+  return rowsToCamel<PlaceSignal>(data ?? []);
+}
+
+export async function getPlaceSignal(
+  userId: string,
+  placeId: string,
+): Promise<PlaceSignal | undefined> {
+  const { data, error } = await supabase
+    .from('place_signals')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('place_id', placeId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<PlaceSignal>(data) : undefined;
+}
+
+export async function setPlaceSignal(
+  userId: string,
+  placeId: string,
+  signalType: PlaceSignal['signalType'],
+  rating?: number,
+  note?: string,
+): Promise<PlaceSignal> {
+  const { data, error } = await supabase
+    .from('place_signals')
+    .upsert(
+      {
+        user_id: userId,
+        place_id: placeId,
+        signal_type: signalType,
+        rating: rating ?? null,
+        note: note ?? null,
+      },
+      { onConflict: 'user_id,place_id' }
+    )
+    .select('*')
+    .single();
+  if (error) throw error;
+  return toCamel<PlaceSignal>(data);
+}
+
+export async function removePlaceSignal(
+  userId: string,
+  placeId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('place_signals')
+    .delete()
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Place Verification (Sola Baseline System)
+// ---------------------------------------------------------------------------
+
+/**
+ * Get verification signals for a place.
+ * These are extracted signals from AI verification (e.g., has_24h_checkin, female_dorm_available).
+ */
+export async function getPlaceVerificationSignals(
+  placeId: string,
+): Promise<PlaceVerificationSignal[]> {
+  const { data, error } = await supabase
+    .from('place_signals')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('signal_key');
+  if (error) throw error;
+  return rowsToCamel<PlaceVerificationSignal>(data ?? []);
+}
+
+/**
+ * Get Sola notes for a place.
+ * These are contextual notes surfaced in the UI (e.g., "Female-only dorm available").
+ */
+export async function getPlaceSolaNotes(placeId: string): Promise<PlaceSolaNote[]> {
+  const { data, error } = await supabase
+    .from('place_sola_notes')
+    .select('*')
+    .eq('place_id', placeId)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<PlaceSolaNote>(data ?? []);
+}
+
+/**
+ * Get all verified places in a city (baseline_passed or sola_checked).
+ * Sola-checked places appear first.
+ */
+export async function getVerifiedPlacesByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .in('verification_status', ['baseline_passed', 'sola_checked'])
+    .order('verification_status', { ascending: false })
+    .order('name');
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Get verified accommodations (hotels, hostels, homestays) in a city.
+ * Only places that have passed the Sola baseline are returned.
+ */
+export async function getVerifiedAccommodationsByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .in('place_type', ['hotel', 'hostel', 'homestay'])
+    .in('verification_status', ['baseline_passed', 'sola_checked'])
+    .order('verification_status', { ascending: false })
+    .order('name');
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Get verified accommodations in a specific area.
+ */
+export async function getVerifiedAccommodationsByArea(areaId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_area_id', areaId)
+    .eq('is_active', true)
+    .in('place_type', ['hotel', 'hostel', 'homestay'])
+    .in('verification_status', ['baseline_passed', 'sola_checked'])
+    .order('verification_status', { ascending: false })
+    .order('name');
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Check if a place is verified (baseline_passed or sola_checked).
+ */
+export function isPlaceVerified(place: Place): boolean {
+  return place.verificationStatus === 'baseline_passed' ||
+    place.verificationStatus === 'sola_checked';
+}
+
+/**
+ * Check if a place has been physically checked by Sola team.
+ */
+export function isSolaChecked(place: Place): boolean {
+  return place.verificationStatus === 'sola_checked';
 }
 
 // ---------------------------------------------------------------------------
