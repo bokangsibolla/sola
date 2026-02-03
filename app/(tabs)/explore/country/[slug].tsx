@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -7,9 +8,14 @@ import { getCountryBySlug, getCountryContent, getCitiesByCountry, getCityContent
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import MarkdownContent from '@/components/MarkdownContent';
+import CollapsibleSection from '@/components/CollapsibleSection';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
+const ENGLISH_MAP: Record<string, string> = { high: 'Widely spoken', moderate: 'Moderate', low: 'Limited' };
+const INTERNET_MAP: Record<string, string> = { excellent: 'Excellent', good: 'Good', fair: 'Fair', poor: 'Poor' };
+const SOLO_MAP: Record<string, string> = { beginner: 'Great for beginners', intermediate: 'Some experience helps', expert: 'For experienced travellers' };
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -42,6 +48,25 @@ export default function CountryGuideScreen() {
   const emergency = getEmergencyNumbers(country.iso2);
   const heroImage = country.heroImageUrl ?? content?.heroImageUrl;
 
+  const quickFacts = [
+    { icon: 'calendar-outline', label: 'Best time', value: content?.bestMonths },
+    { icon: 'cash-outline', label: 'Currency', value: content?.currency },
+    { icon: 'language-outline', label: 'Language', value: content?.language },
+    { icon: 'chatbubble-outline', label: 'English', value: content?.englishFriendliness ? ENGLISH_MAP[content.englishFriendliness] : null },
+    { icon: 'wifi-outline', label: 'Internet', value: content?.internetQuality ? INTERNET_MAP[content.internetQuality] : null },
+    { icon: 'compass-outline', label: 'Solo level', value: content?.soloLevel ? SOLO_MAP[content.soloLevel] : null },
+  ].filter((f) => f.value);
+
+  const collapsibleSections = [
+    { title: 'What to know', icon: 'information-circle-outline', content: content?.safetyWomenMd },
+    { title: 'Getting there', icon: 'airplane-outline', content: content?.gettingThereMd },
+    { title: 'Visa & entry', icon: 'document-text-outline', content: [content?.visaEntryMd, content?.visaNote].filter(Boolean).join('\n\n') || null },
+    { title: 'Money & payments', icon: 'card-outline', content: content?.moneyMd },
+    { title: 'SIM & internet', icon: 'wifi-outline', content: content?.simConnectivityMd },
+    { title: 'Culture & etiquette', icon: 'people-outline', content: content?.cultureEtiquetteMd },
+    { title: 'Getting around', icon: 'bus-outline', content: content?.transportMd },
+  ].filter((s) => s.content);
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
@@ -51,7 +76,7 @@ export default function CountryGuideScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero */}
+        {/* A. Hero */}
         <View style={styles.hero}>
           {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} />}
           <View style={styles.heroOverlay}>
@@ -61,25 +86,30 @@ export default function CountryGuideScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* Quick facts */}
-          <View style={styles.factsGrid}>
-            <Fact icon="calendar-outline" label="Best time" value={content?.bestMonths ?? '—'} />
-            <Fact icon="cash-outline" label="Currency" value={content?.currency ?? '—'} />
-            <Fact icon="language-outline" label="Language" value={content?.language ?? '—'} />
-            <Fact icon="heart-outline" label="Best for" value={content?.bestFor ?? content?.goodForInterests?.slice(0, 3).join(', ') ?? '—'} />
-          </View>
-
-          {content?.visaNote ? <Text style={styles.visaNote}>{content.visaNote}</Text> : null}
-
-          {/* Editorial portrait */}
-          {(content?.portraitMd || content?.safetyWomenMd) && (
-            <>
-              <Text style={styles.sectionTitle}>What it's like</Text>
-              <Text style={styles.portraitText}>{content.portraitMd ?? content.safetyWomenMd}</Text>
-            </>
+          {/* B. Quick facts — horizontal scroll cards */}
+          {quickFacts.length > 0 && (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.factsScroll}
+              style={styles.factsContainer}
+            >
+              {quickFacts.map((fact) => (
+                <View key={fact.label} style={styles.factCard}>
+                  <Ionicons name={fact.icon as any} size={18} color={colors.orange} />
+                  <Text style={styles.factLabel}>{fact.label}</Text>
+                  <Text style={styles.factValue} numberOfLines={2}>{fact.value}</Text>
+                </View>
+              ))}
+            </ScrollView>
           )}
 
-          {/* Highlights */}
+          {/* C. "Why we love it" — editorial portrait with Read more */}
+          {content?.portraitMd && (
+            <PortraitSection portraitMd={content.portraitMd} />
+          )}
+
+          {/* D. Highlights */}
           {content?.highlights && content.highlights.length > 0 && (
             <>
               <Text style={styles.sectionTitle}>Highlights</Text>
@@ -92,7 +122,7 @@ export default function CountryGuideScreen() {
             </>
           )}
 
-          {/* Cities */}
+          {/* E. Cities to explore */}
           {cities.length > 0 && (
             <>
               <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities to explore</Text>
@@ -102,7 +132,38 @@ export default function CountryGuideScreen() {
             </>
           )}
 
-          {/* Emergency numbers */}
+          {/* F. "Plan your trip" divider */}
+          {collapsibleSections.length > 0 && (
+            <>
+              <View style={styles.divider}>
+                <View style={styles.dividerLine} />
+                <Text style={styles.dividerText}>Plan your trip</Text>
+                <View style={styles.dividerLine} />
+              </View>
+
+              {/* G. Collapsible practical sections */}
+              {collapsibleSections.map((section) => (
+                <CollapsibleSection key={section.title} title={section.title} icon={section.icon}>
+                  <MarkdownContent>{section.content!}</MarkdownContent>
+                </CollapsibleSection>
+              ))}
+            </>
+          )}
+
+          {/* H. Things to do */}
+          {content?.topThingsToDo && content.topThingsToDo.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Things to do</Text>
+              {content.topThingsToDo.map((item, i) => (
+                <View key={i} style={styles.highlightRow}>
+                  <Text style={styles.highlightBullet}>{i + 1}.</Text>
+                  <Text style={styles.highlightText}>{item}</Text>
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* I. Emergency numbers */}
           <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Emergency numbers</Text>
           <View style={styles.emergencyCard}>
             <EmergencyRow label="Police" number={emergency.police} />
@@ -112,6 +173,23 @@ export default function CountryGuideScreen() {
           </View>
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+function PortraitSection({ portraitMd }: { portraitMd: string }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <View style={styles.portraitSection}>
+      <Text style={styles.portraitTitle}>Why we love it</Text>
+      <View style={!expanded ? styles.portraitCollapsed : undefined}>
+        <MarkdownContent>{portraitMd}</MarkdownContent>
+      </View>
+      {!expanded && <View style={styles.portraitFade} />}
+      <Pressable onPress={() => setExpanded((v) => !v)}>
+        <Text style={styles.readMore}>{expanded ? 'Read less' : 'Read more'}</Text>
+      </Pressable>
     </View>
   );
 }
@@ -135,16 +213,6 @@ function CityCard({ city }: { city: any }) {
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
-  );
-}
-
-function Fact({ icon, label, value }: { icon: string; label: string; value: string }) {
-  return (
-    <View style={styles.fact}>
-      <Ionicons name={icon as any} size={18} color={colors.orange} />
-      <Text style={styles.factLabel}>{label}</Text>
-      <Text style={styles.factValue}>{value}</Text>
-    </View>
   );
 }
 
@@ -204,14 +272,22 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },
-  factsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginBottom: spacing.lg,
+
+  // Quick facts cards
+  factsContainer: {
+    marginBottom: spacing.xl,
+    marginHorizontal: -spacing.lg,
   },
-  fact: {
-    width: '47%',
+  factsScroll: {
+    paddingHorizontal: spacing.lg,
+    gap: spacing.sm,
+  },
+  factCard: {
+    width: 100,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.sm,
+    padding: spacing.md,
     gap: 4,
   },
   factLabel: {
@@ -224,18 +300,34 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textPrimary,
   },
-  visaNote: {
-    ...typography.captionSmall,
-    color: colors.textMuted,
+
+  // Portrait / "Why we love it"
+  portraitSection: {
     marginBottom: spacing.xl,
   },
-  portraitText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 24,
+  portraitTitle: {
+    fontFamily: fonts.serif,
+    fontSize: 22,
     color: colors.textPrimary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
+  portraitCollapsed: {
+    maxHeight: 96,
+    overflow: 'hidden',
+  },
+  portraitFade: {
+    height: 24,
+    marginTop: -24,
+    backgroundColor: 'transparent',
+  },
+  readMore: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+    marginTop: spacing.sm,
+  },
+
+  // Section title
   sectionTitle: {
     ...typography.label,
     color: colors.textPrimary,
@@ -255,6 +347,28 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     flex: 1,
   },
+
+  // Divider
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.borderDefault,
+  },
+  dividerText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+
+  // City cards
   cityCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -283,6 +397,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
+
+  // Emergency
   emergencyCard: {
     borderWidth: 1,
     borderColor: colors.borderDefault,

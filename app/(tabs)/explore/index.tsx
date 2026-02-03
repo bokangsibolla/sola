@@ -28,11 +28,12 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const SMALL_CARD_WIDTH = 140;
 
-const TABS: { key: string; label: string; tags: string[] }[] = [
-  { key: 'for_you', label: 'For you', tags: [] },
-  { key: 'beach_nature', label: 'Beach & nature', tags: ['beach_islands', 'nature_outdoors'] },
-  { key: 'city_culture', label: 'City & culture', tags: ['city_culture', 'foodie'] },
-  { key: 'first_solo', label: 'First solo trip', tags: ['first_solo_trip'] },
+const TABS: { key: string; label: string; icon: string; tags: string[] }[] = [
+  { key: 'for_you', label: 'For you', icon: 'sparkles-outline', tags: [] },
+  { key: 'beach_nature', label: 'Beach & nature', icon: 'leaf-outline', tags: ['beach_islands', 'nature_outdoors'] },
+  { key: 'city_culture', label: 'City & culture', icon: 'business-outline', tags: ['city_culture', 'foodie'] },
+  { key: 'first_solo', label: 'First trip', icon: 'compass-outline', tags: ['first_solo_trip'] },
+  { key: 'wellness', label: 'Wellness', icon: 'flower-outline', tags: ['wellness_retreat'] },
 ];
 
 const SECTIONS = [
@@ -304,10 +305,16 @@ export default function ExploreScreen() {
                 return (
                   <Pressable
                     key={tab.key}
-                    style={[styles.tab, isActive ? styles.tabActive : styles.tabInactive]}
+                    style={[styles.tab, isActive && styles.tabActive]}
                     onPress={() => setActiveTab(tab.key)}
                   >
-                    <Text style={[styles.tabText, isActive ? styles.tabTextActive : styles.tabTextInactive]}>
+                    <Ionicons
+                      name={tab.icon as any}
+                      size={20}
+                      color={isActive ? colors.orange : colors.textMuted}
+                      style={styles.tabIcon}
+                    />
+                    <Text style={[styles.tabLabel, isActive ? styles.tabLabelActive : styles.tabLabelInactive]}>
                       {tab.label}
                     </Text>
                   </Pressable>
@@ -344,30 +351,33 @@ const styles = StyleSheet.create({
   },
   tabBar: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginBottom: spacing.xl,
+    gap: spacing.xl,
+    marginBottom: spacing.lg,
+    paddingBottom: spacing.xs,
   },
   tab: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
+    alignItems: 'center' as const,
+    paddingBottom: spacing.sm,
+    width: 64,
+    borderBottomWidth: 2,
+    borderBottomColor: 'transparent',
   },
   tabActive: {
-    backgroundColor: colors.textPrimary,
+    borderBottomColor: colors.orange,
   },
-  tabInactive: {
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
+  tabIcon: {
+    marginBottom: 4,
   },
-  tabText: {
+  tabLabel: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 11,
+    textAlign: 'center' as const,
   },
-  tabTextActive: {
-    color: colors.background,
-  },
-  tabTextInactive: {
+  tabLabelActive: {
     color: colors.textPrimary,
+  },
+  tabLabelInactive: {
+    color: colors.textMuted,
   },
   heroCard: {
     borderRadius: radius.card,
