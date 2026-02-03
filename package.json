@@ -13,6 +13,7 @@
     "seed": "tsx scripts/seed.ts",
     "seed:images": "tsx scripts/seed-images.ts",
     "seed:place": "tsx scripts/seed-place.ts",
+    "discover:accommodations": "tsx scripts/discover-accommodations.ts",
     "seed:accommodations": "tsx scripts/seed-accommodations.ts",
     "verify:place": "tsx scripts/verify-place.ts",
     "verify:accommodations": "tsx scripts/verify-accommodations.ts",

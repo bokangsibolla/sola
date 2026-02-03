@@ -1,30 +1,8 @@
 /**
  * Curated Accommodation List for Sola
  *
- * Each entry needs:
- * - googlePlaceId: Get from Google Maps (see instructions below)
- * - citySlug: Must match a city slug from cities.ts
- * - type: 'hotel' | 'hostel' | 'homestay'
- * - name: Optional, for reference (will be fetched from Google)
- * - description: Optional short description
- *
- * HOW TO FIND GOOGLE PLACE IDs:
- * 1. Go to Google Maps (maps.google.com)
- * 2. Search for the accommodation
- * 3. Click on the place
- * 4. Look at the URL - it contains the Place ID after "place/"
- *    Example: https://www.google.com/maps/place/.../@13.7563,100.5018,17z/data=!3m1!4b1!4m6!3m5!1s0x30e29e1f9e0d5c69:0x1f9e8d2b3a4c5e6f
- *    The part after "!1s" and before ":" is similar but not exact
- * 5. Better: Use the Place ID Finder:
- *    https://developers.google.com/maps/documentation/javascript/examples/places-placeid-finder
- *
- * CURATION CRITERIA (what makes a good Sola accommodation):
- * - Clear room types (private/shared explicitly stated)
- * - Good reviews from solo female travelers
- * - Safe neighborhood
- * - Clear check-in process
- * - Female-only options for hostels (preferred)
- * - Central location or good transport access
+ * Auto-generated from Google Places API discovery.
+ * Review and curate as needed.
  */
 
 export interface AccommodationEntry {
@@ -36,377 +14,1156 @@ export interface AccommodationEntry {
 }
 
 export const ACCOMMODATIONS: AccommodationEntry[] = [
-  // ===========================================================================
-  // THAILAND
-  // ===========================================================================
-
-  // Bangkok (5 accommodations)
+  // BANGKOK
   {
-    googlePlaceId: 'ChIJN1t_tDeuEmsRUsoyG83frY4', // Example - replace with real ID
+    googlePlaceId: 'ChIJwZDtimuZ4jARlYTVLKLbNgk',
     citySlug: 'bangkok',
     type: 'hostel',
-    name: 'Lub d Bangkok Silom',
-    description: 'Modern hostel with female-only dorms, central location',
+    name: 'OH Hostels - Bangkok',
+    // Rating: 4.6 (1855 reviews)
   },
   {
-    googlePlaceId: 'ChIJgUbEo8cfqokR5lP9_Wh_DaM', // Example - replace with real ID
+    googlePlaceId: 'ChIJ3b78nRaZ4jARxEghQurreI4',
     citySlug: 'bangkok',
     type: 'hostel',
-    name: 'The Yard Hostel',
-    description: 'Popular with solo travelers, social atmosphere',
+    name: 'Once Again Hostel',
+    // Rating: 4.6 (881 reviews)
   },
   {
-    googlePlaceId: 'ChIJN2T_tDeuEmsRdqsH2g83fr8', // Example - replace with real ID
+    googlePlaceId: 'ChIJlb2fOqae4jARKp8gzFyam88',
     citySlug: 'bangkok',
     type: 'hostel',
-    name: 'NapPark Hostel',
-    description: 'Award-winning hostel, great for first-time solo travelers',
+    name: 'The Yard Hostel Bangkok',
+    // Rating: 4.7 (758 reviews)
   },
   {
-    googlePlaceId: 'ChIJN3T_tDeuEmsRUsoyG83frZ9', // Example - replace with real ID
+    googlePlaceId: 'ChIJfeuXXBSZ4jARPRNtQQKmfFk',
     citySlug: 'bangkok',
-    type: 'hotel',
-    name: 'ibis Bangkok Riverside',
-    description: 'Budget-friendly hotel, safe area, river views',
+    type: 'hostel',
+    name: 'Here Hostel Bangkok',
+    // Rating: 4.6 (673 reviews)
   },
   {
-    googlePlaceId: 'ChIJN4T_tDeuEmsRUsoyG83frA1', // Example - replace with real ID
+    googlePlaceId: 'ChIJ__9PnSuf4jAR_K5x__6o67c',
     citySlug: 'bangkok',
     type: 'hotel',
-    name: 'Anantara Sathorn Bangkok',
-    description: 'Mid-range hotel, excellent for solo travelers',
+    name: 'Pullman Bangkok Hotel G',
+    // Rating: 4.5 (8320 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJwb3uUy2f4jARzZ5MaShGHUA',
+    citySlug: 'bangkok',
+    type: 'hotel',
+    name: 'Holiday Inn Bangkok Silom by IHG',
+    // Rating: 4.5 (7310 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJWZowOM2Y4jAREngwCg-0sIM',
+    citySlug: 'bangkok',
+    type: 'hotel',
+    name: 'W Bangkok',
+    // Rating: 4.6 (4482 reviews)
   },
 
-  // Chiang Mai (5 accommodations)
+  // CHIANG MAI
   {
-    googlePlaceId: 'ChIJBzT_tDeuEmsRUsoyG83frB2', // Example - replace with real ID
+    googlePlaceId: 'ChIJiVhKZwA72jARmW3asAqjW5c',
     citySlug: 'chiang-mai',
     type: 'hostel',
-    name: 'Stamps Backpackers',
-    description: 'Female-only dorms available, Old City location',
+    name: 'Yellow Fellow Hostel',
+    // Rating: 4.8 (592 reviews)
   },
   {
-    googlePlaceId: 'ChIJCzT_tDeuEmsRUsoyG83frC3', // Example - replace with real ID
+    googlePlaceId: 'ChIJc3-mHaM62jARrwSCi7zkvE8',
     citySlug: 'chiang-mai',
     type: 'hostel',
-    name: 'Hug Hostel',
-    description: 'Social hostel, rooftop bar, walking distance to temples',
+    name: 'Stamps Backpackers Hostel & Tours Chiang Mai',
+    // Rating: 4.8 (562 reviews)
   },
   {
-    googlePlaceId: 'ChIJDzT_tDeuEmsRUsoyG83frD4', // Example - replace with real ID
+    googlePlaceId: 'ChIJe33-Gp062jARfCcUe_wTcM0',
     citySlug: 'chiang-mai',
+    type: 'hostel',
+    name: 'Bloomin\' Moon Hostel, Chiang Mai Old Town',
+    // Rating: 4.9 (480 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJySOke5A62jAR3DgjbEcQIiE',
+    citySlug: 'chiang-mai',
+    type: 'hostel',
+    name: 'The Common Hostel',
+    // Rating: 4.6 (711 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJa6MKTwgw2jAR87UK8NeGSPM',
+    citySlug: 'chiang-mai',
+    type: 'hotel',
+    name: 'Shangri-La Chiang Mai',
+    // Rating: 4.6 (4111 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJT-F9SKg62jARLeYUQc3AwcE',
+    citySlug: 'chiang-mai',
+    type: 'hotel',
+    name: 'Anantara Chiang Mai Resort',
+    // Rating: 4.7 (2270 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ003nVK472jAR366QO3FQtE0',
+    citySlug: 'chiang-mai',
+    type: 'hotel',
+    name: 'Meliá Chiang Mai',
+    // Rating: 4.7 (1686 reviews)
+  },
+
+  // UBUD
+  {
+    googlePlaceId: 'ChIJazIwX4U90i0RT1YPNKcLNjM',
+    citySlug: 'ubud',
+    type: 'hostel',
+    name: 'Ubud Backpacker Hostel',
+    // Rating: 4.9 (373 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJXUK6cx090i0RYZ74Or09h64',
+    citySlug: 'ubud',
+    type: 'hotel',
+    name: 'Ubud Raya Boutique Hotel',
+    // Rating: 4.8 (2938 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ7fovTWk90i0RgcXs-GYNGnk',
+    citySlug: 'ubud',
+    type: 'hotel',
+    name: 'Adiwana Resort Jembawan',
+    // Rating: 4.8 (1603 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJtV7HcYY90i0RJIL4Smyty7g',
+    citySlug: 'ubud',
+    type: 'hotel',
+    name: 'Titik Dua',
+    // Rating: 4.8 (1294 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJzbEhgnI90i0RPTicski1UX8',
+    citySlug: 'ubud',
     type: 'homestay',
-    name: 'Baan Hanibah',
-    description: 'Boutique guesthouse, quiet neighborhood, female owner',
+    name: 'Ubud Ku Guest House',
+    // Rating: 5 (131 reviews)
   },
   {
-    googlePlaceId: 'ChIJEzT_tDeuEmsRUsoyG83frE5', // Example - replace with real ID
-    citySlug: 'chiang-mai',
-    type: 'hotel',
-    name: 'U Chiang Mai',
-    description: 'Boutique hotel, central location, excellent service',
-  },
-  {
-    googlePlaceId: 'ChIJFzT_tDeuEmsRUsoyG83frF6', // Example - replace with real ID
-    citySlug: 'chiang-mai',
-    type: 'hostel',
-    name: 'Deejai Backpackers',
-    description: 'Budget-friendly, great for meeting other travelers',
-  },
-
-  // ===========================================================================
-  // INDONESIA (Bali)
-  // ===========================================================================
-
-  // Ubud (5 accommodations)
-  {
-    googlePlaceId: 'ChIJGzT_tDeuEmsRUsoyG83frG7', // Example - replace with real ID
-    citySlug: 'ubud',
-    type: 'hostel',
-    name: 'Outpost Ubud',
-    description: 'Co-living space, great for digital nomads',
-  },
-  {
-    googlePlaceId: 'ChIJHzT_tDeuEmsRUsoyG83frH8', // Example - replace with real ID
+    googlePlaceId: 'ChIJtxGok3I90i0R_6C1AzY-YY8',
     citySlug: 'ubud',
     type: 'homestay',
-    name: 'Tegal Sari Accommodation',
-    description: 'Traditional Balinese homestay, rice field views',
-  },
-  {
-    googlePlaceId: 'ChIJIzT_tDeuEmsRUsoyG83frI9', // Example - replace with real ID
-    citySlug: 'ubud',
-    type: 'hotel',
-    name: 'Bisma Eight',
-    description: 'Boutique hotel, infinity pool, central Ubud',
-  },
-  {
-    googlePlaceId: 'ChIJJzT_tDeuEmsRUsoyG83frJ0', // Example - replace with real ID
-    citySlug: 'ubud',
-    type: 'hostel',
-    name: 'Puri Garden Hotel',
-    description: 'Budget-friendly with pool, quiet location',
-  },
-  {
-    googlePlaceId: 'ChIJKzT_tDeuEmsRUsoyG83frK1', // Example - replace with real ID
-    citySlug: 'ubud',
-    type: 'homestay',
-    name: 'Pondok Pundi Village Inn',
-    description: 'Family-run guesthouse, authentic experience',
+    name: 'Bucu Guest House',
+    // Rating: 4.4 (215 reviews)
   },
 
-  // Canggu (5 accommodations)
+  // CANGGU
   {
-    googlePlaceId: 'ChIJLzT_tDeuEmsRUsoyG83frL2', // Example - replace with real ID
+    googlePlaceId: 'ChIJj-DiXmI40i0RiImmw9yjHjU',
     citySlug: 'canggu',
     type: 'hostel',
-    name: 'The Farm Hostel',
-    description: 'Popular surf hostel, social atmosphere',
+    name: 'Lay Day Hostel Canggu',
+    // Rating: 4.7 (879 reviews)
   },
   {
-    googlePlaceId: 'ChIJMzT_tDeuEmsRUsoyG83frM3', // Example - replace with real ID
+    googlePlaceId: 'ChIJb1J6o6Q50i0RCMLVdoY4gpY',
     citySlug: 'canggu',
     type: 'hostel',
-    name: 'Kos One Hostel',
-    description: 'Female-only dorms, close to beach',
+    name: 'Sepeda Hostel Canggu',
+    // Rating: 4.8 (630 reviews)
   },
   {
-    googlePlaceId: 'ChIJNzT_tDeuEmsRUsoyG83frN4', // Example - replace with real ID
+    googlePlaceId: 'ChIJT41a0Lo50i0RbZ6ZYJ5W6FM',
+    citySlug: 'canggu',
+    type: 'hostel',
+    name: 'Clandestino Hostel Canggu',
+    // Rating: 4.7 (659 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJbyscyDw50i0R6RfMu1TavZE',
+    citySlug: 'canggu',
+    type: 'hostel',
+    name: 'Roomates Hostel & Surf Camp Canggu (3min to Batu Bolong Beach) by iNi ViE Hospitality',
+    // Rating: 4.7 (647 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJw1lxFWA50i0Rwj3OJ_Ohwc4',
     citySlug: 'canggu',
     type: 'hotel',
-    name: 'Theanna Eco Villa',
-    description: 'Eco-friendly villa, quiet area',
+    name: 'Elsewhere Surf Camp Bali Canggu',
+    // Rating: 5 (1737 reviews)
   },
   {
-    googlePlaceId: 'ChIJOzT_tDeuEmsRUsoyG83frO5', // Example - replace with real ID
+    googlePlaceId: 'ChIJCRXoOHY40i0RP5b3E30CF7Y',
     citySlug: 'canggu',
+    type: 'hotel',
+    name: 'COMO Uma Canggu',
+    // Rating: 4.7 (1561 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJTfD_xZE50i0RjNMUZWC5R7U',
+    citySlug: 'canggu',
+    type: 'hotel',
+    name: 'Amandaya Canggu',
+    // Rating: 4.9 (1139 reviews)
+  },
+
+  // SEMINYAK
+  {
+    googlePlaceId: 'ChIJq6KyD-hH0i0R_Wub2gXgOJ4',
+    citySlug: 'seminyak',
     type: 'hostel',
-    name: 'Sedasa Canggu',
-    description: 'Design hostel, great common areas',
+    name: 'My Capsule Seminyak',
+    // Rating: 4.5 (388 reviews)
   },
   {
-    googlePlaceId: 'ChIJPzT_tDeuEmsRUsoyG83frP6', // Example - replace with real ID
-    citySlug: 'canggu',
-    type: 'homestay',
-    name: 'Serenity Eco Guesthouse',
-    description: 'Peaceful retreat, yoga classes available',
+    googlePlaceId: 'ChIJ4Tg1Z1dH0i0RzJkio7hFzvo',
+    citySlug: 'seminyak',
+    type: 'hostel',
+    name: 'Stellar Capsules Seminyak',
+    // Rating: 4.5 (243 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJtwl1LhNH0i0RaidQ8BU0XAc',
+    citySlug: 'seminyak',
+    type: 'hostel',
+    name: 'M Boutique Hostel',
+    // Rating: 4.3 (285 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJN6-wqwVH0i0RVg5uFWY9WzY',
+    citySlug: 'seminyak',
+    type: 'hostel',
+    name: 'White Penny Hostel',
+    // Rating: 4.7 (146 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJzcxjwRpH0i0RkCvrbJ5wmL8',
+    citySlug: 'seminyak',
+    type: 'hotel',
+    name: 'The Seminyak Beach Resort & Spa',
+    // Rating: 4.8 (2679 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ______8j0i0R4BuF3WaH_qQ',
+    citySlug: 'seminyak',
+    type: 'hotel',
+    name: 'Double Six Luxury Hotel',
+    // Rating: 4.7 (3023 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJyaecyt5G0i0RCCemhMxoGsU',
+    citySlug: 'seminyak',
+    type: 'hotel',
+    name: 'TS Suites',
+    // Rating: 4.5 (1997 reviews)
   },
 
-  // ===========================================================================
-  // JAPAN
-  // ===========================================================================
-
-  // Tokyo (5 accommodations)
+  // TOKYO
   {
-    googlePlaceId: 'ChIJQzT_tDeuEmsRUsoyG83frQ7', // Example - replace with real ID
+    googlePlaceId: 'ChIJ4U-9KsiOGGARARhaBLZLqS0',
     citySlug: 'tokyo',
     type: 'hostel',
-    name: 'Nui. HOSTEL & BAR LOUNGE',
-    description: 'Stylish hostel, Kuramae area, female-only floor',
+    name: 'Nui. Hostel & Bar Lounge',
+    // Rating: 4.4 (1376 reviews)
   },
   {
-    googlePlaceId: 'ChIJRzT_tDeuEmsRUsoyG83frR8', // Example - replace with real ID
+    googlePlaceId: 'ChIJmZGoz1KJGGAR2tXWi0Q1Aig',
     citySlug: 'tokyo',
     type: 'hostel',
+    name: 'CITAN Hostel',
+    // Rating: 4.5 (1002 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJY27X16iOGGARPfoLoRAFDso',
+    citySlug: 'tokyo',
+    type: 'hostel',
+    name: '＆AND HOSTEL AKIHABARA',
+    // Rating: 4.2 (891 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJNxuwa3-PGGARVOXQr-5sLGY',
+    citySlug: 'tokyo',
+    type: 'hostel',
+    name: 'plat hostel keikyu asakusa karin',
+    // Rating: 4.8 (289 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJk58S9aaMGGARMDVQui_NxEY',
+    citySlug: 'tokyo',
+    type: 'hotel',
+    name: 'TRUNK(HOTEL)',
+    // Rating: 4.1 (1811 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJAQBRQf-MGGARZ66XLRbNcfY',
+    citySlug: 'tokyo',
+    type: 'hotel',
+    name: 'UNPLAN Kagurazaka',
+    // Rating: 4.4 (655 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJCd85CYONGGAROzjK0EgWo9E',
+    citySlug: 'tokyo',
+    type: 'hotel',
     name: 'UNPLAN Shinjuku',
-    description: 'Modern capsule-style, women-only section',
-  },
-  {
-    googlePlaceId: 'ChIJSzT_tDeuEmsRUsoyG83frS9', // Example - replace with real ID
-    citySlug: 'tokyo',
-    type: 'hotel',
-    name: 'The Millennials Shibuya',
-    description: 'Smart pods, tech-forward, excellent location',
-  },
-  {
-    googlePlaceId: 'ChIJTzT_tDeuEmsRUsoyG83frT0', // Example - replace with real ID
-    citySlug: 'tokyo',
-    type: 'hostel',
-    name: 'Kaisu Hostel',
-    description: 'Traditional meets modern, Asakusa area',
-  },
-  {
-    googlePlaceId: 'ChIJUzT_tDeuEmsRUsoyG83frU1', // Example - replace with real ID
-    citySlug: 'tokyo',
-    type: 'hotel',
-    name: 'Tokyu Stay Shinjuku',
-    description: 'Apartment-style hotel, great for longer stays',
+    // Rating: 4.2 (592 reviews)
   },
 
-  // Kyoto (5 accommodations)
+  // KYOTO
   {
-    googlePlaceId: 'ChIJVzT_tDeuEmsRUsoyG83frV2', // Example - replace with real ID
+    googlePlaceId: 'ChIJnRTQvJEIAWAR2jsf9qondlg',
     citySlug: 'kyoto',
     type: 'hostel',
-    name: 'Piece Hostel Sanjo',
-    description: 'Design hostel, female dorms, central location',
+    name: 'PIECE HOSTEL SANJO',
+    // Rating: 4.7 (1665 reviews)
   },
   {
-    googlePlaceId: 'ChIJWzT_tDeuEmsRUsoyG83frW3', // Example - replace with real ID
-    citySlug: 'kyoto',
-    type: 'homestay',
-    name: 'Guesthouse Soi',
-    description: 'Traditional machiya townhouse experience',
-  },
-  {
-    googlePlaceId: 'ChIJXzT_tDeuEmsRUsoyG83frX4', // Example - replace with real ID
+    googlePlaceId: 'ChIJvyvihbIIAWARxakS-eHqjRE',
     citySlug: 'kyoto',
     type: 'hostel',
+    name: 'PIECE HOSTEL KYOTO',
+    // Rating: 4.7 (1302 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJJQML4bAIAWARftLKAhi1sTc',
+    citySlug: 'kyoto',
+    type: 'hostel',
+    name: 'Backpackers Hostel K\'s House Kyoto',
+    // Rating: 4.5 (1503 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJobQN7_MIAWARmQ1lhxOrNVU',
+    citySlug: 'kyoto',
+    type: 'hostel',
+    name: 'HOSTEL NINIROOM',
+    // Rating: 4.7 (307 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJCdgahJQIAWARx5tRtWoWDb0',
+    citySlug: 'kyoto',
+    type: 'hotel',
     name: 'The Millennials Kyoto',
-    description: 'Smart pods, women-only floor available',
+    // Rating: 4.6 (997 reviews)
   },
   {
-    googlePlaceId: 'ChIJYzT_tDeuEmsRUsoyG83frY5', // Example - replace with real ID
+    googlePlaceId: 'ChIJTTXxlL4IAWARQeycyDeDetM',
     citySlug: 'kyoto',
     type: 'hotel',
-    name: 'Hotel Kanra Kyoto',
-    description: 'Boutique hotel, traditional aesthetic',
-  },
-  {
-    googlePlaceId: 'ChIJZzT_tDeuEmsRUsoyG83frZ6', // Example - replace with real ID
-    citySlug: 'kyoto',
-    type: 'hostel',
     name: 'Len Kyoto Kawaramachi',
-    description: 'Social hostel, bar and cafe, riverside',
+    // Rating: 4.5 (945 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJHWvpdo8JAWARvstpbg_A_KE',
+    citySlug: 'kyoto',
+    type: 'hotel',
+    name: 'WeBase 京都',
+    // Rating: 4.6 (408 reviews)
   },
 
-  // ===========================================================================
-  // PORTUGAL
-  // ===========================================================================
-
-  // Lisbon (5 accommodations)
+  // OSAKA
   {
-    googlePlaceId: 'ChIJazT_tDeuEmsRUsoyG83fra7', // Example - replace with real ID
-    citySlug: 'lisbon',
+    googlePlaceId: 'ChIJwzyLpgjnAGARqQPGEwmFm_c',
+    citySlug: 'osaka',
     type: 'hostel',
-    name: 'Home Lisbon Hostel',
-    description: 'Award-winning hostel, family dinners, great atmosphere',
+    name: '&And Hostel Hommachi East',
+    // Rating: 4.5 (1179 reviews)
   },
   {
-    googlePlaceId: 'ChIJbzT_tDeuEmsRUsoyG83frb8', // Example - replace with real ID
+    googlePlaceId: 'ChIJVWqJJGvnAGARF5xgI6KX_yw',
+    citySlug: 'osaka',
+    type: 'hostel',
+    name: 'Sauna & Capsule Amza',
+    // Rating: 4.1 (2072 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJTxRd6grnAGAR-DOW2yw68I0',
+    citySlug: 'osaka',
+    type: 'hostel',
+    name: '& AND HOSTEL SHINSAIBASHI EAST',
+    // Rating: 4.6 (676 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ1w6Iff7nAGARekkC6fhcgUA',
+    citySlug: 'osaka',
+    type: 'hostel',
+    name: 'GRAND HOSTEL LDK OSAKA SHINSAIBASHI',
+    // Rating: 4.5 (553 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJDwJoBEDnAGAR3aePab0OhHI',
+    citySlug: 'osaka',
+    type: 'hotel',
+    name: 'Sotetsu Grand Fresa Osaka Namba',
+    // Rating: 4 (4625 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJIx5hp2rnAGAR8YNxqZbCux8',
+    citySlug: 'osaka',
+    type: 'hotel',
+    name: 'Onyado Nono Nanba',
+    // Rating: 4.3 (2165 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJy29XSX3nAGARbCUz-2-lpJU',
+    citySlug: 'osaka',
+    type: 'hotel',
+    name: 'Centara Grand Hotel Osaka',
+    // Rating: 4.5 (1362 reviews)
+  },
+
+  // LISBON
+  {
+    googlePlaceId: 'ChIJ_7WEWoczGQ0RJP-NoRTnNgk',
     citySlug: 'lisbon',
     type: 'hostel',
     name: 'Lisbon Destination Hostel',
-    description: 'In train station, super central, female dorms',
+    // Rating: 4.7 (2039 reviews)
   },
   {
-    googlePlaceId: 'ChIJczT_tDeuEmsRUsoyG83frc9', // Example - replace with real ID
+    googlePlaceId: 'ChIJMchntnk0GQ0RUffIYHPfHik',
+    citySlug: 'lisbon',
+    type: 'hostel',
+    name: 'Home - Lisbon Hostel',
+    // Rating: 4.7 (1579 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ6RwuvX00GQ0Rv6KEXFAw4YE',
+    citySlug: 'lisbon',
+    type: 'hostel',
+    name: 'Sunset Destination Hostel',
+    // Rating: 4.6 (1280 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJQerccHk0GQ0R_LnxW2yVDn4',
+    citySlug: 'lisbon',
+    type: 'hostel',
+    name: 'Yes! Lisbon Hostel',
+    // Rating: 4.6 (1179 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJlWvg9Hg0GQ0R6ySEhkIJJD8',
     citySlug: 'lisbon',
     type: 'hotel',
-    name: 'Hotel Pessoa Lisboa',
-    description: 'Boutique hotel, Baixa area, literary themed',
+    name: 'Hotel da Baixa',
+    // Rating: 4.8 (1187 reviews)
   },
   {
-    googlePlaceId: 'ChIJdzT_tDeuEmsRUsoyG83frd0', // Example - replace with real ID
+    googlePlaceId: 'ChIJiULG6Hg0GQ0REhiOp3X8fYA',
     citySlug: 'lisbon',
-    type: 'hostel',
-    name: 'Living Lounge Hostel',
-    description: 'Cozy hostel, Bairro Alto location',
+    type: 'hotel',
+    name: 'Brown\'s Central Hotel',
+    // Rating: 4.5 (1709 reviews)
   },
   {
-    googlePlaceId: 'ChIJezT_tDeuEmsRUsoyG83fre1', // Example - replace with real ID
+    googlePlaceId: 'ChIJf7Sem4czGQ0R7-Z0x-wVcIU',
     citySlug: 'lisbon',
-    type: 'homestay',
-    name: 'Casa do Bairro',
-    description: 'Charming guesthouse, Alfama neighborhood',
+    type: 'hotel',
+    name: 'Hotel Portugal - Portugal Boutique Hotel',
+    // Rating: 4.7 (1167 reviews)
   },
 
-  // Porto (5 accommodations)
+  // PORTO
   {
-    googlePlaceId: 'ChIJfzT_tDeuEmsRUsoyG83frf2', // Example - replace with real ID
+    googlePlaceId: 'ChIJBSyrduRkJA0RLp1J6oYzdMU',
     citySlug: 'porto',
     type: 'hostel',
-    name: 'Gallery Hostel',
-    description: 'Art-focused hostel, female dorms, breakfast included',
+    name: 'The Passenger Hostel',
+    // Rating: 4.7 (949 reviews)
   },
   {
-    googlePlaceId: 'ChIJgzT_tDeuEmsRUsoyG83frg3', // Example - replace with real ID
+    googlePlaceId: 'ChIJM4jGC_pkJA0RgrKnoV5Xy60',
     citySlug: 'porto',
     type: 'hostel',
-    name: 'Pilot Design Hostel',
-    description: 'Design hostel, rooftop terrace',
+    name: 'Porto Spot Hostel',
+    // Rating: 4.6 (920 reviews)
   },
   {
-    googlePlaceId: 'ChIJhzT_tDeuEmsRUsoyG83frh4', // Example - replace with real ID
+    googlePlaceId: 'ChIJMSXaFwNlJA0RnbYGWButEEs',
+    citySlug: 'porto',
+    type: 'hostel',
+    name: 'Gallery Hostel Porto | GH Group Porto | Accommodation in Porto Art District | Events',
+    // Rating: 4.7 (758 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJe8m6keRkJA0REmcF3AJ1HpE',
+    citySlug: 'porto',
+    type: 'hostel',
+    name: 'Rivoli Cinema Hostel',
+    // Rating: 4.7 (730 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJq6qqjo7VRwsR2YaQs8JwSXo',
     citySlug: 'porto',
     type: 'hotel',
-    name: 'Hotel Carris Porto Ribeira',
-    description: 'Riverside hotel, historic building',
+    name: 'Pestana Vintage Porto',
+    // Rating: 4.7 (2575 reviews)
   },
   {
-    googlePlaceId: 'ChIJizT_tDeuEmsRUsoyG83fri5', // Example - replace with real ID
+    googlePlaceId: 'ChIJh_6pCbZlJA0RyBjRfnG1Ckc',
     citySlug: 'porto',
-    type: 'hostel',
-    name: 'Yes! Porto Hostel',
-    description: 'Social hostel, walking tours included',
+    type: 'hotel',
+    name: 'Selina Porto',
+    // Rating: 4.3 (2394 reviews)
   },
   {
-    googlePlaceId: 'ChIJjzT_tDeuEmsRUsoyG83frj6', // Example - replace with real ID
+    googlePlaceId: 'ChIJMS2DUuBkJA0Rm5_FfROt8Fo',
     citySlug: 'porto',
-    type: 'homestay',
-    name: 'Guest House Douro',
-    description: 'Traditional guesthouse, river views',
+    type: 'hotel',
+    name: 'The Editory House Ribeira Porto Hotel',
+    // Rating: 4.5 (690 reviews)
   },
 
-  // ===========================================================================
-  // CAMBODIA
-  // ===========================================================================
-
-  // Siem Reap (5 accommodations)
+  // HO CHI MINH CITY
   {
-    googlePlaceId: 'ChIJkzT_tDeuEmsRUsoyG83frk7', // Example - replace with real ID
-    citySlug: 'siem-reap',
+    googlePlaceId: 'ChIJk1rgBD4vdTERbnpIhtpyyVI',
+    citySlug: 'ho-chi-minh-city',
     type: 'hostel',
-    name: 'Onederz Hostel',
-    description: 'Social hostel, pool, popular with solo travelers',
+    name: 'Saigon Chill Hostel',
+    // Rating: 4.7 (396 reviews)
   },
   {
-    googlePlaceId: 'ChIJlzT_tDeuEmsRUsoyG83frl8', // Example - replace with real ID
+    googlePlaceId: 'ChIJlcYrjTwvdTERz6uF-qvMO0A',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hostel',
+    name: 'Capsulesaigon',
+    // Rating: 4.1 (170 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ_bMX4M4pdTERCNIX0Fu1FtI',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hostel',
+    name: 'The Roof Tiles Hostel',
+    // Rating: 4.4 (112 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJSQ7eFH0vdTERMTSiqsJCQik',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hostel',
+    name: 'Sakura Hostel Saigon',
+    // Rating: 4.3 (120 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJSXwyXDYvdTERjIuhQKiCCqM',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hotel',
+    name: 'Hôtel des Arts Saigon - MGallery Collection',
+    // Rating: 4.6 (3379 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJBUZZeh4vdTERjcZTglYc-B4',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hotel',
+    name: 'Equatorial Ho Chi Minh City',
+    // Rating: 4.4 (4699 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJmfcfuUYvdTERoM-VKjTQBLA',
+    citySlug: 'ho-chi-minh-city',
+    type: 'hotel',
+    name: 'The Reverie Saigon',
+    // Rating: 4.6 (1902 reviews)
+  },
+
+  // HANOI
+  {
+    googlePlaceId: 'ChIJ94wpQL-rNTERgZw5CuatajA',
+    citySlug: 'hanoi',
+    type: 'hostel',
+    name: 'Old Quarter View Hanoi Hostel',
+    // Rating: 4.8 (2676 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJpQ2Xp1mrNTERv5loUIzDzvA',
+    citySlug: 'hanoi',
+    type: 'hostel',
+    name: 'The One Hostel Hanoi',
+    // Rating: 4.8 (1478 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ2dmnILWrNTER9XP9YdDhqDQ',
+    citySlug: 'hanoi',
+    type: 'hostel',
+    name: 'Hanoi Buffalo Hostel',
+    // Rating: 4.8 (1405 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJjWkLRd6rNTERDdxGBFb3krw',
+    citySlug: 'hanoi',
+    type: 'hostel',
+    name: 'Hanoi Backpackers Hostel & Rooftop Bar',
+    // Rating: 4.6 (1743 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ7Wv7gqCrNTERV0aUMHe7tsk',
+    citySlug: 'hanoi',
+    type: 'hotel',
+    name: 'Mad Monkey Hanoi',
+    // Rating: 4.7 (1489 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJvav7qbirNTERGm-gFI2SzBY',
+    citySlug: 'hanoi',
+    type: 'hotel',
+    name: 'Hanoi Boutique Hotel & Spa',
+    // Rating: 4.5 (986 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJx8FgQJ6rNTERr9w8J4xnKyw',
+    citySlug: 'hanoi',
+    type: 'hotel',
+    name: 'Urban Slumber Dormitory',
+    // Rating: 4.7 (400 reviews)
+  },
+
+  // HOI AN
+  {
+    googlePlaceId: 'ChIJLUjtYSQPQjERccfl4ui9QUk',
+    citySlug: 'hoi-an',
+    type: 'hostel',
+    name: 'The Cuckoo\'s Nest Hostel and Bar',
+    // Rating: 5 (1011 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJuzo_aNwPQjERKhnpYUNZVsw',
+    citySlug: 'hoi-an',
+    type: 'hostel',
+    name: 'FUSE Old Town Hoi An Hostel',
+    // Rating: 4.8 (875 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJl_mEw3YOQjER9PUNxAfJTUc',
+    citySlug: 'hoi-an',
+    type: 'hostel',
+    name: 'Cheerful Hoi An Hostel',
+    // Rating: 4.9 (328 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJga8v76MNQjER99b9HXFVQLg',
+    citySlug: 'hoi-an',
+    type: 'hostel',
+    name: 'Nalani Homestay & Hostel Hoi An',
+    // Rating: 5 (226 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJl219x34PQjERNvqZEJ0X6NA',
+    citySlug: 'hoi-an',
+    type: 'hotel',
+    name: 'Hoian Central Boutique Hotel & Spa',
+    // Rating: 4.7 (2158 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJdaFSinYOQjERtD9NX01RFSo',
+    citySlug: 'hoi-an',
+    type: 'hotel',
+    name: 'Anio Boutique Hotel Hoian',
+    // Rating: 4.9 (1469 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJZSAoCeEPQjER-8lkJdqqaMg',
+    citySlug: 'hoi-an',
+    type: 'hotel',
+    name: 'Hoianese Quiet Old Town Hotel - Cultural Experiential Hotels',
+    // Rating: 5 (1002 reviews)
+  },
+
+  // SIEM REAP
+  {
+    googlePlaceId: 'ChIJy9kC3AAXEDERlHjZCvsb1rA',
     citySlug: 'siem-reap',
     type: 'hostel',
+    name: 'The Twizt - Lifestyle Hostel & Hotel',
+    // Rating: 4.6 (1103 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJx6TqlhMXEDER5T5ibFtYUQQ',
+    citySlug: 'siem-reap',
+    type: 'hostel',
+    name: 'Siem Reap Pub Hostel',
+    // Rating: 4.2 (1107 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ13-9YGwXEDER8C1QBfzQZGU',
+    citySlug: 'siem-reap',
+    type: 'hostel',
+    name: 'Bokre Angkor Hostel',
+    // Rating: 4.7 (364 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJuWsbhnAXEDERJrrRG7FRPCQ',
+    citySlug: 'siem-reap',
+    type: 'hostel',
+    name: 'White Rabbit Hostel Siem Reap',
+    // Rating: 4.5 (470 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJlbgFDW8XEDERQoZ4quiaMys',
+    citySlug: 'siem-reap',
+    type: 'hotel',
+    name: 'Onederz Siem Reap',
+    // Rating: 4.7 (1842 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJq7w0rW8XEDERAsTo81bxhmc',
+    citySlug: 'siem-reap',
+    type: 'hotel',
     name: 'Mad Monkey Siem Reap',
-    description: 'Party hostel, pool, female dorms',
+    // Rating: 4.7 (1645 reviews)
   },
   {
-    googlePlaceId: 'ChIJmzT_tDeuEmsRUsoyG83frm9', // Example - replace with real ID
+    googlePlaceId: 'ChIJOyRg1W4XEDERALnYlxXaw6k',
     citySlug: 'siem-reap',
     type: 'hotel',
-    name: 'Lynnaya Urban River Resort',
-    description: 'Boutique hotel, riverside, peaceful',
+    name: 'The Funky Village',
+    // Rating: 4.6 (1661 reviews)
   },
+
+  // PHNOM PENH
   {
-    googlePlaceId: 'ChIJnzT_tDeuEmsRUsoyG83frn0', // Example - replace with real ID
-    citySlug: 'siem-reap',
-    type: 'homestay',
-    name: 'Angkor Rural Boutique Resort',
-    description: 'Countryside retreat, authentic experience',
-  },
-  {
-    googlePlaceId: 'ChIJozT_tDeuEmsRUsoyG83fro1', // Example - replace with real ID
-    citySlug: 'siem-reap',
+    googlePlaceId: 'ChIJz4YmMdxRCTER_2cwmHTlK8c',
+    citySlug: 'phnom-penh',
     type: 'hostel',
-    name: 'Siem Reap Hostel',
-    description: 'Budget-friendly, good base for temples',
+    name: 'Bliss & Beats Hostel',
+    // Rating: 4.1 (408 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJmQJqfHxRCTERxErP-lOoTco',
+    citySlug: 'phnom-penh',
+    type: 'hostel',
+    name: 'ActivateC3 Hostel',
+    // Rating: 4.7 (152 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ51WxRE9RCTERg2xQv-ACRSo',
+    citySlug: 'phnom-penh',
+    type: 'hostel',
+    name: 'Monsoon Riverside Hostel',
+    // Rating: 3.7 (225 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ74qPGoVRCTERETwaFuMPhe0',
+    citySlug: 'phnom-penh',
+    type: 'hostel',
+    name: 'RS III Hostel',
+    // Rating: 3.7 (206 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJxaaRaiVRCTERDEK0DQwG4tk',
+    citySlug: 'phnom-penh',
+    type: 'hotel',
+    name: 'Mad Monkey Phnom Penh',
+    // Rating: 4.6 (3091 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJUykNdU9RCTERF-P0l6KtaAU',
+    citySlug: 'phnom-penh',
+    type: 'hotel',
+    name: 'Onederz Phnom Penh',
+    // Rating: 4.4 (1081 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJk3ea-DdRCTERo0NKpBCv4xk',
+    citySlug: 'phnom-penh',
+    type: 'hotel',
+    name: 'Okay Boutique Hotel',
+    // Rating: 4.1 (1690 reviews)
   },
 
-  // ===========================================================================
-  // Add more cities as needed...
-  // ===========================================================================
-];
+  // EL NIDO
+  {
+    googlePlaceId: 'ChIJweaRNtZVtjMRWKjEJoywAM0',
+    citySlug: 'el-nido',
+    type: 'hostel',
+    name: 'Frendz Hostel El Nido',
+    // Rating: 4.5 (703 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJeyrRbRVVtjMRiT3CoUlYbws',
+    citySlug: 'el-nido',
+    type: 'hostel',
+    name: 'Spin Designer Hostel',
+    // Rating: 4.5 (608 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJpdBw455VtjMRRAQhfIxtvng',
+    citySlug: 'el-nido',
+    type: 'hostel',
+    name: 'Outpost Beach Hostel',
+    // Rating: 4.4 (549 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJOSUjMdNVtjMRCUZ4xPP9ERA',
+    citySlug: 'el-nido',
+    type: 'hostel',
+    name: 'Happiness Hostel',
+    // Rating: 4.7 (243 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ65zRRn0HtzMRhLto_n5eCiI',
+    citySlug: 'el-nido',
+    type: 'hotel',
+    name: 'Mad Monkey Nacpan Beach',
+    // Rating: 4.5 (1302 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJaVCPO-yrtzMRlUebzhfgZlU',
+    citySlug: 'el-nido',
+    type: 'hotel',
+    name: 'Piece Lio, El Nido',
+    // Rating: 4.9 (518 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJxTtRpUNVtjMR29DmIfMYtZ4',
+    citySlug: 'el-nido',
+    type: 'hotel',
+    name: 'The Funny Lion - El Nido',
+    // Rating: 4.7 (589 reviews)
+  },
 
-/**
- * ADDING NEW ACCOMMODATIONS:
- *
- * 1. Research accommodations that are popular with solo female travelers
- * 2. Check reviews for safety mentions, female-only options, location
- * 3. Find the Google Place ID using the Place ID Finder
- * 4. Add to this file with the appropriate citySlug
- *
- * QUALITY CHECKLIST:
- * ✓ Has female-only dorm option (for hostels)
- * ✓ Good reviews from solo female travelers
- * ✓ Safe neighborhood
- * ✓ Clear check-in process
- * ✓ Good location / transport access
- * ✓ Active Google listing with photos
- */
+  // SIARGAO
+  {
+    googlePlaceId: 'ChIJJ31fJHf3AzMRvHh47TJL5mM',
+    citySlug: 'siargao',
+    type: 'hostel',
+    name: 'Happiness Hostel Siargao',
+    // Rating: 4.6 (320 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJF03VcI0JBDMRAO3buKJvenM',
+    citySlug: 'siargao',
+    type: 'hostel',
+    name: 'Rucksack Inn Siargao - Biggest Hostel in Siargao with Co-Working Space',
+    // Rating: 4.3 (295 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ_w5WUQAJBDMRYCgVFxpdrv4',
+    citySlug: 'siargao',
+    type: 'hostel',
+    name: 'Ilakai Hostel',
+    // Rating: 4.7 (155 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ9a49Lf8JBDMRVVsDwU-3lLc',
+    citySlug: 'siargao',
+    type: 'hostel',
+    name: 'Tres Islas Hostel',
+    // Rating: 4.5 (172 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJY6KU1y0JBDMRQVqscCdtbqo',
+    citySlug: 'siargao',
+    type: 'hotel',
+    name: 'Mad Monkey Siargao',
+    // Rating: 4.7 (908 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJqwAOj7sJBDMRiydeYwQKfRI',
+    citySlug: 'siargao',
+    type: 'hotel',
+    name: 'Lamari Siargao Boutique Hotel',
+    // Rating: 4.7 (494 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJo8BaIigJBDMRu7q-fPnXbKg',
+    citySlug: 'siargao',
+    type: 'hotel',
+    name: 'The Ohm Siargao Resort',
+    // Rating: 4.9 (152 reviews)
+  },
+
+  // CEBU
+  {
+    googlePlaceId: 'ChIJ4RSZuNqdqTMRKaGv-Aim1RI',
+    citySlug: 'cebu',
+    type: 'hostel',
+    name: 'Nacho Hostel Cebu',
+    // Rating: 4.7 (519 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJmWpTJ1uZqTMRtrfyet0Poxo',
+    citySlug: 'cebu',
+    type: 'hostel',
+    name: 'Shejoje Poshtel Hostel',
+    // Rating: 4.3 (272 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ6XfLy9-ZqTMR3ZCArtcS-mg',
+    citySlug: 'cebu',
+    type: 'hostel',
+    name: 'Murals Hostel & Cafe, Cebu city',
+    // Rating: 4.2 (258 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJN46R-SKZqTMRW81jt6naGFk',
+    citySlug: 'cebu',
+    type: 'hostel',
+    name: 'Cebu Backpackers Hostel',
+    // Rating: 4 (80 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ0-t7TxeZqTMRfrFC2a83JWc',
+    citySlug: 'cebu',
+    type: 'hotel',
+    name: 'Seda Central Bloc Cebu',
+    // Rating: 4.4 (754 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJxYp5TA2ZqTMR8HpubBYJW28',
+    citySlug: 'cebu',
+    type: 'hotel',
+    name: 'Citi Park Hotel',
+    // Rating: 4.1 (354 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJh6YlnC-ZqTMRGAqOCoYLjXQ',
+    citySlug: 'cebu',
+    type: 'hotel',
+    name: 'Eia by Dawata',
+    // Rating: 4.2 (164 reviews)
+  },
+
+  // KUALA LUMPUR
+  {
+    googlePlaceId: 'ChIJB8FE89BJzDER_VzFuZAco3Y',
+    citySlug: 'kuala-lumpur',
+    type: 'hostel',
+    name: 'Chinatown Hostel by Mingle - Rooftop Private Jacuzzi with Bar',
+    // Rating: 4.5 (884 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJKy7bwis2zDERafRQ4HGDy_A',
+    citySlug: 'kuala-lumpur',
+    type: 'hostel',
+    name: 'Sunshine Bedz Hostel Kuala Lumpur',
+    // Rating: 4.6 (686 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ6WzDGFs3zDERhc-OCZdURVM',
+    citySlug: 'kuala-lumpur',
+    type: 'hostel',
+    name: 'Bestow Capsule Hostel',
+    // Rating: 4.2 (396 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJUxSfQxk2zDEReFehHaAuwGA',
+    citySlug: 'kuala-lumpur',
+    type: 'hostel',
+    name: 'Homie Kl Hostel',
+    // Rating: 4.5 (46 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJWUl7uis2zDERlOB88gU7Gyc',
+    citySlug: 'kuala-lumpur',
+    type: 'hotel',
+    name: 'The Kuala Lumpur Journal Hotel',
+    // Rating: 4.4 (3290 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJRSfl5is2zDERprn9LyC1NsY',
+    citySlug: 'kuala-lumpur',
+    type: 'hotel',
+    name: 'WOLO Kuala Lumpur',
+    // Rating: 4.4 (2991 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ4fekoMk3zDERn3o-0SWspnw',
+    citySlug: 'kuala-lumpur',
+    type: 'hotel',
+    name: 'Villa Samadhi Kuala Lumpur',
+    // Rating: 4.7 (1321 reviews)
+  },
+
+  // PENANG
+  {
+    googlePlaceId: 'ChIJYUqEwLbDSjAR2_w8Id0D4WQ',
+    citySlug: 'penang',
+    type: 'hostel',
+    name: 'EZ Social Hostel',
+    // Rating: 4.7 (286 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJDTQVf77DSjARVsgVSsFPIdg',
+    citySlug: 'penang',
+    type: 'hostel',
+    name: 'House of Journey Hostel & Guesthouse',
+    // Rating: 4.4 (234 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ1T19yJnDSjARh6QtdDBbz1I',
+    citySlug: 'penang',
+    type: 'hostel',
+    name: 'TIDO Hostel Penang',
+    // Rating: 3.7 (514 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJNwuZrwfDSjARvL1s8QkF8MU',
+    citySlug: 'penang',
+    type: 'hostel',
+    name: 'Aayu Chulia - Hostel in George Town, Penang',
+    // Rating: 4.3 (115 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ78_BcpDDSjARZ_0r6Sq-Lvg',
+    citySlug: 'penang',
+    type: 'hotel',
+    name: '23 LoveLane',
+    // Rating: 4.8 (1239 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJb69Hq5bDSjARD1zZNJBwpuE',
+    citySlug: 'penang',
+    type: 'hotel',
+    name: 'Le Dream Boutique Hotel',
+    // Rating: 4.5 (763 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJcaV615DDSjARxamxF-sKQZI',
+    citySlug: 'penang',
+    type: 'hotel',
+    name: 'Campbell House Penang',
+    // Rating: 4.7 (556 reviews)
+  },
+
+  // SINGAPORE
+  {
+    googlePlaceId: 'ChIJv3oMC7EZ2jER2kSvNGCPTiQ',
+    citySlug: 'singapore',
+    type: 'hostel',
+    name: 'The Pod Boutique Capsule Hotel',
+    // Rating: 4.3 (1244 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ52u_HbEZ2jER8f53EGixN3k',
+    citySlug: 'singapore',
+    type: 'hostel',
+    name: 'CUBE - Boutique Capsule Hotel @ Kampong Glam',
+    // Rating: 4.3 (752 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJdzYEE3MZ2jERGuVTH_L6nTw',
+    citySlug: 'singapore',
+    type: 'hostel',
+    name: 'CUBE - Boutique Capsule Hotel @ Chinatown',
+    // Rating: 4.1 (845 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJR5JfZeUZ2jER0CwRJ0nUDKk',
+    citySlug: 'singapore',
+    type: 'hostel',
+    name: 'KINN Capsule',
+    // Rating: 4.4 (350 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ8zaesgwZ2jERuXipCiacK1A',
+    citySlug: 'singapore',
+    type: 'hotel',
+    name: 'The Bohemian',
+    // Rating: 4.2 (320 reviews)
+  },
+
+  // MARRAKECH
+  {
+    googlePlaceId: 'ChIJ_ZmyWU_urw0RfXa-sUqkT6M',
+    citySlug: 'marrakech',
+    type: 'hostel',
+    name: 'Hostel Red Castle Kasbah',
+    // Rating: 4.3 (655 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJeTDd4kHurw0RnacqNLbRFMo',
+    citySlug: 'marrakech',
+    type: 'hostel',
+    name: 'EARTH HOSTEL',
+    // Rating: 4.7 (264 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ-Ugo_2vurw0RwVC_v4muvIQ',
+    citySlug: 'marrakech',
+    type: 'hostel',
+    name: 'Equity Point Hostel Marrakech',
+    // Rating: 4.1 (595 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJv1Fpxmjurw0RmRBINJhLc2w',
+    citySlug: 'marrakech',
+    type: 'hostel',
+    name: 'Mosaic Hostel Marrakech',
+    // Rating: 4.6 (291 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJcROuUvjurw0Rh7-IzfuvgDk',
+    citySlug: 'marrakech',
+    type: 'hotel',
+    name: 'Movenpick Hotel Mansour Eddahbi',
+    // Rating: 4.7 (10785 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJI-xiPi3vrw0RQ9cNxCV0850',
+    citySlug: 'marrakech',
+    type: 'hotel',
+    name: 'Be Live Collection Marrakech Adults Only, Marrakesch',
+    // Rating: 4.7 (2714 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJnce37e7urw0RRwISCC26Al8',
+    citySlug: 'marrakech',
+    type: 'hotel',
+    name: 'Four Seasons Resort Marrakech',
+    // Rating: 4.6 (2103 reviews)
+  },
+
+  // FES
+  {
+    googlePlaceId: 'ChIJJ3WXB1fznw0Rojk5VOd9BLg',
+    citySlug: 'fes',
+    type: 'hostel',
+    name: 'Moroccan Dream Hostel',
+    // Rating: 4.6 (188 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJ-9u1brD1nw0RzieCXzjmn5M',
+    citySlug: 'fes',
+    type: 'hostel',
+    name: 'fes hostel home',
+    // Rating: 4.1 (57 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJndRfrYn1nw0RU8BFiTVfM34',
+    citySlug: 'fes',
+    type: 'hostel',
+    name: 'Speakeasy Hostel Fes',
+    // Rating: 4.3 (41 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJL7r-LEiLnw0RBwRurf98A7o',
+    citySlug: 'fes',
+    type: 'hotel',
+    name: 'Barceló Fès Medina',
+    // Rating: 4.4 (3242 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJt5a4KEOLnw0RBCTbQ-4Y3uI',
+    citySlug: 'fes',
+    type: 'hotel',
+    name: 'Hotel Sahrai, an SLH Hotel',
+    // Rating: 4.5 (1828 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJrQO5eKj0nw0R1CzzRujIM-E',
+    citySlug: 'fes',
+    type: 'hotel',
+    name: 'Médina Social Club',
+    // Rating: 4.6 (706 reviews)
+  },
+  {
+    googlePlaceId: 'ChIJvdHxwqj0nw0RIE9vZAILnbE',
+    citySlug: 'fes',
+    type: 'homestay',
+    name: 'Riad Fes - Relais & Châteaux',
+    // Rating: 4.5 (858 reviews)
+  },
+
+];
