@@ -84,25 +84,30 @@ export default function CreateAccountScreen() {
 
   const handleContinue = async () => {
     setLoading(true);
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
-    setLoading(false);
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) {
-      Alert.alert('Sign up failed', error.message);
-      return;
+      if (error) {
+        Alert.alert('Sign up failed', error.message);
+        return;
+      }
+
+      onboardingStore.set('email', email);
+
+      // Initialize A/B testing flow for new user
+      if (data.user?.id) {
+        await initializeOnboardingFlow(data.user.id, posthog);
+      }
+
+      router.push('/(onboarding)/profile');
+    } catch (e: any) {
+      Alert.alert('Sign up failed', e.message ?? 'Something went wrong');
+    } finally {
+      setLoading(false);
     }
-
-    onboardingStore.set('email', email);
-
-    // Initialize A/B testing flow for new user
-    if (data.user?.id) {
-      await initializeOnboardingFlow(data.user.id, posthog);
-    }
-
-    router.push('/(onboarding)/profile');
   };
 
   return (

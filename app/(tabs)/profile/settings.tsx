@@ -188,8 +188,20 @@ export default function SettingsScreen() {
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
+        {/* Account */}
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Account</Text>
+
+        <Pressable
+          style={styles.settingRow}
+          onPress={() => router.push('/(tabs)/profile/delete-account')}
+        >
+          <Ionicons name="trash-outline" size={18} color="#E53E3E" />
+          <Text style={[styles.settingLabel, { color: '#E53E3E' }]}>Delete Account</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+
         {/* Danger zone */}
-        <View style={{ marginTop: spacing.xxxl }}>
+        <View style={{ marginTop: spacing.xl }}>
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
             <Text style={styles.logoutText}>Log out</Text>
           </Pressable>

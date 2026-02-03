@@ -109,7 +109,10 @@ export default function PlaceDetailScreen() {
     () => userId ? getProfileById(userId) : Promise.resolve(undefined),
     [userId],
   );
-  const { data: isSaved } = useData(() => isPlaceSaved(userId!, id ?? ''), [userId, id]);
+  const { data: isSaved } = useData(
+    () => (userId && id) ? isPlaceSaved(userId, id) : Promise.resolve(false),
+    [userId, id],
+  );
   const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
@@ -117,11 +120,22 @@ export default function PlaceDetailScreen() {
     if (isSaved !== null) setSaved(isSaved);
   }, [isSaved]);
 
+  const canSave = Boolean(userId && id);
+
   const handleSave = useCallback(async () => {
+    if (!userId || !id) return;
+
     const newSaved = !saved;
     setSaved(newSaved);
     posthog.capture(newSaved ? 'place_saved' : 'place_unsaved', { place_id: id });
-    await toggleSavePlace(userId!, id ?? '');
+
+    try {
+      await toggleSavePlace(userId, id);
+    } catch (error) {
+      // Revert on error
+      setSaved(saved);
+      console.error('Failed to save place:', error);
+    }
   }, [userId, id, saved, posthog]);
 
   // Group tags by filterGroup
@@ -184,11 +198,11 @@ export default function PlaceDetailScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Pressable onPress={handleSave} hitSlop={12}>
+        <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
           <Ionicons
             name={saved ? 'heart' : 'heart-outline'}
             size={24}
-            color={saved ? colors.orange : colors.textPrimary}
+            color={saved ? colors.orange : canSave ? colors.textPrimary : colors.textMuted}
           />
         </Pressable>
       </View>
@@ -331,18 +345,20 @@ export default function PlaceDetailScreen() {
           {/* Large save button */}
           <Pressable
             onPress={handleSave}
+            disabled={!canSave}
             style={[
               styles.saveBtnLarge,
               saved && styles.saveBtnLargeSaved,
+              !canSave && styles.saveBtnLargeDisabled,
             ]}
           >
             <Ionicons
               name={saved ? 'heart' : 'heart-outline'}
               size={20}
-              color={saved ? colors.background : colors.background}
+              color={colors.background}
             />
             <Text style={styles.saveBtnLargeText}>
-              {saved ? 'Saved' : 'Save to collection'}
+              {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save to collection'}
             </Text>
           </Pressable>
         </View>
@@ -541,6 +557,9 @@ const styles = StyleSheet.create({
   },
   saveBtnLargeSaved: {
     backgroundColor: colors.greenSoft,
+  },
+  saveBtnLargeDisabled: {
+    backgroundColor: colors.textMuted,
   },
   saveBtnLargeText: {
     ...typography.button,

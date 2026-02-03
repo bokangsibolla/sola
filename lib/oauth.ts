@@ -22,32 +22,46 @@ export function useGoogleAuth() {
   });
 
   const signInWithGoogle = async (): Promise<{ isNewUser: boolean; userId: string }> => {
-    const result = await promptAsync();
+    try {
+      const result = await promptAsync();
 
-    if (result.type !== 'success') {
-      throw new Error('Google sign-in was cancelled');
+      if (result.type === 'cancel' || result.type === 'dismiss') {
+        throw new Error('Sign-in was cancelled');
+      }
+
+      if (result.type !== 'success') {
+        throw new Error('Google sign-in failed. Please try again.');
+      }
+
+      const idToken = result.params.id_token;
+      if (!idToken) {
+        throw new Error('No ID token returned from Google');
+      }
+
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (error) {
+        throw new Error(error.message || 'Failed to authenticate with Google');
+      }
+
+      // Check if user has a profile already (existing vs new user)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      return { isNewUser: !profile, userId: data.user.id };
+    } catch (err: any) {
+      // Re-throw with consistent error format
+      if (err.message?.includes('cancel')) {
+        throw new Error('Sign-in was cancelled');
+      }
+      throw err;
     }
-
-    const idToken = result.params.id_token;
-    if (!idToken) {
-      throw new Error('No ID token returned from Google');
-    }
-
-    const { data, error } = await supabase.auth.signInWithIdToken({
-      provider: 'google',
-      token: idToken,
-    });
-
-    if (error) throw error;
-
-    // Check if user has a profile already (existing vs new user)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', data.user.id)
-      .maybeSingle();
-
-    return { isNewUser: !profile, userId: data.user.id };
   };
 
   return { request, signInWithGoogle };
@@ -56,38 +70,48 @@ export function useGoogleAuth() {
 // ─── Apple ────────────────────────────────────────────────────────────────────
 
 export async function signInWithApple(): Promise<{ isNewUser: boolean; userId: string }> {
-  const rawNonce = Crypto.randomUUID();
-  const hashedNonce = await Crypto.digestStringAsync(
-    Crypto.CryptoDigestAlgorithm.SHA256,
-    rawNonce,
-  );
+  try {
+    const rawNonce = Crypto.randomUUID();
+    const hashedNonce = await Crypto.digestStringAsync(
+      Crypto.CryptoDigestAlgorithm.SHA256,
+      rawNonce,
+    );
 
-  const credential = await AppleAuthentication.signInAsync({
-    requestedScopes: [
-      AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
-      AppleAuthentication.AppleAuthenticationScope.EMAIL,
-    ],
-    nonce: hashedNonce,
-  });
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
 
-  const idToken = credential.identityToken;
-  if (!idToken) {
-    throw new Error('No identity token returned from Apple');
+    const idToken = credential.identityToken;
+    if (!idToken) {
+      throw new Error('No identity token returned from Apple');
+    }
+
+    const { data, error } = await supabase.auth.signInWithIdToken({
+      provider: 'apple',
+      token: idToken,
+      nonce: rawNonce,
+    });
+
+    if (error) {
+      throw new Error(error.message || 'Failed to authenticate with Apple');
+    }
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    return { isNewUser: !profile, userId: data.user.id };
+  } catch (err: any) {
+    // Apple authentication cancelled by user
+    if (err.code === 'ERR_REQUEST_CANCELED' || err.code === 'ERR_CANCELED') {
+      throw new Error('Sign-in was cancelled');
+    }
+    throw err;
   }
-
-  const { data, error } = await supabase.auth.signInWithIdToken({
-    provider: 'apple',
-    token: idToken,
-    nonce: rawNonce,
-  });
-
-  if (error) throw error;
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('id', data.user.id)
-    .maybeSingle();
-
-  return { isNewUser: !profile, userId: data.user.id };
 }

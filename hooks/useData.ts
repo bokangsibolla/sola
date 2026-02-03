@@ -21,11 +21,16 @@ export function useData<T>(
   const { data, isLoading, error } = useQuery<T, Error>({
     queryKey,
     queryFn: async () => {
-      const result = fetcher();
-      if (result instanceof Promise) {
-        return await result;
+      try {
+        const result = fetcher();
+        if (result instanceof Promise) {
+          return await result;
+        }
+        return result;
+      } catch (err) {
+        // Re-throw as Error for React Query to handle
+        throw err instanceof Error ? err : new Error(String(err));
       }
-      return result;
     },
     // Show stale data while refetching
     staleTime: 30_000,

@@ -1189,22 +1189,39 @@ export async function setPlaceSignal(
   rating?: number,
   note?: string,
 ): Promise<PlaceSignal> {
-  const { data, error } = await supabase
-    .from('place_signals')
-    .upsert(
-      {
+  // Check if signal already exists
+  const existing = await getPlaceSignal(userId, placeId);
+
+  if (existing) {
+    // Update existing signal
+    const { data, error } = await supabase
+      .from('place_signals')
+      .update({
+        signal_type: signalType,
+        rating: rating ?? null,
+        note: note ?? null,
+      })
+      .eq('id', existing.id)
+      .select('*')
+      .single();
+    if (error) throw error;
+    return toCamel<PlaceSignal>(data);
+  } else {
+    // Insert new signal
+    const { data, error } = await supabase
+      .from('place_signals')
+      .insert({
         user_id: userId,
         place_id: placeId,
         signal_type: signalType,
         rating: rating ?? null,
         note: note ?? null,
-      },
-      { onConflict: 'user_id,place_id' }
-    )
-    .select('*')
-    .single();
-  if (error) throw error;
-  return toCamel<PlaceSignal>(data);
+      })
+      .select('*')
+      .single();
+    if (error) throw error;
+    return toCamel<PlaceSignal>(data);
+  }
 }
 
 export async function removePlaceSignal(
@@ -1318,6 +1335,110 @@ export function isPlaceVerified(place: Place): boolean {
  */
 export function isSolaChecked(place: Place): boolean {
   return place.verificationStatus === 'sola_checked';
+}
+
+// ---------------------------------------------------------------------------
+// Account Deletion
+// ---------------------------------------------------------------------------
+
+/**
+ * Delete all user data and anonymize the account.
+ * This is required for App Store compliance.
+ *
+ * Deletes (in order to respect foreign keys):
+ * - Push tokens
+ * - Messages sent by user
+ * - Conversations where user is participant
+ * - Trip places (via trips)
+ * - Trips
+ * - Saved places
+ * - Collections
+ * - Place signals
+ * - Blocked users (both directions)
+ * - User reports (as reporter)
+ * - Onboarding sessions
+ * - Profile (anonymized, not deleted to preserve referential integrity)
+ *
+ * Note: The auth.users record remains but profile is anonymized.
+ * For complete deletion, use a server-side edge function with service role.
+ */
+export async function deleteAccount(userId: string): Promise<void> {
+  // 1. Delete push tokens
+  await supabase.from('push_tokens').delete().eq('user_id', userId);
+
+  // 2. Delete messages sent by user
+  await supabase.from('messages').delete().eq('sender_id', userId);
+
+  // 3. Delete conversations where user is participant
+  // (messages from others in these convos will be orphaned but that's OK)
+  await supabase.from('conversations').delete().contains('participant_ids', [userId]);
+
+  // 4. Delete trip places for user's trips
+  const { data: trips } = await supabase
+    .from('trips')
+    .select('id')
+    .eq('user_id', userId);
+  if (trips && trips.length > 0) {
+    const tripIds = trips.map((t) => t.id);
+    await supabase.from('trip_places').delete().in('trip_id', tripIds);
+  }
+
+  // 5. Delete trips
+  await supabase.from('trips').delete().eq('user_id', userId);
+
+  // 6. Delete saved places
+  await supabase.from('saved_places').delete().eq('user_id', userId);
+
+  // 7. Delete collections
+  await supabase.from('collections').delete().eq('user_id', userId);
+
+  // 8. Delete place signals
+  await supabase.from('place_signals').delete().eq('user_id', userId);
+
+  // 9. Delete blocked users (both as blocker and blocked)
+  await supabase.from('blocked_users').delete().eq('blocker_id', userId);
+  await supabase.from('blocked_users').delete().eq('blocked_id', userId);
+
+  // 10. Delete user reports (as reporter only - reports against user preserved for safety)
+  await supabase.from('user_reports').delete().eq('reporter_id', userId);
+
+  // 11. Delete onboarding sessions
+  await supabase.from('onboarding_sessions').delete().eq('user_id', userId);
+
+  // 12. Anonymize profile (preserve row for referential integrity in other users' data)
+  // Username set to deleted_xxx indicates account was deleted
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({
+      username: `deleted_${userId.slice(0, 8)}`,
+      first_name: 'Deleted User',
+      bio: 'This account has been deleted.',
+      avatar_url: null,
+      home_country_iso2: null,
+      home_country_name: null,
+      home_city_id: null,
+      current_city_id: null,
+      current_city_name: null,
+      interests: null,
+      travel_style: null,
+      is_online: false,
+    })
+    .eq('id', userId);
+
+  if (profileError) throw profileError;
+
+  // 13. Delete avatar files from storage
+  try {
+    const { data: files } = await supabase.storage
+      .from('avatars')
+      .list(userId);
+    if (files && files.length > 0) {
+      const filePaths = files.map((f) => `${userId}/${f.name}`);
+      await supabase.storage.from('avatars').remove(filePaths);
+    }
+  } catch {
+    // Storage deletion is best-effort
+  }
 }
 
 // ---------------------------------------------------------------------------
