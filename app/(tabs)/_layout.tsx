@@ -35,15 +35,6 @@ export default function TabLayout() {
         ),
       }}>
       <Tabs.Screen
-        name="home"
-        options={{
-          title: 'Home',
-          tabBarIcon: ({ color }) => (
-            <Feather name="home" size={22} color={color} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="explore"
         options={{
           title: 'Explore',
@@ -53,13 +44,28 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="home"
+        options={{
+          title: 'Travelers',
+          tabBarIcon: ({ color }) => (
+            <Feather name="users" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="sos"
         options={{
           title: 'SOS',
           tabBarButton: () => (
-            <Pressable style={styles.sosTab} onPress={() => setSosVisible(true)}>
+            <Pressable
+              style={styles.sosTab}
+              onPress={() => setSosVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="SOS emergency button. Double tap to open emergency contacts."
+              accessibilityHint="Opens emergency contact options for police, ambulance, and fire services"
+            >
               <View style={styles.sosCircle}>
-                <Feather name="shield" size={18} color="#FFFFFF" />
+                <Feather name="shield" size={18} color={colors.background} />
               </View>
               <Text style={styles.sosLabel}>SOS</Text>
             </Pressable>
@@ -126,14 +132,14 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: '#D32F2F',
+    backgroundColor: colors.emergency,
     alignItems: 'center',
     justifyContent: 'center',
   },
   sosLabel: {
     fontFamily: fonts.medium,
     fontSize: 10,
-    color: '#D32F2F',
+    color: colors.emergency,
     marginTop: 2,
     letterSpacing: 0.2,
   },
