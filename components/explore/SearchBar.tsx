@@ -14,7 +14,7 @@ export default function SearchBar({
   return (
     <Pressable style={styles.container} onPress={onPress}>
       <View style={styles.inner}>
-        <Ionicons name="search" size={20} color={colors.textSecondary} />
+        <Ionicons name="search-outline" size={22} color={colors.textPrimary} />
         <Text style={styles.placeholder}>{placeholder}</Text>
       </View>
     </Pressable>
@@ -24,26 +24,29 @@ export default function SearchBar({
 const styles = StyleSheet.create({
   container: {
     marginHorizontal: spacing.screenX,
+    marginBottom: spacing.lg,
     backgroundColor: colors.background,
-    borderRadius: 32,
+    borderRadius: 40,
     borderWidth: 1,
     borderColor: colors.borderDefault,
+    // Airbnb-style prominent shadow
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    elevation: 6,
   },
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingVertical: 16,
+    gap: spacing.md,
   },
   placeholder: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    color: colors.textSecondary,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
   },
 });

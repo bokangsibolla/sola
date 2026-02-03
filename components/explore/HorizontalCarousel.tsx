@@ -1,5 +1,10 @@
-import { FlatList, StyleSheet, ListRenderItem } from 'react-native';
+import { FlatList, StyleSheet, ListRenderItem, Dimensions } from 'react-native';
 import { spacing } from '@/constants/design';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+// Calculate default card width to show ~1.3 cards (with peek)
+const DEFAULT_ITEM_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2) * 0.82;
+const DEFAULT_GAP = 12;
 
 interface HorizontalCarouselProps<T> {
   data: T[];
@@ -13,8 +18,8 @@ export default function HorizontalCarousel<T>({
   data,
   renderItem,
   keyExtractor,
-  itemWidth = 280,
-  gap = spacing.md,
+  itemWidth = DEFAULT_ITEM_WIDTH,
+  gap = DEFAULT_GAP,
 }: HorizontalCarouselProps<T>) {
   return (
     <FlatList
@@ -33,6 +38,9 @@ export default function HorizontalCarousel<T>({
     />
   );
 }
+
+// Export for use in tabs
+export { DEFAULT_ITEM_WIDTH, DEFAULT_GAP };
 
 const styles = StyleSheet.create({
   content: {

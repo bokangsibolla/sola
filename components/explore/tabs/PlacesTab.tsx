@@ -2,7 +2,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback } from 'react';
-import { ExploreCard, SectionHeader, HorizontalCarousel } from '@/components/explore';
+import { ExploreCard, SectionHeader, HorizontalCarousel, DEFAULT_ITEM_WIDTH } from '@/components/explore';
 import {
   getCitiesByCategory,
   cityCategoryLabels,
@@ -33,7 +33,7 @@ export default function PlacesTab({ onNavigateToSeeAll }: PlacesTabProps) {
         rating={item.rating}
         reviewCount={item.reviewCount}
         onPress={() => handleCityPress(item)}
-        width={280}
+        width={DEFAULT_ITEM_WIDTH}
       />
     ),
     [handleCityPress]

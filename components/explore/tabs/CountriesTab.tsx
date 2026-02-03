@@ -2,7 +2,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { ExploreCard, SectionHeader, HorizontalCarousel } from '@/components/explore';
+import { ExploreCard, SectionHeader, HorizontalCarousel, DEFAULT_ITEM_WIDTH } from '@/components/explore';
 import {
   mockCountries,
   getCountriesByContinent,
@@ -43,7 +43,7 @@ export default function CountriesTab({ onNavigateToSeeAll }: CountriesTabProps) 
         rating={item.rating}
         reviewCount={item.reviewCount}
         onPress={() => handleCountryPress(item)}
-        width={280}
+        width={DEFAULT_ITEM_WIDTH}
       />
     ),
     [handleCountryPress]

@@ -1,8 +1,14 @@
 import { useCallback, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+
+const SCREEN_WIDTH = Dimensions.get('window').width;
+// Card width that shows ~1.5 cards with peek of next (Airbnb style)
+const DEFAULT_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) * 0.85;
+// Portrait aspect ratio like Airbnb (4:5)
+const IMAGE_ASPECT_RATIO = 4 / 5;
 
 interface ExploreCardProps {
   imageUrl: string;
@@ -30,14 +36,17 @@ export default function ExploreCard({
   reviewCount,
   price,
   onPress,
-  width = 280,
+  width = DEFAULT_CARD_WIDTH,
   showFavorite = true,
 }: ExploreCardProps) {
   const [scale] = useState(new Animated.Value(1));
   const [isFavorited, setIsFavorited] = useState(false);
 
+  // Calculate image height based on portrait aspect ratio
+  const imageHeight = width / IMAGE_ASPECT_RATIO;
+
   const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.97, useNativeDriver: true, speed: 50 }).start();
+    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
   }, [scale]);
 
   const onPressOut = useCallback(() => {
@@ -58,7 +67,7 @@ export default function ExploreCard({
   return (
     <Animated.View style={[styles.container, { width, transform: [{ scale }] }]}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={[styles.imageContainer, { width, height: width }]}>
+        <View style={[styles.imageContainer, { width, height: imageHeight }]}>
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
@@ -69,7 +78,7 @@ export default function ExploreCard({
             <Pressable style={styles.favoriteButton} onPress={handleFavoritePress}>
               <Ionicons
                 name={isFavorited ? 'heart' : 'heart-outline'}
-                size={20}
+                size={22}
                 color={isFavorited ? colors.orange : colors.textPrimary}
               />
             </Pressable>
@@ -77,7 +86,7 @@ export default function ExploreCard({
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.title} numberOfLines={2}>
             {title}
           </Text>
 
@@ -95,10 +104,10 @@ export default function ExploreCard({
 
           {rating !== undefined && (
             <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={colors.textPrimary} />
+              <Ionicons name="star" size={14} color={colors.textPrimary} style={styles.starIcon} />
               <Text style={styles.ratingText}>{rating.toFixed(2)}</Text>
               {reviewCount !== undefined && (
-                <Text style={styles.reviewCount}>({reviewCount})</Text>
+                <Text style={styles.reviewCount}>({reviewCount.toLocaleString()})</Text>
               )}
             </View>
           )}
@@ -117,59 +126,75 @@ export default function ExploreCard({
   );
 }
 
+// Export for use in tabs
+export { DEFAULT_CARD_WIDTH };
+
 const styles = StyleSheet.create({
-  container: {
-    marginRight: spacing.md,
-  },
+  container: {},
   imageContainer: {
     position: 'relative',
-    borderRadius: radius.card,
+    borderRadius: 12,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
   image: {
     width: '100%',
     height: '100%',
-    backgroundColor: colors.borderDefault,
+    backgroundColor: colors.neutralFill,
   },
   favoriteButton: {
     position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    top: spacing.md,
+    right: spacing.md,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   contentContainer: {
-    gap: spacing.xs,
+    paddingTop: 2,
   },
   title: {
     fontFamily: fonts.medium,
     fontSize: 15,
+    lineHeight: 20,
     color: colors.textPrimary,
+    marginBottom: 2,
   },
   subtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
+    lineHeight: 18,
     color: colors.textSecondary,
+    marginBottom: 2,
   },
   metaRow: {
     fontFamily: fonts.regular,
     fontSize: 14,
+    lineHeight: 18,
     color: colors.textSecondary,
+    marginBottom: 2,
   },
   ratingRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    marginTop: 4,
+  },
+  starIcon: {
+    marginRight: 4,
   },
   ratingText: {
-    fontFamily: fonts.medium,
+    fontFamily: fonts.semiBold,
     fontSize: 14,
     color: colors.textPrimary,
+    marginRight: 4,
   },
   reviewCount: {
     fontFamily: fonts.regular,
@@ -177,7 +202,7 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
   },
   priceRow: {
-    marginTop: spacing.xs,
+    marginTop: 4,
   },
   priceText: {
     fontFamily: fonts.medium,

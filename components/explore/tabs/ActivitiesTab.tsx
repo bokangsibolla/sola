@@ -2,7 +2,7 @@
 import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo } from 'react';
-import { ExploreCard, SectionHeader, HorizontalCarousel } from '@/components/explore';
+import { ExploreCard, SectionHeader, HorizontalCarousel, DEFAULT_ITEM_WIDTH } from '@/components/explore';
 import {
   getActivitiesByCategory,
   getTopRatedActivities,
@@ -35,7 +35,7 @@ export default function ActivitiesTab({ onNavigateToSeeAll }: ActivitiesTabProps
         rating={item.rating}
         reviewCount={item.reviewCount}
         onPress={() => handleActivityPress(item)}
-        width={280}
+        width={DEFAULT_ITEM_WIDTH}
       />
     ),
     [handleActivityPress]
