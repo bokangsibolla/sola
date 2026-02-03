@@ -19,6 +19,7 @@ import type {
   Trip,
   Conversation,
   Message,
+  DestinationTag,
   PaginatedResult,
 } from './types';
 
@@ -119,6 +120,63 @@ export async function getAreasByCity(cityId: string): Promise<CityArea[]> {
     .order('order_index');
   if (error) throw error;
   return rowsToCamel<CityArea>(data ?? []);
+}
+
+// ---------------------------------------------------------------------------
+// Destination Tags
+// ---------------------------------------------------------------------------
+
+export async function getDestinationTags(
+  entityType: 'country' | 'city' | 'neighborhood',
+  entityId: string,
+): Promise<DestinationTag[]> {
+  const { data, error } = await supabase
+    .from('destination_tags')
+    .select('*')
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<DestinationTag>(data ?? []);
+}
+
+export async function getCountriesByTag(tagSlug: string): Promise<Country[]> {
+  const { data, error } = await supabase
+    .from('destination_tags')
+    .select('entity_id')
+    .eq('entity_type', 'country')
+    .eq('tag_slug', tagSlug);
+  if (error) throw error;
+  const ids = (data ?? []).map((r) => r.entity_id);
+  if (ids.length === 0) return [];
+  const { data: countries, error: cError } = await supabase
+    .from('countries')
+    .select('*')
+    .in('id', ids)
+    .eq('is_active', true)
+    .order('order_index');
+  if (cError) throw cError;
+  return rowsToCamel<Country>(countries ?? []);
+}
+
+export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]> {
+  if (tagSlugs.length === 0) return getCountries();
+  const { data, error } = await supabase
+    .from('destination_tags')
+    .select('entity_id')
+    .eq('entity_type', 'country')
+    .in('tag_slug', tagSlugs);
+  if (error) throw error;
+  const ids = [...new Set((data ?? []).map((r) => r.entity_id))];
+  if (ids.length === 0) return [];
+  const { data: countries, error: cError } = await supabase
+    .from('countries')
+    .select('*')
+    .in('id', ids)
+    .eq('is_active', true)
+    .order('order_index');
+  if (cError) throw cError;
+  return rowsToCamel<Country>(countries ?? []);
 }
 
 // ---------------------------------------------------------------------------

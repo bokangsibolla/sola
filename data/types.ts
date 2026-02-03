@@ -121,6 +121,17 @@ export interface PlaceTag {
   createdAt: string;
 }
 
+export interface DestinationTag {
+  id: string;
+  entityType: 'country' | 'city' | 'neighborhood';
+  entityId: string;
+  tagCategory: string;
+  tagSlug: string;
+  tagLabel: string;
+  orderIndex: number;
+  createdAt: string;
+}
+
 export interface PlaceSignal {
   id: string;
   userId: string | null;
@@ -195,6 +206,8 @@ export interface GeoContent {
   safetyWomenMd: string | null;
   transportMd: string | null;
   topThingsToDo: string[];
+  portraitMd: string | null;
+  bestFor: string | null;
   updatedBy: string | null;
   publishedAt: string | null;
   createdAt: string;
