@@ -1,4 +1,5 @@
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -9,26 +10,27 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
-function formatSafetyRating(rating: string | undefined): string {
-  if (!rating) return '—';
-  return rating.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase());
-}
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
-  const { data: country, loading, error, refetch } = useData(() => getCountryBySlug(slug), [slug]);
+  const { data: country, loading: countryLoading, error, refetch } = useData(() => getCountryBySlug(slug), [slug]);
+  const { data: contentData } = useData(
+    () => (country ? getCountryContent(country.id) : Promise.resolve(null)),
+    [country?.id],
+  );
+  const { data: citiesData } = useData(
+    () => (country ? getCitiesByCountry(country.id) : Promise.resolve(null)),
+    [country?.id],
+  );
 
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
-
-  const { data: contentData } = useData(() => country ? getCountryContent(country.id) : Promise.resolve(null), [country?.id]);
-  const { data: citiesData } = useData(() => country ? getCitiesByCountry(country.id) : Promise.resolve(null), [country?.id]);
   const content = contentData ?? undefined;
   const cities = citiesData ?? [];
 
+  if (countryLoading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
   if (!country) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -51,7 +53,7 @@ export default function CountryGuideScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero */}
         <View style={styles.hero}>
-          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} />}
+          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} />}
           <View style={styles.heroOverlay}>
             <Text style={styles.heroName}>{country.name}</Text>
             {content?.subtitle ? <Text style={styles.heroTagline}>{content.subtitle}</Text> : null}
@@ -61,13 +63,21 @@ export default function CountryGuideScreen() {
         <View style={styles.content}>
           {/* Quick facts */}
           <View style={styles.factsGrid}>
-            <Fact icon="shield-checkmark-outline" label="Safety" value={formatSafetyRating(content?.safetyRating)} />
             <Fact icon="calendar-outline" label="Best time" value={content?.bestMonths ?? '—'} />
             <Fact icon="cash-outline" label="Currency" value={content?.currency ?? '—'} />
             <Fact icon="language-outline" label="Language" value={content?.language ?? '—'} />
+            <Fact icon="heart-outline" label="Best for" value={content?.bestFor ?? content?.goodForInterests?.slice(0, 3).join(', ') ?? '—'} />
           </View>
 
           {content?.visaNote ? <Text style={styles.visaNote}>{content.visaNote}</Text> : null}
+
+          {/* Editorial portrait */}
+          {(content?.portraitMd || content?.safetyWomenMd) && (
+            <>
+              <Text style={styles.sectionTitle}>What it's like</Text>
+              <Text style={styles.portraitText}>{content.portraitMd ?? content.safetyWomenMd}</Text>
+            </>
+          )}
 
           {/* Highlights */}
           {content?.highlights && content.highlights.length > 0 && (
@@ -85,7 +95,7 @@ export default function CountryGuideScreen() {
           {/* Cities */}
           {cities.length > 0 && (
             <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities</Text>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Cities to explore</Text>
               {cities.map((city) => (
                 <CityCard key={city.slug} city={city} />
               ))}
@@ -115,7 +125,7 @@ function CityCard({ city }: { city: any }) {
       onPress={() => router.push(`/explore/place/${city.slug}`)}
     >
       {city.heroImageUrl && (
-        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} />
+        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
       )}
       <View style={styles.cityText}>
         <Text style={styles.cityName}>{city.name}</Text>
@@ -217,6 +227,13 @@ const styles = StyleSheet.create({
   visaNote: {
     ...typography.captionSmall,
     color: colors.textMuted,
+    marginBottom: spacing.xl,
+  },
+  portraitText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.textPrimary,
     marginBottom: spacing.xl,
   },
   sectionTitle: {
