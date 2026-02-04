@@ -79,15 +79,17 @@ export default function CollectionScreen() {
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
       {/* Hero */}
-      <View style={styles.hero}>
+      <View style={styles.hero} pointerEvents="box-none">
         <Image
           source={{ uri: collection.heroImageUrl }}
           style={styles.heroImage}
           contentFit="cover"
+          pointerEvents="none"
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.7)']}
           style={styles.heroGradient}
+          pointerEvents="none"
         />
         <Pressable
           style={[styles.backButton, { top: insets.top + spacing.md }]}
@@ -96,7 +98,7 @@ export default function CollectionScreen() {
         >
           <Feather name="arrow-left" size={24} color="#FFFFFF" />
         </Pressable>
-        <View style={styles.heroContent}>
+        <View style={styles.heroContent} pointerEvents="none">
           <Text style={styles.heroTitle}>{collection.title}</Text>
           <Text style={styles.heroSubtitle}>{collection.subtitle}</Text>
         </View>
@@ -117,8 +119,9 @@ export default function CollectionScreen() {
                 source={{ uri: dest.imageUrl }}
                 style={styles.destImage}
                 contentFit="cover"
+                pointerEvents="none"
               />
-              <View style={styles.destInfo}>
+              <View style={styles.destInfo} pointerEvents="none">
                 <Text style={styles.destName}>{dest.name}</Text>
                 <Text style={styles.destType}>{dest.type}</Text>
               </View>

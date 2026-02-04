@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, Animated } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,35 +111,24 @@ function CityCard({ city }: { city: any }) {
   const router = useRouter();
   const posthog = usePostHog();
   const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
-  const scale = useState(new Animated.Value(1))[0];
-
-  const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
-
-  const onPressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
 
   return (
     <Pressable
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       onPress={() => {
         posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
         router.push(`/(tabs)/explore/city/${city.slug}` as any);
       }}
+      style={({ pressed }) => [styles.cityCard, pressed && styles.cityCardPressed]}
     >
-      <Animated.View style={[styles.cityCard, { transform: [{ scale }] }]}>
         {/* Full-width image */}
         {city.heroImageUrl ? (
-          <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
+          <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} pointerEvents="none" />
         ) : (
-          <View style={[styles.cityImage, styles.cityImagePlaceholder]} />
+          <View style={[styles.cityImage, styles.cityImagePlaceholder]} pointerEvents="none" />
         )}
 
         {/* Content below image */}
-        <View style={styles.cityBody}>
+        <View style={styles.cityBody} pointerEvents="none">
           <View style={styles.cityHeader}>
             <Text style={styles.cityName}>{city.name}</Text>
             <View style={styles.cityArrow}>
@@ -161,7 +150,6 @@ function CityCard({ city }: { city: any }) {
             <Ionicons name="arrow-forward" size={14} color={colors.orange} />
           </View>
         </View>
-      </Animated.View>
     </Pressable>
   );
 }
@@ -301,9 +289,9 @@ export default function CountryGuideScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 1. Hero with vibe statement */}
-        <View style={styles.hero}>
-          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} />}
-          <View style={styles.heroOverlay}>
+        <View style={styles.hero} pointerEvents="none">
+          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} pointerEvents="none" />}
+          <View style={styles.heroOverlay} pointerEvents="none">
             <Text style={styles.heroName}>{country.name}</Text>
             {content?.subtitle && <Text style={styles.heroTagline}>{content.subtitle}</Text>}
           </View>
@@ -586,6 +574,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.borderDefault,
+  },
+  cityCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   cityImage: {
     width: '100%',

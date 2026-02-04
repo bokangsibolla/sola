@@ -2,7 +2,6 @@
 import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { Country } from '@/data/types';
 
@@ -16,32 +15,14 @@ interface CountryCardProps {
   onPress: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function CountryCard({ country, onPress }: CountryCardProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
-
   const imageUrl = country.heroImageUrl ?? 'https://images.unsplash.com/photo-1488085061387-422e29b40080?w=400';
 
   return (
     <View style={styles.wrapper}>
-      <AnimatedPressable
+      <Pressable
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={[styles.card, animatedStyle]}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <Image
           source={{ uri: imageUrl }}
@@ -55,8 +36,8 @@ export function CountryCard({ country, onPress }: CountryCardProps) {
           style={styles.gradient}
           pointerEvents="none"
         />
-        <Text style={styles.name} pointerEvents="none">{country.name}</Text>
-      </AnimatedPressable>
+        <Text style={styles.name}>{country.name}</Text>
+      </Pressable>
       {country.shortBlurb && (
         <Text style={styles.blurb} numberOfLines={1}>{country.shortBlurb}</Text>
       )}
@@ -76,6 +57,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   image: {
     ...StyleSheet.absoluteFillObject,

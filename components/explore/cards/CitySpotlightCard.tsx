@@ -1,7 +1,6 @@
 // components/explore/cards/CitySpotlightCard.tsx
 import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
 
@@ -14,32 +13,14 @@ interface CitySpotlightCardProps {
   onPress: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function CitySpotlightCard({ city, onPress }: CitySpotlightCardProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
-
   const imageUrl = city.heroImageUrl ?? 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800';
 
   return (
     <View style={styles.container}>
-      <AnimatedPressable
+      <Pressable
         onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        style={[styles.card, animatedStyle]}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
         <Image
           source={{ uri: imageUrl }}
@@ -48,7 +29,7 @@ export function CitySpotlightCard({ city, onPress }: CitySpotlightCardProps) {
           transition={200}
           pointerEvents="none"
         />
-      </AnimatedPressable>
+      </Pressable>
       <View style={styles.info}>
         <Text style={styles.name}>{city.name}</Text>
         <Text style={styles.country}>{city.countryName}</Text>
@@ -70,6 +51,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   image: {
     ...StyleSheet.absoluteFillObject,

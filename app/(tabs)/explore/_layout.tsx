@@ -7,7 +7,6 @@ export default function ExploreLayout() {
       <Stack.Screen
         name="search"
         options={{
-          presentation: 'modal',
           animation: 'slide_from_bottom',
         }}
       />

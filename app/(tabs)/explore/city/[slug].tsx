@@ -5,7 +5,6 @@ import {
   StyleSheet,
   Text,
   View,
-  Animated,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -139,7 +138,6 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
     [userId, place.id],
   );
   const [saved, setSaved] = useState(false);
-  const scale = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     if (isSaved !== null) setSaved(isSaved);
@@ -153,31 +151,21 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
     await toggleSavePlace(userId, place.id);
   }, [userId, place.id, saved, posthog]);
 
-  const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
-
-  const onPressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
-
   return (
     <Pressable
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       onPress={() => {
         posthog.capture('place_card_tapped', { place_id: place.id, place_name: place.name });
         router.push(`/explore/place-detail/${place.id}`);
       }}
+      style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
-      <Animated.View style={[styles.card, { transform: [{ scale }] }]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} />
+          <Image source={{ uri: imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} pointerEvents="none" />
         ) : (
-          <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
+          <View style={[styles.cardImage, styles.cardImagePlaceholder]} pointerEvents="none" />
         )}
 
-      <View style={styles.cardBody}>
+      <View style={styles.cardBody} pointerEvents="box-none">
         {/* Top row: name + price */}
         <View style={styles.cardTopRow}>
           <Text style={styles.cardName} numberOfLines={1}>
@@ -234,7 +222,6 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
           </Text>
         </Pressable>
       </View>
-      </Animated.View>
     </Pressable>
   );
 }
@@ -253,7 +240,6 @@ function FullDayCard({ place }: { place: Place }) {
     [userId, place.id],
   );
   const [saved, setSaved] = useState(false);
-  const scale = useState(new Animated.Value(1))[0];
 
   useEffect(() => {
     if (isSaved !== null) setSaved(isSaved);
@@ -267,30 +253,20 @@ function FullDayCard({ place }: { place: Place }) {
     await toggleSavePlace(userId, place.id);
   }, [userId, place.id, saved, posthog]);
 
-  const onPressIn = useCallback(() => {
-    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
-
-  const onPressOut = useCallback(() => {
-    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
-  }, [scale]);
-
   return (
     <Pressable
-      onPressIn={onPressIn}
-      onPressOut={onPressOut}
       onPress={() => {
         posthog.capture('fullday_card_tapped', { place_id: place.id, place_name: place.name });
         router.push(`/explore/place-detail/${place.id}`);
       }}
+      style={({ pressed }) => [styles.fullDayCard, pressed && styles.fullDayCardPressed]}
     >
-      <Animated.View style={[styles.fullDayCard, { transform: [{ scale }] }]}>
         {imageUrl ? (
-          <Image source={{ uri: imageUrl }} style={styles.fullDayImage} contentFit="cover" transition={200} />
+          <Image source={{ uri: imageUrl }} style={styles.fullDayImage} contentFit="cover" transition={200} pointerEvents="none" />
         ) : (
-          <View style={[styles.fullDayImage, styles.fullDayImagePlaceholder]} />
+          <View style={[styles.fullDayImage, styles.fullDayImagePlaceholder]} pointerEvents="none" />
         )}
-      <View style={styles.fullDayBody}>
+      <View style={styles.fullDayBody} pointerEvents="box-none">
         <Text style={styles.fullDayName} numberOfLines={2}>{place.name}</Text>
         {place.whySelected && (
           <Text style={styles.fullDayDesc} numberOfLines={2}>{place.whySelected}</Text>
@@ -317,7 +293,6 @@ function FullDayCard({ place }: { place: Place }) {
           />
         </Pressable>
       </View>
-      </Animated.View>
     </Pressable>
   );
 }
@@ -776,6 +751,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.md,
   },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
   cardImage: {
     width: 88,
     height: 88,
@@ -867,6 +846,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.md,
     backgroundColor: colors.background,
+  },
+  fullDayCardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   fullDayImage: {
     width: '100%',

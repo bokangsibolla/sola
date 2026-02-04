@@ -1,7 +1,6 @@
 // components/explore/cards/ActivityCard.tsx
 import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { ActivityWithCity } from '@/data/explore/types';
 
@@ -15,31 +14,13 @@ interface ActivityCardProps {
   onPress: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function ActivityCard({ activity, onPress }: ActivityCardProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.96, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
-
   const imageUrl = activity.imageUrl ?? 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300';
 
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
     >
       <View style={styles.imageContainer} pointerEvents="none">
         <Image
@@ -50,7 +31,7 @@ export function ActivityCard({ activity, onPress }: ActivityCardProps) {
         />
       </View>
       <Text style={styles.name} numberOfLines={2}>{activity.name}</Text>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -59,6 +40,10 @@ export { CARD_SIZE as ACTIVITY_CARD_SIZE, CARD_GAP as ACTIVITY_CARD_GAP };
 const styles = StyleSheet.create({
   container: {
     width: CARD_SIZE,
+  },
+  pressed: {
+    opacity: 0.8,
+    transform: [{ scale: 0.96 }],
   },
   imageContainer: {
     width: CARD_SIZE,

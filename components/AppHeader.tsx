@@ -25,7 +25,7 @@ export default function AppHeader({ title, subtitle, rightAction, rightComponent
           {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
         </View>
       )}
-      {!hasTitle && leftComponent && <View style={styles.spacer} />}
+      {!hasTitle && leftComponent && <View style={styles.spacer} pointerEvents="none" />}
       {rightComponent && <View style={styles.rightContainer}>{rightComponent}</View>}
       {!rightComponent && rightAction && (
         <Pressable onPress={rightAction.onPress}>

@@ -71,12 +71,13 @@ export default function GridCard({
   return (
     <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={styles.imageContainer}>
+        <View style={styles.imageContainer} pointerEvents="box-none">
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
             contentFit="cover"
             transition={200}
+            pointerEvents="none"
           />
 
           {/* Optional badge - only render if badge exists */}
@@ -94,6 +95,7 @@ export default function GridCard({
                 localFavorited && styles.favoriteButtonActive
               ]}
               onPress={handleFavoritePress}
+              hitSlop={8}
             >
               <Ionicons
                 name={localFavorited ? 'heart' : 'heart-outline'}

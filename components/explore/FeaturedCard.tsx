@@ -49,16 +49,17 @@ export default function FeaturedCard({
   return (
     <Animated.View style={[styles.container, { transform: [{ scale }] }]}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={styles.imageContainer}>
+        <View style={styles.imageContainer} pointerEvents="box-none">
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
             contentFit="cover"
             transition={200}
+            pointerEvents="none"
           />
 
           {/* Gradient overlay for text readability */}
-          <View style={styles.gradient} />
+          <View style={styles.gradient} pointerEvents="none" />
 
           {/* Badge */}
           {badge && badge.trim().length > 0 && (
@@ -76,7 +77,7 @@ export default function FeaturedCard({
           )}
 
           {/* Favorite button */}
-          <Pressable style={styles.favoriteButton} onPress={handleFavoritePress}>
+          <Pressable style={styles.favoriteButton} onPress={handleFavoritePress} hitSlop={8}>
             <Ionicons
               name={localFavorited ? 'heart' : 'heart-outline'}
               size={18}
@@ -85,7 +86,7 @@ export default function FeaturedCard({
           </Pressable>
 
           {/* Content overlay */}
-          <View style={styles.contentOverlay}>
+          <View style={styles.contentOverlay} pointerEvents="none">
             <Text style={styles.title} numberOfLines={1}>
               {title}
             </Text>

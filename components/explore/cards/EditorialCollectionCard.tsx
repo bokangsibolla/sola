@@ -2,7 +2,6 @@
 import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { EditorialCollection } from '@/data/explore/types';
 
@@ -15,29 +14,11 @@ interface EditorialCollectionCardProps {
   onPress: () => void;
 }
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 export function EditorialCollectionCard({ collection, onPress }: EditorialCollectionCardProps) {
-  const scale = useSharedValue(1);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
-  const handlePressIn = () => {
-    scale.value = withSpring(0.98, { damping: 15, stiffness: 300 });
-  };
-
-  const handlePressOut = () => {
-    scale.value = withSpring(1, { damping: 15, stiffness: 300 });
-  };
-
   return (
-    <AnimatedPressable
+    <Pressable
       onPress={onPress}
-      onPressIn={handlePressIn}
-      onPressOut={handlePressOut}
-      style={[styles.container, animatedStyle]}
+      style={({ pressed }) => [styles.container, pressed && styles.pressed]}
     >
       <Image
         source={{ uri: collection.heroImageUrl }}
@@ -60,7 +41,7 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
           <Text style={styles.subtitle}>{collection.subtitle}</Text>
         )}
       </View>
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -72,6 +53,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   image: {
     ...StyleSheet.absoluteFillObject,

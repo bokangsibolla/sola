@@ -67,15 +67,16 @@ export default function ExploreCard({
   return (
     <Animated.View style={[styles.container, { width, transform: [{ scale }] }]}>
       <Pressable onPress={onPress} onPressIn={onPressIn} onPressOut={onPressOut}>
-        <View style={[styles.imageContainer, { width, height: imageHeight }]}>
+        <View style={[styles.imageContainer, { width, height: imageHeight }]} pointerEvents="box-none">
           <Image
             source={{ uri: imageUrl }}
             style={styles.image}
             contentFit="cover"
             transition={200}
+            pointerEvents="none"
           />
           {showFavorite && (
-            <Pressable style={styles.favoriteButton} onPress={handleFavoritePress}>
+            <Pressable style={styles.favoriteButton} onPress={handleFavoritePress} hitSlop={8}>
               <Ionicons
                 name={isFavorited ? 'heart' : 'heart-outline'}
                 size={22}

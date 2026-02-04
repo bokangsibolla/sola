@@ -1,13 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withSpring,
-} from 'react-native-reanimated';
 import { colors, fonts, radius } from '@/constants/design';
-
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 interface OptionCardProps {
   title: string;
@@ -16,31 +9,19 @@ interface OptionCardProps {
   onPress: () => void;
 }
 
-const SPRING = { damping: 14, stiffness: 200 };
-
 export default function OptionCard({ title, subtitle, selected, onPress }: OptionCardProps) {
-  const scale = useSharedValue(1);
-
-  useEffect(() => {
-    if (selected) {
-      scale.value = withSpring(0.97, SPRING, () => {
-        scale.value = withSpring(1, SPRING);
-      });
-    }
-  }, [selected]);
-
-  const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-  }));
-
   return (
-    <AnimatedPressable
-      style={[styles.card, selected && styles.cardSelected, animatedStyle]}
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        selected && styles.cardSelected,
+        pressed && styles.pressed,
+      ]}
       onPress={onPress}
     >
       <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
-    </AnimatedPressable>
+    </Pressable>
   );
 }
 
@@ -58,6 +39,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: colors.orange,
     backgroundColor: colors.orangeFill,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   title: {
     fontFamily: fonts.semiBold,
