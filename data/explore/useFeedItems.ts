@@ -1,16 +1,8 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
-import {
-  getCountries,
-  getPopularCities,
-  getCountryById,
-  getActivitiesByCity,
-  getPlaceFirstImage,
-} from '../api';
-import { buildFeed } from './feedBuilder';
 import type { FeedItem, EditorialCollection, CityWithCountry, ActivityWithCity } from './types';
 
-// Mock editorial collections until database table exists
+// Mock editorial collections
 const MOCK_EDITORIALS: EditorialCollection[] = [
   {
     id: '1',
@@ -47,6 +39,14 @@ const MOCK_EDITORIALS: EditorialCollection[] = [
   },
 ];
 
+// Static mock data - no API calls
+const MOCK_FEED: FeedItem[] = [
+  { type: 'editorial-collection', data: MOCK_EDITORIALS[0] },
+  { type: 'editorial-collection', data: MOCK_EDITORIALS[1] },
+  { type: 'editorial-collection', data: MOCK_EDITORIALS[2] },
+  { type: 'end-card' },
+];
+
 interface UseFeedItemsResult {
   feedItems: FeedItem[];
   isLoading: boolean;
@@ -57,75 +57,20 @@ interface UseFeedItemsResult {
 export function useFeedItems(): UseFeedItemsResult {
   const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    let cancelled = false;
+    // Instant load with static data - no API calls
+    setFeedItems(MOCK_FEED);
+    setIsLoading(false);
+  }, []);
 
-    async function loadFeed() {
-      try {
-        setIsLoading(true);
-        setError(null);
+  const refresh = () => {
+    setIsLoading(true);
+    setTimeout(() => {
+      setFeedItems(MOCK_FEED);
+      setIsLoading(false);
+    }, 300);
+  };
 
-        // Fetch countries
-        const countries = await getCountries();
-
-        // Fetch popular cities and enrich with country info (in parallel)
-        const cities = await getPopularCities(8);
-
-        if (cancelled) return;
-
-        const citiesWithActivities = await Promise.all(
-          cities.map(async (city) => {
-            const [country, activities] = await Promise.all([
-              getCountryById(city.countryId),
-              getActivitiesByCity(city.id),
-            ]);
-
-            // Get images for activities (in parallel)
-            const activitiesWithImages: ActivityWithCity[] = await Promise.all(
-              activities.slice(0, 4).map(async (activity) => {
-                const imageUrl = await getPlaceFirstImage(activity.id);
-                return {
-                  ...activity,
-                  cityName: city.name,
-                  imageUrl,
-                };
-              })
-            );
-
-            return {
-              city: {
-                ...city,
-                countryName: country?.name ?? '',
-                countrySlug: country?.slug ?? '',
-              } as CityWithCountry,
-              activities: activitiesWithImages,
-            };
-          })
-        );
-
-        if (cancelled) return;
-
-        const feed = buildFeed(MOCK_EDITORIALS, countries, citiesWithActivities);
-        setFeedItems(feed);
-      } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err : new Error('Failed to load feed'));
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    }
-
-    loadFeed();
-    return () => { cancelled = true; };
-  }, [refreshKey]);
-
-  const refresh = () => setRefreshKey((k) => k + 1);
-
-  return { feedItems, isLoading, error, refresh };
+  return { feedItems, isLoading, error: null, refresh };
 }
