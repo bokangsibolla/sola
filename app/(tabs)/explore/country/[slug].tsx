@@ -5,7 +5,8 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import { getCountryBySlug, getCountryContent, getCitiesByCountry, getCityContent } from '@/data/api';
+import { getCountryBySlug, getCitiesByCountry } from '@/data/api';
+import type { City } from '@/data/types';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -13,7 +14,7 @@ import MarkdownContent from '@/components/MarkdownContent';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { getEmergencyNumbers } from '@/data/safety';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import type { GeoContent } from '@/data/types';
+import type { Country } from '@/data/types';
 
 // ---------------------------------------------------------------------------
 // Constants & Helpers
@@ -39,7 +40,7 @@ const INTERNET_MAP: Record<string, string> = { excellent: 'Excellent', good: 'Go
 // Who This Is For Section
 // ---------------------------------------------------------------------------
 
-function WhoThisIsFor({ content }: { content: GeoContent }) {
+function WhoThisIsFor({ content }: { content: Country }) {
   const personas: string[] = [];
 
   // Add solo level persona
@@ -73,7 +74,7 @@ function WhoThisIsFor({ content }: { content: GeoContent }) {
 // Safety Context Section
 // ---------------------------------------------------------------------------
 
-function SafetyContext({ content }: { content: GeoContent }) {
+function SafetyContext({ content }: { content: Country }) {
   const safety = content.safetyRating ? SAFETY_LABELS[content.safetyRating] : null;
 
   if (!safety && !content.safetyWomenMd) return null;
@@ -107,10 +108,9 @@ function SafetyContext({ content }: { content: GeoContent }) {
 // Enhanced City Card
 // ---------------------------------------------------------------------------
 
-function CityCard({ city }: { city: any }) {
+function CityCard({ city }: { city: City }) {
   const router = useRouter();
   const posthog = usePostHog();
-  const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
 
   return (
     <Pressable
@@ -135,14 +135,14 @@ function CityCard({ city }: { city: any }) {
               <Ionicons name="arrow-forward" size={16} color={colors.orange} />
             </View>
           </View>
-          {cityContent?.subtitle && (
+          {city.subtitle && (
             <Text style={styles.cityPurpose} numberOfLines={2}>
-              {cityContent.subtitle}
+              {city.subtitle}
             </Text>
           )}
-          {cityContent?.bestFor && (
+          {city.bestFor && (
             <View style={styles.cityBestFor}>
-              <Text style={styles.cityBestForValue}>{cityContent.bestFor}</Text>
+              <Text style={styles.cityBestForValue}>{city.bestFor}</Text>
             </View>
           )}
           <View style={styles.cityExploreRow}>
@@ -208,11 +208,6 @@ export default function CountryGuideScreen() {
     () => slug ? getCountryBySlug(slug) : Promise.resolve(null),
     [slug],
   );
-  const { data: contentData } = useData(
-    () => country ? getCountryContent(country.id) : Promise.resolve(null),
-    [country?.id],
-  );
-  const content = contentData ?? undefined;
 
   // Fetch cities directly with useState/useEffect to avoid caching issues
   const [cities, setCities] = useState<any[]>([]);
@@ -253,25 +248,24 @@ export default function CountryGuideScreen() {
   }
 
   const emergency = getEmergencyNumbers(country.iso2);
-  const heroImage = country.heroImageUrl ?? content?.heroImageUrl;
+  const heroImage = country.heroImageUrl;
 
   // Quick facts for reference section
   const quickFacts = [
-    { icon: 'calendar-outline', label: 'Best time', value: content?.bestMonths },
-    { icon: 'cash-outline', label: 'Currency', value: content?.currency },
-    { icon: 'language-outline', label: 'Language', value: content?.language },
-    { icon: 'chatbubble-outline', label: 'English', value: content?.englishFriendliness ? ENGLISH_MAP[content.englishFriendliness] : null },
-    { icon: 'wifi-outline', label: 'Internet', value: content?.internetQuality ? INTERNET_MAP[content.internetQuality] : null },
+    { icon: 'calendar-outline', label: 'Best time', value: country.bestMonths },
+    { icon: 'cash-outline', label: 'Currency', value: country.currency },
+    { icon: 'language-outline', label: 'Language', value: country.language },
+    { icon: 'chatbubble-outline', label: 'English', value: country.englishFriendliness ? ENGLISH_MAP[country.englishFriendliness] : null },
+    { icon: 'wifi-outline', label: 'Internet', value: country.internetQuality ? INTERNET_MAP[country.internetQuality] : null },
   ].filter((f) => f.value);
 
   // Collapsible practical sections (moved down)
   const collapsibleSections = [
-    { title: 'Getting there', icon: 'airplane-outline', content: content?.gettingThereMd },
-    { title: 'Visa & entry', icon: 'document-text-outline', content: [content?.visaEntryMd, content?.visaNote].filter(Boolean).join('\n\n') || null },
-    { title: 'Money & payments', icon: 'card-outline', content: content?.moneyMd },
-    { title: 'SIM & internet', icon: 'wifi-outline', content: content?.simConnectivityMd },
-    { title: 'Culture & etiquette', icon: 'people-outline', content: content?.cultureEtiquetteMd },
-    { title: 'Getting around', icon: 'bus-outline', content: content?.transportMd },
+    { title: 'Getting there', icon: 'airplane-outline', content: country.gettingThereMd },
+    { title: 'Visa & entry', icon: 'document-text-outline', content: [country.visaEntryMd, country.visaNote].filter(Boolean).join('\n\n') || null },
+    { title: 'Money & payments', icon: 'card-outline', content: country.moneyMd },
+    { title: 'SIM & internet', icon: 'wifi-outline', content: country.simConnectivityMd },
+    { title: 'Culture & etiquette', icon: 'people-outline', content: country.cultureEtiquetteMd },
   ].filter((s) => s.content);
 
   return (
@@ -293,7 +287,7 @@ export default function CountryGuideScreen() {
           {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} pointerEvents="none" />}
           <View style={styles.heroOverlay} pointerEvents="none">
             <Text style={styles.heroName}>{country.name}</Text>
-            {content?.subtitle && <Text style={styles.heroTagline}>{content.subtitle}</Text>}
+            {country.subtitle && <Text style={styles.heroTagline}>{country.subtitle}</Text>}
           </View>
         </View>
 
@@ -323,13 +317,13 @@ export default function CountryGuideScreen() {
           </View>
 
           {/* 2. Who this is for (brief orientation) */}
-          {content && <WhoThisIsFor content={content} />}
+          <WhoThisIsFor content={country} />
 
           {/* 3. Safety context */}
-          {content && <SafetyContext content={content} />}
+          <SafetyContext content={country} />
 
           {/* 4. The experience (brief editorial) */}
-          {content?.portraitMd && <PortraitSection portraitMd={content.portraitMd} />}
+          {country.portraitMd && <PortraitSection portraitMd={country.portraitMd} />}
 
           {/* 5. Quick facts (reference) */}
           {quickFacts.length > 0 && (

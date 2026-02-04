@@ -17,7 +17,6 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { useData } from '@/hooks/useData';
 import {
   getCityBySlug,
-  getCityContent,
   getAreasByCity,
   getPlacesGroupedByTime,
   getPlacesGroupedByTimeForArea,
@@ -386,10 +385,6 @@ export default function PlaceScreen() {
     () => city?.countryId ? getCountryById(city.countryId) : Promise.resolve(null),
     [city?.countryId],
   );
-  const { data: content } = useData(
-    () => city ? getCityContent(city.id) : Promise.resolve(null),
-    [city?.id],
-  );
   const { data: areas } = useData(
     () => city ? getAreasByCity(city.id) : Promise.resolve([]),
     [city?.id],
@@ -424,8 +419,8 @@ export default function PlaceScreen() {
     );
   }
 
-  const heroUrl = city.heroImageUrl ?? content?.heroImageUrl ?? null;
-  const tagline = content?.subtitle ?? null;
+  const heroUrl = city.heroImageUrl;
+  const tagline = city.subtitle;
 
   // Check if we have any places at all
   const hasPlaces = groupedPlaces && (
@@ -481,8 +476,8 @@ export default function PlaceScreen() {
 
           {/* City editorial intro */}
           <CityEditorial
-            summary={content?.summary ?? null}
-            bestFor={content?.bestFor ?? null}
+            summary={city.summary}
+            bestFor={city.bestFor}
           />
 
           {/* Neighborhood pills */}
