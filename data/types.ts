@@ -13,6 +13,35 @@ export interface Country {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  // Content fields (merged from geo_content)
+  title: string | null;
+  subtitle: string | null;
+  summary: string | null;
+  summaryMd: string | null;
+  contentMd: string | null;
+  whyWeLoveMd: string | null;
+  safetyRating: 'very_safe' | 'generally_safe' | 'use_caution' | 'exercise_caution' | null;
+  soloFriendly: boolean | null;
+  soloLevel: 'beginner' | 'intermediate' | 'expert' | null;
+  bestMonths: string | null;
+  bestTimeToVisit: string | null;
+  currency: string | null;
+  language: string | null;
+  visaNote: string | null;
+  highlights: string[] | null;
+  avgDailyBudgetUsd: number | null;
+  internetQuality: 'excellent' | 'good' | 'fair' | 'poor' | null;
+  englishFriendliness: 'high' | 'moderate' | 'low' | null;
+  goodForInterests: string[] | null;
+  bestFor: string | null;
+  gettingThereMd: string | null;
+  visaEntryMd: string | null;
+  simConnectivityMd: string | null;
+  moneyMd: string | null;
+  cultureEtiquetteMd: string | null;
+  safetyWomenMd: string | null;
+  portraitMd: string | null;
+  publishedAt: string | null;
 }
 
 export interface City {
@@ -31,6 +60,34 @@ export interface City {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  // Content fields (merged from geo_content)
+  title: string | null;
+  subtitle: string | null;
+  summary: string | null;
+  summaryMd: string | null;
+  contentMd: string | null;
+  whyWeLoveMd: string | null;
+  safetyRating: 'very_safe' | 'generally_safe' | 'use_caution' | 'exercise_caution' | null;
+  soloFriendly: boolean | null;
+  soloLevel: 'beginner' | 'intermediate' | 'expert' | null;
+  bestMonths: string | null;
+  bestTimeToVisit: string | null;
+  currency: string | null;
+  language: string | null;
+  visaNote: string | null;
+  highlights: string[] | null;
+  avgDailyBudgetUsd: number | null;
+  internetQuality: 'excellent' | 'good' | 'fair' | 'poor' | null;
+  englishFriendliness: 'high' | 'moderate' | 'low' | null;
+  goodForInterests: string[] | null;
+  bestFor: string | null;
+  cultureEtiquetteMd: string | null;
+  safetyWomenMd: string | null;
+  portraitMd: string | null;
+  publishedAt: string | null;
+  // City-specific content fields
+  transportMd: string | null;
+  topThingsToDo: string[] | null;
 }
 
 export interface CityArea {
@@ -218,6 +275,11 @@ export interface Collection {
   createdAt: string;
 }
 
+/**
+ * @deprecated Use Country or City interfaces directly instead.
+ * Content fields have been merged into the countries and cities tables.
+ * This interface will be removed once the geo_content table is dropped.
+ */
 export interface GeoContent {
   id: string;
   scope: 'country' | 'city';
