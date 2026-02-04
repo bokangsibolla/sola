@@ -41,7 +41,7 @@ export function ActivityCard({ activity, onPress }: ActivityCardProps) {
       onPressOut={handlePressOut}
       style={[styles.container, animatedStyle]}
     >
-      <View style={styles.imageContainer}>
+      <View style={styles.imageContainer} pointerEvents="none">
         <Image
           source={{ uri: imageUrl }}
           style={styles.image}

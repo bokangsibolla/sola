@@ -49,8 +49,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 0,
   },
   logo: {
-    height: 30,
-    width: 90,
+    height: 36,
+    width: 108,
   },
   searchBtn: {
     width: 40,

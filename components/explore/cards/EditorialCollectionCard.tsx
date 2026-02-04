@@ -44,12 +44,14 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
         style={styles.image}
         contentFit="cover"
         transition={200}
+        pointerEvents="none"
       />
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.7)']}
         style={styles.gradient}
+        pointerEvents="none"
       />
-      <View style={styles.content}>
+      <View style={styles.content} pointerEvents="none">
         {collection.isSponsored && (
           <Text style={styles.sponsored}>Sponsored</Text>
         )}

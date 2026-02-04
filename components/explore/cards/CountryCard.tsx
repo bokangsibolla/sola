@@ -48,12 +48,14 @@ export function CountryCard({ country, onPress }: CountryCardProps) {
           style={styles.image}
           contentFit="cover"
           transition={200}
+          pointerEvents="none"
         />
         <LinearGradient
           colors={['transparent', 'rgba(0,0,0,0.6)']}
           style={styles.gradient}
+          pointerEvents="none"
         />
-        <Text style={styles.name}>{country.name}</Text>
+        <Text style={styles.name} pointerEvents="none">{country.name}</Text>
       </AnimatedPressable>
       {country.shortBlurb && (
         <Text style={styles.blurb} numberOfLines={1}>{country.shortBlurb}</Text>

@@ -46,6 +46,7 @@ export function CitySpotlightCard({ city, onPress }: CitySpotlightCardProps) {
           style={styles.image}
           contentFit="cover"
           transition={200}
+          pointerEvents="none"
         />
       </AnimatedPressable>
       <View style={styles.info}>
