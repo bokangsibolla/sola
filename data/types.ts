@@ -437,6 +437,7 @@ export interface ExploreCollectionItem {
   entitySlug: string;
   entityImageUrl: string | null;
   isFeatured: boolean;
+  orderIndex: number;
 }
 
 export interface ExploreCollectionWithItems extends ExploreCollection {

@@ -1904,3 +1904,15 @@ export {
   type OnboardingFlowResult,
   type OnboardingSession,
 } from '@/lib/onboardingConfig';
+
+// ---------------------------------------------------------------------------
+// Explore Collections (Editorial)
+// ---------------------------------------------------------------------------
+
+export {
+  getExploreCollections,
+  getExploreCollectionBySlug,
+  getExploreCollectionItems,
+  getExploreCollectionWithItems,
+  getFeaturedExploreCollections,
+} from './collections';
