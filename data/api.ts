@@ -263,6 +263,39 @@ export async function getPlaceBySlug(slug: string): Promise<Place | undefined> {
   return data ? toCamel<Place>(data) : undefined;
 }
 
+/**
+ * Get an activity (tour/activity place) by slug
+ */
+export async function getActivityBySlug(slug: string): Promise<Place | undefined> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('slug', slug)
+    .in('place_type', ['activity', 'tour'])
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Place>(data) : undefined;
+}
+
+/**
+ * Get activity with its media and tags
+ */
+export async function getActivityWithDetails(slug: string): Promise<{
+  activity: Place;
+  media: PlaceMedia[];
+  tags: Tag[];
+} | undefined> {
+  const activity = await getActivityBySlug(slug);
+  if (!activity) return undefined;
+
+  const [media, tags] = await Promise.all([
+    getPlaceMedia(activity.id),
+    getPlaceTags(activity.id),
+  ]);
+
+  return { activity, media, tags };
+}
+
 export async function getPlaceMedia(placeId: string): Promise<PlaceMedia[]> {
   const { data, error } = await supabase
     .from('place_media')

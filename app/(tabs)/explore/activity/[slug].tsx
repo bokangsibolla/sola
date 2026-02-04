@@ -1,18 +1,56 @@
 // app/(tabs)/explore/activity/[slug].tsx
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, Linking, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import { mockActivities } from '@/data/exploreMockData';
+import { useData } from '@/hooks/useData';
+import { getActivityWithDetails } from '@/data/api';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
-  const activity = mockActivities.find(a => a.slug === slug);
+  const { data, loading, error, refetch } = useData(
+    () => getActivityWithDetails(slug ?? ''),
+    [slug]
+  );
+
+  const activity = data?.activity;
+  const media = data?.media ?? [];
+  const tags = data?.tags ?? [];
+
+  // Get the hero image URL from media or use a placeholder
+  const heroImageUrl = media[0]?.url ?? 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800';
+
+  // Format price level as dollar signs (1-4 scale)
+  const formatPriceLevel = (level: number | null): string => {
+    if (!level) return 'Price varies';
+    return '$'.repeat(level);
+  };
+
+  // Handle "Check availability" button press
+  const handleCheckAvailability = () => {
+    if (activity?.website) {
+      Linking.openURL(activity.website).catch(() => {
+        Alert.alert('Error', 'Could not open the website');
+      });
+    } else {
+      Alert.alert('Coming Soon', 'Booking will be available soon.');
+    }
+  };
+
+  if (loading) {
+    return <LoadingScreen />;
+  }
+
+  if (error) {
+    return <ErrorScreen message={error.message} onRetry={refetch} />;
+  }
 
   if (!activity) {
     return (
@@ -33,22 +71,25 @@ export default function ActivityDetailScreen() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
-        <View style={styles.heroContainer}>
+        <View style={styles.heroContainer} pointerEvents="box-none">
           <Image
-            source={{ uri: activity.heroImageUrl }}
+            source={{ uri: heroImageUrl }}
             style={styles.heroImage}
             contentFit="cover"
+            pointerEvents="none"
           />
           {/* Back Button Overlay */}
           <Pressable
             style={[styles.backButton, { top: insets.top + spacing.sm }]}
             onPress={() => router.back()}
+            hitSlop={8}
           >
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
           {/* Favorite Button Overlay */}
           <Pressable
             style={[styles.favoriteButton, { top: insets.top + spacing.sm }]}
+            hitSlop={8}
           >
             <Ionicons name="heart-outline" size={24} color={colors.textPrimary} />
           </Pressable>
@@ -58,66 +99,125 @@ export default function ActivityDetailScreen() {
         <View style={styles.content}>
           <Text style={styles.title}>{activity.name}</Text>
 
-          <View style={styles.locationRow}>
-            <Ionicons name="location" size={16} color={colors.textSecondary} />
-            <Text style={styles.location}>{activity.cityName}, {activity.countryName}</Text>
-          </View>
+          {activity.address && (
+            <View style={styles.locationRow}>
+              <Ionicons name="location" size={16} color={colors.textSecondary} />
+              <Text style={styles.location}>{activity.address}</Text>
+            </View>
+          )}
 
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={14} color={colors.textPrimary} />
-            <Text style={styles.ratingText}>{activity.rating.toFixed(2)}</Text>
-            <Text style={styles.reviewCount}>({activity.reviewCount.toLocaleString()} reviews)</Text>
-          </View>
+          {/* Rating row - uses Google rating if available */}
+          {activity.googleRating && (
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={14} color={colors.textPrimary} />
+              <Text style={styles.ratingText}>{activity.googleRating.toFixed(1)}</Text>
+              {activity.googleReviewCount && (
+                <Text style={styles.reviewCount}>
+                  ({activity.googleReviewCount.toLocaleString()} reviews)
+                </Text>
+              )}
+            </View>
+          )}
 
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
-            <View style={styles.infoItem}>
-              <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.infoLabel}>Duration</Text>
-              <Text style={styles.infoValue}>{activity.duration}</Text>
-            </View>
+            {activity.estimatedDuration && (
+              <View style={styles.infoItem}>
+                <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
+                <Text style={styles.infoLabel}>Duration</Text>
+                <Text style={styles.infoValue}>{activity.estimatedDuration}</Text>
+              </View>
+            )}
             <View style={styles.infoItem}>
               <Ionicons name="cash-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.infoLabel}>From</Text>
-              <Text style={styles.infoValue}>${activity.priceFrom}</Text>
+              <Text style={styles.infoLabel}>Price</Text>
+              <Text style={styles.infoValue}>{formatPriceLevel(activity.priceLevel)}</Text>
             </View>
+            {activity.physicalLevel && (
+              <View style={styles.infoItem}>
+                <Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />
+                <Text style={styles.infoLabel}>Difficulty</Text>
+                <Text style={styles.infoValue}>
+                  {activity.physicalLevel.charAt(0).toUpperCase() + activity.physicalLevel.slice(1)}
+                </Text>
+              </View>
+            )}
           </View>
 
           <View style={styles.divider} />
 
-          {/* Placeholder content */}
+          {/* About this experience */}
           <Text style={styles.sectionTitle}>About this experience</Text>
           <Text style={styles.description}>
-            This is a placeholder description for the activity. The full description will be populated when connected to the backend.
+            {activity.whySelected || activity.description || 'No description available.'}
           </Text>
 
-          <Text style={styles.sectionTitle}>What's included</Text>
-          <View style={styles.includesList}>
-            <View style={styles.includeItem}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} />
-              <Text style={styles.includeText}>Local guide</Text>
-            </View>
-            <View style={styles.includeItem}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} />
-              <Text style={styles.includeText}>Food tastings</Text>
-            </View>
-            <View style={styles.includeItem}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} />
-              <Text style={styles.includeText}>Small group size</Text>
-            </View>
-          </View>
+          {/* What's included - from highlights array */}
+          {activity.highlights && activity.highlights.length > 0 && (
+            <>
+              <Text style={styles.sectionTitle}>What's included</Text>
+              <View style={styles.includesList}>
+                {activity.highlights.map((highlight, index) => (
+                  <View key={index} style={styles.includeItem}>
+                    <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} />
+                    <Text style={styles.includeText}>{highlight}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Considerations - things to be aware of */}
+          {activity.considerations && activity.considerations.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
+                Good to know
+              </Text>
+              <View style={styles.includesList}>
+                {activity.considerations.map((consideration, index) => (
+                  <View key={index} style={styles.includeItem}>
+                    <Ionicons name="information-circle" size={18} color={colors.orange} />
+                    <Text style={styles.includeText}>{consideration}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Tags */}
+          {tags.length > 0 && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tags</Text>
+              <View style={styles.tagsContainer}>
+                {tags.map((tag) => (
+                  <View key={tag.id} style={styles.tag}>
+                    <Text style={styles.tagText}>{tag.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </>
+          )}
+
+          {/* Booking info if available */}
+          {activity.bookingInfo && (
+            <>
+              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
+                Booking info
+              </Text>
+              <Text style={styles.description}>{activity.bookingInfo}</Text>
+            </>
+          )}
         </View>
       </ScrollView>
 
       {/* Bottom CTA */}
       <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
         <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>From</Text>
-          <Text style={styles.priceValue}>${activity.priceFrom}</Text>
-          <Text style={styles.priceSuffix}>/ person</Text>
+          <Text style={styles.priceLabel}>Price</Text>
+          <Text style={styles.priceValue}>{formatPriceLevel(activity.priceLevel)}</Text>
         </View>
-        <Pressable style={styles.bookButton}>
+        <Pressable style={styles.bookButton} onPress={handleCheckAvailability}>
           <Text style={styles.bookButtonText}>Check availability</Text>
         </Pressable>
       </View>
@@ -190,6 +290,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 15,
     color: colors.textSecondary,
+    flex: 1,
   },
   ratingRow: {
     flexDirection: 'row',
@@ -246,13 +347,32 @@ const styles = StyleSheet.create({
   },
   includeItem: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   includeText: {
     fontFamily: fonts.regular,
     fontSize: 15,
     color: colors.textPrimary,
+    flex: 1,
+  },
+  tagsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  tag: {
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  tagText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
   bottomBar: {
     position: 'absolute',
