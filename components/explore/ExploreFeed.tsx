@@ -3,7 +3,7 @@ import { useCallback } from 'react';
 import { FlatList, StyleSheet, View, ActivityIndicator, Text, RefreshControl } from 'react-native';
 import { colors, fonts, spacing } from '@/constants/design';
 import { FeedItem } from './FeedItem';
-import { useFeedItems } from '@/data/explore';
+import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem as FeedItemType } from '@/data/explore/types';
 
 export function ExploreFeed() {
