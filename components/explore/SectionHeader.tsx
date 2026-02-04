@@ -6,19 +6,30 @@ interface SectionHeaderProps {
   title: string;
   subtitle?: string;
   onSeeAll?: () => void;
+  variant?: 'default' | 'editorial';
 }
 
-export default function SectionHeader({ title, subtitle, onSeeAll }: SectionHeaderProps) {
+export default function SectionHeader({
+  title,
+  subtitle,
+  onSeeAll,
+  variant = 'default',
+}: SectionHeaderProps) {
+  const isEditorial = variant === 'editorial';
+
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={[styles.title, isEditorial && styles.titleEditorial]}>
+          {title}
+        </Text>
         {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
 
       {onSeeAll && (
         <Pressable style={styles.seeAllButton} onPress={onSeeAll}>
-          <Ionicons name="arrow-forward" size={18} color={colors.textPrimary} />
+          <Text style={styles.seeAllText}>See all</Text>
+          <Ionicons name="arrow-forward" size={14} color={colors.orange} />
         </Pressable>
       )}
     </View>
@@ -32,29 +43,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.screenX,
     marginBottom: spacing.lg,
+    marginTop: spacing.sm,
   },
   textContainer: {
     flex: 1,
-    gap: spacing.xs,
+    gap: 2,
   },
   title: {
     fontFamily: fonts.semiBold,
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
+    letterSpacing: -0.3,
+  },
+  titleEditorial: {
+    fontFamily: fonts.serif,
+    fontSize: 24,
+    letterSpacing: -0.5,
   },
   subtitle: {
     fontFamily: fonts.regular,
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
   },
   seeAllButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    marginLeft: spacing.md,
+    gap: 4,
+    paddingVertical: spacing.xs,
+    paddingLeft: spacing.sm,
+  },
+  seeAllText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
   },
 });
