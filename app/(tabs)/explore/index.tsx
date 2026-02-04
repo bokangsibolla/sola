@@ -72,7 +72,7 @@ function ActivityClusterCard({ cityName }: { cityName: string }) {
 function EndCard() {
   return (
     <View style={styles.endCard}>
-      <Text style={styles.endCardText}>You've seen it all!</Text>
+      <Text style={styles.endCardText}>You&apos;ve seen it all!</Text>
     </View>
   );
 }
