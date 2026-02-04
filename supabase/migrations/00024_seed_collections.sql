@@ -27,7 +27,7 @@ values
   '{fast_paced,nightlife_social}',
   '{city}',
   2,
-  false
+  true
 ),
 
 -- 3. Cultural Capitals (Cities)
@@ -41,7 +41,7 @@ values
   '{}',
   '{city}',
   3,
-  false
+  true
 ),
 
 -- 4. Wellness Retreats (Mix)

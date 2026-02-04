@@ -33,9 +33,9 @@ interface UseFeedItemsResult {
 }
 
 export function useFeedItems(): UseFeedItemsResult {
-  // Start with initial feed immediately - no loading state
+  // Start with loading state until we have data
   const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
 
