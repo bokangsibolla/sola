@@ -139,7 +139,9 @@ export default function LoginScreen() {
               Alert.alert('Enter your email', 'Type your email address above, then tap Forgot password.');
               return;
             }
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email);
+            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: 'sola://reset-password',
+            });
             if (resetError) {
               Alert.alert('Error', resetError.message);
             } else {
