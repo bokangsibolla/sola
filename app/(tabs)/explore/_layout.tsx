@@ -13,6 +13,7 @@ export default function ExploreLayout() {
       <Stack.Screen name="see-all" />
       <Stack.Screen name="country/[slug]" />
       <Stack.Screen name="city/[slug]" />
+      <Stack.Screen name="collection/[slug]" />
       <Stack.Screen name="activity/[slug]" />
       <Stack.Screen name="place-detail/[id]" />
     </Stack>

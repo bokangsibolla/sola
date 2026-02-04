@@ -1,164 +1,266 @@
-// app/(tabs)/explore/collection/[slug].tsx
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View, Pressable, Dimensions } from 'react-native';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
+import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Feather } from '@expo/vector-icons';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { Ionicons } from '@expo/vector-icons';
+import AppScreen from '@/components/AppScreen';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { useData } from '@/hooks/useData';
+import { getExploreCollectionWithItems } from '@/data/api';
+import { colors, fonts, radius, spacing } from '@/constants/design';
+import type { ExploreCollectionItem } from '@/data/types';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const HERO_HEIGHT = 300;
-
-// Mock data - will be replaced with real API
-const MOCK_COLLECTIONS: Record<string, {
-  title: string;
-  subtitle: string;
-  heroImageUrl: string;
-  intro: string;
-  destinations: { type: 'country' | 'city'; name: string; slug: string; imageUrl: string }[];
-}> = {
-  'first-solo-trips': {
-    title: 'Best destinations for your first solo trip',
-    subtitle: 'For first-timers who want ease and charm',
-    heroImageUrl: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=800',
-    intro: 'Starting your solo travel journey? These destinations offer the perfect blend of safety, friendliness, and unforgettable experiences.',
-    destinations: [
-      { type: 'country', name: 'Portugal', slug: 'portugal', imageUrl: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=400' },
-      { type: 'city', name: 'Lisbon', slug: 'lisbon', imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400' },
-      { type: 'country', name: 'Japan', slug: 'japan', imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?w=400' },
-    ],
-  },
-  'calm-beach-towns': {
-    title: 'Calm beach towns for slow travel',
-    subtitle: 'Where the pace is gentle and the views are endless',
-    heroImageUrl: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
-    intro: 'Escape the rush and find your rhythm in these serene coastal destinations.',
-    destinations: [
-      { type: 'city', name: 'Cascais', slug: 'cascais', imageUrl: 'https://images.unsplash.com/photo-1555881400-74d7acaacd8b?w=400' },
-      { type: 'city', name: 'Hoi An', slug: 'hoi-an', imageUrl: 'https://images.unsplash.com/photo-1559592413-7cec4d0cae2b?w=400' },
-    ],
-  },
-  'cultural-capitals': {
-    title: 'Cultural capitals worth exploring',
-    subtitle: 'Art, history, and unforgettable experiences',
-    heroImageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800',
-    intro: 'Immerse yourself in world-class museums, historic neighborhoods, and vibrant arts scenes.',
-    destinations: [
-      { type: 'city', name: 'Paris', slug: 'paris', imageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=400' },
-      { type: 'city', name: 'Tokyo', slug: 'tokyo', imageUrl: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400' },
-    ],
-  },
-};
-
-export default function CollectionScreen() {
+export default function CollectionPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
 
-  const collection = MOCK_COLLECTIONS[slug ?? ''];
+  const { data: collection, loading, error, refetch } = useData(
+    () => getExploreCollectionWithItems(slug ?? ''),
+    [slug]
+  );
 
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
   if (!collection) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.errorText}>Collection not found</Text>
-      </View>
+      <AppScreen>
+        <View style={styles.empty}>
+          <Text style={styles.emptyText}>This collection is being updated.</Text>
+        </View>
+      </AppScreen>
     );
   }
 
-  const handleBack = () => router.back();
-
-  const handleDestinationPress = (dest: { type: string; slug: string }) => {
-    if (dest.type === 'country') {
-      router.push(`/(tabs)/explore/country/${dest.slug}`);
-    } else {
-      router.push(`/(tabs)/explore/city/${dest.slug}`);
+  const handleItemPress = (item: ExploreCollectionItem) => {
+    if (item.entityType === 'country') {
+      router.push(`/(tabs)/explore/country/${item.entitySlug}`);
+    } else if (item.entityType === 'city') {
+      router.push(`/(tabs)/explore/city/${item.entitySlug}`);
     }
   };
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      {/* Hero */}
-      <View style={styles.hero} pointerEvents="box-none">
-        <Image
-          source={{ uri: collection.heroImageUrl }}
-          style={styles.heroImage}
-          contentFit="cover"
-          pointerEvents="none"
-        />
-        <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'transparent', 'rgba(0,0,0,0.7)']}
-          style={styles.heroGradient}
-          pointerEvents="none"
-        />
-        <Pressable
-          style={[styles.backButton, { top: insets.top + spacing.md }]}
-          onPress={handleBack}
-          hitSlop={12}
-        >
-          <Feather name="arrow-left" size={24} color="#FFFFFF" />
-        </Pressable>
-        <View style={styles.heroContent} pointerEvents="none">
-          <Text style={styles.heroTitle}>{collection.title}</Text>
-          <Text style={styles.heroSubtitle}>{collection.subtitle}</Text>
-        </View>
-      </View>
-
-      {/* Content */}
-      <View style={styles.content}>
-        <Text style={styles.intro}>{collection.intro}</Text>
-
-        <View style={styles.destinations}>
-          {collection.destinations.map((dest) => (
-            <Pressable
-              key={dest.slug}
-              style={styles.destCard}
-              onPress={() => handleDestinationPress(dest)}
-            >
-              <Image
-                source={{ uri: dest.imageUrl }}
-                style={styles.destImage}
-                contentFit="cover"
-                pointerEvents="none"
-              />
-              <View style={styles.destInfo} pointerEvents="none">
-                <Text style={styles.destName}>{dest.name}</Text>
-                <Text style={styles.destType}>{dest.type}</Text>
+    <AppScreen style={styles.screen}>
+      <Stack.Screen
+        options={{
+          title: '',
+          headerTransparent: true,
+          headerLeft: () => (
+            <Pressable onPress={() => router.back()} style={styles.backButton}>
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </Pressable>
+          ),
+        }}
+      />
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.scrollView}>
+        {/* Hero */}
+        <View style={styles.hero}>
+          {collection.heroImageUrl && (
+            <Image
+              source={{ uri: collection.heroImageUrl }}
+              style={styles.heroImage}
+              contentFit="cover"
+              transition={200}
+            />
+          )}
+          <View style={styles.heroOverlay}>
+            {collection.badgeLabel && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{collection.badgeLabel}</Text>
               </View>
-              <Feather name="chevron-right" size={20} color={colors.textMuted} />
+            )}
+            <Text style={styles.title}>{collection.title}</Text>
+            {collection.subtitle && (
+              <Text style={styles.subtitle}>{collection.subtitle}</Text>
+            )}
+          </View>
+        </View>
+
+        <View style={styles.content}>
+          {/* Intro */}
+          {collection.introMd && (
+            <Text style={styles.intro}>{collection.introMd}</Text>
+          )}
+
+          {/* Sponsored disclosure */}
+          {collection.isSponsored && collection.sponsorName && (
+            <View style={styles.sponsorBanner}>
+              <Ionicons name="megaphone-outline" size={14} color={colors.textMuted} />
+              <Text style={styles.sponsorText}>
+                Sponsored by {collection.sponsorName}
+              </Text>
+            </View>
+          )}
+
+          {/* Items */}
+          <Text style={styles.sectionTitle}>
+            {collection.items.length} destination{collection.items.length !== 1 ? 's' : ''}
+          </Text>
+
+          {collection.items.map((item) => (
+            <Pressable
+              key={`${item.entityType}-${item.entityId}`}
+              style={styles.itemCard}
+              onPress={() => handleItemPress(item)}
+            >
+              {item.entityImageUrl && (
+                <Image
+                  source={{ uri: item.entityImageUrl }}
+                  style={styles.itemImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              )}
+              <View style={styles.itemInfo}>
+                <View style={styles.itemHeader}>
+                  <Text style={styles.itemName}>{item.entityName}</Text>
+                  {item.isFeatured && (
+                    <View style={styles.itemBadge}>
+                      <Text style={styles.itemBadgeText}>Featured</Text>
+                    </View>
+                  )}
+                </View>
+                <Text style={styles.itemType}>
+                  {item.entityType === 'country' ? 'Country' : 'City'}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </Pressable>
           ))}
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  screen: {
+    paddingHorizontal: 0,
   },
-  errorText: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginTop: 100,
+  scrollView: {
+    marginHorizontal: -spacing.lg,
   },
   hero: {
-    width: SCREEN_WIDTH,
-    height: HERO_HEIGHT,
+    height: 280,
+    backgroundColor: colors.borderSubtle,
   },
   heroImage: {
-    ...StyleSheet.absoluteFillObject,
+    width: '100%',
+    height: '100%',
   },
-  heroGradient: {
-    ...StyleSheet.absoluteFillObject,
+  heroOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.xl,
+    paddingTop: 60,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  badge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.orange,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.sm,
+    marginBottom: spacing.sm,
+  },
+  badgeText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  title: {
+    fontFamily: fonts.semiBold,
+    fontSize: 26,
+    color: '#FFFFFF',
+    lineHeight: 32,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.9)',
+    marginTop: 6,
+  },
+  content: {
+    padding: spacing.lg,
+  },
+  intro: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 24,
+    color: colors.textPrimary,
+    marginBottom: spacing.xl,
+  },
+  sponsorBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.borderSubtle,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
+    marginBottom: spacing.lg,
+  },
+  sponsorText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  itemCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: radius.card,
+    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    overflow: 'hidden',
+  },
+  itemImage: {
+    width: 80,
+    height: 80,
+  },
+  itemInfo: {
+    flex: 1,
+    padding: spacing.md,
+  },
+  itemHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  itemName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  itemBadge: {
+    backgroundColor: colors.borderSubtle,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  itemBadgeText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+  },
+  itemType: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   backButton: {
-    position: 'absolute',
-    left: spacing.screenX,
     width: 40,
     height: 40,
     borderRadius: 20,
@@ -166,64 +268,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  heroContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+  empty: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
     padding: spacing.xl,
   },
-  heroTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 24,
-    color: '#FFFFFF',
-    marginBottom: spacing.xs,
-  },
-  heroSubtitle: {
+  emptyText: {
     fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  content: {
-    padding: spacing.screenX,
-  },
-  intro: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.textSecondary,
-    marginBottom: spacing.xxl,
-  },
-  destinations: {
-    gap: spacing.md,
-  },
-  destCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    overflow: 'hidden',
-  },
-  destImage: {
-    width: 80,
-    height: 80,
-  },
-  destInfo: {
-    flex: 1,
-    padding: spacing.lg,
-  },
-  destName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  destType: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    textTransform: 'capitalize',
-    marginTop: spacing.xs,
+    fontSize: 15,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
 });
