@@ -51,6 +51,135 @@ export function rowsToCamel<T>(rows: Record<string, any>[]): T[] {
   return rows.map((r) => toCamel<T>(r));
 }
 
+/**
+ * Map a country database row to Country type.
+ * Handles all content fields from the consolidated schema:
+ * - title, subtitle, summary, summary_md → summaryMd, content_md → contentMd
+ * - why_we_love_md → whyWeLoveMd, safety_rating → safetyRating
+ * - solo_friendly → soloFriendly, solo_level → soloLevel
+ * - best_months → bestMonths, best_time_to_visit → bestTimeToVisit
+ * - currency, language, visa_note → visaNote
+ * - highlights, avg_daily_budget_usd → avgDailyBudgetUsd
+ * - internet_quality → internetQuality, english_friendliness → englishFriendliness
+ * - good_for_interests → goodForInterests, best_for → bestFor
+ * - getting_there_md → gettingThereMd, visa_entry_md → visaEntryMd
+ * - sim_connectivity_md → simConnectivityMd, money_md → moneyMd
+ * - culture_etiquette_md → cultureEtiquetteMd, safety_women_md → safetyWomenMd
+ * - portrait_md → portraitMd, published_at → publishedAt
+ */
+export function mapCountry(row: Record<string, any>): Country {
+  return {
+    id: row.id,
+    slug: row.slug,
+    name: row.name,
+    iso2: row.iso2,
+    iso3: row.iso3,
+    currencyCode: row.currency_code,
+    isActive: row.is_active,
+    orderIndex: row.order_index,
+    heroImageUrl: row.hero_image_url,
+    shortBlurb: row.short_blurb,
+    badgeLabel: row.badge_label,
+    isFeatured: row.is_featured,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    // Content fields (merged from geo_content)
+    title: row.title,
+    subtitle: row.subtitle,
+    summary: row.summary,
+    summaryMd: row.summary_md,
+    contentMd: row.content_md,
+    whyWeLoveMd: row.why_we_love_md,
+    safetyRating: row.safety_rating,
+    soloFriendly: row.solo_friendly,
+    soloLevel: row.solo_level,
+    bestMonths: row.best_months,
+    bestTimeToVisit: row.best_time_to_visit,
+    currency: row.currency,
+    language: row.language,
+    visaNote: row.visa_note,
+    highlights: row.highlights,
+    avgDailyBudgetUsd: row.avg_daily_budget_usd,
+    internetQuality: row.internet_quality,
+    englishFriendliness: row.english_friendliness,
+    goodForInterests: row.good_for_interests,
+    bestFor: row.best_for,
+    gettingThereMd: row.getting_there_md,
+    visaEntryMd: row.visa_entry_md,
+    simConnectivityMd: row.sim_connectivity_md,
+    moneyMd: row.money_md,
+    cultureEtiquetteMd: row.culture_etiquette_md,
+    safetyWomenMd: row.safety_women_md,
+    portraitMd: row.portrait_md,
+    publishedAt: row.published_at,
+  };
+}
+
+/**
+ * Map a city database row to City type.
+ * Handles all content fields from the consolidated schema plus city-specific fields:
+ * - All country content fields (see mapCountry)
+ * - transport_md → transportMd
+ * - top_things_to_do → topThingsToDo
+ */
+export function mapCity(row: Record<string, any>): City {
+  return {
+    id: row.id,
+    countryId: row.country_id,
+    slug: row.slug,
+    name: row.name,
+    timezone: row.timezone,
+    centerLat: row.center_lat,
+    centerLng: row.center_lng,
+    isActive: row.is_active,
+    orderIndex: row.order_index,
+    heroImageUrl: row.hero_image_url,
+    shortBlurb: row.short_blurb,
+    badgeLabel: row.badge_label,
+    isFeatured: row.is_featured,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+    // Content fields (merged from geo_content)
+    title: row.title,
+    subtitle: row.subtitle,
+    summary: row.summary,
+    summaryMd: row.summary_md,
+    contentMd: row.content_md,
+    whyWeLoveMd: row.why_we_love_md,
+    safetyRating: row.safety_rating,
+    soloFriendly: row.solo_friendly,
+    soloLevel: row.solo_level,
+    bestMonths: row.best_months,
+    bestTimeToVisit: row.best_time_to_visit,
+    currency: row.currency,
+    language: row.language,
+    visaNote: row.visa_note,
+    highlights: row.highlights,
+    avgDailyBudgetUsd: row.avg_daily_budget_usd,
+    internetQuality: row.internet_quality,
+    englishFriendliness: row.english_friendliness,
+    goodForInterests: row.good_for_interests,
+    bestFor: row.best_for,
+    cultureEtiquetteMd: row.culture_etiquette_md,
+    safetyWomenMd: row.safety_women_md,
+    portraitMd: row.portrait_md,
+    publishedAt: row.published_at,
+    // City-specific content fields
+    transportMd: row.transport_md,
+    topThingsToDo: row.top_things_to_do,
+  };
+}
+
+/** Map multiple country rows to Country[] */
+export function mapCountries(rows: Record<string, any>[]): Country[] {
+  return rows.map(mapCountry);
+}
+
+/** Map multiple city rows to City[] */
+export function mapCities(rows: Record<string, any>[]): City[] {
+  return rows.map(mapCity);
+}
+
 // ---------------------------------------------------------------------------
 // Geography
 // ---------------------------------------------------------------------------
@@ -62,7 +191,7 @@ export async function getCountries(): Promise<Country[]> {
     .eq('is_active', true)
     .order('order_index');
   if (error) throw error;
-  return rowsToCamel<Country>(data ?? []);
+  return mapCountries(data ?? []);
 }
 
 export async function getCountryBySlug(slug: string): Promise<Country | undefined> {
@@ -72,7 +201,7 @@ export async function getCountryBySlug(slug: string): Promise<Country | undefine
     .eq('slug', slug)
     .maybeSingle();
   if (error) throw error;
-  return data ? toCamel<Country>(data) : undefined;
+  return data ? mapCountry(data) : undefined;
 }
 
 export async function getCountryByIso2(iso2: string): Promise<Country | undefined> {
@@ -82,7 +211,7 @@ export async function getCountryByIso2(iso2: string): Promise<Country | undefine
     .eq('iso2', iso2)
     .maybeSingle();
   if (error) throw error;
-  return data ? toCamel<Country>(data) : undefined;
+  return data ? mapCountry(data) : undefined;
 }
 
 export async function getCountryById(id: string): Promise<Country | undefined> {
@@ -92,7 +221,7 @@ export async function getCountryById(id: string): Promise<Country | undefined> {
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  return data ? toCamel<Country>(data) : undefined;
+  return data ? mapCountry(data) : undefined;
 }
 
 export async function getCitiesByCountry(countryId: string): Promise<City[]> {
@@ -103,7 +232,7 @@ export async function getCitiesByCountry(countryId: string): Promise<City[]> {
     .eq('is_active', true)
     .order('order_index');
   if (error) throw error;
-  return rowsToCamel<City>(data ?? []);
+  return mapCities(data ?? []);
 }
 
 export async function getPopularCities(limit = 12): Promise<City[]> {
@@ -114,7 +243,7 @@ export async function getPopularCities(limit = 12): Promise<City[]> {
     .order('order_index')
     .limit(limit);
   if (error) throw error;
-  return rowsToCamel<City>(data ?? []);
+  return mapCities(data ?? []);
 }
 
 export async function getCityBySlug(slug: string): Promise<City | undefined> {
@@ -124,7 +253,7 @@ export async function getCityBySlug(slug: string): Promise<City | undefined> {
     .eq('slug', slug)
     .maybeSingle();
   if (error) throw error;
-  return data ? toCamel<City>(data) : undefined;
+  return data ? mapCity(data) : undefined;
 }
 
 export async function getCityById(id: string): Promise<City | undefined> {
@@ -134,7 +263,7 @@ export async function getCityById(id: string): Promise<City | undefined> {
     .eq('id', id)
     .maybeSingle();
   if (error) throw error;
-  return data ? toCamel<City>(data) : undefined;
+  return data ? mapCity(data) : undefined;
 }
 
 export async function getAreasByCity(cityId: string): Promise<CityArea[]> {
@@ -182,7 +311,7 @@ export async function getCountriesByTag(tagSlug: string): Promise<Country[]> {
     .eq('is_active', true)
     .order('order_index');
   if (cError) throw cError;
-  return rowsToCamel<Country>(countries ?? []);
+  return mapCountries(countries ?? []);
 }
 
 export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]> {
@@ -202,7 +331,7 @@ export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]>
     .eq('is_active', true)
     .order('order_index');
   if (cError) throw cError;
-  return rowsToCamel<Country>(countries ?? []);
+  return mapCountries(countries ?? []);
 }
 
 // ---------------------------------------------------------------------------
@@ -581,10 +710,19 @@ export async function getPlacesGroupedByTimeForArea(
 }
 
 // ---------------------------------------------------------------------------
-// Geo Content
+// Geo Content (DEPRECATED - content now in countries/cities tables)
 // ---------------------------------------------------------------------------
 
+/**
+ * @deprecated Content fields have been merged into the countries table.
+ * Use getCountryById() or getCountryBySlug() instead, which now includes all content fields.
+ * This function will be removed once the geo_content table is dropped.
+ */
 export async function getCountryContent(countryId: string): Promise<GeoContent | undefined> {
+  console.warn(
+    'DEPRECATED: getCountryContent() is deprecated. ' +
+    'Use getCountryById() instead - content fields are now on the Country type.'
+  );
   const { data, error } = await supabase
     .from('geo_content')
     .select('*')
@@ -595,7 +733,16 @@ export async function getCountryContent(countryId: string): Promise<GeoContent |
   return data ? toCamel<GeoContent>(data) : undefined;
 }
 
+/**
+ * @deprecated Content fields have been merged into the cities table.
+ * Use getCityById() or getCityBySlug() instead, which now includes all content fields.
+ * This function will be removed once the geo_content table is dropped.
+ */
 export async function getCityContent(cityId: string): Promise<GeoContent | undefined> {
+  console.warn(
+    'DEPRECATED: getCityContent() is deprecated. ' +
+    'Use getCityById() instead - content fields are now on the City type.'
+  );
   const { data, error } = await supabase
     .from('geo_content')
     .select('*')
