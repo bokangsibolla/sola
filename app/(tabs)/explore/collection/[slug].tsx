@@ -37,6 +37,9 @@ export default function CollectionPage() {
     } else if (item.entityType === 'city') {
       router.push(`/(tabs)/explore/city/${item.entitySlug}`);
     }
+    // Neighborhood routes don't exist yet - ignore press for now.
+    // This case is unlikely since collections filter by entity_types,
+    // but TypeScript requires handling all union members.
   };
 
   return (
@@ -46,7 +49,12 @@ export default function CollectionPage() {
           title: '',
           headerTransparent: true,
           headerLeft: () => (
-            <Pressable onPress={() => router.back()} style={styles.backButton}>
+            <Pressable
+              onPress={() => router.back()}
+              style={styles.backButton}
+              accessibilityRole="button"
+              accessibilityLabel="Go back"
+            >
               <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
             </Pressable>
           ),
@@ -102,6 +110,8 @@ export default function CollectionPage() {
               key={`${item.entityType}-${item.entityId}`}
               style={styles.itemCard}
               onPress={() => handleItemPress(item)}
+              accessibilityRole="button"
+              accessibilityLabel={item.entityName}
             >
               {item.entityImageUrl && (
                 <Image
