@@ -7,7 +7,7 @@ import { colors, fonts, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
-const CARD_HEIGHT = 200;
+const CARD_HEIGHT = 220;
 
 interface FeaturedCardProps {
   imageUrl: string;
@@ -105,6 +105,11 @@ const styles = StyleSheet.create({
   container: {
     width: CARD_WIDTH,
     marginHorizontal: spacing.screenX,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 4,
   },
   imageContainer: {
     width: CARD_WIDTH,

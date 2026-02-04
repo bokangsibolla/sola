@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: GRID_CARD_WIDTH,
     height: GRID_CARD_WIDTH, // Square aspect ratio
-    borderRadius: 12,
+    borderRadius: 14,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
     position: 'relative',
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     paddingTop: spacing.sm,
-    paddingBottom: spacing.xs,
+    paddingBottom: spacing.md,
   },
   title: {
     fontFamily: fonts.semiBold,
