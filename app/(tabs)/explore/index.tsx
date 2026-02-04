@@ -1,82 +1,151 @@
 // app/(tabs)/explore/index.tsx
-import { ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
+import { FlatList, StyleSheet, View, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import LoadingScreen from '@/components/LoadingScreen';
+import ErrorScreen from '@/components/ErrorScreen';
+import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
+import { useFeedItems } from '@/data/explore/useFeedItems';
+import type { FeedItem } from '@/data/explore/types';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
-// Placeholder card component
-function PlaceholderCard({ title, height = 180 }: { title: string; height?: number }) {
+// Placeholder card for country pair
+function CountryPairCard({ countries }: { countries: [{ name: string }, { name: string }] }) {
   return (
-    <Pressable
-      style={[styles.card, { height }]}
-      onPress={() => console.log(`Tapped: ${title}`)}
-    >
+    <View style={styles.pairRow}>
+      <Pressable style={styles.smallCard}>
+        <View style={styles.smallCardContent}>
+          <Text style={styles.smallCardTitle}>{countries[0].name}</Text>
+        </View>
+      </Pressable>
+      <Pressable style={styles.smallCard}>
+        <View style={styles.smallCardContent}>
+          <Text style={styles.smallCardTitle}>{countries[1].name}</Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
+// Placeholder card for city spotlight
+function CitySpotlightCard({ cityName }: { cityName: string }) {
+  return (
+    <Pressable style={[styles.card, { height: 220 }]}>
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{title}</Text>
-        <Text style={styles.cardSubtitle}>Placeholder</Text>
+        <Text style={styles.cardTitle}>{cityName}</Text>
+        <Text style={styles.cardSubtitle}>City Spotlight</Text>
       </View>
     </Pressable>
   );
 }
 
-// Small card for the 2-up row
-function SmallCard({ title }: { title: string }) {
+// Placeholder card for activity cluster
+function ActivityClusterCard({ cityName }: { cityName: string }) {
   return (
-    <Pressable style={styles.smallCard} onPress={() => console.log(`Tapped: ${title}`)}>
-      <View style={styles.smallCardContent}>
-        <Text style={styles.smallCardTitle}>{title}</Text>
+    <Pressable style={[styles.card, { height: 160 }]}>
+      <View style={styles.cardContent}>
+        <Text style={styles.cardTitle}>Activities in {cityName}</Text>
+        <Text style={styles.cardSubtitle}>Activity Cluster</Text>
       </View>
     </Pressable>
+  );
+}
+
+// End card component
+function EndCard() {
+  return (
+    <View style={styles.endCard}>
+      <Text style={styles.endCardText}>You've seen it all!</Text>
+    </View>
   );
 }
 
 export default function ExploreScreen() {
   const router = useRouter();
+  const { feedItems, isLoading, error, refresh } = useFeedItems();
+
+  const renderItem = ({ item }: { item: FeedItem }) => {
+    switch (item.type) {
+      case 'editorial-collection':
+        return (
+          <EditorialCollectionCard
+            collection={item.data}
+            onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
+          />
+        );
+
+      case 'country-pair':
+        return <CountryPairCard countries={item.data} />;
+
+      case 'city-spotlight':
+        return <CitySpotlightCard cityName={item.data.name} />;
+
+      case 'activity-cluster':
+        return <ActivityClusterCard cityName={item.cityName} />;
+
+      case 'end-card':
+        return <EndCard />;
+
+      default:
+        return null;
+    }
+  };
+
+  const keyExtractor = (item: FeedItem, index: number): string => {
+    switch (item.type) {
+      case 'editorial-collection':
+        return `collection-${item.data.slug}`;
+      case 'country-pair':
+        return `country-pair-${item.data[0].slug}-${item.data[1].slug}`;
+      case 'city-spotlight':
+        return `city-spotlight-${item.data.slug}`;
+      case 'activity-cluster':
+        return `activity-cluster-${item.citySlug}`;
+      case 'end-card':
+        return 'end-card';
+      default:
+        return `item-${index}`;
+    }
+  };
+
+  // Show loading screen only on initial load with no feed items
+  if (isLoading && feedItems.length <= 1) {
+    return (
+      <AppScreen>
+        <AppHeader title="Explore" />
+        <LoadingScreen />
+      </AppScreen>
+    );
+  }
+
+  // Show error screen if there's an error and no feed items
+  if (error && feedItems.length <= 1) {
+    return (
+      <AppScreen>
+        <AppHeader title="Explore" />
+        <ErrorScreen message={error.message} onRetry={refresh} />
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen>
       <AppHeader title="Explore" />
-      <ScrollView
-        style={styles.scroll}
+      <FlatList
+        data={feedItems}
+        renderItem={renderItem}
+        keyExtractor={keyExtractor}
+        style={styles.list}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
-      >
-        {/* Editorial Collection 1 */}
-        <PlaceholderCard title="Editorial Collection 1" height={200} />
-
-        {/* Country Pair - 2 cards side by side */}
-        <View style={styles.pairRow}>
-          <SmallCard title="Country 1" />
-          <SmallCard title="Country 2" />
-        </View>
-
-        {/* City Spotlight */}
-        <PlaceholderCard title="City Spotlight" height={220} />
-
-        {/* Editorial Collection 2 */}
-        <PlaceholderCard title="Editorial Collection 2" height={200} />
-
-        {/* Another Country Pair */}
-        <View style={styles.pairRow}>
-          <SmallCard title="Country 3" />
-          <SmallCard title="Country 4" />
-        </View>
-
-        {/* Activity Cluster */}
-        <PlaceholderCard title="Activities" height={160} />
-
-        {/* End Card */}
-        <View style={styles.endCard}>
-          <Text style={styles.endCardText}>You've seen it all!</Text>
-        </View>
-      </ScrollView>
+      />
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  list: {
     flex: 1,
   },
   content: {
@@ -84,7 +153,7 @@ const styles = StyleSheet.create({
     gap: spacing.xl,
   },
   card: {
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     marginHorizontal: spacing.md,
     overflow: 'hidden',
@@ -113,7 +182,7 @@ const styles = StyleSheet.create({
   smallCard: {
     flex: 1,
     height: 140,
-    backgroundColor: colors.cardBackground,
+    backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     overflow: 'hidden',
     justifyContent: 'flex-end',
