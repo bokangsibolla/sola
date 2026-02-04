@@ -1,95 +1,157 @@
 // components/explore/tabs/CountriesTab.tsx
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View, ActivityIndicator, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useCallback, useMemo } from 'react';
-import { ExploreCard, SectionHeader, HorizontalCarousel, DEFAULT_ITEM_WIDTH } from '@/components/explore';
-import {
-  mockCountries,
-  getCountriesByContinent,
-  continentLabels,
-  MockCountry,
-} from '@/data/exploreMockData';
-import { spacing } from '@/constants/design';
-
-// Order continents by number of countries (most first)
-function getContinentOrder(): MockCountry['continent'][] {
-  const counts: Record<string, number> = {};
-  mockCountries.forEach(c => {
-    counts[c.continent] = (counts[c.continent] || 0) + 1;
-  });
-  return Object.entries(counts)
-    .sort((a, b) => b[1] - a[1])
-    .map(([continent]) => continent as MockCountry['continent']);
-}
+import { useCallback } from 'react';
+import { FeaturedCard, GridCard, SectionHeader, WelcomeHeader, GRID_GAP } from '@/components/explore';
+import { supabase } from '@/lib/supabase';
+import { toCamel } from '@/data/api';
+import { useData } from '@/hooks/useData';
+import type { Country } from '@/data/types';
+import { colors, fonts, spacing } from '@/constants/design';
 
 interface CountriesTabProps {
   onNavigateToSeeAll: (category: string, title: string) => void;
 }
 
+type CountryWithContent = Country & {
+  blurb?: string | null;
+};
+
+// Fetch countries with their geo_content for blurbs
+async function getCountriesWithContent(): Promise<CountryWithContent[]> {
+  const { data: countries, error: countriesError } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('is_active', true)
+    .order('order_index');
+
+  if (countriesError) throw countriesError;
+  if (!countries || countries.length === 0) return [];
+
+  // Get geo_content for all countries to get blurbs
+  const countryIds = countries.map((c: any) => c.id);
+  const { data: geoContent, error: geoError } = await supabase
+    .from('geo_content')
+    .select('country_id, best_for, subtitle, badge_label')
+    .eq('scope', 'country')
+    .in('country_id', countryIds);
+
+  if (geoError) {
+    console.warn('Failed to fetch geo_content:', geoError);
+    return countries.map((c: any) => toCamel<CountryWithContent>(c));
+  }
+
+  const contentMap = new Map<string, any>();
+  (geoContent || []).forEach((gc: any) => {
+    contentMap.set(gc.country_id, gc);
+  });
+
+  return countries.map((c: any): CountryWithContent => {
+    const country = toCamel<Country>(c);
+    const content = contentMap.get(c.id);
+    return {
+      ...country,
+      blurb: content?.best_for || content?.subtitle || country.shortBlurb || null,
+      badgeLabel: content?.badge_label || country.badgeLabel || null,
+    };
+  });
+}
+
 export default function CountriesTab({ onNavigateToSeeAll }: CountriesTabProps) {
   const router = useRouter();
-  const continentOrder = useMemo(() => getContinentOrder(), []);
+  const { data: countries, loading, error } = useData(() => getCountriesWithContent(), []);
 
-  const handleCountryPress = useCallback((country: MockCountry) => {
+  const handleCountryPress = useCallback((country: CountryWithContent) => {
     router.push(`/(tabs)/explore/country/${country.slug}` as any);
   }, [router]);
 
-  const renderCountryCard = useCallback(
-    ({ item }: { item: MockCountry }) => (
-      <ExploreCard
-        imageUrl={item.heroImageUrl}
-        title={item.name}
-        subtitle={item.subtitle}
-        rating={item.rating}
-        reviewCount={item.reviewCount}
-        onPress={() => handleCountryPress(item)}
-        width={DEFAULT_ITEM_WIDTH}
-      />
-    ),
-    [handleCountryPress]
-  );
+  if (loading) {
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={colors.orange} />
+      </View>
+    );
+  }
 
-  const topCountries = useMemo(
-    () => [...mockCountries].sort((a, b) => b.reviewCount - a.reviewCount).slice(0, 8),
-    []
-  );
+  if (error || !countries || countries.length === 0) {
+    return (
+      <View style={styles.centered}>
+        <Text style={styles.emptyText}>No countries available</Text>
+      </View>
+    );
+  }
+
+  // First country is featured, rest are in grid
+  const featured = countries[0];
+  const gridCountries = countries.slice(1, 5);
+  const moreCountries = countries.slice(5, 9);
 
   return (
     <ScrollView
       showsVerticalScrollIndicator={false}
       contentContainerStyle={styles.content}
     >
-      {/* Top Countries */}
-      <SectionHeader
-        title="Top countries"
-        subtitle="Most loved destinations"
-        onSeeAll={() => onNavigateToSeeAll('all-countries', 'All Countries')}
-      />
-      <HorizontalCarousel
-        data={topCountries}
-        renderItem={renderCountryCard}
-        keyExtractor={(item) => item.id}
+      {/* Editorial welcome */}
+      <WelcomeHeader
+        title="Where to next?"
+        subtitle="Curated destinations for solo women travelers"
       />
 
-      {/* Continent Sections */}
-      {continentOrder.map((continent) => {
-        const countries = getCountriesByContinent(continent);
-        if (countries.length === 0) return null;
+      {/* Featured country */}
+      <FeaturedCard
+        imageUrl={featured.heroImageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=800'}
+        title={featured.name}
+        blurb={featured.blurb}
+        badge={featured.badgeLabel}
+        badgeVariant={featured.isFeatured ? 'highlight' : 'default'}
+        onPress={() => handleCountryPress(featured)}
+      />
 
-        return (
-          <View key={continent} style={styles.section}>
-            <SectionHeader
-              title={continentLabels[continent]}
-              onSeeAll={() => onNavigateToSeeAll(`continent-${continent}`, continentLabels[continent])}
-            />
-            <HorizontalCarousel
-              data={countries}
-              renderItem={renderCountryCard}
-              keyExtractor={(item) => item.id}
-            />
+      {/* Grid countries */}
+      {gridCountries.length > 0 && (
+        <View style={styles.section}>
+          <SectionHeader
+            title="Explore countries"
+            onSeeAll={() => onNavigateToSeeAll('all-countries', 'All Countries')}
+          />
+          <View style={styles.grid}>
+            {gridCountries.map((country) => (
+              <GridCard
+                key={country.id}
+                imageUrl={country.heroImageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400'}
+                title={country.name}
+                blurb={country.blurb}
+                badge={country.badgeLabel}
+                onPress={() => handleCountryPress(country)}
+                showFavorite={true}
+              />
+            ))}
           </View>
-        );
-      })}
+        </View>
+      )}
+
+      {/* More countries */}
+      {moreCountries.length > 0 && (
+        <View style={styles.section}>
+          <SectionHeader
+            title="More to discover"
+            onSeeAll={() => onNavigateToSeeAll('all-countries', 'All Countries')}
+          />
+          <View style={styles.grid}>
+            {moreCountries.map((country) => (
+              <GridCard
+                key={country.id}
+                imageUrl={country.heroImageUrl || 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=400'}
+                title={country.name}
+                blurb={country.blurb}
+                badge={country.badgeLabel}
+                onPress={() => handleCountryPress(country)}
+                showFavorite={true}
+              />
+            ))}
+          </View>
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -100,5 +162,22 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: spacing.xxl,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.screenX,
+    gap: GRID_GAP,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: spacing.xxxl,
+  },
+  emptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textSecondary,
   },
 });
