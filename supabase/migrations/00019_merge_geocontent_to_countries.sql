@@ -111,7 +111,7 @@ SET
   summary_md = COALESCE(c.summary_md, gc.summary_md),
   content_md = COALESCE(c.content_md, gc.content_md),
   why_we_love_md = COALESCE(c.why_we_love_md, gc.why_we_love_md),
-  safety_rating = COALESCE(c.safety_rating, gc.safety_rating),
+  -- Note: safety_rating was removed from geo_content, so we only add the column but don't migrate data
   solo_friendly = COALESCE(c.solo_friendly, gc.solo_friendly),
   solo_level = COALESCE(c.solo_level, gc.solo_level),
   best_months = COALESCE(c.best_months, gc.best_months),
