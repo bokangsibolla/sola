@@ -14,6 +14,11 @@ export const colors = {
   greenFill: '#EEFBF3',
   blueSoft: '#3B82F6',
   blueFill: '#EFF6FF',
+  // Emergency/danger colors
+  emergency: '#D32F2F',
+  emergencyFill: '#FDEAEA',
+  // Neutral fills
+  neutralFill: '#F3F3F3',
 };
 
 export const spacing = {
