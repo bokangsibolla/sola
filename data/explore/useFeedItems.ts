@@ -43,6 +43,7 @@ export function useFeedItems(): UseFeedItemsResult {
     let cancelled = false;
 
     async function loadRealData() {
+      setIsLoading(true);
       try {
         // Fetch countries, cities, and featured collections with 5 second timeout
         const [countries, cities, featuredCollections] = await withTimeout(
@@ -100,11 +101,15 @@ export function useFeedItems(): UseFeedItemsResult {
         // Build full feed with real data
         const feed = buildFeed(collectionsWithItems, countries, citiesWithActivities);
         setFeedItems(feed);
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       } catch (err) {
         // On error/timeout, keep showing initial feed - don't block UI
         console.log('Feed API error (using cached data):', err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error('Failed to load'));
+          setIsLoading(false);
         }
       }
     }
@@ -116,11 +121,8 @@ export function useFeedItems(): UseFeedItemsResult {
   }, [refreshKey]);
 
   const refresh = () => {
-    setIsLoading(true);
     setError(null);
     setRefreshKey((k) => k + 1);
-    // Brief loading indicator then reset
-    setTimeout(() => setIsLoading(false), 500);
   };
 
   return { feedItems, isLoading, error, refresh };
