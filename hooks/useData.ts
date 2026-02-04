@@ -18,15 +18,17 @@ export function useData<T>(
 
   const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery<T, Error>({
+  const { data, isLoading, error } = useQuery<T | null, Error>({
     queryKey,
     queryFn: async () => {
       try {
         const result = fetcher();
         if (result instanceof Promise) {
-          return await result;
+          const resolved = await result;
+          // React Query doesn't allow undefined, convert to null
+          return resolved === undefined ? null : resolved;
         }
-        return result;
+        return result === undefined ? null : result;
       } catch (err) {
         // Re-throw as Error for React Query to handle
         throw err instanceof Error ? err : new Error(String(err));

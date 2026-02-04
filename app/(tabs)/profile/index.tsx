@@ -32,7 +32,7 @@ export default function ProfileScreen() {
   }, [posthog]);
 
   const { data: profile, loading: loadingProfile, error: errorProfile, refetch: refetchProfile } = useData(
-    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
     [userId],
   );
 
@@ -62,7 +62,7 @@ export default function ProfileScreen() {
         <View style={styles.header}>
           <View style={styles.avatarContainer}>
             {profile?.avatarUrl ? (
-              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 })! }} style={styles.avatar} contentFit="cover" transition={200} />
+              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
                 <Ionicons name="person" size={32} color={colors.textMuted} />

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface AnimatedBackgroundProps {
   images: number[];
@@ -48,9 +49,8 @@ export default function AnimatedBackground({
           <Image
             source={img}
             style={styles.image}
-            resizeMode="cover"
-            // Preload images to avoid flash
-            defaultSource={img}
+            contentFit="cover"
+            transition={200}
           />
           <View style={styles.overlay} />
         </View>

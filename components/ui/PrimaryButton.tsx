@@ -25,6 +25,9 @@ export default function PrimaryButton({
       ]}
       onPress={onPress}
       disabled={disabled}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      accessibilityState={{ disabled }}
     >
       <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
         {label}
@@ -52,7 +55,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: fonts.medium,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: colors.background,
     letterSpacing: 0.3,
   },
   buttonTextDisabled: {

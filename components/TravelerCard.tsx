@@ -1,4 +1,5 @@
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 interface User {
@@ -18,12 +19,26 @@ interface TravelerCardProps {
 }
 
 export default function TravelerCard({ user, onPress }: TravelerCardProps) {
+  const accessibilityLabel = [
+    user.firstName,
+    user.isOnline ? 'online now' : '',
+    user.currentCity ? `in ${user.currentCity}` : '',
+    `from ${user.countryName}`,
+    user.interests.length > 0 ? `interests: ${user.interests.slice(0, 2).join(', ')}` : '',
+  ].filter(Boolean).join(', ');
+
   return (
-    <Pressable style={styles.card} onPress={onPress}>
+    <Pressable
+      style={styles.card}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityHint="Double tap to view profile"
+    >
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
           {user.photoUrl ? (
-            <Image source={{ uri: user.photoUrl }} style={styles.avatar} />
+            <Image source={{ uri: user.photoUrl }} style={styles.avatar} contentFit="cover" transition={200} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Ionicons name="person" size={20} color={colors.textMuted} />

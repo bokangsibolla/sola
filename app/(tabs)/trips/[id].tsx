@@ -63,7 +63,10 @@ function PlaceCard({ place }: { place: Place }) {
   const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
   const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
   const { userId } = useAuth();
-  const { data: isSaved, refetch: refetchSaved } = useData(() => isPlaceSaved(userId!, place.id), [userId, place.id]);
+  const { data: isSaved, refetch: refetchSaved } = useData(
+    () => userId ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
+    [userId, place.id],
+  );
   const [saved, setSaved] = useState(false);
 
   // Sync saved state when data loads
@@ -72,8 +75,9 @@ function PlaceCard({ place }: { place: Place }) {
   }, [isSaved]);
 
   const handleSave = useCallback(async () => {
+    if (!userId) return;
     setSaved((prev) => !prev);
-    await toggleSavePlace(userId!, place.id);
+    await toggleSavePlace(userId, place.id);
   }, [userId, place.id]);
 
   return (
@@ -142,11 +146,11 @@ export default function TripDetailScreen() {
 
   const { data: trip, loading, error, refetch } = useData(() => getTripById(id ?? ''), [id]);
   const { data: city } = useData(
-    () => trip ? getCityById(trip.destinationCityId) : Promise.resolve(undefined),
+    () => trip ? getCityById(trip.destinationCityId) : Promise.resolve(null),
     [trip?.destinationCityId],
   );
   const { data: country } = useData(
-    () => trip ? getCountryByIso2(trip.countryIso2) : Promise.resolve(undefined),
+    () => trip ? getCountryByIso2(trip.countryIso2) : Promise.resolve(null),
     [trip?.countryIso2],
   );
   const { data: cityPlaces } = useData(

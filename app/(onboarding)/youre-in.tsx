@@ -80,7 +80,7 @@ export default function YoureInScreen() {
     });
 
     setSaving(false);
-    router.replace('/(tabs)/home');
+    router.replace('/(tabs)/explore');
   };
 
   return (

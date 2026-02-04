@@ -81,13 +81,18 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
     >
       <View style={styles.backdrop}>
         <View style={styles.modal}>
-          <Pressable style={styles.closeBtn} onPress={onClose}>
+          <Pressable
+            style={styles.closeBtn}
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close emergency menu"
+          >
             <Feather name="x" size={22} color={colors.textPrimary} />
           </Pressable>
 
           <View style={styles.header}>
             <View style={styles.headerIcon}>
-              <Feather name="shield" size={24} color="#D32F2F" />
+              <Feather name="shield" size={24} color={colors.emergency} />
             </View>
             <Text style={styles.title}>Emergency</Text>
             <Text style={styles.subtitle}>Tap to call local emergency services</Text>
@@ -97,8 +102,10 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
             <Pressable
               style={styles.callBtn}
               onPress={() => call(numbers.police)}
+              accessibilityRole="button"
+              accessibilityLabel={`Call police at ${numbers.police}`}
             >
-              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Feather name="phone" size={18} color={colors.background} />
               <Text style={styles.callBtnText}>
                 Police — {numbers.police}
               </Text>
@@ -107,8 +114,10 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
             <Pressable
               style={styles.callBtn}
               onPress={() => call(numbers.ambulance)}
+              accessibilityRole="button"
+              accessibilityLabel={`Call ambulance at ${numbers.ambulance}`}
             >
-              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Feather name="phone" size={18} color={colors.background} />
               <Text style={styles.callBtnText}>
                 Ambulance — {numbers.ambulance}
               </Text>
@@ -117,14 +126,21 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
             <Pressable
               style={styles.callBtn}
               onPress={() => call(numbers.fire)}
+              accessibilityRole="button"
+              accessibilityLabel={`Call fire department at ${numbers.fire}`}
             >
-              <Feather name="phone" size={18} color="#FFFFFF" />
+              <Feather name="phone" size={18} color={colors.background} />
               <Text style={styles.callBtnText}>
                 Fire — {numbers.fire}
               </Text>
             </Pressable>
 
-            <Pressable style={styles.shareBtn} onPress={sendEmergencySMS}>
+            <Pressable
+              style={styles.shareBtn}
+              onPress={sendEmergencySMS}
+              accessibilityRole="button"
+              accessibilityLabel="Send emergency SMS to a contact"
+            >
               <Feather name="send" size={18} color={colors.orange} />
               <Text style={styles.shareBtnText}>Send emergency SMS</Text>
             </Pressable>
@@ -138,7 +154,7 @@ export default function SOSButton({ externalVisible, onClose }: SOSButtonProps) 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: colors.overlayDark,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -164,7 +180,7 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 24,
-    backgroundColor: '#FDEAEA',
+    backgroundColor: colors.emergencyFill,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.sm,
@@ -172,7 +188,7 @@ const styles = StyleSheet.create({
   title: {
     fontFamily: fonts.semiBold,
     fontSize: 22,
-    color: '#D32F2F',
+    color: colors.emergency,
   },
   subtitle: {
     fontFamily: fonts.regular,
@@ -188,14 +204,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: '#D32F2F',
+    backgroundColor: colors.emergency,
     paddingVertical: 14,
     borderRadius: radius.button,
   },
   callBtnText: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
-    color: '#FFFFFF',
+    color: colors.background,
   },
   shareBtn: {
     flexDirection: 'row',

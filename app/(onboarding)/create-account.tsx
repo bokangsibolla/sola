@@ -72,7 +72,7 @@ export default function CreateAccountScreen() {
         router.push('/(onboarding)/profile');
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/explore');
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return; // user dismissed

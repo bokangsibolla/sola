@@ -1,7 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
+  Alert,
   Image,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -65,6 +67,25 @@ export default function ProfileScreen() {
   const canContinue = firstName.trim().length > 0 && selectedCountry.length > 0;
 
   const pickImage = async (fromCamera: boolean) => {
+    // Request permission first
+    const permissionResult = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        fromCamera ? 'Camera Access Required' : 'Photo Access Required',
+        fromCamera
+          ? 'Please allow camera access in Settings to take a profile photo.'
+          : 'Please allow photo library access in Settings to choose a profile photo.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });

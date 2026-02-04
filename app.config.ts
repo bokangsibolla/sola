@@ -19,6 +19,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'app.solatravel.sola',
+    buildNumber: '1',
     usesAppleSignIn: true,
     infoPlist: {
       NSPhotoLibraryUsageDescription:

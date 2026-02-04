@@ -138,8 +138,8 @@ export default function CollectionDetailScreen() {
             <Text style={styles.emptyText}>No places in this collection yet.</Text>
           </View>
         ) : (
-          placeList.map((place) => (
-            <PlaceRow key={place.id} place={place} userId={userId!} collectionId={collection.id} />
+          userId && placeList.map((place) => (
+            <PlaceRow key={place.id} place={place} userId={userId} collectionId={collection.id} />
           ))
         )}
 

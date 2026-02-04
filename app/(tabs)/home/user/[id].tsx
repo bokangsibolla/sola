@@ -73,7 +73,7 @@ export default function UserProfileScreen() {
         {/* Avatar + name */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 })! }} style={styles.avatar} contentFit="cover" transition={200} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Ionicons name="person" size={36} color={colors.textMuted} />

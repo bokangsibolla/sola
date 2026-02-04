@@ -37,7 +37,7 @@ export default function LoginScreen() {
         router.push('/(onboarding)/profile');
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/explore');
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
@@ -64,7 +64,7 @@ export default function LoginScreen() {
 
     posthog.capture('auth_success', { provider: 'email' });
     await onboardingStore.set('onboardingCompleted', true);
-    router.replace('/(tabs)/home');
+    router.replace('/(tabs)/explore');
   };
 
   return (

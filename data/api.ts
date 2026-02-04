@@ -85,6 +85,16 @@ export async function getCountryByIso2(iso2: string): Promise<Country | undefine
   return data ? toCamel<Country>(data) : undefined;
 }
 
+export async function getCountryById(id: string): Promise<Country | undefined> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('id', id)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Country>(data) : undefined;
+}
+
 export async function getCitiesByCountry(countryId: string): Promise<City[]> {
   const { data, error } = await supabase
     .from('cities')
@@ -92,6 +102,17 @@ export async function getCitiesByCountry(countryId: string): Promise<City[]> {
     .eq('country_id', countryId)
     .eq('is_active', true)
     .order('order_index');
+  if (error) throw error;
+  return rowsToCamel<City>(data ?? []);
+}
+
+export async function getPopularCities(limit = 12): Promise<City[]> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('is_active', true)
+    .order('order_index')
+    .limit(limit);
   if (error) throw error;
   return rowsToCamel<City>(data ?? []);
 }
@@ -295,6 +316,235 @@ export async function getCategories(): Promise<PlaceCategory[]> {
     .order('order_index');
   if (error) throw error;
   return rowsToCamel<PlaceCategory>(data ?? []);
+}
+
+// ---------------------------------------------------------------------------
+// Time-Based Place Queries (for city page redesign)
+// ---------------------------------------------------------------------------
+
+export type TimeOfDay = 'morning' | 'afternoon' | 'evening' | 'any';
+
+/**
+ * Get places by time of day for a city.
+ * Used for time-based sections on city pages.
+ */
+export async function getPlacesByTimeOfDay(
+  cityId: string,
+  timeOfDay: TimeOfDay,
+): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .eq('best_time_of_day', timeOfDay)
+    .order('curation_score', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Get activities and tours for a city (for "If you have a full day" section).
+ * Includes tours, activities, and landmarks with bestTimeOfDay = 'any' or longer durations.
+ */
+export async function getActivitiesByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .in('place_type', ['tour', 'activity', 'landmark'])
+    .order('curation_score', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Get accommodations for a city (for "Where to Stay" section).
+ */
+export async function getAccommodationsByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .in('place_type', ['hotel', 'hostel', 'homestay'])
+    .order('curation_score', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Result type for getPlacesGroupedByTime
+ */
+export interface PlacesGroupedByTime {
+  morning: Place[];
+  afternoon: Place[];
+  evening: Place[];
+  fullDay: Place[];
+  accommodations: Place[];
+}
+
+/**
+ * Get all places for a city grouped by time of day.
+ * This is the main query for the new time-based city page architecture.
+ *
+ * Sections:
+ * - morning: Places with best_time_of_day = 'morning' (cafés, coworking, breakfast spots)
+ * - afternoon: Places with best_time_of_day = 'afternoon' (lunch, walks, attractions)
+ * - evening: Places with best_time_of_day = 'evening' (dinner, bars, nightlife)
+ * - fullDay: Tours and activities (place_type = 'tour' or 'activity') + any with best_time_of_day = 'any'
+ * - accommodations: Hotels, hostels, homestays
+ */
+export async function getPlacesGroupedByTime(cityId: string): Promise<PlacesGroupedByTime> {
+  // Fetch all active places for this city in one query
+  // Note: We don't order by curation_score to avoid errors if column is null
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true);
+
+  if (error) throw error;
+
+  const places = rowsToCamel<Place>(data ?? []);
+
+  // Group places by their intended use
+  const accommodationTypes = ['hotel', 'hostel', 'homestay'];
+  const activityTypes = ['tour', 'activity'];
+
+  const result: PlacesGroupedByTime = {
+    morning: [],
+    afternoon: [],
+    evening: [],
+    fullDay: [],
+    accommodations: [],
+  };
+
+  for (const place of places) {
+    // Accommodations go to their own section
+    if (accommodationTypes.includes(place.placeType)) {
+      result.accommodations.push(place);
+      continue;
+    }
+
+    // Tours and activities go to fullDay section
+    if (activityTypes.includes(place.placeType)) {
+      result.fullDay.push(place);
+      continue;
+    }
+
+    // Landmarks without specific time go to fullDay
+    if (place.placeType === 'landmark' && (!place.bestTimeOfDay || place.bestTimeOfDay === 'any')) {
+      result.fullDay.push(place);
+      continue;
+    }
+
+    // Group by time of day
+    switch (place.bestTimeOfDay) {
+      case 'morning':
+        result.morning.push(place);
+        break;
+      case 'afternoon':
+        result.afternoon.push(place);
+        break;
+      case 'evening':
+        result.evening.push(place);
+        break;
+      case 'any':
+        // Places with 'any' time that aren't tours/activities go to fullDay
+        result.fullDay.push(place);
+        break;
+      default:
+        // Places without bestTimeOfDay - use place type heuristics
+        if (['cafe', 'bakery', 'coworking'].includes(place.placeType)) {
+          result.morning.push(place);
+        } else if (['restaurant'].includes(place.placeType)) {
+          // Restaurants could be lunch or dinner - put in afternoon by default
+          result.afternoon.push(place);
+        } else if (['bar', 'club', 'rooftop'].includes(place.placeType)) {
+          result.evening.push(place);
+        } else {
+          // Default to fullDay for unclassified places
+          result.fullDay.push(place);
+        }
+    }
+  }
+
+  return result;
+}
+
+/**
+ * Get places for a specific neighborhood/area grouped by time.
+ * Same grouping logic as getPlacesGroupedByTime but filtered by city_area_id.
+ */
+export async function getPlacesGroupedByTimeForArea(
+  cityAreaId: string,
+): Promise<PlacesGroupedByTime> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('city_area_id', cityAreaId)
+    .eq('is_active', true);
+
+  if (error) throw error;
+
+  const places = rowsToCamel<Place>(data ?? []);
+
+  const accommodationTypes = ['hotel', 'hostel', 'homestay'];
+  const activityTypes = ['tour', 'activity'];
+
+  const result: PlacesGroupedByTime = {
+    morning: [],
+    afternoon: [],
+    evening: [],
+    fullDay: [],
+    accommodations: [],
+  };
+
+  for (const place of places) {
+    if (accommodationTypes.includes(place.placeType)) {
+      result.accommodations.push(place);
+      continue;
+    }
+
+    if (activityTypes.includes(place.placeType)) {
+      result.fullDay.push(place);
+      continue;
+    }
+
+    if (place.placeType === 'landmark' && (!place.bestTimeOfDay || place.bestTimeOfDay === 'any')) {
+      result.fullDay.push(place);
+      continue;
+    }
+
+    switch (place.bestTimeOfDay) {
+      case 'morning':
+        result.morning.push(place);
+        break;
+      case 'afternoon':
+        result.afternoon.push(place);
+        break;
+      case 'evening':
+        result.evening.push(place);
+        break;
+      case 'any':
+        result.fullDay.push(place);
+        break;
+      default:
+        if (['cafe', 'bakery', 'coworking'].includes(place.placeType)) {
+          result.morning.push(place);
+        } else if (['restaurant'].includes(place.placeType)) {
+          result.afternoon.push(place);
+        } else if (['bar', 'club', 'rooftop'].includes(place.placeType)) {
+          result.evening.push(place);
+        } else {
+          result.fullDay.push(place);
+        }
+    }
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------

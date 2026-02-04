@@ -77,6 +77,15 @@ export default function HomeScreen() {
             <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
           </>
         }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Feather name="users" size={40} color={colors.textMuted} />
+            <Text style={styles.emptyTitle}>No travelers nearby yet</Text>
+            <Text style={styles.emptySubtitle}>
+              Check back soon — more women are joining Sola every day
+            </Text>
+          </View>
+        }
         contentContainerStyle={styles.feed}
         renderItem={({ item }) => <ProfileCard profile={item} />}
         onEndReached={() => { if (hasMore) fetchMore(); }}
@@ -106,7 +115,7 @@ function ProfileCard({ profile }: { profile: Profile }) {
       <View style={styles.cardTop}>
         <View style={styles.avatarWrap}>
           {profile.avatarUrl ? (
-            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 })! }} style={styles.avatar} contentFit="cover" transition={200} />
+            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
               <Feather name="user" size={24} color={colors.textMuted} />
@@ -251,5 +260,22 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 12,
     color: colors.orange,
+  },
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxl * 2,
+    gap: spacing.md,
+  },
+  emptyTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  emptySubtitle: {
+    ...typography.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingHorizontal: spacing.xl,
   },
 });

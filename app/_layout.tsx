@@ -101,7 +101,7 @@ function AuthGate() {
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/explore');
     } else if (currentGroup === '(tabs)' && !userId) {
       router.replace('/(onboarding)/welcome');
     }

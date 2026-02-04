@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from 'react';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { onboardingStore } from '@/state/onboardingStore';
 import { getNextScreen } from '@/lib/onboardingConfig';
@@ -75,7 +75,7 @@ export function useOnboardingNavigation() {
 
       // Navigate
       if (nextScreen) {
-        router.push(`/(onboarding)/${nextScreen}` as any);
+        router.push(`/(onboarding)/${nextScreen}` as Href);
       }
     },
     [router, posthog],
@@ -114,7 +114,7 @@ export function useOnboardingNavigation() {
         // Screen not in flow, skip to next
         const nextScreen = onboardingStore.getNextScreen(screenName);
         if (nextScreen) {
-          router.replace(`/(onboarding)/${nextScreen}` as any);
+          router.replace(`/(onboarding)/${nextScreen}` as Href);
         }
         return false;
       }

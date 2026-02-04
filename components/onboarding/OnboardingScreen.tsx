@@ -118,7 +118,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F3F3',
+    backgroundColor: colors.neutralFill,
   },
   backPlaceholder: {
     width: 32,

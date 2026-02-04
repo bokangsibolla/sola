@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View, Animated } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -111,45 +111,57 @@ function CityCard({ city }: { city: any }) {
   const router = useRouter();
   const posthog = usePostHog();
   const { data: cityContent } = useData(() => getCityContent(city.id), [city.id]);
+  const scale = useState(new Animated.Value(1))[0];
+
+  const onPressIn = useCallback(() => {
+    Animated.spring(scale, { toValue: 0.98, useNativeDriver: true, speed: 50 }).start();
+  }, [scale]);
+
+  const onPressOut = useCallback(() => {
+    Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50 }).start();
+  }, [scale]);
 
   return (
     <Pressable
-      style={styles.cityCard}
+      onPressIn={onPressIn}
+      onPressOut={onPressOut}
       onPress={() => {
         posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
         router.push(`/(tabs)/explore/city/${city.slug}` as any);
       }}
     >
-      {/* Full-width image */}
-      {city.heroImageUrl ? (
-        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
-      ) : (
-        <View style={[styles.cityImage, styles.cityImagePlaceholder]} />
-      )}
+      <Animated.View style={[styles.cityCard, { transform: [{ scale }] }]}>
+        {/* Full-width image */}
+        {city.heroImageUrl ? (
+          <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} />
+        ) : (
+          <View style={[styles.cityImage, styles.cityImagePlaceholder]} />
+        )}
 
-      {/* Content below image */}
-      <View style={styles.cityBody}>
-        <View style={styles.cityHeader}>
-          <Text style={styles.cityName}>{city.name}</Text>
-          <View style={styles.cityArrow}>
-            <Ionicons name="arrow-forward" size={16} color={colors.orange} />
+        {/* Content below image */}
+        <View style={styles.cityBody}>
+          <View style={styles.cityHeader}>
+            <Text style={styles.cityName}>{city.name}</Text>
+            <View style={styles.cityArrow}>
+              <Ionicons name="arrow-forward" size={16} color={colors.orange} />
+            </View>
+          </View>
+          {cityContent?.subtitle && (
+            <Text style={styles.cityPurpose} numberOfLines={2}>
+              {cityContent.subtitle}
+            </Text>
+          )}
+          {cityContent?.bestFor && (
+            <View style={styles.cityBestFor}>
+              <Text style={styles.cityBestForValue}>{cityContent.bestFor}</Text>
+            </View>
+          )}
+          <View style={styles.cityExploreRow}>
+            <Text style={styles.cityExploreHint}>Plan your days here</Text>
+            <Ionicons name="arrow-forward" size={14} color={colors.orange} />
           </View>
         </View>
-        {cityContent?.subtitle && (
-          <Text style={styles.cityPurpose} numberOfLines={2}>
-            {cityContent.subtitle}
-          </Text>
-        )}
-        {cityContent?.bestFor && (
-          <View style={styles.cityBestFor}>
-            <Text style={styles.cityBestForValue}>{cityContent.bestFor}</Text>
-          </View>
-        )}
-        <View style={styles.cityExploreRow}>
-          <Text style={styles.cityExploreHint}>Plan your days here</Text>
-          <Ionicons name="arrow-forward" size={14} color={colors.orange} />
-        </View>
-      </View>
+      </Animated.View>
     </Pressable>
   );
 }
@@ -212,15 +224,37 @@ export default function CountryGuideScreen() {
     () => country ? getCountryContent(country.id) : Promise.resolve(null),
     [country?.id],
   );
-  const { data: citiesData } = useData(
-    () => country ? getCitiesByCountry(country.id) : Promise.resolve([]),
-    [country?.id],
-  );
-
   const content = contentData ?? undefined;
-  const cities = Array.isArray(citiesData) ? citiesData : [];
 
-  if (countryLoading) return <LoadingScreen />;
+  // Fetch cities directly with useState/useEffect to avoid caching issues
+  const [cities, setCities] = useState<any[]>([]);
+  const [citiesLoading, setCitiesLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchCities() {
+      if (!country?.id) {
+        setCities([]);
+        setCitiesLoading(false);
+        return;
+      }
+
+      setCitiesLoading(true);
+      try {
+        const result = await getCitiesByCountry(country.id);
+        setCities(result ?? []);
+      } catch (err) {
+        console.error('Error fetching cities:', err);
+        setCities([]);
+      } finally {
+        setCitiesLoading(false);
+      }
+    }
+
+    fetchCities();
+  }, [country?.id]);
+
+  // Wait for both country and cities to load
+  if (countryLoading || (country && citiesLoading)) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
   if (!country) {
     return (
@@ -276,11 +310,11 @@ export default function CountryGuideScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* 1. CITIES FIRST - Primary navigation */}
+          {/* 1. CITIES FIRST - Primary navigation ("Where do you want to go?") */}
           <View style={styles.citiesSection}>
             <View style={styles.citiesSectionHeader}>
               <Text style={styles.sectionTitle}>
-                {cities.length > 0 ? 'Where do you want to go?' : 'Cities coming soon'}
+                {citiesLoading ? 'Loading cities...' : cities.length > 0 ? 'Where do you want to go?' : 'Cities coming soon'}
               </Text>
               {cities.length > 0 && (
                 <Text style={styles.sectionHint}>
@@ -289,45 +323,27 @@ export default function CountryGuideScreen() {
               )}
             </View>
             <Text style={styles.sectionSubtitle}>
-              {cities.length > 0
-                ? 'Find restaurants, cafes, activities and places to stay'
-                : 'We are adding cities to this country'}
+              {citiesLoading
+                ? 'Finding cities in this country...'
+                : cities.length > 0
+                  ? 'Pick your base and discover what to do there'
+                  : 'We are adding cities to this country'}
             </Text>
             {cities.map((city) => (
               <CityCard key={city.slug} city={city} />
             ))}
           </View>
 
-          {/* 2. Who this is for (persona matching) */}
+          {/* 2. Who this is for (brief orientation) */}
           {content && <WhoThisIsFor content={content} />}
 
           {/* 3. Safety context */}
           {content && <SafetyContext content={content} />}
 
-          {/* 4. What to experience - Main activities */}
-          {content?.highlights && content.highlights.length > 0 && (
-            <View style={styles.experiencesSection}>
-              <Text style={styles.sectionTitle}>What to experience</Text>
-              <Text style={styles.sectionSubtitle}>
-                Unique things that make {country.name} special
-              </Text>
-              <View style={styles.highlightsList}>
-                {content.highlights.slice(0, 5).map((highlight, i) => (
-                  <View key={i} style={styles.highlightItem}>
-                    <View style={styles.highlightNumber}>
-                      <Text style={styles.highlightNumberText}>{i + 1}</Text>
-                    </View>
-                    <Text style={styles.highlightItemText}>{highlight}</Text>
-                  </View>
-                ))}
-              </View>
-            </View>
-          )}
-
-          {/* 5. The experience (detailed editorial) */}
+          {/* 4. The experience (brief editorial) */}
           {content?.portraitMd && <PortraitSection portraitMd={content.portraitMd} />}
 
-          {/* 7. Quick facts (reference) */}
+          {/* 5. Quick facts (reference) */}
           {quickFacts.length > 0 && (
             <View style={styles.quickFactsSection}>
               <Text style={styles.sectionTitle}>Quick facts</Text>
@@ -348,7 +364,7 @@ export default function CountryGuideScreen() {
             </View>
           )}
 
-          {/* 8. Practical info (collapsible, secondary) */}
+          {/* 6. Practical info (collapsible, secondary) */}
           {collapsibleSections.length > 0 && (
             <>
               <View style={styles.divider}>

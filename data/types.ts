@@ -8,6 +8,9 @@ export interface Country {
   isActive: boolean;
   orderIndex: number;
   heroImageUrl: string | null;
+  shortBlurb: string | null;
+  badgeLabel: string | null;
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,6 +26,9 @@ export interface City {
   isActive: boolean;
   orderIndex: number;
   heroImageUrl: string | null;
+  shortBlurb: string | null;
+  badgeLabel: string | null;
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -86,6 +92,29 @@ export interface Place {
   verifiedAt: string | null;
   solaCheckedAt: string | null;
   solaCheckedBy: string | null;
+  // Internal curation fields
+  curationNotes: string | null;
+  curationScore: number | null;
+  googleRating: number | null;
+  googleReviewCount: number | null;
+  discoveredAt: string | null;
+  discoveryQuery: string | null;
+  // Rich curation data
+  whySelected: string | null;
+  highlights: string[];
+  considerations: string[];
+  soloFemaleReviews: string | null;
+  googleMapsUrl: string | null;
+  originalType: string | null;
+  pricePerNight: string | null;
+  sourcesChecked: string[];
+  // Time-based organization (for city page sections)
+  bestTimeOfDay: 'morning' | 'afternoon' | 'evening' | 'any' | null;
+  estimatedDuration: string | null;
+  bookingInfo: string | null;
+  physicalLevel: 'easy' | 'moderate' | 'challenging' | null;
+  badgeLabel: string | null;
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -104,7 +104,7 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
       }}
     >
       {other.avatarUrl ? (
-        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 })! }} style={styles.avatar} contentFit="cover" transition={200} />
+        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
           <Ionicons name="person" size={18} color={colors.textMuted} />

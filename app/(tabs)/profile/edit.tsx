@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
   Alert,
+  Linking,
   Platform,
   Pressable,
   ScrollView,
@@ -50,7 +51,7 @@ export default function EditProfileScreen() {
   }, [posthog]);
 
   const { data: profile, loading, error, refetch } = useData(
-    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
     [userId],
   );
 
@@ -93,8 +94,27 @@ export default function EditProfileScreen() {
 
   const availableInterests = ALL_INTERESTS.filter((i) => !interests.includes(i));
 
-  // Image picker
+  // Image picker with permission handling
   const pickImage = async (fromCamera: boolean) => {
+    // Request permission first
+    const permissionResult = fromCamera
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permissionResult.granted) {
+      Alert.alert(
+        fromCamera ? 'Camera Access Required' : 'Photo Access Required',
+        fromCamera
+          ? 'Please allow camera access in Settings to take a profile photo.'
+          : 'Please allow photo library access in Settings to choose a profile photo.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Open Settings', onPress: () => Linking.openSettings() },
+        ],
+      );
+      return;
+    }
+
     const result = fromCamera
       ? await ImagePicker.launchCameraAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 })
       : await ImagePicker.launchImageLibraryAsync({ allowsEditing: true, aspect: [1, 1], quality: 0.8 });

@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Dimensions,
+  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -77,6 +78,23 @@ function PriceDots({ level }: { level: number | null }) {
 }
 
 // ---------------------------------------------------------------------------
+// Rating display
+// ---------------------------------------------------------------------------
+
+function RatingBadge({ rating, reviewCount }: { rating: number | null; reviewCount: number | null }) {
+  if (!rating) return null;
+  return (
+    <View style={styles.ratingContainer}>
+      <Ionicons name="star" size={14} color={colors.orange} />
+      <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+      {reviewCount && reviewCount > 0 && (
+        <Text style={styles.reviewCount}>({reviewCount.toLocaleString()} reviews)</Text>
+      )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Screen
 // ---------------------------------------------------------------------------
 
@@ -96,17 +114,17 @@ export default function PlaceDetailScreen() {
   const { data: media } = useData(() => getPlaceMedia(id ?? ''), [id]);
   const { data: tags } = useData(() => getPlaceTags(id ?? ''), [id]);
   const { data: category } = useData(
-    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(undefined),
+    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(null),
     [place?.primaryCategoryId],
   );
   const { data: city } = useData(
-    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(undefined),
+    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(null),
     [place?.cityId],
   );
 
   const { userId } = useAuth();
   const { data: profile } = useData(
-    () => userId ? getProfileById(userId) : Promise.resolve(undefined),
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
     [userId],
   );
   const { data: isSaved } = useData(
@@ -137,6 +155,22 @@ export default function PlaceDetailScreen() {
       console.error('Failed to save place:', error);
     }
   }, [userId, id, saved, posthog]);
+
+  const handleOpenMaps = useCallback(() => {
+    if (!place) return;
+
+    // Use googleMapsUrl if available, otherwise construct from coordinates
+    const url = place.googleMapsUrl
+      || (place.lat && place.lng
+        ? `https://www.google.com/maps/search/?api=1&query=${place.lat},${place.lng}`
+        : place.googlePlaceId
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name)}&query_place_id=${place.googlePlaceId}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(place.name + ' ' + (place.address || ''))}`
+        );
+
+    posthog.capture('place_maps_opened', { place_id: id, place_name: place.name });
+    Linking.openURL(url);
+  }, [place, id, posthog]);
 
   // Group tags by filterGroup
   const groupedTags = useMemo(() => {
@@ -180,6 +214,10 @@ export default function PlaceDetailScreen() {
 
   const images = (media ?? []).filter((m) => m.mediaType === 'image');
 
+  // Get highlights and considerations arrays
+  const highlights = place?.highlights ?? [];
+  const considerations = place?.considerations ?? [];
+
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
@@ -191,12 +229,24 @@ export default function PlaceDetailScreen() {
     );
   }
 
+  // Determine display type (more specific than placeType)
+  const displayType = place.originalType
+    ? place.originalType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
+    : category?.name || place.placeType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header */}
+      {/* Header with contextual back */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        <Pressable
+          onPress={() => city ? router.push(`/(tabs)/explore/city/${city.slug}` as any) : router.back()}
+          hitSlop={12}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+          {city && (
+            <Text style={styles.backLabel}>Back to {city.name}</Text>
+          )}
         </Pressable>
         <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
           <Ionicons
@@ -206,6 +256,17 @@ export default function PlaceDetailScreen() {
           />
         </Pressable>
       </View>
+
+      {/* Breadcrumb */}
+      {city && (
+        <View style={styles.breadcrumb}>
+          <Pressable onPress={() => router.push(`/(tabs)/explore/city/${city.slug}` as any)}>
+            <Text style={styles.breadcrumbLink}>{city.name}</Text>
+          </Pressable>
+          <Text style={styles.breadcrumbSeparator}>→</Text>
+          <Text style={styles.breadcrumbCurrent} numberOfLines={1}>{place.name}</Text>
+        </View>
+      )}
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image carousel */}
@@ -255,15 +316,53 @@ export default function PlaceDetailScreen() {
             <PriceDots level={place.priceLevel} />
           </View>
 
-          {/* Category + city */}
+          {/* Type + city */}
           <View style={styles.metaRow}>
-            {category && (
-              <View style={styles.categoryPill}>
-                <Text style={styles.categoryText}>{category.name}</Text>
-              </View>
-            )}
+            <View style={styles.categoryPill}>
+              <Text style={styles.categoryText}>{displayType}</Text>
+            </View>
             {city && <Text style={styles.cityLabel}>{city.name}</Text>}
+            {place.pricePerNight && (
+              <Text style={styles.pricePerNight}>~${place.pricePerNight}/night</Text>
+            )}
           </View>
+
+          {/* Rating */}
+          <RatingBadge rating={place.googleRating} reviewCount={place.googleReviewCount} />
+
+          {/* Highlights */}
+          {highlights.length > 0 && (
+            <View style={styles.highlightsSection}>
+              <Text style={styles.sectionTitle}>Highlights</Text>
+              <View style={styles.highlightsRow}>
+                {highlights.map((highlight, idx) => (
+                  <View key={idx} style={styles.highlightPill}>
+                    <Ionicons name="checkmark-circle" size={14} color={colors.greenSoft} />
+                    <Text style={styles.highlightText}>{highlight}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Why We Love It */}
+          {place.whySelected && (
+            <View style={styles.whySection}>
+              <Text style={styles.sectionTitle}>Why We Love It</Text>
+              <Text style={styles.whyText}>{place.whySelected}</Text>
+            </View>
+          )}
+
+          {/* Solo Travelers Say */}
+          {place.soloFemaleReviews && (
+            <View style={styles.reviewsSection}>
+              <Text style={styles.sectionTitle}>Solo Travelers Say</Text>
+              <View style={styles.quoteBox}>
+                <Ionicons name="chatbubble-outline" size={16} color={colors.textMuted} style={styles.quoteIcon} />
+                <Text style={styles.quoteText}>{place.soloFemaleReviews}</Text>
+              </View>
+            </View>
+          )}
 
           {/* Tags grouped */}
           {Object.keys(groupedTags).length > 0 && (
@@ -293,40 +392,56 @@ export default function PlaceDetailScreen() {
             </View>
           )}
 
-          {/* Description */}
-          {place.description && (
+          {/* Good to Know (Considerations) */}
+          {considerations.length > 0 && (
+            <View style={styles.considerationsSection}>
+              <Text style={styles.sectionTitle}>Good to Know</Text>
+              {considerations.map((item, idx) => (
+                <View key={idx} style={styles.considerationRow}>
+                  <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
+                  <Text style={styles.considerationText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Description (fallback if no whySelected) */}
+          {!place.whySelected && place.description && (
             <Text style={styles.description}>{place.description}</Text>
           )}
 
           {/* Details */}
           {(place.address || place.hoursText || place.phone || place.website) && (
             <View style={styles.detailsSection}>
-              <Text style={styles.detailsSectionTitle}>Details</Text>
+              <Text style={styles.sectionTitle}>Details</Text>
               {place.address && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>📍</Text>
+                  <Ionicons name="location-outline" size={16} color={colors.textMuted} />
                   <Text style={styles.detailText}>{place.address}</Text>
                 </View>
               )}
               {place.hoursText && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>🕐</Text>
+                  <Ionicons name="time-outline" size={16} color={colors.textMuted} />
                   <Text style={styles.detailText}>{place.hoursText}</Text>
                 </View>
               )}
               {place.phone && (
                 <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>📞</Text>
+                  <Ionicons name="call-outline" size={16} color={colors.textMuted} />
                   <Text style={styles.detailText}>{place.phone}</Text>
                 </View>
               )}
               {place.website && (
-                <View style={styles.detailRow}>
-                  <Text style={styles.detailIcon}>🌐</Text>
-                  <Text style={styles.detailText} numberOfLines={1}>
+                <Pressable
+                  style={styles.detailRow}
+                  onPress={() => Linking.openURL(place.website!.startsWith('http') ? place.website! : `https://${place.website}`)}
+                >
+                  <Ionicons name="globe-outline" size={16} color={colors.blueSoft} />
+                  <Text style={[styles.detailText, styles.linkText]} numberOfLines={1}>
                     {place.website}
                   </Text>
-                </View>
+                </Pressable>
               )}
             </View>
           )}
@@ -336,31 +451,44 @@ export default function PlaceDetailScreen() {
             <>
               <View style={styles.separator} />
               <View style={styles.fitSection}>
-                <Text style={styles.fitTitle}>Why this fits you</Text>
+                <Text style={styles.sectionTitle}>Why this fits you</Text>
                 <Text style={styles.fitBody}>{fitMessage}</Text>
               </View>
             </>
           )}
 
-          {/* Large save button */}
-          <Pressable
-            onPress={handleSave}
-            disabled={!canSave}
-            style={[
-              styles.saveBtnLarge,
-              saved && styles.saveBtnLargeSaved,
-              !canSave && styles.saveBtnLargeDisabled,
-            ]}
-          >
-            <Ionicons
-              name={saved ? 'heart' : 'heart-outline'}
-              size={20}
-              color={colors.background}
-            />
-            <Text style={styles.saveBtnLargeText}>
-              {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save to collection'}
-            </Text>
-          </Pressable>
+          {/* Action Buttons */}
+          <View style={styles.actionButtons}>
+            {/* Save button */}
+            <Pressable
+              onPress={handleSave}
+              disabled={!canSave}
+              style={[
+                styles.actionBtn,
+                styles.saveBtn,
+                saved && styles.saveBtnSaved,
+                !canSave && styles.actionBtnDisabled,
+              ]}
+            >
+              <Ionicons
+                name={saved ? 'heart' : 'heart-outline'}
+                size={20}
+                color={saved ? colors.background : colors.background}
+              />
+              <Text style={styles.actionBtnText}>
+                {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
+              </Text>
+            </Pressable>
+
+            {/* Google Maps button */}
+            <Pressable
+              onPress={handleOpenMaps}
+              style={[styles.actionBtn, styles.mapsBtn]}
+            >
+              <Ionicons name="map-outline" size={20} color={colors.textPrimary} />
+              <Text style={styles.mapsBtnText}>View on Maps</Text>
+            </Pressable>
+          </View>
         </View>
 
         {/* Bottom spacing */}
@@ -391,6 +519,39 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+  },
+  backButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  backLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+  breadcrumb: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+    paddingBottom: spacing.sm,
+    gap: spacing.xs,
+  },
+  breadcrumbLink: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  breadcrumbSeparator: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+    flex: 1,
   },
 
   // Carousel
@@ -445,6 +606,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.sm,
+    flexWrap: 'wrap',
   },
   categoryPill: {
     backgroundColor: colors.orangeFill,
@@ -461,6 +623,94 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textMuted,
+  },
+  pricePerNight: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // Rating
+  ratingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: spacing.sm,
+  },
+  ratingText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
+  reviewCount: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+
+  // Section title
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+
+  // Highlights
+  highlightsSection: {
+    marginTop: spacing.xl,
+  },
+  highlightsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  highlightPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.greenFill,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+  },
+  highlightText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.greenSoft,
+  },
+
+  // Why We Love It
+  whySection: {
+    marginTop: spacing.xl,
+  },
+  whyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+
+  // Solo Travelers Say
+  reviewsSection: {
+    marginTop: spacing.xl,
+  },
+  quoteBox: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.md,
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quoteIcon: {
+    marginTop: 2,
+  },
+  quoteText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    lineHeight: 20,
   },
 
   // Tags
@@ -491,6 +741,24 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
 
+  // Good to Know (Considerations)
+  considerationsSection: {
+    marginTop: spacing.xl,
+    gap: spacing.sm,
+  },
+  considerationRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+  },
+  considerationText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+
   // Description
   description: {
     ...typography.body,
@@ -502,25 +770,19 @@ const styles = StyleSheet.create({
   detailsSection: {
     marginTop: spacing.xl,
   },
-  detailsSectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
   detailRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  detailIcon: {
-    fontSize: 16,
-    lineHeight: 22,
-  },
   detailText: {
     ...typography.body,
     color: colors.textSecondary,
     flex: 1,
+  },
+  linkText: {
+    color: colors.blueSoft,
   },
 
   // Separator
@@ -535,34 +797,48 @@ const styles = StyleSheet.create({
   fitSection: {
     gap: spacing.sm,
   },
-  fitTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-  },
   fitBody: {
     ...typography.body,
     color: colors.textSecondary,
   },
 
-  // Large save button
-  saveBtnLarge: {
+  // Action buttons
+  actionButtons: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xxl,
+  },
+  actionBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
-    backgroundColor: colors.orange,
-    borderRadius: radius.button,
     paddingVertical: 14,
-    marginTop: spacing.xxl,
+    borderRadius: radius.button,
   },
-  saveBtnLargeSaved: {
+  saveBtn: {
+    backgroundColor: colors.orange,
+  },
+  saveBtnSaved: {
     backgroundColor: colors.greenSoft,
   },
-  saveBtnLargeDisabled: {
+  actionBtnDisabled: {
     backgroundColor: colors.textMuted,
   },
-  saveBtnLargeText: {
-    ...typography.button,
+  actionBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
     color: colors.background,
+  },
+  mapsBtn: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  mapsBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
   },
 });

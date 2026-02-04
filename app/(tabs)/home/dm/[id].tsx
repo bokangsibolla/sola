@@ -32,7 +32,7 @@ export default function DMThreadScreen() {
 
   const { data: olderMessages, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
     queryKey: ['messages', conversationId ?? ''],
-    fetcher: (page) => getMessagesPaginated(conversationId!, page),
+    fetcher: (page) => getMessagesPaginated(conversationId ?? '', page),
     enabled: !!conversationId,
   });
 
@@ -126,7 +126,7 @@ export default function DMThreadScreen() {
   };
 
   const showMenu = () => {
-    Alert.alert(undefined as any, undefined as any, [
+    Alert.alert('', '', [
       {
         text: 'Block',
         style: 'destructive',

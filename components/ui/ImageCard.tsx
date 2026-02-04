@@ -1,5 +1,6 @@
 import { colors, radius, spacing, typography } from '@/constants/design';
-import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 
 interface ImageCardProps {
   title: string;
@@ -13,7 +14,7 @@ export default function ImageCard({ title, subtitle, imageUrl, onPress, badge }:
   const content = (
     <View style={styles.container}>
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUrl }} style={styles.image} />
+        <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" transition={200} />
         {badge && (
           <View style={styles.badge}>
             <Text style={styles.badgeText}>{badge}</Text>
@@ -47,7 +48,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
     borderRadius: radius.md,
-    resizeMode: 'cover',
+    backgroundColor: colors.borderDefault,
   },
   badge: {
     position: 'absolute',
