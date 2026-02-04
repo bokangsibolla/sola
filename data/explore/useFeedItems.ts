@@ -1,5 +1,11 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
+import {
+  getCountries,
+  getPopularCities,
+  getCountryById,
+} from '../api';
+import { buildFeed } from './feedBuilder';
 import type { FeedItem, EditorialCollection, CityWithCountry, ActivityWithCity } from './types';
 
 // Mock editorial collections
@@ -39,13 +45,23 @@ const MOCK_EDITORIALS: EditorialCollection[] = [
   },
 ];
 
-// Static mock data - no API calls
-const MOCK_FEED: FeedItem[] = [
+// Initial feed shown immediately while real data loads
+const INITIAL_FEED: FeedItem[] = [
   { type: 'editorial-collection', data: MOCK_EDITORIALS[0] },
   { type: 'editorial-collection', data: MOCK_EDITORIALS[1] },
   { type: 'editorial-collection', data: MOCK_EDITORIALS[2] },
   { type: 'end-card' },
 ];
+
+// Timeout wrapper for API calls
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error('Request timeout')), ms)
+    ),
+  ]);
+}
 
 interface UseFeedItemsResult {
   feedItems: FeedItem[];
@@ -55,22 +71,81 @@ interface UseFeedItemsResult {
 }
 
 export function useFeedItems(): UseFeedItemsResult {
-  const [feedItems, setFeedItems] = useState<FeedItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  // Start with initial feed immediately - no loading state
+  const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    // Instant load with static data - no API calls
-    setFeedItems(MOCK_FEED);
-    setIsLoading(false);
-  }, []);
+    let cancelled = false;
+
+    async function loadRealData() {
+      try {
+        // Fetch countries and cities with 5 second timeout
+        const [countries, cities] = await withTimeout(
+          Promise.all([
+            getCountries(),
+            getPopularCities(4),
+          ]),
+          5000
+        );
+
+        if (cancelled) return;
+
+        // Get unique country IDs and fetch country details
+        const countryIds = [...new Set(cities.map(c => c.countryId))];
+        const countryResults = await withTimeout(
+          Promise.all(countryIds.map(id => getCountryById(id))),
+          3000
+        );
+
+        if (cancelled) return;
+
+        const countryMap = new Map(
+          countryResults.filter(Boolean).map(c => [c!.id, c!])
+        );
+
+        // Build cities with country info
+        const citiesWithActivities = cities.map((city) => {
+          const country = countryMap.get(city.countryId);
+          return {
+            city: {
+              ...city,
+              countryName: country?.name ?? '',
+              countrySlug: country?.slug ?? '',
+            } as CityWithCountry,
+            activities: [] as ActivityWithCity[],
+          };
+        });
+
+        if (cancelled) return;
+
+        // Build full feed with real data
+        const feed = buildFeed(MOCK_EDITORIALS, countries, citiesWithActivities);
+        setFeedItems(feed);
+      } catch (err) {
+        // On error/timeout, keep showing initial feed - don't block UI
+        console.log('Feed API error (using cached data):', err);
+        if (!cancelled) {
+          setError(err instanceof Error ? err : new Error('Failed to load'));
+        }
+      }
+    }
+
+    // Load real data in background (don't block UI)
+    loadRealData();
+
+    return () => { cancelled = true; };
+  }, [refreshKey]);
 
   const refresh = () => {
     setIsLoading(true);
-    setTimeout(() => {
-      setFeedItems(MOCK_FEED);
-      setIsLoading(false);
-    }, 300);
+    setError(null);
+    setRefreshKey((k) => k + 1);
+    // Brief loading indicator then reset
+    setTimeout(() => setIsLoading(false), 500);
   };
 
-  return { feedItems, isLoading, error: null, refresh };
+  return { feedItems, isLoading, error, refresh };
 }
