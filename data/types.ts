@@ -399,3 +399,46 @@ export interface PaginatedResult<T> {
   data: T[];
   hasMore: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Explore Collections (Editorial)
+// ---------------------------------------------------------------------------
+
+export interface ExploreCollection {
+  id: string;
+  slug: string;
+  title: string;
+  subtitle: string | null;
+  introMd: string | null;
+  heroImageUrl: string | null;
+  badgeLabel: string | null;
+  includeTags: string[];
+  excludeTags: string[];
+  entityTypes: ('country' | 'city' | 'neighborhood')[];
+  minItems: number;
+  maxItems: number;
+  sortBy: 'order_index' | 'name' | 'random' | 'featured_first';
+  orderIndex: number;
+  isActive: boolean;
+  isFeatured: boolean;
+  isSponsored: boolean;
+  sponsorName: string | null;
+  sponsorLogoUrl: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ExploreCollectionItem {
+  collectionId: string;
+  collectionSlug: string;
+  entityType: 'country' | 'city' | 'neighborhood';
+  entityId: string;
+  entityName: string;
+  entitySlug: string;
+  entityImageUrl: string | null;
+  isFeatured: boolean;
+}
+
+export interface ExploreCollectionWithItems extends ExploreCollection {
+  items: ExploreCollectionItem[];
+}
