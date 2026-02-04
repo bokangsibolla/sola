@@ -3,14 +3,14 @@ import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import type { EditorialCollection } from '@/data/explore/types';
+import type { ExploreCollectionWithItems } from '@/data/types';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
 const CARD_HEIGHT = 300;
 
 interface EditorialCollectionCardProps {
-  collection: EditorialCollection;
+  collection: ExploreCollectionWithItems;
   onPress: () => void;
 }
 
@@ -20,13 +20,15 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
       onPress={onPress}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
     >
-      <Image
-        source={{ uri: collection.heroImageUrl }}
-        style={styles.image}
-        contentFit="cover"
-        transition={200}
-        pointerEvents="none"
-      />
+      {collection.heroImageUrl && (
+        <Image
+          source={{ uri: collection.heroImageUrl }}
+          style={styles.image}
+          contentFit="cover"
+          transition={200}
+          pointerEvents="none"
+        />
+      )}
       <LinearGradient
         colors={['transparent', 'rgba(0,0,0,0.7)']}
         style={styles.gradient}

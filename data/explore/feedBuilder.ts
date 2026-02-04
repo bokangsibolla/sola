@@ -1,8 +1,7 @@
 // data/explore/feedBuilder.ts
-import type { Country } from '../types';
+import type { Country, ExploreCollectionWithItems } from '../types';
 import type {
   FeedItem,
-  EditorialCollection,
   CityWithCountry,
   ActivityWithCity,
 } from './types';
@@ -12,13 +11,13 @@ import type {
  * Pattern: Editorial → Country pair → City spotlight → Activities → Editorial...
  */
 export function buildFeed(
-  editorials: EditorialCollection[],
+  collections: ExploreCollectionWithItems[],
   countries: Country[],
   citiesWithActivities: { city: CityWithCountry; activities: ActivityWithCity[] }[]
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
-  let editorialIndex = 0;
+  let collectionIndex = 0;
   let countryIndex = 0;
   let cityIndex = 0;
 
@@ -30,10 +29,10 @@ export function buildFeed(
 
     switch (beatPosition) {
       case 0: // Editorial collection
-        if (editorialIndex < editorials.length) {
+        if (collectionIndex < collections.length) {
           feed.push({
             type: 'editorial-collection',
-            data: editorials[editorialIndex++],
+            data: collections[collectionIndex++],
           });
         }
         break;
@@ -76,10 +75,10 @@ export function buildFeed(
         break;
 
       case 4: // Another editorial or skip
-        if (editorialIndex < editorials.length) {
+        if (collectionIndex < collections.length) {
           feed.push({
             type: 'editorial-collection',
-            data: editorials[editorialIndex++],
+            data: collections[collectionIndex++],
           });
         }
         break;
@@ -87,7 +86,7 @@ export function buildFeed(
 
     // Safety: if we can't add anything, break
     if (
-      editorialIndex >= editorials.length &&
+      collectionIndex >= collections.length &&
       countryIndex >= countries.length &&
       cityIndex >= citiesWithActivities.length
     ) {
