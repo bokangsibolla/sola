@@ -71,37 +71,40 @@ export function useFeedItems(): UseFeedItemsResult {
         // Fetch countries
         const countries = await getCountries();
 
-        // Fetch popular cities and enrich with country info
+        // Fetch popular cities and enrich with country info (in parallel)
         const cities = await getPopularCities(8);
-        const citiesWithActivities: { city: CityWithCountry; activities: ActivityWithCity[] }[] = [];
 
-        for (const city of cities) {
-          if (cancelled) return;
+        if (cancelled) return;
 
-          const country = await getCountryById(city.countryId);
-          const activities = await getActivitiesByCity(city.id);
+        const citiesWithActivities = await Promise.all(
+          cities.map(async (city) => {
+            const [country, activities] = await Promise.all([
+              getCountryById(city.countryId),
+              getActivitiesByCity(city.id),
+            ]);
 
-          // Get images for activities
-          const activitiesWithImages: ActivityWithCity[] = await Promise.all(
-            activities.slice(0, 4).map(async (activity) => {
-              const imageUrl = await getPlaceFirstImage(activity.id);
-              return {
-                ...activity,
-                cityName: city.name,
-                imageUrl,
-              };
-            })
-          );
+            // Get images for activities (in parallel)
+            const activitiesWithImages: ActivityWithCity[] = await Promise.all(
+              activities.slice(0, 4).map(async (activity) => {
+                const imageUrl = await getPlaceFirstImage(activity.id);
+                return {
+                  ...activity,
+                  cityName: city.name,
+                  imageUrl,
+                };
+              })
+            );
 
-          citiesWithActivities.push({
-            city: {
-              ...city,
-              countryName: country?.name ?? '',
-              countrySlug: country?.slug ?? '',
-            },
-            activities: activitiesWithImages,
-          });
-        }
+            return {
+              city: {
+                ...city,
+                countryName: country?.name ?? '',
+                countrySlug: country?.slug ?? '',
+              } as CityWithCountry,
+              activities: activitiesWithImages,
+            };
+          })
+        );
 
         if (cancelled) return;
 
