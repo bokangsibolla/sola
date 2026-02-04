@@ -1,38 +1,32 @@
 // app/(tabs)/explore/index.tsx
 import { useCallback, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Feather } from '@expo/vector-icons';
+import AppScreen from '@/components/AppScreen';
+import AppHeader from '@/components/AppHeader';
 import { colors, spacing } from '@/constants/design';
-import { SearchBar, SegmentedControl } from '@/components/explore';
+import { IconTabs } from '@/components/explore';
 import { CountriesTab, PlacesTab, ActivitiesTab } from '@/components/explore/tabs';
 
 type SegmentKey = 'countries' | 'places' | 'activities';
 
-const SEGMENTS = [
-  { key: 'countries' as const, label: 'Countries' },
-  { key: 'places' as const, label: 'Places' },
-  { key: 'activities' as const, label: 'Activities' },
+const TABS = [
+  { key: 'countries' as const, label: 'Countries', icon: 'globe-outline' as const },
+  { key: 'places' as const, label: 'Places', icon: 'compass-outline' as const },
+  { key: 'activities' as const, label: 'Things to do', icon: 'ticket-outline' as const },
 ];
 
 export default function ExploreScreen() {
   const router = useRouter();
   const posthog = usePostHog();
-  const insets = useSafeAreaInsets();
-  const [selectedSegment, setSelectedSegment] = useState<SegmentKey>('countries');
+  const [selectedTab, setSelectedTab] = useState<SegmentKey>('countries');
 
-  const handleSearchPress = useCallback(() => {
-    posthog.capture('explore_search_tapped', { segment: selectedSegment });
-    router.push({
-      pathname: '/(tabs)/explore/search',
-      params: { segment: selectedSegment },
-    } as any);
-  }, [router, posthog, selectedSegment]);
-
-  const handleSegmentChange = useCallback((key: string) => {
-    posthog.capture('explore_segment_changed', { segment: key });
-    setSelectedSegment(key as SegmentKey);
+  const handleTabChange = useCallback((key: string) => {
+    posthog.capture('explore_tab_changed', { tab: key });
+    setSelectedTab(key as SegmentKey);
   }, [posthog]);
 
   const handleNavigateToSeeAll = useCallback((category: string, title: string) => {
@@ -43,49 +37,69 @@ export default function ExploreScreen() {
     } as any);
   }, [router, posthog]);
 
-  const getSearchPlaceholder = () => {
-    switch (selectedSegment) {
-      case 'countries': return 'Search countries...';
-      case 'places': return 'Search cities...';
-      case 'activities': return 'Search activities...';
-    }
-  };
-
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-      {/* Search Bar */}
-      <SearchBar
-        placeholder={getSearchPlaceholder()}
-        onPress={handleSearchPress}
+    <AppScreen style={styles.screen}>
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.logo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <Pressable
+            onPress={() => {
+              posthog.capture('inbox_opened');
+              router.push('/home/dm');
+            }}
+            hitSlop={12}
+            style={styles.inboxBtn}
+          >
+            <Feather name="message-circle" size={20} color={colors.orange} />
+          </Pressable>
+        }
       />
 
-      {/* Segmented Control */}
-      <SegmentedControl
-        segments={SEGMENTS}
-        selectedKey={selectedSegment}
-        onSelect={handleSegmentChange}
+      {/* Icon Tabs */}
+      <IconTabs
+        tabs={TABS}
+        selectedKey={selectedTab}
+        onSelect={handleTabChange}
       />
 
       {/* Tab Content */}
       <View style={styles.tabContent}>
-        {selectedSegment === 'countries' && (
+        {selectedTab === 'countries' && (
           <CountriesTab onNavigateToSeeAll={handleNavigateToSeeAll} />
         )}
-        {selectedSegment === 'places' && (
+        {selectedTab === 'places' && (
           <PlacesTab onNavigateToSeeAll={handleNavigateToSeeAll} />
         )}
-        {selectedSegment === 'activities' && (
+        {selectedTab === 'activities' && (
           <ActivitiesTab onNavigateToSeeAll={handleNavigateToSeeAll} />
         )}
       </View>
-    </View>
+    </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  screen: {
+    paddingHorizontal: 0,
+  },
+  logo: {
+    height: 30,
+    width: 90,
+  },
+  inboxBtn: {
+    backgroundColor: colors.orangeFill,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabContent: {
     flex: 1,
