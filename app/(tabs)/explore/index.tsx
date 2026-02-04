@@ -14,12 +14,20 @@ import { colors, fonts, spacing, radius } from '@/constants/design';
 function CountryPairCard({ countries }: { countries: [{ name: string }, { name: string }] }) {
   return (
     <View style={styles.pairRow}>
-      <Pressable style={styles.smallCard}>
+      <Pressable
+        style={styles.smallCard}
+        accessibilityRole="button"
+        accessibilityLabel={countries[0].name}
+      >
         <View style={styles.smallCardContent}>
           <Text style={styles.smallCardTitle}>{countries[0].name}</Text>
         </View>
       </Pressable>
-      <Pressable style={styles.smallCard}>
+      <Pressable
+        style={styles.smallCard}
+        accessibilityRole="button"
+        accessibilityLabel={countries[1].name}
+      >
         <View style={styles.smallCardContent}>
           <Text style={styles.smallCardTitle}>{countries[1].name}</Text>
         </View>
@@ -31,7 +39,11 @@ function CountryPairCard({ countries }: { countries: [{ name: string }, { name: 
 // Placeholder card for city spotlight
 function CitySpotlightCard({ cityName }: { cityName: string }) {
   return (
-    <Pressable style={[styles.card, { height: 220 }]}>
+    <Pressable
+      style={[styles.card, { height: 220 }]}
+      accessibilityRole="button"
+      accessibilityLabel={`${cityName} city spotlight`}
+    >
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>{cityName}</Text>
         <Text style={styles.cardSubtitle}>City Spotlight</Text>
@@ -43,7 +55,11 @@ function CitySpotlightCard({ cityName }: { cityName: string }) {
 // Placeholder card for activity cluster
 function ActivityClusterCard({ cityName }: { cityName: string }) {
   return (
-    <Pressable style={[styles.card, { height: 160 }]}>
+    <Pressable
+      style={[styles.card, { height: 160 }]}
+      accessibilityRole="button"
+      accessibilityLabel={`Activities in ${cityName}`}
+    >
       <View style={styles.cardContent}>
         <Text style={styles.cardTitle}>Activities in {cityName}</Text>
         <Text style={styles.cardSubtitle}>Activity Cluster</Text>

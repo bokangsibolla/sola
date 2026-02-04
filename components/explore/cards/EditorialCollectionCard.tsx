@@ -19,6 +19,8 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel={`${collection.title}. ${collection.items.length} destinations`}
     >
       {collection.heroImageUrl && (
         <Image
@@ -77,14 +79,6 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     padding: spacing.xl,
-  },
-  sponsored: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   title: {
     fontFamily: fonts.semiBold,
