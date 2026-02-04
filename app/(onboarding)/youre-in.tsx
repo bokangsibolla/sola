@@ -10,6 +10,7 @@ import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
 import { completeOnboardingSession } from '@/lib/onboardingConfig';
+import { getCityByName } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -56,6 +57,28 @@ export default function YoureInScreen() {
         travel_style: data.spendingStyle || null,
         interests: data.dayStyle,
       });
+
+      // Create trip record if destination was selected during onboarding
+      const { tripDestination, tripArriving, tripLeaving, tripNights } = data;
+      if (tripDestination) {
+        try {
+          // Try to find the city by name to link destination_city_id
+          const city = await getCityByName(tripDestination);
+
+          await supabase.from('trips').insert({
+            user_id: userId,
+            destination_city_id: city?.id || null,
+            destination_name: tripDestination,
+            arriving: tripArriving || null,
+            leaving: tripLeaving || null,
+            nights: tripNights || null,
+            status: 'planned',
+          });
+        } catch (tripError) {
+          // Don't block onboarding completion if trip creation fails
+          console.warn('Failed to create trip during onboarding:', tripError);
+        }
+      }
     }
 
     onboardingStore.set('onboardingCompleted', true);

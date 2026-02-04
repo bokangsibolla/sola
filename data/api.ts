@@ -266,6 +266,24 @@ export async function getCityById(id: string): Promise<City | undefined> {
   return data ? mapCity(data) : undefined;
 }
 
+/**
+ * Look up a city by name (case-insensitive).
+ * Returns the first matching city or null if not found.
+ */
+export async function getCityByName(name: string): Promise<City | null> {
+  if (!name?.trim()) return null;
+
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .ilike('name', escapeIlike(name.trim()))
+    .limit(1)
+    .maybeSingle();
+
+  if (error || !data) return null;
+  return mapCity(data);
+}
+
 export async function getAreasByCity(cityId: string): Promise<CityArea[]> {
   const { data, error } = await supabase
     .from('city_areas')
