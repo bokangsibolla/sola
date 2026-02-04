@@ -1,168 +1,160 @@
-import { useState, useCallback, useMemo } from 'react';
+// app/(tabs)/explore/search.tsx
+import { useEffect, useRef } from 'react';
 import {
-  FlatList,
   Pressable,
   StyleSheet,
   Text,
   TextInput,
   View,
-  KeyboardAvoidingView,
-  Platform,
+  FlatList,
+  ActivityIndicator,
+  Keyboard,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { usePostHog } from 'posthog-react-native';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, radius, spacing } from '@/constants/design';
-import { searchMockData, MockCountry, MockCity, MockActivity } from '@/data/exploreMockData';
-
-type SearchResult =
-  | { type: 'country'; item: MockCountry }
-  | { type: 'city'; item: MockCity }
-  | { type: 'activity'; item: MockActivity };
+import { colors, fonts, spacing, radius } from '@/constants/design';
+import { useSearch, SearchResult } from '@/data/explore';
 
 export default function SearchScreen() {
   const router = useRouter();
+  const posthog = usePostHog();
   const insets = useSafeAreaInsets();
-  const params = useLocalSearchParams<{ segment?: string }>();
-  const [query, setQuery] = useState('');
+  const inputRef = useRef<TextInput>(null);
 
-  const results = useMemo(() => {
-    const { countries, cities, activities } = searchMockData(query);
-    const all: SearchResult[] = [];
-    const segment = params.segment;
+  const {
+    query,
+    setQuery,
+    results,
+    isSearching,
+    recentSearches,
+    addRecentSearch,
+  } = useSearch();
 
-    // Filter based on active segment if provided
-    if (!segment || segment === 'countries') {
-      countries.forEach(item => all.push({ type: 'country', item }));
-    }
-    if (!segment || segment === 'places') {
-      cities.forEach(item => all.push({ type: 'city', item }));
-    }
-    if (!segment || segment === 'activities') {
-      activities.forEach(item => all.push({ type: 'activity', item }));
-    }
+  useEffect(() => {
+    // Auto-focus input on mount
+    setTimeout(() => inputRef.current?.focus(), 100);
+  }, []);
 
-    return all;
-  }, [query, params.segment]);
+  const handleBack = () => {
+    Keyboard.dismiss();
+    router.back();
+  };
 
-  const handleResultPress = useCallback((result: SearchResult) => {
+  const handleClear = () => {
+    setQuery('');
+    inputRef.current?.focus();
+  };
+
+  const handleResultPress = (result: SearchResult) => {
+    posthog.capture('search_result_selected', {
+      type: result.type,
+      name: result.name,
+      query,
+    });
+    addRecentSearch(result.name);
+
     switch (result.type) {
       case 'country':
-        router.push(`/(tabs)/explore/country/${result.item.slug}` as any);
+        router.push(`/(tabs)/explore/country/${result.slug}`);
         break;
       case 'city':
-        router.push(`/(tabs)/explore/city/${result.item.slug}` as any);
+        router.push(`/(tabs)/explore/city/${result.slug}`);
         break;
-      case 'activity':
-        router.push(`/(tabs)/explore/activity/${result.item.slug}` as any);
+      case 'place':
+        router.push(`/(tabs)/explore/activity/${result.slug}`);
         break;
-    }
-  }, [router]);
-
-  const getPlaceholder = () => {
-    switch (params.segment) {
-      case 'countries': return 'Search countries...';
-      case 'places': return 'Search cities...';
-      case 'activities': return 'Search activities...';
-      default: return 'Search destinations...';
     }
   };
 
-  const renderItem = useCallback(({ item }: { item: SearchResult }) => {
-    let imageUrl = '';
-    let title = '';
-    let subtitle = '';
-    let icon: 'flag' | 'location' | 'compass' = 'location';
+  const handleRecentPress = (term: string) => {
+    setQuery(term);
+  };
 
-    switch (item.type) {
-      case 'country':
-        imageUrl = item.item.heroImageUrl;
-        title = item.item.name;
-        subtitle = item.item.subtitle;
-        icon = 'flag';
-        break;
-      case 'city':
-        imageUrl = item.item.heroImageUrl;
-        title = item.item.name;
-        subtitle = item.item.countryName;
-        icon = 'location';
-        break;
-      case 'activity':
-        imageUrl = item.item.heroImageUrl;
-        title = item.item.name;
-        subtitle = `${item.item.cityName}, ${item.item.countryName}`;
-        icon = 'compass';
-        break;
-    }
-
-    return (
-      <Pressable
-        style={styles.resultItem}
-        onPress={() => handleResultPress(item)}
-      >
-        <Image source={{ uri: imageUrl }} style={styles.resultImage} contentFit="cover" />
-        <View style={styles.resultText}>
-          <Text style={styles.resultTitle} numberOfLines={1}>{title}</Text>
-          <Text style={styles.resultSubtitle} numberOfLines={1}>{subtitle}</Text>
-        </View>
-        <View style={styles.resultIconContainer}>
-          <Ionicons name={icon} size={16} color={colors.textSecondary} />
-        </View>
-      </Pressable>
-    );
-  }, [handleResultPress]);
+  const renderResult = ({ item }: { item: SearchResult }) => (
+    <Pressable
+      style={styles.resultRow}
+      onPress={() => handleResultPress(item)}
+    >
+      <View style={styles.resultContent}>
+        <Text style={styles.resultName}>{item.name}</Text>
+        <Text style={styles.resultContext}>{item.context}</Text>
+      </View>
+      <Text style={styles.resultType}>{item.type}</Text>
+    </Pressable>
+  );
 
   return (
-    <KeyboardAvoidingView
-      style={[styles.container, { paddingTop: insets.top }]}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
-      {/* Search Header */}
+    <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+        <Pressable onPress={handleBack} hitSlop={12}>
+          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
         </Pressable>
-        <View style={styles.searchInputContainer}>
-          <Ionicons name="search" size={18} color={colors.textMuted} />
+
+        <View style={styles.inputContainer}>
+          <Feather name="search" size={18} color={colors.textMuted} />
           <TextInput
-            style={styles.searchInput}
-            placeholder={getPlaceholder()}
-            placeholderTextColor={colors.textMuted}
+            ref={inputRef}
+            style={styles.input}
             value={query}
             onChangeText={setQuery}
-            autoFocus
+            placeholder="Search countries, cities, or activities"
+            placeholderTextColor={colors.textMuted}
             returnKeyType="search"
+            autoCorrect={false}
           />
           {query.length > 0 && (
-            <Pressable onPress={() => setQuery('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+            <Pressable onPress={handleClear} hitSlop={8}>
+              <Feather name="x" size={18} color={colors.textMuted} />
             </Pressable>
           )}
         </View>
       </View>
 
-      {/* Results */}
-      {query.length > 0 ? (
-        results.length > 0 ? (
-          <FlatList
-            data={results}
-            renderItem={renderItem}
-            keyExtractor={(item, index) => `${item.type}-${item.item.id}`}
-            contentContainerStyle={styles.resultsList}
-            keyboardShouldPersistTaps="handled"
-          />
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>No results for "{query}"</Text>
+      {/* Content */}
+      {isSearching ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="small" color={colors.orange} />
+        </View>
+      ) : query.length === 0 ? (
+        // Recent searches
+        recentSearches.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>RECENT</Text>
+            <View style={styles.recentList}>
+              {recentSearches.map((term) => (
+                <Pressable
+                  key={term}
+                  style={styles.recentChip}
+                  onPress={() => handleRecentPress(term)}
+                >
+                  <Text style={styles.recentText}>{term}</Text>
+                </Pressable>
+              ))}
+            </View>
           </View>
         )
-      ) : (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Start typing to search</Text>
+      ) : results.length === 0 ? (
+        // No results
+        <View style={styles.centered}>
+          <Text style={styles.noResults}>No results for "{query}"</Text>
+          <Text style={styles.noResultsHint}>
+            Try searching for a country or city name.
+          </Text>
         </View>
+      ) : (
+        // Results
+        <FlatList
+          data={results}
+          renderItem={renderResult}
+          keyExtractor={(item) => `${item.type}-${item.id}`}
+          contentContainerStyle={styles.results}
+          keyboardShouldPersistTaps="handled"
+        />
       )}
-    </KeyboardAvoidingView>
+    </View>
   );
 }
 
@@ -180,68 +172,95 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
-  searchInputContainer: {
+  inputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.input,
-    paddingHorizontal: spacing.md,
-    height: 44,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     gap: spacing.sm,
   },
-  searchInput: {
+  input: {
     flex: 1,
     fontFamily: fonts.regular,
-    fontSize: 15,
+    fontSize: 16,
+    color: colors.textPrimary,
+    paddingVertical: spacing.xs,
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.xl,
+  },
+  section: {
+    padding: spacing.screenX,
+  },
+  sectionTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  recentList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  recentChip: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+  },
+  recentText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
     color: colors.textPrimary,
   },
-  resultsList: {
-    paddingVertical: spacing.sm,
+  results: {
+    paddingVertical: spacing.md,
   },
-  resultItem: {
+  resultRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
-    gap: spacing.md,
+    paddingVertical: spacing.lg,
   },
-  resultImage: {
-    width: 48,
-    height: 48,
-    borderRadius: radius.sm,
-  },
-  resultText: {
+  resultContent: {
     flex: 1,
   },
-  resultTitle: {
+  resultName: {
     fontFamily: fonts.medium,
-    fontSize: 15,
+    fontSize: 16,
     color: colors.textPrimary,
   },
-  resultSubtitle: {
+  resultContext: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 14,
     color: colors.textSecondary,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
-  resultIconContainer: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingBottom: 100,
-  },
-  emptyText: {
+  resultType: {
     fontFamily: fonts.regular,
-    fontSize: 15,
+    fontSize: 12,
     color: colors.textMuted,
+    textTransform: 'capitalize',
+  },
+  noResults: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  noResultsHint: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });
