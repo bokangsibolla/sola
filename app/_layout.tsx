@@ -1,3 +1,7 @@
+// gesture-handler MUST be imported first, before any other imports
+import 'react-native-gesture-handler';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -22,8 +26,10 @@ const queryClient = new QueryClient();
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { PostHogProvider, usePostHog } from 'posthog-react-native';
 import { usePushNotifications } from '@/hooks/usePushNotifications';
+import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
+import OfflineBanner from '@/components/OfflineBanner';
 
 // Ensure icon fonts are available (Ionicons uses native fonts, no explicit loading needed)
 // Importing here ensures the icon library is initialized before use
@@ -120,6 +126,7 @@ function AuthGate() {
 
 function RootLayout() {
   const colorScheme = useColorScheme();
+  const { isOffline } = useNetworkStatus();
 
   const [storeReady, setStoreReady] = useState(false);
 
@@ -143,23 +150,26 @@ function RootLayout() {
   if (!fontsLoaded || !storeReady) return null;
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <PostHogProvider
-        apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
-        options={{
-          host: 'https://us.i.posthog.com',
-          enableSessionReplay: false,
-        }}
-      >
-        <AuthProvider>
-          <SafeAreaProvider>
-            <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-              <AuthGate />
-            </ThemeProvider>
-          </SafeAreaProvider>
-        </AuthProvider>
-      </PostHogProvider>
-    </QueryClientProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <OfflineBanner visible={isOffline} />
+      <QueryClientProvider client={queryClient}>
+        <PostHogProvider
+          apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
+          options={{
+            host: 'https://us.i.posthog.com',
+            enableSessionReplay: false,
+          }}
+        >
+          <AuthProvider>
+            <SafeAreaProvider>
+              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                <AuthGate />
+              </ThemeProvider>
+            </SafeAreaProvider>
+          </AuthProvider>
+        </PostHogProvider>
+      </QueryClientProvider>
+    </GestureHandlerRootView>
   );
 }
 
