@@ -19,6 +19,10 @@ export const colors = {
   emergencyFill: '#FDEAEA',
   // Neutral fills
   neutralFill: '#F3F3F3',
+  // Tab bar
+  tabBarBackground: '#FAF9F7',
+  tabBarBorder: '#EBE7E3',
+  tabBarInactive: '#B8B0AA',
 };
 
 export const spacing = {
@@ -59,4 +63,6 @@ export const typography = {
   caption: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20, color: colors.textMuted },
   captionSmall: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18, color: colors.textMuted },
   button: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 24 },
+  tabLabel: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 12 },
+  screenTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
 };

@@ -53,16 +53,27 @@ export default function HomeScreen() {
         leftComponent={
           <Image
             source={require('@/assets/images/sola-logo.png')}
-            style={styles.logo}
+            style={styles.headerLogo}
             contentFit="contain"
           />
         }
         rightComponent={
-          <Pressable onPress={() => {
-            posthog.capture('inbox_opened');
-            router.push('/home/dm');
-          }} hitSlop={12} style={styles.inboxBtn}>
-            <Feather name="message-circle" size={20} color={colors.orange} />
+          <Pressable
+            onPress={() => {
+              posthog.capture('inbox_opened');
+              router.push('/home/dm');
+            }}
+            hitSlop={12}
+            style={styles.headerAction}
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+          >
+            <Image
+              source={require('@/assets/images/icons/icon-inbox.png')}
+              style={styles.headerIcon}
+              contentFit="contain"
+              tintColor={colors.orange}
+            />
           </Pressable>
         }
       />
@@ -159,17 +170,19 @@ function ProfileCard({ profile }: { profile: Profile }) {
 }
 
 const styles = StyleSheet.create({
-  logo: {
-    height: 30,
-    width: 90,
+  headerLogo: {
+    height: 22,
+    width: 76,
   },
-  inboxBtn: {
-    backgroundColor: colors.orangeFill,
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  headerAction: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  headerIcon: {
+    width: 22,
+    height: 22,
   },
   sectionTitle: {
     ...typography.h2,

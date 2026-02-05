@@ -56,7 +56,23 @@ export default function ProfileScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Profile" />
+      <AppHeader
+        title="Profile"
+        rightComponent={
+          <Pressable
+            onPress={() => {
+              posthog.capture('settings_tapped', { source: 'header' });
+              router.push('/profile/settings');
+            }}
+            hitSlop={12}
+            style={styles.headerAction}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
+            <Ionicons name="settings-outline" size={22} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Avatar + info */}
         <View style={styles.header}>
@@ -173,6 +189,12 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerAction: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   header: {
     alignItems: 'center',
     paddingBottom: spacing.xl,

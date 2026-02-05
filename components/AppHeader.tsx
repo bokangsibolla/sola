@@ -41,8 +41,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: spacing.md,
+    paddingTop: spacing.xl,
     paddingBottom: spacing.lg,
+    minHeight: 44,
   },
   leftContainer: {
     marginRight: spacing.md,
@@ -60,11 +61,12 @@ const styles = StyleSheet.create({
   title: {
     ...typography.h1,
     color: colors.textPrimary,
-    marginBottom: spacing.xs,
+    marginBottom: 0,
   },
   subtitle: {
-    ...typography.body,
+    ...typography.caption,
     color: colors.textSecondary,
+    marginTop: 2,
   },
   actionText: {
     ...typography.body,

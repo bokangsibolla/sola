@@ -164,7 +164,32 @@ export default function ExploreScreen() {
   if (isLoading && feedItems.length <= 1) {
     return (
       <AppScreen>
-        <AppHeader title="Explore" />
+        <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <Pressable
+            onPress={() => router.push('/home/dm')}
+            hitSlop={12}
+            style={styles.headerAction}
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+          >
+            <Image
+              source={require('@/assets/images/icons/icon-inbox.png')}
+              style={styles.headerIcon}
+              contentFit="contain"
+              tintColor={colors.orange}
+            />
+          </Pressable>
+        }
+      />
         <LoadingScreen />
       </AppScreen>
     );
@@ -174,7 +199,32 @@ export default function ExploreScreen() {
   if (error && feedItems.length <= 1) {
     return (
       <AppScreen>
-        <AppHeader title="Explore" />
+        <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <Pressable
+            onPress={() => router.push('/home/dm')}
+            hitSlop={12}
+            style={styles.headerAction}
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+          >
+            <Image
+              source={require('@/assets/images/icons/icon-inbox.png')}
+              style={styles.headerIcon}
+              contentFit="contain"
+              tintColor={colors.orange}
+            />
+          </Pressable>
+        }
+      />
         <ErrorScreen message={error.message} onRetry={refresh} />
       </AppScreen>
     );
@@ -182,7 +232,32 @@ export default function ExploreScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Explore" />
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <Pressable
+            onPress={() => router.push('/home/dm')}
+            hitSlop={12}
+            style={styles.headerAction}
+            accessibilityRole="button"
+            accessibilityLabel="Messages"
+          >
+            <Image
+              source={require('@/assets/images/icons/icon-inbox.png')}
+              style={styles.headerIcon}
+              contentFit="contain"
+              tintColor={colors.orange}
+            />
+          </Pressable>
+        }
+      />
       <FlatList
         data={feedItems}
         renderItem={renderItem}
@@ -196,6 +271,20 @@ export default function ExploreScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerLogo: {
+    height: 22,
+    width: 76,
+  },
+  headerAction: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerIcon: {
+    width: 22,
+    height: 22,
+  },
   list: {
     flex: 1,
   },
@@ -211,7 +300,6 @@ const styles = StyleSheet.create({
   pairRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    paddingHorizontal: spacing.md,
   },
   smallCard: {
     flex: 1,
@@ -240,7 +328,6 @@ const styles = StyleSheet.create({
   // City spotlight
   spotlightCard: {
     height: 220,
-    marginHorizontal: spacing.md,
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     overflow: 'hidden',

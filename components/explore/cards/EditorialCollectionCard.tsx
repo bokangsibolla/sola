@@ -1,12 +1,10 @@
 // components/explore/cards/EditorialCollectionCard.tsx
-import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { ExploreCollectionWithItems } from '@/data/types';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
 const CARD_HEIGHT = 300;
 
 interface EditorialCollectionCardProps {
@@ -56,9 +54,7 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
 
 const styles = StyleSheet.create({
   container: {
-    width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    marginHorizontal: spacing.screenX,
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
