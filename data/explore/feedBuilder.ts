@@ -1,111 +1,105 @@
 // data/explore/feedBuilder.ts
-import type { Country, ExploreCollectionWithItems } from '../types';
+import type { ExploreCollectionWithItems, DiscoveryLens } from '../types';
 import type {
   FeedItem,
   CityWithCountry,
-  ActivityWithCity,
 } from './types';
 
 /**
- * Build the Explore feed with rhythmic content interleaving.
- * Pattern: Editorial → Country pair → City spotlight → Activities → Editorial...
+ * Build the Explore feed with a city-first, women-first structure.
+ *
+ * Layout:
+ *   1. Hero grid (collection hero + 2 city cards)
+ *   2. Search bar (mid-page break)
+ *   3. City pair — first pair gets "POPULAR WITH SOLO WOMEN" label
+ *   4. Interleaved: spotlights, collections, city pairs (no label)
+ *   5. Remaining collections
+ *   6. Remaining city spotlights
+ *   7. Quick actions
+ *   8. Meet travellers
+ *   9. End card
+ *
+ * Max 4 city pairs shown. Rest as spotlights.
  */
 export function buildFeed(
   collections: ExploreCollectionWithItems[],
-  countries: Country[],
-  citiesWithActivities: { city: CityWithCountry; activities: ActivityWithCity[] }[]
+  cities: CityWithCountry[],
+  _lenses: DiscoveryLens[] = [],
 ): FeedItem[] {
   const feed: FeedItem[] = [];
+  let ci = 0; // collection index
+  let si = 0; // city index
+  const MAX_CITY_PAIRS = 4;
+  let pairsShown = 0;
 
-  let collectionIndex = 0;
-  let countryIndex = 0;
-  let cityIndex = 0;
-  let beat = 0;
-  let quickActionsInserted = false;
+  // --- Hero grid (collection hero + 2 city cards) ---
+  const heroCollection = ci < collections.length ? collections[ci++] : null;
+  const heroCity1 = si < cities.length ? cities[si++] : null;
+  const heroCity2 = si < cities.length ? cities[si++] : null;
+  if (heroCity1) {
+    feed.push({
+      type: 'hero-grid',
+      data: { collection: heroCollection, city1: heroCity1, city2: heroCity2 },
+    });
+  }
 
-  // Build ~15-20 items following the rhythm
-  const maxItems = 18;
+  // --- Search bar (mid-page visual break) ---
+  feed.push({ type: 'search-bar' });
 
-  while (feed.length < maxItems) {
-    const beatPosition = beat % 5;
-    beat++;
+  // --- First city pair with women-first label ---
+  if (si + 1 < cities.length && pairsShown < MAX_CITY_PAIRS) {
+    feed.push({
+      type: 'city-pair',
+      data: [cities[si], cities[si + 1]],
+      sectionLabel: 'POPULAR WITH SOLO WOMEN',
+    });
+    si += 2;
+    pairsShown++;
+  }
 
-    switch (beatPosition) {
-      case 0: // Editorial collection
-        if (collectionIndex < collections.length) {
-          feed.push({
-            type: 'editorial-collection',
-            data: collections[collectionIndex++],
-          });
-          if (!quickActionsInserted) {
-            feed.push({ type: 'quick-actions' });
-            quickActionsInserted = true;
-          }
-        }
-        break;
-
-      case 1: // Country pair
-        if (countryIndex + 1 < countries.length) {
-          feed.push({
-            type: 'country-pair',
-            data: [countries[countryIndex], countries[countryIndex + 1]],
-          });
-          countryIndex += 2;
-        }
-        break;
-
-      case 2: // City spotlight
-        if (cityIndex < citiesWithActivities.length) {
-          const { city, activities } = citiesWithActivities[cityIndex];
-          feed.push({
-            type: 'city-spotlight',
-            data: city,
-            activities: activities.slice(0, 4),
-          });
-          cityIndex++;
-        }
-        break;
-
-      case 3: // Activity cluster (from next city)
-        if (cityIndex < citiesWithActivities.length) {
-          const { city, activities } = citiesWithActivities[cityIndex];
-          if (activities.length > 0) {
-            feed.push({
-              type: 'activity-cluster',
-              data: activities.slice(0, 4),
-              cityName: city.name,
-              citySlug: city.slug,
-            });
-          }
-          cityIndex++;
-        }
-        break;
-
-      case 4: // Another editorial or skip
-        if (collectionIndex < collections.length) {
-          feed.push({
-            type: 'editorial-collection',
-            data: collections[collectionIndex++],
-          });
-        }
-        break;
+  // --- Interleave: spotlight, collection, city pair ---
+  while (
+    pairsShown < MAX_CITY_PAIRS &&
+    (ci < collections.length || si + 1 < cities.length)
+  ) {
+    // City spotlight
+    if (si < cities.length) {
+      feed.push({ type: 'city-spotlight', data: cities[si++], activities: [] });
     }
 
-    // Safety: if we can't add anything, break
-    if (
-      collectionIndex >= collections.length &&
-      countryIndex >= countries.length &&
-      cityIndex >= citiesWithActivities.length
-    ) {
-      break;
+    // Editorial collection (sponsorship slot)
+    if (ci < collections.length) {
+      feed.push({ type: 'editorial-collection', data: collections[ci++] });
+    }
+
+    // City pair (no label after first)
+    if (si + 1 < cities.length && pairsShown < MAX_CITY_PAIRS) {
+      feed.push({
+        type: 'city-pair',
+        data: [cities[si], cities[si + 1]],
+      });
+      si += 2;
+      pairsShown++;
     }
   }
 
-  if (!quickActionsInserted) {
-    feed.unshift({ type: 'quick-actions' });
+  // --- Remaining editorial collections ---
+  while (ci < collections.length) {
+    feed.push({ type: 'editorial-collection', data: collections[ci++] });
   }
 
-  // Add end card
+  // --- Remaining city spotlights ---
+  while (si < cities.length) {
+    feed.push({ type: 'city-spotlight', data: cities[si++], activities: [] });
+  }
+
+  // --- Quick actions (bottom) ---
+  feed.push({ type: 'quick-actions' });
+
+  // --- Meet travellers ---
+  feed.push({ type: 'meet-travellers' });
+
+  // --- End card ---
   feed.push({ type: 'end-card' });
 
   return feed;

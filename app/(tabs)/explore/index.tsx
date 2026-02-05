@@ -1,70 +1,74 @@
 // app/(tabs)/explore/index.tsx
 import { FlatList, StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import SearchBar from '@/components/explore/SearchBar';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
+import { HeroGrid } from '@/components/explore/HeroGrid';
 import { QuickActionsRow } from '@/components/explore/QuickActionsRow';
+import { DiscoveryLensesSection } from '@/components/explore/DiscoveryLensesSection';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem } from '@/data/explore/types';
-import type { Country } from '@/data/types';
 import type { CityWithCountry } from '@/data/explore/types';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Country card with hero image
-function CountryCard({ country, onPress }: { country: Country; onPress: () => void }) {
+// City card with hero image
+function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () => void }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.smallCard, pressed && styles.pressed]}
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={country.name}
+      accessibilityLabel={`${city.name}, ${city.countryName}`}
     >
-      {country.heroImageUrl && (
+      {city.heroImageUrl && (
         <Image
-          source={{ uri: country.heroImageUrl }}
+          source={{ uri: city.heroImageUrl }}
           style={StyleSheet.absoluteFill}
           contentFit="cover"
           transition={200}
         />
       )}
       <View style={styles.smallCardOverlay}>
-        <Text style={styles.smallCardTitle}>{country.name}</Text>
-        {country.shortBlurb && (
-          <Text style={styles.smallCardBlurb} numberOfLines={1}>{country.shortBlurb}</Text>
-        )}
+        <Text style={styles.smallCardTitle}>{city.name}</Text>
+        <Text style={styles.smallCardBlurb} numberOfLines={1}>{city.countryName}</Text>
       </View>
     </Pressable>
   );
 }
 
-// Country pair - two country cards side by side
-function CountryPairCard({ countries, onCountryPress, onViewAll }: {
-  countries: [Country, Country];
-  onCountryPress: (slug: string) => void;
+// City pair - two city cards side by side
+function CityPairCard({ cities, sectionLabel, onCityPress, onViewAll }: {
+  cities: [CityWithCountry, CityWithCountry];
+  sectionLabel?: string;
+  onCityPress: (slug: string) => void;
   onViewAll: () => void;
 }) {
   return (
     <View>
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionLabel}>COUNTRIES</Text>
-        <Pressable onPress={onViewAll} hitSlop={8}>
-          <Text style={styles.seeAllLink}>See all</Text>
-        </Pressable>
-      </View>
+      {sectionLabel && (
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionLabel}>{sectionLabel}</Text>
+          <Pressable onPress={onViewAll} hitSlop={8}>
+            <Text style={styles.seeAllLink}>See all</Text>
+          </Pressable>
+        </View>
+      )}
       <View style={styles.pairRow}>
-        <CountryCard
-          country={countries[0]}
-          onPress={() => onCountryPress(countries[0].slug)}
+        <CitySmallCard
+          city={cities[0]}
+          onPress={() => onCityPress(cities[0].slug)}
         />
-        <CountryCard
-          country={countries[1]}
-          onPress={() => onCountryPress(countries[1].slug)}
+        <CitySmallCard
+          city={cities[1]}
+          onPress={() => onCityPress(cities[1].slug)}
         />
       </View>
     </View>
@@ -104,9 +108,17 @@ function CitySpotlightCard({ city, onPress }: {
 
 // End card component
 function EndCard() {
+  const router = useRouter();
   return (
     <View style={styles.endCard}>
       <Text style={styles.endCardText}>More destinations coming soon</Text>
+      <Pressable
+        style={styles.endCardButton}
+        onPress={() => router.push('/explore/all-destinations')}
+        hitSlop={8}
+      >
+        <Text style={styles.endCardLink}>Browse all destinations</Text>
+      </Pressable>
     </View>
   );
 }
@@ -117,6 +129,34 @@ export default function ExploreScreen() {
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
+      case 'search-bar':
+        return (
+          <SearchBar
+            placeholder="Where to next, queen?"
+            onPress={() => router.push('/explore/search')}
+          />
+        );
+
+      case 'hero-grid':
+        return (
+          <HeroGrid
+            collection={item.data.collection}
+            city1={item.data.city1}
+            city2={item.data.city2}
+            onCollectionPress={() =>
+              item.data.collection
+                ? router.push(`/explore/collection/${item.data.collection.slug}`)
+                : router.push('/explore/all-destinations')
+            }
+            onCity1Press={() => router.push(`/explore/city/${item.data.city1.slug}`)}
+            onCity2Press={() =>
+              item.data.city2
+                ? router.push(`/explore/city/${item.data.city2.slug}`)
+                : router.push('/explore/all-destinations')
+            }
+          />
+        );
+
       case 'editorial-collection':
         return (
           <EditorialCollectionCard
@@ -125,15 +165,19 @@ export default function ExploreScreen() {
           />
         );
 
+      case 'discovery-lenses':
+        return <DiscoveryLensesSection lenses={item.data} />;
+
       case 'quick-actions':
         return <QuickActionsRow />;
 
-      case 'country-pair':
+      case 'city-pair':
         return (
-          <CountryPairCard
-            countries={item.data}
-            onCountryPress={(slug) => router.push(`/explore/country/${slug}`)}
-            onViewAll={() => router.push('/explore/all-countries')}
+          <CityPairCard
+            cities={item.data}
+            sectionLabel={item.sectionLabel}
+            onCityPress={(slug) => router.push(`/explore/city/${slug}`)}
+            onViewAll={() => router.push('/explore/all-destinations')}
           />
         );
 
@@ -146,8 +190,36 @@ export default function ExploreScreen() {
         );
 
       case 'activity-cluster':
-        // Activity clusters not yet implemented — skip
         return null;
+
+      case 'meet-travellers':
+        return (
+          <Pressable
+            style={({ pressed }) => [styles.meetCard, pressed && styles.pressed]}
+            onPress={() => router.push('/home/dm')}
+            accessibilityRole="button"
+            accessibilityLabel="Meet other travellers"
+          >
+            <Image
+              source={require('@/assets/images/pexels-paddleboarding.png')}
+              style={StyleSheet.absoluteFill}
+              contentFit="cover"
+              transition={200}
+              pointerEvents="none"
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(0,0,0,0.6)']}
+              style={StyleSheet.absoluteFill}
+              pointerEvents="none"
+            />
+            <View style={styles.meetCardContent} pointerEvents="none">
+              <Text style={styles.meetCardTitle}>Meet other travellers</Text>
+              <Text style={styles.meetCardSubtitle}>
+                Connect with solo women exploring the world
+              </Text>
+            </View>
+          </Pressable>
+        );
 
       case 'end-card':
         return <EndCard />;
@@ -159,16 +231,24 @@ export default function ExploreScreen() {
 
   const keyExtractor = (item: FeedItem, index: number): string => {
     switch (item.type) {
+      case 'search-bar':
+        return 'search-bar';
+      case 'hero-grid':
+        return `hero-grid-${item.data.city1.slug}`;
       case 'editorial-collection':
         return `collection-${item.data.slug}`;
+      case 'discovery-lenses':
+        return 'discovery-lenses';
       case 'quick-actions':
         return 'quick-actions';
-      case 'country-pair':
-        return `country-pair-${item.data[0].slug}-${item.data[1].slug}`;
+      case 'city-pair':
+        return `city-pair-${item.data[0].slug}-${item.data[1].slug}`;
       case 'city-spotlight':
         return `city-spotlight-${item.data.slug}`;
       case 'activity-cluster':
         return `activity-cluster-${item.citySlug}`;
+      case 'meet-travellers':
+        return 'meet-travellers';
       case 'end-card':
         return 'end-card';
       default:
@@ -330,7 +410,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.orange,
   },
-  // Country pair row
+  // City pair row
   pairRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -389,14 +469,49 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.75)',
     marginTop: spacing.xs,
   },
+  // Meet travellers card
+  meetCard: {
+    height: 200,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    backgroundColor: colors.neutralFill,
+  },
+  meetCardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.lg,
+  },
+  meetCardTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 22,
+    color: '#FFFFFF',
+  },
+  meetCardSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: spacing.xs,
+  },
   // End card
   endCard: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,
+    gap: spacing.md,
   },
   endCardText: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textMuted,
+  },
+  endCardButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  endCardLink: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
   },
 });

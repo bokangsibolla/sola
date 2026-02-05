@@ -1,7 +1,8 @@
 // app/(tabs)/explore/search.tsx
-import { useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -10,12 +11,15 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useSearch, SearchResult } from '@/data/explore';
+import { getPopularCitiesWithCountry } from '@/data/api';
+import type { CityWithCountry } from '@/data/explore/types';
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -31,6 +35,29 @@ export default function SearchScreen() {
     recentSearches,
     addRecentSearch,
   } = useSearch();
+
+  const [popularCities, setPopularCities] = useState<CityWithCountry[]>([]);
+
+  useEffect(() => {
+    getPopularCitiesWithCountry(6)
+      .then(setPopularCities)
+      .catch(() => {});
+  }, []);
+
+  const browseCategories = [
+    { label: 'Cities', icon: 'map-pin' as const, route: '/explore/all-destinations' as const },
+    { label: 'Countries', icon: 'globe' as const, route: '/explore/all-countries' as const },
+    { label: 'Activities', icon: 'compass' as const, route: '/explore/all-activities' as const },
+  ];
+
+  const suggestions = [
+    'Bangkok',
+    'Female-only stays',
+    'Chiang Mai',
+    'Yoga retreat',
+    'Bali beaches',
+    'Night markets',
+  ];
 
   const groupedResults = useMemo(() => {
     const groups: { title: string; type: string; data: SearchResult[] }[] = [];
@@ -123,7 +150,7 @@ export default function SearchScreen() {
             style={styles.input}
             value={query}
             onChangeText={setQuery}
-            placeholder="Search countries, cities, or activities"
+            placeholder="Where to next, queen?"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
             autoCorrect={false}
@@ -142,23 +169,106 @@ export default function SearchScreen() {
           <ActivityIndicator size="small" color={colors.orange} />
         </View>
       ) : query.length === 0 ? (
-        // Recent searches
-        recentSearches.length > 0 && (
+        // Discovery experience
+        <ScrollView
+          contentContainerStyle={styles.discoveryContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Section 1: Recent searches */}
+          {recentSearches.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>RECENT</Text>
+              <View style={styles.recentList}>
+                {recentSearches.map((term) => (
+                  <Pressable
+                    key={term}
+                    style={styles.recentChip}
+                    onPress={() => handleRecentPress(term)}
+                  >
+                    <Text style={styles.recentText}>{term}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+
+          {/* Section 2: Browse by */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>RECENT</Text>
-            <View style={styles.recentList}>
-              {recentSearches.map((term) => (
+            <Text style={styles.sectionTitle}>BROWSE BY</Text>
+            <View style={styles.browseRow}>
+              {browseCategories.map((cat) => (
                 <Pressable
-                  key={term}
-                  style={styles.recentChip}
-                  onPress={() => handleRecentPress(term)}
+                  key={cat.label}
+                  style={styles.browseChip}
+                  onPress={() => router.push(cat.route)}
                 >
-                  <Text style={styles.recentText}>{term}</Text>
+                  <Feather name={cat.icon} size={14} color={colors.orange} />
+                  <Text style={styles.browseChipText}>{cat.label}</Text>
                 </Pressable>
               ))}
             </View>
           </View>
-        )
+
+          {/* Section 3: Popular destinations */}
+          {popularCities.length > 0 && (
+            <View style={styles.sectionNoPadX}>
+              <Text style={[styles.sectionTitle, { paddingHorizontal: spacing.screenX }]}>
+                POPULAR DESTINATIONS
+              </Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.popularRow}
+              >
+                {popularCities.map((city) => (
+                  <Pressable
+                    key={city.slug}
+                    style={styles.popularCard}
+                    onPress={() => {
+                      addRecentSearch(city.name);
+                      router.push(`/(tabs)/explore/city/${city.slug}`);
+                    }}
+                  >
+                    {city.heroImageUrl ? (
+                      <Image
+                        source={{ uri: city.heroImageUrl }}
+                        style={styles.popularImage}
+                        contentFit="cover"
+                        transition={200}
+                      />
+                    ) : (
+                      <View style={[styles.popularImage, { backgroundColor: colors.neutralFill }]} />
+                    )}
+                    <Text style={styles.popularCityName} numberOfLines={1}>
+                      {city.name}
+                    </Text>
+                    <Text style={styles.popularCountryName} numberOfLines={1}>
+                      {city.countryName}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          )}
+
+          {/* Section 4: Try searching for */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>TRY SEARCHING FOR</Text>
+            <View style={styles.suggestionList}>
+              {suggestions.map((term) => (
+                <Pressable
+                  key={term}
+                  style={styles.suggestionChip}
+                  onPress={() => setQuery(term)}
+                >
+                  <Feather name="search" size={12} color={colors.textMuted} />
+                  <Text style={styles.suggestionText}>{term}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </ScrollView>
       ) : results.length === 0 ? (
         // No results
         <View style={styles.centered}>
@@ -219,7 +329,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingVertical: 10,
     gap: spacing.sm,
   },
   input: {
@@ -227,7 +337,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.textPrimary,
-    paddingVertical: spacing.xs,
+    paddingVertical: 6,
   },
   centered: {
     flex: 1,
@@ -312,5 +422,74 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
     textAlign: 'center',
+  },
+  // Discovery empty state
+  discoveryContent: {
+    paddingVertical: spacing.lg,
+    gap: spacing.xl,
+  },
+  sectionNoPadX: {
+    // section without horizontal padding (for horizontal scroll)
+  },
+  browseRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  browseChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  browseChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  popularRow: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.md,
+  },
+  popularCard: {
+    width: 120,
+  },
+  popularImage: {
+    width: 120,
+    height: 90,
+    borderRadius: radius.md,
+  },
+  popularCityName: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+  },
+  popularCountryName: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  suggestionList: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  suggestionChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  suggestionText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
 });
