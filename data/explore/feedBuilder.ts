@@ -20,12 +20,14 @@ export function buildFeed(
   let collectionIndex = 0;
   let countryIndex = 0;
   let cityIndex = 0;
+  let beat = 0;
 
   // Build ~15-20 items following the rhythm
   const maxItems = 18;
 
   while (feed.length < maxItems) {
-    const beatPosition = feed.length % 5;
+    const beatPosition = beat % 5;
+    beat++;
 
     switch (beatPosition) {
       case 0: // Editorial collection

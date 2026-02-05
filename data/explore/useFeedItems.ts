@@ -45,28 +45,39 @@ export function useFeedItems(): UseFeedItemsResult {
     async function loadRealData() {
       setIsLoading(true);
       try {
-        // Fetch countries, cities, and featured collections with 5 second timeout
-        const [countries, cities, featuredCollections] = await withTimeout(
+        // Fetch countries and cities (core feed data)
+        const [countries, cities] = await withTimeout(
           Promise.all([
             getCountries(),
             getPopularCities(4),
-            getFeaturedExploreCollections(),
           ]),
           5000
         );
 
         if (cancelled) return;
 
-        // Resolve collection items for each featured collection
-        const collectionsWithItems: ExploreCollectionWithItems[] = await withTimeout(
-          Promise.all(
-            featuredCollections.map(async (collection) => {
-              const items = await getExploreCollectionItems(collection);
-              return { ...collection, items };
-            })
-          ),
-          5000
-        );
+        // Fetch collections separately so a failure doesn't break the whole feed
+        let collectionsWithItems: ExploreCollectionWithItems[] = [];
+        try {
+          const featuredCollections = await withTimeout(
+            getFeaturedExploreCollections(),
+            5000
+          );
+          if (!cancelled && featuredCollections.length > 0) {
+            collectionsWithItems = await withTimeout(
+              Promise.all(
+                featuredCollections.map(async (collection) => {
+                  const items = await getExploreCollectionItems(collection);
+                  return { ...collection, items };
+                })
+              ),
+              5000
+            );
+          }
+        } catch (collectionErr) {
+          // Collections failed (table may not exist yet) — continue without them
+          console.log('Collections unavailable:', collectionErr);
+        }
 
         if (cancelled) return;
 
@@ -105,8 +116,8 @@ export function useFeedItems(): UseFeedItemsResult {
           setIsLoading(false);
         }
       } catch (err) {
-        // On error/timeout, keep showing initial feed - don't block UI
-        console.log('Feed API error (using cached data):', err);
+        // Core feed data failed — show error
+        console.log('Feed API error:', err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error('Failed to load'));
           setIsLoading(false);
