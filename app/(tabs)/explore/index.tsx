@@ -1,5 +1,6 @@
 // app/(tabs)/explore/index.tsx
-import { FlatList, StyleSheet, View, Text, Pressable } from 'react-native';
+import { FlatList, StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
@@ -8,61 +9,84 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem } from '@/data/explore/types';
+import type { Country } from '@/data/types';
+import type { CityWithCountry } from '@/data/explore/types';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
-// Placeholder card for country pair
-function CountryPairCard({ countries }: { countries: [{ name: string }, { name: string }] }) {
-  return (
-    <View style={styles.pairRow}>
-      <Pressable
-        style={styles.smallCard}
-        accessibilityRole="button"
-        accessibilityLabel={countries[0].name}
-      >
-        <View style={styles.smallCardContent}>
-          <Text style={styles.smallCardTitle}>{countries[0].name}</Text>
-        </View>
-      </Pressable>
-      <Pressable
-        style={styles.smallCard}
-        accessibilityRole="button"
-        accessibilityLabel={countries[1].name}
-      >
-        <View style={styles.smallCardContent}>
-          <Text style={styles.smallCardTitle}>{countries[1].name}</Text>
-        </View>
-      </Pressable>
-    </View>
-  );
-}
+const SCREEN_WIDTH = Dimensions.get('window').width;
 
-// Placeholder card for city spotlight
-function CitySpotlightCard({ cityName }: { cityName: string }) {
+// Country card with hero image
+function CountryCard({ country, onPress }: { country: Country; onPress: () => void }) {
   return (
     <Pressable
-      style={[styles.card, { height: 220 }]}
+      style={({ pressed }) => [styles.smallCard, pressed && styles.pressed]}
+      onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${cityName} city spotlight`}
+      accessibilityLabel={country.name}
     >
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>{cityName}</Text>
-        <Text style={styles.cardSubtitle}>City Spotlight</Text>
+      {country.heroImageUrl && (
+        <Image
+          source={{ uri: country.heroImageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+        />
+      )}
+      <View style={styles.smallCardOverlay}>
+        <Text style={styles.smallCardTitle}>{country.name}</Text>
+        {country.shortBlurb && (
+          <Text style={styles.smallCardBlurb} numberOfLines={1}>{country.shortBlurb}</Text>
+        )}
       </View>
     </Pressable>
   );
 }
 
-// Placeholder card for activity cluster
-function ActivityClusterCard({ cityName }: { cityName: string }) {
+// Country pair - two country cards side by side
+function CountryPairCard({ countries, onCountryPress }: {
+  countries: [Country, Country];
+  onCountryPress: (slug: string) => void;
+}) {
+  return (
+    <View style={styles.pairRow}>
+      <CountryCard
+        country={countries[0]}
+        onPress={() => onCountryPress(countries[0].slug)}
+      />
+      <CountryCard
+        country={countries[1]}
+        onPress={() => onCountryPress(countries[1].slug)}
+      />
+    </View>
+  );
+}
+
+// City spotlight card with hero image
+function CitySpotlightCard({ city, onPress }: {
+  city: CityWithCountry;
+  onPress: () => void;
+}) {
   return (
     <Pressable
-      style={[styles.card, { height: 160 }]}
+      style={({ pressed }) => [styles.spotlightCard, pressed && styles.pressed]}
+      onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Activities in ${cityName}`}
+      accessibilityLabel={`${city.name}, ${city.countryName}`}
     >
-      <View style={styles.cardContent}>
-        <Text style={styles.cardTitle}>Activities in {cityName}</Text>
-        <Text style={styles.cardSubtitle}>Activity Cluster</Text>
+      {city.heroImageUrl && (
+        <Image
+          source={{ uri: city.heroImageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+        />
+      )}
+      <View style={styles.spotlightOverlay}>
+        <Text style={styles.spotlightTitle}>{city.name}</Text>
+        <Text style={styles.spotlightSubtitle}>{city.countryName}</Text>
+        {city.shortBlurb && (
+          <Text style={styles.spotlightBlurb} numberOfLines={2}>{city.shortBlurb}</Text>
+        )}
       </View>
     </Pressable>
   );
@@ -72,7 +96,7 @@ function ActivityClusterCard({ cityName }: { cityName: string }) {
 function EndCard() {
   return (
     <View style={styles.endCard}>
-      <Text style={styles.endCardText}>You&apos;ve seen it all!</Text>
+      <Text style={styles.endCardText}>More destinations coming soon</Text>
     </View>
   );
 }
@@ -92,13 +116,24 @@ export default function ExploreScreen() {
         );
 
       case 'country-pair':
-        return <CountryPairCard countries={item.data} />;
+        return (
+          <CountryPairCard
+            countries={item.data}
+            onCountryPress={(slug) => router.push(`/explore/country/${slug}`)}
+          />
+        );
 
       case 'city-spotlight':
-        return <CitySpotlightCard cityName={item.data.name} />;
+        return (
+          <CitySpotlightCard
+            city={item.data}
+            onPress={() => router.push(`/explore/city/${item.data.slug}`)}
+          />
+        );
 
       case 'activity-cluster':
-        return <ActivityClusterCard cityName={item.cityName} />;
+        // Activity clusters not yet implemented — skip
+        return null;
 
       case 'end-card':
         return <EndCard />;
@@ -168,28 +203,11 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     gap: spacing.xl,
   },
-  card: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    marginHorizontal: spacing.md,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
-  cardContent: {
-    padding: spacing.lg,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-  },
-  cardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: '#FFFFFF',
-  },
-  cardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 4,
-  },
+  // Country pair row
   pairRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -197,21 +215,60 @@ const styles = StyleSheet.create({
   },
   smallCard: {
     flex: 1,
-    height: 140,
+    height: 160,
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  smallCardContent: {
+  smallCardOverlay: {
     padding: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    paddingTop: spacing.xl,
+    backgroundColor: 'rgba(0,0,0,0.35)',
   },
   smallCardTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontSize: 18,
     color: '#FFFFFF',
   },
+  smallCardBlurb: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
+  },
+  // City spotlight
+  spotlightCard: {
+    height: 220,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+  },
+  spotlightOverlay: {
+    padding: spacing.lg,
+    paddingTop: 60,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  spotlightTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 22,
+    color: '#FFFFFF',
+  },
+  spotlightSubtitle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+  spotlightBlurb: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: spacing.xs,
+  },
+  // End card
   endCard: {
     alignItems: 'center',
     paddingVertical: spacing.xxl,

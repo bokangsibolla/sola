@@ -46,13 +46,19 @@ export function useFeedItems(): UseFeedItemsResult {
       setIsLoading(true);
       try {
         // Fetch countries and cities (core feed data)
-        const [countries, cities] = await withTimeout(
+        const [allCountries, cities] = await withTimeout(
           Promise.all([
             getCountries(),
             getPopularCities(4),
           ]),
           5000
         );
+
+        // Prioritize featured countries (SE Asia) first
+        const countries = [...allCountries].sort((a, b) => {
+          if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+          return a.orderIndex - b.orderIndex;
+        });
 
         if (cancelled) return;
 
