@@ -4,7 +4,7 @@ import type { ExploreCollection, ExploreCollectionItem, ExploreCollectionWithIte
 
 export async function getExploreCollections(): Promise<ExploreCollection[]> {
   const { data, error } = await supabase
-    .from('collections')
+    .from('explore_collections')
     .select('*')
     .eq('is_active', true)
     .order('order_index');
@@ -15,7 +15,7 @@ export async function getExploreCollections(): Promise<ExploreCollection[]> {
 
 export async function getExploreCollectionBySlug(slug: string): Promise<ExploreCollection | null> {
   const { data, error } = await supabase
-    .from('collections')
+    .from('explore_collections')
     .select('*')
     .eq('slug', slug)
     .eq('is_active', true)
@@ -154,7 +154,7 @@ export async function getExploreCollectionWithItems(
 
 export async function getFeaturedExploreCollections(): Promise<ExploreCollection[]> {
   const { data, error } = await supabase
-    .from('collections')
+    .from('explore_collections')
     .select('*')
     .eq('is_active', true)
     .eq('is_featured', true)

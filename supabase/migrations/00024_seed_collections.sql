@@ -1,6 +1,6 @@
 -- Seed editorial collections for Southeast Asia launch
 
-insert into collections (slug, title, subtitle, intro_md, hero_image_url, include_tags, exclude_tags, entity_types, order_index, is_featured)
+insert into explore_collections (slug, title, subtitle, intro_md, hero_image_url, include_tags, exclude_tags, entity_types, order_index, is_featured)
 values
 -- 1. First Solo Trips (Countries)
 (

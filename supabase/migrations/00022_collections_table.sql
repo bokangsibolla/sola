@@ -1,5 +1,5 @@
 -- Collections table for Explore
-create table collections (
+create table explore_collections (
   id uuid primary key default gen_random_uuid(),
   slug text unique not null,
   title text not null,
@@ -28,14 +28,14 @@ create table collections (
   updated_at timestamptz not null default now()
 );
 
-create index idx_collections_order on collections (order_index) where is_active = true;
-create index idx_collections_slug on collections (slug);
+create index idx_explore_collections_order on explore_collections (order_index) where is_active = true;
+create index idx_explore_collections_slug on explore_collections (slug);
 
-alter table collections enable row level security;
-create policy "Anyone can read collections"
-  on collections for select using (true);
+alter table explore_collections enable row level security;
+create policy "Anyone can read explore_collections"
+  on explore_collections for select using (true);
 
 -- Auto-update updated_at timestamp
-create trigger trg_collections_updated_at
-  before update on collections
+create trigger trg_explore_collections_updated_at
+  before update on explore_collections
   for each row execute function update_updated_at();
