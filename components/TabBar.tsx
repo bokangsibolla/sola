@@ -11,6 +11,7 @@ const HIDDEN_ROUTES = new Set(['sos']);
 // Custom icon assets per route
 const TAB_ICONS: Record<string, ImageSource> = {
   explore: require('@/assets/images/icons/icon-explore.png'),
+  community: require('@/assets/images/icons/icon-community.png'),
   home: require('@/assets/images/icons/icon-travelers.png'),
   trips: require('@/assets/images/icons/icon-trips.png'),
   profile: require('@/assets/images/icons/icon-profile.png'),

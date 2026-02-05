@@ -13,6 +13,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import MarkdownContent from '@/components/MarkdownContent';
 import CollapsibleSection from '@/components/CollapsibleSection';
 import { getEmergencyNumbers } from '@/data/safety';
+import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import type { Country } from '@/data/types';
 
@@ -361,6 +362,45 @@ export default function CountryGuideScreen() {
                 </CollapsibleSection>
               ))}
             </>
+          )}
+
+          {/* Community discussions link */}
+          {country?.id && (
+            <View style={styles.communitySection}>
+              <View style={styles.communitySectionHeader}>
+                <Text style={styles.sectionTitle}>Community</Text>
+                <Pressable
+                  onPress={() => router.push({
+                    pathname: '/(tabs)/community',
+                    params: { countryId: country.id, countryName: country.name },
+                  } as any)}
+                  style={({ pressed }) => pressed && { opacity: 0.7 }}
+                >
+                  <Text style={styles.communitySeeAll}>See all</Text>
+                </Pressable>
+              </View>
+              <Text style={styles.communitySubtitle}>
+                Questions and tips from solo women travelers
+              </Text>
+              <Pressable
+                onPress={() => router.push({
+                  pathname: '/(tabs)/community',
+                  params: { countryId: country.id, countryName: country.name },
+                } as any)}
+                style={({ pressed }) => [styles.communityCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+              >
+                <Feather name="message-circle" size={20} color={colors.orange} />
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.communityCardTitle}>
+                    Discussions about {country.name}
+                  </Text>
+                  <Text style={styles.communityCardSubtitle}>
+                    Ask questions, share experiences, get advice
+                  </Text>
+                </View>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </Pressable>
+            </View>
           )}
 
           {/* 9. Emergency contacts (footer) */}
@@ -752,5 +792,45 @@ const styles = StyleSheet.create({
   emergencyNumber: {
     ...typography.label,
     color: colors.orange,
+  },
+  communitySection: {
+    marginTop: spacing.xl,
+    marginBottom: spacing.lg,
+  },
+  communitySectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs,
+  },
+  communitySeeAll: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  communitySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+  communityCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  communityCardTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  communityCardSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
   },
 });
