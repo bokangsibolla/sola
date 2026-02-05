@@ -21,8 +21,8 @@ export function ExploreFeed() {
     switch (item.type) {
       case 'editorial-collection':
         return `editorial-${item.data.id}`;
-      case 'country-pair':
-        return `country-pair-${item.data[0].id}-${item.data[1].id}`;
+      case 'city-pair':
+        return `city-pair-${item.data[0].id}-${item.data[1].id}`;
       case 'city-spotlight':
         return `city-${item.data.id}`;
       case 'activity-cluster':

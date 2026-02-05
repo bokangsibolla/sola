@@ -1,170 +1,87 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import { usePostHog } from 'posthog-react-native';
-import {
-  getTripById,
-  getCityById,
-  getCountryByIso2,
-  getPlacesByCity,
-  getPlaceFirstImage,
-  getPlaceTags,
-  isPlaceSaved,
-  toggleSavePlace,
-} from '@/data/api';
+import { getCityById } from '@/data/api';
+import { useTripDetail } from '@/data/trips/useTripDetail';
+import { updateTrip, deleteTrip } from '@/data/trips/tripApi';
+import { formatDateShort, getFlag, tripDayNumber, STATUS_COLORS } from '@/data/trips/helpers';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { getEmergencyNumbers } from '@/data/safety';
-import type { Place, Tag } from '@/data/types';
-import { useAuth } from '@/state/AuthContext';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import SegmentedControl from '@/components/trips/SegmentedControl';
+import JourneyTimeline from '@/components/trips/JourneyTimeline';
+import AddEntrySheet from '@/components/trips/AddEntrySheet';
+import PlanTab from '@/components/trips/PlanTab';
+import PeopleTab from '@/components/trips/PeopleTab';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${d.getDate()} ${months[d.getMonth()]} ${d.getFullYear()}`;
-}
-
-function getFlag(iso2: string): string {
-  return iso2
-    .toUpperCase()
-    .split('')
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join('');
-}
-
-function tagColors(filterGroup: Tag['filterGroup']): { bg: string; fg: string } {
-  switch (filterGroup) {
-    case 'safety':
-      return { bg: colors.greenFill, fg: colors.greenSoft };
-    case 'good_for':
-      return { bg: colors.blueFill, fg: colors.blueSoft };
-    case 'vibe':
-      return { bg: colors.orangeFill, fg: colors.orange };
-    default:
-      return { bg: colors.borderSubtle, fg: colors.textSecondary };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Place Card (same style as city detail)
-// ---------------------------------------------------------------------------
-
-function PlaceCard({ place }: { place: Place }) {
-  const router = useRouter();
-  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
-  const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
-  const { userId } = useAuth();
-  const { data: isSaved, refetch: refetchSaved } = useData(
-    () => userId ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
-    [userId, place.id],
-  );
-  const [saved, setSaved] = useState(false);
-
-  // Sync saved state when data loads
-  useEffect(() => {
-    if (isSaved !== null) setSaved(isSaved);
-  }, [isSaved]);
-
-  const handleSave = useCallback(async () => {
-    if (!userId) return;
-    setSaved((prev) => !prev);
-    await toggleSavePlace(userId, place.id);
-  }, [userId, place.id]);
-
-  return (
-    <Pressable
-      onPress={() => router.push(`/explore/place-detail/${place.id}`)}
-      style={styles.card}
-    >
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.cardImage} contentFit="cover" transition={200} />
-      ) : (
-        <View style={[styles.cardImage, styles.cardImagePlaceholder]} />
-      )}
-
-      <View style={styles.cardBody}>
-        <Text style={styles.cardName} numberOfLines={1}>
-          {place.name}
-        </Text>
-
-        {(tags ?? []).length > 0 && (
-          <View style={styles.tagRow}>
-            {(tags ?? []).slice(0, 3).map((tag) => {
-              const tc = tagColors(tag.filterGroup);
-              return (
-                <View key={tag.id} style={[styles.tagPill, { backgroundColor: tc.bg }]}>
-                  <Text style={[styles.tagText, { color: tc.fg }]}>{tag.label}</Text>
-                </View>
-              );
-            })}
-          </View>
-        )}
-
-        {place.description ? (
-          <Text style={styles.cardDesc} numberOfLines={2}>{place.description}</Text>
-        ) : null}
-
-        <Pressable onPress={handleSave} style={styles.saveBtn} hitSlop={8}>
-          <Ionicons
-            name={saved ? 'heart' : 'heart-outline'}
-            size={18}
-            color={saved ? colors.orange : colors.textMuted}
-          />
-          <Text style={[styles.saveBtnText, { color: saved ? colors.orange : colors.textMuted }]}>
-            {saved ? 'Saved' : 'Save'}
-          </Text>
-        </Pressable>
-      </View>
-    </Pressable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Main Screen
-// ---------------------------------------------------------------------------
+const TABS = ['Journey', 'Plan', 'People'];
 
 export default function TripDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
 
+  const { trip, entries, savedItems, loading, error, refetchAll, refetchEntries, refetchSaved } =
+    useTripDetail(id);
+
+  const [activeTab, setActiveTab] = useState(tab ? parseInt(tab, 10) || 0 : 0);
+  const [showAddEntry, setShowAddEntry] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+
+  const tripStops = trip?.stops ?? [];
+  const firstStop = tripStops[0];
+  const { data: city } = useData(
+    () => (firstStop?.cityId ? getCityById(firstStop.cityId) : Promise.resolve(null)),
+    [firstStop?.cityId]
+  );
+  const heroUrl = city?.heroImageUrl ?? trip?.coverImageUrl ?? null;
+
   useEffect(() => {
-    if (id) {
-      posthog.capture('trip_detail_viewed', { trip_id: id });
-    }
+    if (id) posthog.capture('trip_detail_viewed', { trip_id: id, tab: TABS[activeTab] });
   }, [id, posthog]);
 
-  const { data: trip, loading, error, refetch } = useData(() => getTripById(id ?? ''), [id]);
-  const { data: city } = useData(
-    () => trip ? getCityById(trip.destinationCityId) : Promise.resolve(null),
-    [trip?.destinationCityId],
+  useFocusEffect(
+    useCallback(() => {
+      refetchAll();
+    }, [refetchAll]),
   );
-  const { data: country } = useData(
-    () => trip ? getCountryByIso2(trip.countryIso2) : Promise.resolve(null),
-    [trip?.countryIso2],
-  );
-  const { data: cityPlaces } = useData(
-    () => city ? getPlacesByCity(city.id) : Promise.resolve([]),
-    [city?.id],
-  );
+
+  const handleToggleMatching = async () => {
+    if (!trip) return;
+    const newValue = !trip.matchingOptIn;
+    await updateTrip(trip.id, { matchingOptIn: newValue });
+    refetchAll();
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete trip',
+      'This will permanently delete this trip and all its entries. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (!trip) return;
+            await deleteTrip(trip.id);
+            router.back();
+          },
+        },
+      ]
+    );
+  };
 
   if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
-
-  const emergency = trip ? getEmergencyNumbers(trip.countryIso2) : null;
-  const places = (cityPlaces ?? []).slice(0, 4);
-  const heroUrl = city?.heroImageUrl ?? null;
-  const flag = trip ? getFlag(trip.countryIso2) : '';
+  if (error) return <ErrorScreen message={error.message} onRetry={refetchAll} />;
 
   if (!trip) {
     return (
@@ -179,99 +96,125 @@ export default function TripDetailScreen() {
     );
   }
 
+  const flag = getFlag(trip.countryIso2);
+  const dayNum = tripDayNumber(trip);
+  const stops = trip.stops ?? [];
+  const stopsText = stops.length > 1
+    ? stops.map((s) => s.cityName || s.countryIso2).join(' → ')
+    : trip.destinationName;
+  const dateText = trip.arriving && trip.leaving
+    ? `${formatDateShort(trip.arriving)} — ${formatDateShort(trip.leaving)}`
+    : 'Flexible dates';
+  const statusStyle = STATUS_COLORS[trip.status] ?? STATUS_COLORS.draft;
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* Nav bar */}
       <View style={styles.nav}>
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
+          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
+        </Pressable>
       </View>
 
+      {/* Overflow menu */}
+      {showMenu && (
+        <View style={styles.menu}>
+          <Pressable
+            style={styles.menuItem}
+            onPress={() => {
+              setShowMenu(false);
+              handleDelete();
+            }}
+          >
+            <Ionicons name="trash-outline" size={18} color={colors.emergency} />
+            <Text style={[styles.menuItemText, { color: colors.emergency }]}>Delete trip</Text>
+          </Pressable>
+        </View>
+      )}
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero image */}
-        {heroUrl && (
-          <Image source={{ uri: heroUrl }} style={styles.hero} contentFit="cover" transition={200} />
-        )}
-
-        <View style={styles.content}>
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <Text style={styles.flag}>{flag}</Text>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.destination}>{trip.destinationName}</Text>
-              <Text style={styles.countryName}>{country?.name ?? ''}</Text>
-            </View>
-          </View>
-
-          {/* Date info */}
-          <View style={styles.dateRow}>
-            <View style={styles.dateChip}>
-              <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.dateText}>
-                {formatDate(trip.arriving)} - {formatDate(trip.leaving)}
-              </Text>
-            </View>
-            <View style={styles.nightsChip}>
-              <Text style={styles.nightsText}>
-                {trip.nights} {trip.nights === 1 ? 'night' : 'nights'}
-              </Text>
-            </View>
-          </View>
-
-          {/* Notes */}
-          {trip.notes ? (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Notes</Text>
-              <Text style={styles.notesText}>{trip.notes}</Text>
-            </View>
-          ) : null}
-
-          {/* Places to visit */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Places to visit</Text>
-            {places.length > 0 ? (
-              places.map((place) => <PlaceCard key={place.id} place={place} />)
-            ) : (
-              <Text style={styles.emptyText}>No places found for this city</Text>
-            )}
-            <Pressable style={styles.addPlaceBtn}>
-              <Ionicons name="add-circle-outline" size={18} color={colors.orange} />
-              <Text style={styles.addPlaceText}>Add a place</Text>
-            </Pressable>
-          </View>
-
-          {/* Emergency numbers */}
-          {emergency && (
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Emergency numbers</Text>
-              <View style={styles.emergencyCard}>
-                <EmergencyRow label="Police" number={emergency.police} />
-                <EmergencyRow label="Ambulance" number={emergency.ambulance} />
-                <EmergencyRow label="Fire" number={emergency.fire} />
-                {emergency.general && (
-                  <EmergencyRow label="General" number={emergency.general} last />
-                )}
+        {/* Hero header */}
+        <View style={styles.heroContainer}>
+          {heroUrl ? (
+            <Image source={{ uri: heroUrl }} style={styles.heroImage} contentFit="cover" transition={200} />
+          ) : (
+            <View style={[styles.heroImage, styles.heroPlaceholder]} />
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.65)']}
+            style={styles.gradient}
+          />
+          <View style={styles.overlay}>
+            <View style={styles.statusRow}>
+              <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
+                <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                  {statusStyle.label}{dayNum ? ` · Day ${dayNum}` : ''}
+                </Text>
               </View>
             </View>
+            <Text style={styles.heroTitle} numberOfLines={1}>
+              {trip.title || trip.destinationName}
+            </Text>
+            <Text style={styles.heroSubtitle} numberOfLines={1}>
+              {flag} {stopsText} · {trip.nights} {trip.nights === 1 ? 'night' : 'nights'}
+            </Text>
+            <Text style={styles.heroDates}>{dateText}</Text>
+          </View>
+        </View>
+
+        {/* Segmented control */}
+        <SegmentedControl
+          tabs={TABS}
+          activeIndex={activeTab}
+          onTabPress={setActiveTab}
+        />
+
+        {/* Tab content */}
+        <View style={styles.tabContent}>
+          {activeTab === 0 && (
+            <JourneyTimeline entries={entries} />
+          )}
+          {activeTab === 1 && (
+            <PlanTab
+              trip={trip}
+              savedItems={savedItems}
+              onRefresh={refetchSaved}
+            />
+          )}
+          {activeTab === 2 && (
+            <PeopleTab
+              tripId={trip.id}
+              matchingOptIn={trip.matchingOptIn}
+              onToggleMatching={handleToggleMatching}
+            />
           )}
         </View>
       </ScrollView>
+
+      {/* Floating add entry button (Journey tab only) */}
+      {activeTab === 0 && (
+        <Pressable
+          style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
+          onPress={() => setShowAddEntry(true)}
+        >
+          <Ionicons name="add" size={24} color="#FFFFFF" />
+        </Pressable>
+      )}
+
+      {/* Add entry sheet */}
+      <AddEntrySheet
+        tripId={trip.id}
+        visible={showAddEntry}
+        onClose={() => setShowAddEntry(false)}
+        onSaved={refetchEntries}
+      />
     </View>
   );
 }
-
-function EmergencyRow({ label, number, last }: { label: string; number: string; last?: boolean }) {
-  return (
-    <View style={[styles.emergencyRow, last && { borderBottomWidth: 0 }]}>
-      <Text style={styles.emergencyLabel}>{label}</Text>
-      <Text style={styles.emergencyNumber}>{number}</Text>
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Styles
-// ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
@@ -279,194 +222,115 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   notFound: {
-    ...typography.body,
+    fontFamily: fonts.regular,
+    fontSize: 16,
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
   nav: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
   },
-  hero: {
-    width: '100%',
-    height: 200,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl,
-  },
-
-  // Header
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-  flag: {
-    fontSize: 40,
-  },
-  destination: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  countryName: {
-    ...typography.caption,
-    marginTop: 2,
-  },
-
-  // Dates
-  dateRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  dateChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: colors.borderSubtle,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  dateText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  nightsChip: {
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  nightsText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.orange,
-  },
-
-  // Sections
-  section: {
-    marginTop: spacing.xl,
-  },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  notesText: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-
-  // Place card
-  card: {
-    flexDirection: 'row',
+  menu: {
+    position: 'absolute',
+    top: 80,
+    right: spacing.lg,
+    backgroundColor: colors.background,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     borderRadius: radius.card,
-    overflow: 'hidden',
-    marginBottom: spacing.md,
+    padding: spacing.sm,
+    zIndex: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  cardImage: {
-    width: 88,
-    height: 88,
-  },
-  cardImagePlaceholder: {
-    backgroundColor: colors.borderSubtle,
-  },
-  cardBody: {
-    flex: 1,
-    padding: spacing.md,
-    justifyContent: 'center',
-  },
-  cardName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  tagRow: {
+  menuItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginTop: 4,
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
-  tagPill: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-  },
-  tagText: {
+  menuItemText: {
     fontFamily: fonts.medium,
+    fontSize: 15,
+  },
+  // Hero header
+  heroContainer: {
+    height: 220,
+    position: 'relative',
+  },
+  heroImage: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroPlaceholder: {
+    backgroundColor: colors.neutralFill,
+  },
+  gradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  overlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.lg,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  statusPill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+  },
+  statusText: {
+    fontFamily: fonts.semiBold,
     fontSize: 11,
   },
-  cardDesc: {
+  heroTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 24,
+    color: '#FFFFFF',
+  },
+  heroSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.85)',
+    marginTop: 2,
+  },
+  heroDates: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.textPrimary,
-    lineHeight: 18,
-    marginTop: 4,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: 2,
   },
-  saveBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-end',
-    gap: 4,
-    marginTop: 4,
+  // Tab content
+  tabContent: {
+    paddingHorizontal: spacing.lg,
+    minHeight: 400,
   },
-  saveBtnText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-  },
-
-  // Add place button
-  addPlaceBtn: {
-    flexDirection: 'row',
+  // FAB
+  fab: {
+    position: 'absolute',
+    right: spacing.lg,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.card,
-    borderStyle: 'dashed',
-    marginTop: spacing.xs,
-  },
-  addPlaceText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
-
-  // Emergency
-  emergencyCard: {
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-  },
-  emergencyRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
-  },
-  emergencyLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  emergencyNumber: {
-    ...typography.label,
-    color: colors.orange,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 6,
   },
 });

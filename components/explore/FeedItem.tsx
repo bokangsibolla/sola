@@ -1,16 +1,34 @@
 // components/explore/FeedItem.tsx
 import { useRouter } from 'expo-router';
+import { StyleSheet, View } from 'react-native';
 import { EditorialCollectionCard } from './cards';
 import {
-  CountryPairSection,
   CitySpotlightSection,
   ActivityClusterSection
 } from './sections';
 import { FeedEndCard } from './FeedEndCard';
 import type { FeedItem as FeedItemType } from '@/data/explore/types';
+import type { CityWithCountry } from '@/data/explore/types';
+import { spacing } from '@/constants/design';
 
 interface FeedItemProps {
   item: FeedItemType;
+}
+
+function CityPairInline({ cities }: { cities: [CityWithCountry, CityWithCountry] }) {
+  const router = useRouter();
+  return (
+    <View style={inlineStyles.pairRow}>
+      <CitySpotlightSection
+        city={cities[0]}
+        activities={[]}
+      />
+      <CitySpotlightSection
+        city={cities[1]}
+        activities={[]}
+      />
+    </View>
+  );
 }
 
 export function FeedItem({ item }: FeedItemProps) {
@@ -30,8 +48,8 @@ export function FeedItem({ item }: FeedItemProps) {
         />
       );
 
-    case 'country-pair':
-      return <CountryPairSection countries={item.data} />;
+    case 'city-pair':
+      return <CityPairInline cities={item.data} />;
 
     case 'city-spotlight':
       return (
@@ -57,3 +75,11 @@ export function FeedItem({ item }: FeedItemProps) {
       return null;
   }
 }
+
+const inlineStyles = StyleSheet.create({
+  pairRow: {
+    flexDirection: 'row',
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.md,
+  },
+});

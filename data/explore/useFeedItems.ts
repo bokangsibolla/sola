@@ -1,21 +1,16 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
-import {
-  getCountries,
-  getPopularCities,
-  getCountryById,
-} from '../api';
+import { getPopularCitiesWithCountry } from '../api';
 import { getFeaturedExploreCollections, getExploreCollectionItems } from '../collections';
+import { getDiscoveryLenses } from '../lenses';
 import { buildFeed } from './feedBuilder';
 import type { ExploreCollectionWithItems } from '../types';
-import type { FeedItem, CityWithCountry, ActivityWithCity } from './types';
+import type { FeedItem } from './types';
 
-// Initial feed shown while real data loads (loading placeholder)
 const INITIAL_FEED: FeedItem[] = [
   { type: 'end-card' },
 ];
 
-// Timeout wrapper for API calls
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return Promise.race([
     promise,
@@ -33,7 +28,6 @@ interface UseFeedItemsResult {
 }
 
 export function useFeedItems(): UseFeedItemsResult {
-  // Start with loading state until we have data
   const [feedItems, setFeedItems] = useState<FeedItem[]>(INITIAL_FEED);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -42,27 +36,18 @@ export function useFeedItems(): UseFeedItemsResult {
   useEffect(() => {
     let cancelled = false;
 
-    async function loadRealData() {
+    async function loadFeed() {
       setIsLoading(true);
       try {
-        // Fetch countries and cities (core feed data)
-        const [allCountries, cities] = await withTimeout(
-          Promise.all([
-            getCountries(),
-            getPopularCities(4),
-          ]),
+        // Single optimized query: 12 cities with country data joined
+        const cities = await withTimeout(
+          getPopularCitiesWithCountry(12),
           5000
         );
 
-        // Prioritize featured countries (SE Asia) first
-        const countries = [...allCountries].sort((a, b) => {
-          if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
-          return a.orderIndex - b.orderIndex;
-        });
-
         if (cancelled) return;
 
-        // Fetch collections separately so a failure doesn't break the whole feed
+        // Collections (optional — failures don't break feed)
         let collectionsWithItems: ExploreCollectionWithItems[] = [];
         try {
           const featuredCollections = await withTimeout(
@@ -81,48 +66,25 @@ export function useFeedItems(): UseFeedItemsResult {
             );
           }
         } catch (collectionErr) {
-          // Collections failed (table may not exist yet) — continue without them
           console.log('Collections unavailable:', collectionErr);
+        }
+
+        // Lenses (optional — returns [] if DB table doesn't exist)
+        let lenses: any[] = [];
+        try {
+          lenses = await withTimeout(getDiscoveryLenses(), 3000);
+        } catch {
+          console.log('Lenses unavailable');
         }
 
         if (cancelled) return;
 
-        // Get unique country IDs and fetch country details
-        const countryIds = [...new Set(cities.map(c => c.countryId))];
-        const countryResults = await withTimeout(
-          Promise.all(countryIds.map(id => getCountryById(id))),
-          3000
-        );
-
-        if (cancelled) return;
-
-        const countryMap = new Map(
-          countryResults.filter(Boolean).map(c => [c!.id, c!])
-        );
-
-        // Build cities with country info
-        const citiesWithActivities = cities.map((city) => {
-          const country = countryMap.get(city.countryId);
-          return {
-            city: {
-              ...city,
-              countryName: country?.name ?? '',
-              countrySlug: country?.slug ?? '',
-            } as CityWithCountry,
-            activities: [] as ActivityWithCity[],
-          };
-        });
-
-        if (cancelled) return;
-
-        // Build full feed with real data
-        const feed = buildFeed(collectionsWithItems, countries, citiesWithActivities);
+        const feed = buildFeed(collectionsWithItems, cities, lenses);
         setFeedItems(feed);
         if (!cancelled) {
           setIsLoading(false);
         }
       } catch (err) {
-        // Core feed data failed — show error
         console.log('Feed API error:', err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error('Failed to load'));
@@ -131,9 +93,7 @@ export function useFeedItems(): UseFeedItemsResult {
       }
     }
 
-    // Load real data in background (don't block UI)
-    loadRealData();
-
+    loadFeed();
     return () => { cancelled = true; };
   }, [refreshKey]);
 
