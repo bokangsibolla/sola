@@ -11,6 +11,9 @@ export default function ExploreLayout() {
         }}
       />
       <Stack.Screen name="see-all" />
+      <Stack.Screen name="all-countries" />
+      <Stack.Screen name="all-destinations" />
+      <Stack.Screen name="all-activities" />
       <Stack.Screen name="country/[slug]" />
       <Stack.Screen name="city/[slug]" />
       <Stack.Screen name="collection/[slug]" />

@@ -21,6 +21,7 @@ export function buildFeed(
   let countryIndex = 0;
   let cityIndex = 0;
   let beat = 0;
+  let quickActionsInserted = false;
 
   // Build ~15-20 items following the rhythm
   const maxItems = 18;
@@ -36,6 +37,10 @@ export function buildFeed(
             type: 'editorial-collection',
             data: collections[collectionIndex++],
           });
+          if (!quickActionsInserted) {
+            feed.push({ type: 'quick-actions' });
+            quickActionsInserted = true;
+          }
         }
         break;
 
@@ -94,6 +99,10 @@ export function buildFeed(
     ) {
       break;
     }
+  }
+
+  if (!quickActionsInserted) {
+    feed.unshift({ type: 'quick-actions' });
   }
 
   // Add end card

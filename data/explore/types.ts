@@ -13,6 +13,7 @@ export interface ActivityWithCity extends Place {
 
 export type FeedItem =
   | { type: 'editorial-collection'; data: ExploreCollectionWithItems }
+  | { type: 'quick-actions' }
   | { type: 'country-pair'; data: [Country, Country] }
   | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] }
   | { type: 'activity-cluster'; data: ActivityWithCity[]; cityName: string; citySlug: string }

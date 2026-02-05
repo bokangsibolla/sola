@@ -246,6 +246,16 @@ export async function getPopularCities(limit = 12): Promise<City[]> {
   return mapCities(data ?? []);
 }
 
+export async function getAllCities(): Promise<City[]> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return mapCities(data ?? []);
+}
+
 export async function getCityBySlug(slug: string): Promise<City | undefined> {
   const { data, error } = await supabase
     .from('cities')
@@ -350,6 +360,35 @@ export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]>
     .order('order_index');
   if (cError) throw cError;
   return mapCountries(countries ?? []);
+}
+
+export async function getUniqueDestinationTagSlugs(
+  entityType: 'country' | 'city' | 'neighborhood',
+  tagCategory?: string,
+): Promise<{ tagSlug: string; tagLabel: string }[]> {
+  let query = supabase
+    .from('destination_tags')
+    .select('tag_slug, tag_label')
+    .eq('entity_type', entityType);
+
+  if (tagCategory) {
+    query = query.eq('tag_category', tagCategory);
+  }
+
+  const { data, error } = await query;
+  if (error) throw error;
+
+  const seen = new Map<string, string>();
+  for (const row of data ?? []) {
+    if (!seen.has(row.tag_slug)) {
+      seen.set(row.tag_slug, row.tag_label);
+    }
+  }
+
+  return Array.from(seen.entries()).map(([tagSlug, tagLabel]) => ({
+    tagSlug,
+    tagLabel,
+  }));
 }
 
 // ---------------------------------------------------------------------------
@@ -535,6 +574,18 @@ export async function getActivitiesByCity(cityId: string): Promise<Place[]> {
     .eq('is_active', true)
     .in('place_type', ['tour', 'activity', 'landmark'])
     .order('curation_score', { ascending: false, nullsFirst: false });
+  if (error) throw error;
+  return rowsToCamel<Place>(data ?? []);
+}
+
+export async function getAllActivities(limit = 50): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('is_active', true)
+    .in('place_type', ['tour', 'activity', 'landmark'])
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
   if (error) throw error;
   return rowsToCamel<Place>(data ?? []);
 }
@@ -1043,7 +1094,7 @@ export async function reportUser(
 // ---------------------------------------------------------------------------
 
 export interface DestinationResult {
-  type: 'country' | 'city';
+  type: 'country' | 'city' | 'area' | 'activity';
   id: string;
   name: string;
   slug: string;
@@ -1093,7 +1144,44 @@ export async function searchDestinations(query: string): Promise<DestinationResu
     });
   }
 
-  return results.slice(0, 10);
+  const { data: areas } = await supabase
+    .from('city_areas')
+    .select('id, name, slug, city_id, cities(name, slug)')
+    .eq('is_active', true)
+    .ilike('name', `%${q}%`)
+    .limit(5);
+
+  for (const a of areas ?? []) {
+    results.push({
+      type: 'area',
+      id: a.id,
+      name: a.name,
+      slug: (a as any).cities?.slug ?? a.slug,
+      parentName: (a as any).cities?.name ?? null,
+      countryIso2: null,
+    });
+  }
+
+  const { data: activities } = await supabase
+    .from('places')
+    .select('id, name, slug, city_id, cities(name)')
+    .eq('is_active', true)
+    .in('place_type', ['tour', 'activity', 'landmark'])
+    .ilike('name', `%${q}%`)
+    .limit(5);
+
+  for (const a of activities ?? []) {
+    results.push({
+      type: 'activity',
+      id: a.id,
+      name: a.name,
+      slug: a.slug,
+      parentName: (a as any).cities?.name ?? null,
+      countryIso2: null,
+    });
+  }
+
+  return results.slice(0, 20);
 }
 
 // ---------------------------------------------------------------------------

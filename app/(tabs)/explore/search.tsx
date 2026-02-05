@@ -1,5 +1,5 @@
 // app/(tabs)/explore/search.tsx
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useMemo } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -32,6 +32,26 @@ export default function SearchScreen() {
     addRecentSearch,
   } = useSearch();
 
+  const groupedResults = useMemo(() => {
+    const groups: { title: string; type: string; data: SearchResult[] }[] = [];
+    const typeLabels: Record<string, string> = {
+      country: 'Countries',
+      city: 'Cities',
+      area: 'Areas',
+      activity: 'Activities',
+    };
+    const order: SearchResult['type'][] = ['country', 'city', 'area', 'activity'];
+
+    for (const type of order) {
+      const items = results.filter((r) => r.type === type);
+      if (items.length > 0) {
+        groups.push({ title: typeLabels[type] ?? type, type, data: items });
+      }
+    }
+
+    return groups;
+  }, [results]);
+
   useEffect(() => {
     // Auto-focus input on mount
     setTimeout(() => inputRef.current?.focus(), 100);
@@ -62,7 +82,10 @@ export default function SearchScreen() {
       case 'city':
         router.push(`/(tabs)/explore/city/${result.slug}`);
         break;
-      case 'place':
+      case 'area':
+        router.push(`/(tabs)/explore/city/${result.slug}`);
+        break;
+      case 'activity':
         router.push(`/(tabs)/explore/activity/${result.slug}`);
         break;
     }
@@ -145,11 +168,28 @@ export default function SearchScreen() {
           </Text>
         </View>
       ) : (
-        // Results
+        // Grouped Results
         <FlatList
-          data={results}
-          renderItem={renderResult}
-          keyExtractor={(item) => `${item.type}-${item.id}`}
+          data={groupedResults}
+          renderItem={({ item: group }) => (
+            <View>
+              <Text style={styles.groupTitle}>{group.title}</Text>
+              {group.data.map((result) => (
+                <Pressable
+                  key={`${result.type}-${result.id}`}
+                  style={styles.resultRow}
+                  onPress={() => handleResultPress(result)}
+                >
+                  <View style={styles.resultContent}>
+                    <Text style={styles.resultName}>{result.name}</Text>
+                    <Text style={styles.resultContext}>{result.context}</Text>
+                  </View>
+                  <Text style={styles.resultType}>{result.type}</Text>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          keyExtractor={(group) => group.type}
           contentContainerStyle={styles.results}
           keyboardShouldPersistTaps="handled"
         />
@@ -223,6 +263,16 @@ const styles = StyleSheet.create({
   },
   results: {
     paddingVertical: spacing.md,
+  },
+  groupTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
   },
   resultRow: {
     flexDirection: 'row',

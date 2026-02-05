@@ -7,6 +7,7 @@ import AppHeader from '@/components/AppHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
+import { QuickActionsRow } from '@/components/explore/QuickActionsRow';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem } from '@/data/explore/types';
 import type { Country } from '@/data/types';
@@ -43,20 +44,29 @@ function CountryCard({ country, onPress }: { country: Country; onPress: () => vo
 }
 
 // Country pair - two country cards side by side
-function CountryPairCard({ countries, onCountryPress }: {
+function CountryPairCard({ countries, onCountryPress, onViewAll }: {
   countries: [Country, Country];
   onCountryPress: (slug: string) => void;
+  onViewAll: () => void;
 }) {
   return (
-    <View style={styles.pairRow}>
-      <CountryCard
-        country={countries[0]}
-        onPress={() => onCountryPress(countries[0].slug)}
-      />
-      <CountryCard
-        country={countries[1]}
-        onPress={() => onCountryPress(countries[1].slug)}
-      />
+    <View>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionLabel}>COUNTRIES</Text>
+        <Pressable onPress={onViewAll} hitSlop={8}>
+          <Text style={styles.seeAllLink}>See all</Text>
+        </Pressable>
+      </View>
+      <View style={styles.pairRow}>
+        <CountryCard
+          country={countries[0]}
+          onPress={() => onCountryPress(countries[0].slug)}
+        />
+        <CountryCard
+          country={countries[1]}
+          onPress={() => onCountryPress(countries[1].slug)}
+        />
+      </View>
     </View>
   );
 }
@@ -115,11 +125,15 @@ export default function ExploreScreen() {
           />
         );
 
+      case 'quick-actions':
+        return <QuickActionsRow />;
+
       case 'country-pair':
         return (
           <CountryPairCard
             countries={item.data}
             onCountryPress={(slug) => router.push(`/explore/country/${slug}`)}
+            onViewAll={() => router.push('/explore/all-countries')}
           />
         );
 
@@ -147,6 +161,8 @@ export default function ExploreScreen() {
     switch (item.type) {
       case 'editorial-collection':
         return `collection-${item.data.slug}`;
+      case 'quick-actions':
+        return 'quick-actions';
       case 'country-pair':
         return `country-pair-${item.data[0].slug}-${item.data[1].slug}`;
       case 'city-spotlight':
@@ -295,6 +311,24 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
+  },
+  // Section header
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  sectionLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: colors.textMuted,
+  },
+  seeAllLink: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
   },
   // Country pair row
   pairRow: {
