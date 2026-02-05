@@ -34,6 +34,9 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
         style={styles.gradient}
         pointerEvents="none"
       />
+      <View style={styles.typeLabel} pointerEvents="none">
+        <Text style={styles.typeLabelText}>Collection</Text>
+      </View>
       <View style={styles.content} pointerEvents="none">
         {collection.badgeLabel && (
           <View style={styles.badge}>
@@ -68,6 +71,23 @@ const styles = StyleSheet.create({
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
+  },
+  typeLabel: {
+    position: 'absolute',
+    top: spacing.lg,
+    left: spacing.lg,
+    zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  typeLabelText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   content: {
     position: 'absolute',

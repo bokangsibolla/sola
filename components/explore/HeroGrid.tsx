@@ -6,6 +6,14 @@ import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { ExploreCollectionWithItems } from '@/data/types';
 
+function TypeLabel({ label }: { label: string }) {
+  return (
+    <View style={styles.typeLabel}>
+      <Text style={styles.typeLabelText}>{label}</Text>
+    </View>
+  );
+}
+
 interface HeroGridProps {
   collection: ExploreCollectionWithItems | null;
   city1: CityWithCountry;
@@ -47,6 +55,7 @@ export function HeroGrid({
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
+          <TypeLabel label="Collection" />
           <View style={styles.topCardContent} pointerEvents="none">
             {collection.badgeLabel && (
               <View style={styles.badge}>
@@ -81,6 +90,7 @@ export function HeroGrid({
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
+          <TypeLabel label="City" />
           <View style={styles.topCardContent} pointerEvents="none">
             <Text style={styles.topCardTitle}>{city1.name}</Text>
             <Text style={styles.topCardSubtitle}>{city1.countryName}</Text>
@@ -111,6 +121,7 @@ export function HeroGrid({
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
+          <TypeLabel label="City" />
           <View style={styles.bottomCardContent} pointerEvents="none">
             <Text style={styles.bottomCardTitle} numberOfLines={1}>
               {city1.name}
@@ -143,6 +154,7 @@ export function HeroGrid({
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
+            <TypeLabel label="City" />
             <View style={styles.bottomCardContent} pointerEvents="none">
               <Text style={styles.bottomCardTitle} numberOfLines={1}>
                 {city2.name}
@@ -167,6 +179,24 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
+  },
+  // Type label pill
+  typeLabel: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+    zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  typeLabelText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   // Top card: featured collection
   topCard: {

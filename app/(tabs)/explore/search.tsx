@@ -139,25 +139,26 @@ export default function SearchScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={handleBack} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
+        <Pressable onPress={handleBack} hitSlop={12} style={styles.backButton}>
+          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
         </Pressable>
 
         <View style={styles.inputContainer}>
-          <Feather name="search" size={18} color={colors.textMuted} />
+          <Feather name="search" size={17} color={colors.orange} />
           <TextInput
             ref={inputRef}
             style={styles.input}
             value={query}
             onChangeText={setQuery}
-            placeholder="Where to next, queen?"
+            placeholder="Search destinations, stays, experiences"
             placeholderTextColor={colors.textMuted}
             returnKeyType="search"
             autoCorrect={false}
+            selectionColor={colors.orange}
           />
           {query.length > 0 && (
             <Pressable onPress={handleClear} hitSlop={8}>
-              <Feather name="x" size={18} color={colors.textMuted} />
+              <Feather name="x-circle" size={17} color={colors.textMuted} />
             </Pressable>
           )}
         </View>
@@ -317,27 +318,34 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
     gap: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderDefault,
+  },
+  backButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   inputContainer: {
     flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
+    borderRadius: radius.card,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+    paddingVertical: 12,
     gap: spacing.sm,
   },
   input: {
     flex: 1,
     fontFamily: fonts.regular,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textPrimary,
-    paddingVertical: 6,
+    paddingVertical: 2,
   },
   centered: {
     flex: 1,

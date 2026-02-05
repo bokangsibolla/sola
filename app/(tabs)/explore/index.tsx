@@ -19,6 +19,15 @@ import { colors, fonts, spacing, radius } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
+// Frosted type label pill — sits top-left of image cards
+function TypeLabel({ label }: { label: string }) {
+  return (
+    <View style={styles.typeLabel}>
+      <Text style={styles.typeLabelText}>{label}</Text>
+    </View>
+  );
+}
+
 // City card with hero image
 function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () => void }) {
   return (
@@ -36,6 +45,7 @@ function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () =
           transition={200}
         />
       )}
+      <TypeLabel label="City" />
       <View style={styles.smallCardOverlay}>
         <Text style={styles.smallCardTitle}>{city.name}</Text>
         <Text style={styles.smallCardBlurb} numberOfLines={1}>{city.countryName}</Text>
@@ -95,6 +105,7 @@ function CitySpotlightCard({ city, onPress }: {
           transition={200}
         />
       )}
+      <TypeLabel label="City" />
       <View style={styles.spotlightOverlay}>
         <Text style={styles.spotlightTitle}>{city.name}</Text>
         <Text style={styles.spotlightSubtitle}>{city.countryName}</Text>
@@ -131,10 +142,7 @@ export default function ExploreScreen() {
     switch (item.type) {
       case 'search-bar':
         return (
-          <SearchBar
-            placeholder="Where to next, queen?"
-            onPress={() => router.push('/explore/search')}
-          />
+          <SearchBar onPress={() => router.push('/explore/search')} />
         );
 
       case 'hero-grid':
@@ -212,6 +220,7 @@ export default function ExploreScreen() {
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
+            <TypeLabel label="Community" />
             <View style={styles.meetCardContent} pointerEvents="none">
               <Text style={styles.meetCardTitle}>Meet other travellers</Text>
               <Text style={styles.meetCardSubtitle}>
@@ -391,6 +400,24 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
+  },
+  // Type label pill
+  typeLabel: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+    zIndex: 1,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  typeLabelText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
   },
   // Section header
   sectionHeader: {
