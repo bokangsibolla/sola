@@ -1,49 +1,91 @@
-import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { getProfilesPaginated, getCityById, getBlockedUserIds } from '@/data/api';
+import TravelerCard from '@/components/TravelerCard';
+import LocationConsentBanner from '@/components/travelers/LocationConsentBanner';
+import PendingConnectionsBanner from '@/components/travelers/PendingConnectionsBanner';
+import SectionHeader from '@/components/travelers/SectionHeader';
+import { useTravelersFeed } from '@/data/travelers/useTravelersFeed';
+import { getConnectionContext, getSharedInterests } from '@/data/travelers/connectionContext';
+import { sendConnectionRequest, getConnectionStatus } from '@/data/api';
+import { useLocationConsent } from '@/hooks/useLocationConsent';
 import { useData } from '@/hooks/useData';
-import { usePaginatedData } from '@/hooks/usePaginatedData';
 import { useAuth } from '@/state/AuthContext';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import { getImageUrl } from '@/lib/image';
-import type { Profile } from '@/data/types';
-
-function countryFlag(iso2: string): string {
-  return [...iso2.toUpperCase()]
-    .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
-    .join('');
-}
+import { colors, fonts, spacing, typography } from '@/constants/design';
+import type { Profile, ConnectionStatus } from '@/data/types';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { userId } = useAuth();
   const posthog = usePostHog();
-  const { data: allProfiles, loading, error, fetchMore, hasMore, isFetchingMore, refetch } = usePaginatedData({
-    queryKey: ['profiles'],
-    fetcher: (page) => getProfilesPaginated(page),
-  });
-  const { data: blockedIds } = useData(
-    () => (userId ? getBlockedUserIds(userId) : Promise.resolve([])),
-    [userId],
-  );
+  const queryClient = useQueryClient();
+  const [locationDismissed, setLocationDismissed] = useState(false);
+
+  const {
+    nearby,
+    sharedInterests,
+    suggested,
+    pendingReceived,
+    userProfile,
+    isLoading,
+    error,
+    refetch,
+  } = useTravelersFeed();
+
+  const { locationGranted, loading: locationLoading, requestLocation } = useLocationConsent(userId);
+  const showLocationBanner =
+    !locationDismissed && !locationGranted && !userProfile?.locationSharingEnabled;
 
   useEffect(() => {
     posthog.capture('home_screen_viewed');
   }, [posthog]);
 
-  const visibleProfiles = allProfiles.filter(
-    (p) => p.id !== userId && !(blockedIds ?? []).includes(p.id),
-  );
+  // Build sections, only include non-empty ones
+  const sections: { key: string; title: string; subtitle?: string; data: Profile[] }[] = [];
+  if (nearby.length > 0) {
+    sections.push({
+      key: 'nearby',
+      title: 'Travelers near you',
+      subtitle: userProfile?.locationCityName
+        ? `Women in ${userProfile.locationCityName}`
+        : 'Women exploring nearby',
+      data: nearby,
+    });
+  }
+  if (sharedInterests.length > 0) {
+    sections.push({
+      key: 'interests',
+      title: 'Shared interests',
+      subtitle: 'Women who enjoy similar things',
+      data: sharedInterests,
+    });
+  }
+  if (suggested.length > 0) {
+    sections.push({
+      key: 'suggested',
+      title: 'Suggested for you',
+      subtitle: 'Discover more travelers',
+      data: suggested,
+    });
+  }
 
-  if (loading) return <LoadingScreen />;
+  const handleLocationEnable = useCallback(async () => {
+    const result = await requestLocation();
+    if (result) {
+      posthog.capture('location_enabled', { city: result.cityName });
+      queryClient.invalidateQueries({ queryKey: ['travelers'] });
+    }
+  }, [requestLocation, posthog, queryClient]);
+
+  if (isLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   return (
@@ -78,94 +120,101 @@ export default function HomeScreen() {
         }
       />
 
-      <FlatList
-        data={visibleProfiles}
+      <SectionList
+        sections={sections}
         keyExtractor={(item) => item.id}
         showsVerticalScrollIndicator={false}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={styles.feed}
         ListHeaderComponent={
           <>
-            <Text style={styles.sectionTitle}>Travelers near you</Text>
-            <Text style={styles.sectionSubtitle}>Women exploring the world right now</Text>
+            {showLocationBanner && (
+              <LocationConsentBanner
+                onEnable={handleLocationEnable}
+                onDismiss={() => setLocationDismissed(true)}
+                loading={locationLoading}
+              />
+            )}
+            <PendingConnectionsBanner
+              count={pendingReceived.length}
+              onPress={() => router.push('/home/connections')}
+            />
           </>
         }
+        renderSectionHeader={({ section }) => (
+          <SectionHeader title={section.title} subtitle={section.subtitle} />
+        )}
+        renderItem={({ item }) => (
+          <TravelerCardWrapper
+            profile={item}
+            userProfile={userProfile}
+            onRefresh={refetch}
+          />
+        )}
+        SectionSeparatorComponent={() => <View style={styles.sectionSeparator} />}
+        ItemSeparatorComponent={() => <View style={styles.itemSeparator} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Feather name="users" size={40} color={colors.textMuted} />
             <Text style={styles.emptyTitle}>No travelers nearby yet</Text>
             <Text style={styles.emptySubtitle}>
-              Check back soon — more women are joining Sola every day
+              Enable location sharing to find women in your area, or check back soon
             </Text>
           </View>
         }
-        contentContainerStyle={styles.feed}
-        renderItem={({ item }) => <ProfileCard profile={item} />}
-        onEndReached={() => { if (hasMore) fetchMore(); }}
-        onEndReachedThreshold={0.5}
-        ListFooterComponent={isFetchingMore ? <ActivityIndicator style={{ padding: 16 }} /> : null}
       />
     </AppScreen>
   );
 }
 
-function ProfileCard({ profile }: { profile: Profile }) {
+function TravelerCardWrapper({
+  profile,
+  userProfile,
+  onRefresh,
+}: {
+  profile: Profile;
+  userProfile: Profile | null;
+  onRefresh: () => void;
+}) {
   const router = useRouter();
   const posthog = usePostHog();
-  const { data: city } = useData(
-    () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
-    [profile.currentCityId],
+  const { userId } = useAuth();
+  const queryClient = useQueryClient();
+  const [localStatus, setLocalStatus] = useState<ConnectionStatus | null>(null);
+
+  const { data: fetchedStatus } = useData(
+    () => (userId ? getConnectionStatus(userId, profile.id) : Promise.resolve('none' as ConnectionStatus)),
+    [userId, profile.id],
   );
 
+  const status = localStatus ?? fetchedStatus ?? 'none';
+  const shared = userProfile ? getSharedInterests(userProfile, profile) : [];
+  const contextLabel = userProfile ? getConnectionContext(userProfile, profile) : undefined;
+
+  const handleConnect = useCallback(async () => {
+    if (!userId) return;
+    posthog.capture('connection_request_sent', { recipient_id: profile.id });
+    setLocalStatus('pending_sent');
+    try {
+      await sendConnectionRequest(userId, profile.id, contextLabel);
+      queryClient.invalidateQueries({ queryKey: ['travelers'] });
+    } catch {
+      setLocalStatus(null); // Revert on failure
+    }
+  }, [userId, profile.id, contextLabel, posthog, queryClient]);
+
   return (
-    <Pressable
-      style={styles.card}
+    <TravelerCard
+      profile={profile}
+      connectionStatus={status}
+      sharedInterests={shared}
+      contextLabel={contextLabel}
       onPress={() => {
         posthog.capture('traveler_profile_tapped', { profile_id: profile.id });
         router.push(`/home/user/${profile.id}`);
       }}
-    >
-      <View style={styles.cardTop}>
-        <View style={styles.avatarWrap}>
-          {profile.avatarUrl ? (
-            <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Feather name="user" size={24} color={colors.textMuted} />
-            </View>
-          )}
-          {profile.isOnline && <View style={styles.onlineDot} />}
-        </View>
-
-        <View style={styles.cardInfo}>
-          <Text style={styles.cardName}>
-            {profile.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}
-            {profile.firstName}
-          </Text>
-          {(city || profile.currentCityName) && (
-            <View style={styles.locationRow}>
-              <Feather name="map-pin" size={12} color={colors.orange} />
-              <Text style={styles.locationText}>
-                {city?.name ?? profile.currentCityName}
-              </Text>
-            </View>
-          )}
-          {profile.bio && (
-            <Text style={styles.cardBio} numberOfLines={1}>
-              {profile.bio}
-            </Text>
-          )}
-        </View>
-      </View>
-
-      {profile.interests.length > 0 && (
-        <View style={styles.tags}>
-          {profile.interests.map((interest) => (
-            <View key={interest} style={styles.tag}>
-              <Text style={styles.tagText}>{interest}</Text>
-            </View>
-          ))}
-        </View>
-      )}
-    </Pressable>
+      onConnect={handleConnect}
+    />
   );
 }
 
@@ -184,95 +233,14 @@ const styles = StyleSheet.create({
     width: 22,
     height: 22,
   },
-  sectionTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
-  },
-  sectionSubtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginBottom: spacing.xl,
-  },
   feed: {
-    gap: spacing.lg,
     paddingBottom: spacing.xxl,
   },
-  card: {
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.card,
-    padding: spacing.lg,
+  sectionSeparator: {
+    height: spacing.sm,
   },
-  cardTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  avatarWrap: {
-    position: 'relative',
-    marginRight: spacing.md,
-  },
-  avatar: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-  },
-  avatarPlaceholder: {
-    backgroundColor: colors.borderDefault,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 2,
-    right: 2,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.greenSoft,
-    borderWidth: 2,
-    borderColor: colors.background,
-  },
-  cardInfo: {
-    flex: 1,
-  },
-  cardName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-    marginTop: 2,
-  },
-  locationText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  cardBio: {
-    ...typography.captionSmall,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  tags: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: spacing.md,
-  },
-  tag: {
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.orange,
+  itemSeparator: {
+    height: spacing.md,
   },
   emptyState: {
     alignItems: 'center',

@@ -254,9 +254,29 @@ export interface Profile {
   interests: string[];
   travelStyle: string | null;
   isOnline: boolean;
+  locationSharingEnabled: boolean;
+  locationLat: number | null;
+  locationLng: number | null;
+  locationCityName: string | null;
+  locationCountryName: string | null;
+  locationUpdatedAt: string | null;
+  nationality: string | null;
+  isDiscoverable: boolean;
   createdAt: string;
   updatedAt: string;
 }
+
+export interface ConnectionRequest {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'pending' | 'accepted' | 'declined';
+  context: string | null;
+  createdAt: string;
+  respondedAt: string | null;
+}
+
+export type ConnectionStatus = 'none' | 'pending_sent' | 'pending_received' | 'connected';
 
 export interface SavedPlace {
   id: string;
@@ -442,4 +462,32 @@ export interface ExploreCollectionItem {
 
 export interface ExploreCollectionWithItems extends ExploreCollection {
   items: ExploreCollectionItem[];
+}
+
+// ---------------------------------------------------------------------------
+// Discovery Lenses (Women-First)
+// ---------------------------------------------------------------------------
+
+export interface DiscoveryLens {
+  id: string;
+  slug: string;
+  title: string;
+  helperText: string | null;
+  iconName: string;
+  introMd: string | null;
+  includeTags: string[];
+  excludeTags: string[];
+  entityTypes: ('country' | 'city' | 'neighborhood')[];
+  sortBy: string;
+  maxItems: number;
+  orderIndex: number;
+  isActive: boolean;
+  isSponsored: boolean;
+  sponsorName: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DiscoveryLensWithResults extends DiscoveryLens {
+  results: ExploreCollectionItem[];
 }

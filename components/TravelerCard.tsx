@@ -1,66 +1,115 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-interface User {
-  id: string;
-  firstName: string;
-  bio: string;
-  photoUrl: string | null;
-  countryName: string;
-  currentCity: string | null;
-  interests: string[];
-  isOnline: boolean;
-}
+import { getImageUrl } from '@/lib/image';
+import type { Profile, ConnectionStatus } from '@/data/types';
 
 interface TravelerCardProps {
-  user: User;
+  profile: Profile;
+  connectionStatus: ConnectionStatus;
+  sharedInterests?: string[];
+  contextLabel?: string;
   onPress: () => void;
+  onConnect: () => void;
 }
 
-export default function TravelerCard({ user, onPress }: TravelerCardProps) {
-  const accessibilityLabel = [
-    user.firstName,
-    user.isOnline ? 'online now' : '',
-    user.currentCity ? `in ${user.currentCity}` : '',
-    `from ${user.countryName}`,
-    user.interests.length > 0 ? `interests: ${user.interests.slice(0, 2).join(', ')}` : '',
-  ].filter(Boolean).join(', ');
+export default function TravelerCard({
+  profile,
+  connectionStatus,
+  sharedInterests = [],
+  contextLabel,
+  onPress,
+  onConnect,
+}: TravelerCardProps) {
+  const displayInterests = sharedInterests.length > 0
+    ? sharedInterests.slice(0, 4)
+    : (profile.interests ?? []).slice(0, 4);
 
   return (
     <Pressable
-      style={styles.card}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityLabel}
-      accessibilityHint="Double tap to view profile"
     >
       <View style={styles.header}>
         <View style={styles.avatarContainer}>
-          {user.photoUrl ? (
-            <Image source={{ uri: user.photoUrl }} style={styles.avatar} contentFit="cover" transition={200} />
+          {profile.avatarUrl ? (
+            <Image
+              source={{ uri: getImageUrl(profile.avatarUrl, { width: 112, height: 112 }) ?? undefined }}
+              style={styles.avatar}
+              contentFit="cover"
+              transition={200}
+            />
           ) : (
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Ionicons name="person" size={20} color={colors.textMuted} />
+              <Feather name="user" size={22} color={colors.textMuted} />
             </View>
           )}
-          {user.isOnline && <View style={styles.onlineDot} />}
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>{user.firstName}</Text>
-          <Text style={styles.location}>
-            {user.currentCity ? `${user.currentCity} · ` : ''}{user.countryName}
-          </Text>
+          <Text style={styles.name}>{profile.firstName}</Text>
+          {(profile.locationCityName || profile.homeCountryName) && (
+            <Text style={styles.location}>
+              {profile.locationCityName ?? profile.homeCountryName}
+              {profile.nationality ? ` · ${profile.nationality}` : ''}
+            </Text>
+          )}
+          {contextLabel && (
+            <Text style={styles.contextLabel}>{contextLabel}</Text>
+          )}
         </View>
       </View>
-      <Text style={styles.bio} numberOfLines={2}>{user.bio}</Text>
-      <View style={styles.tags}>
-        {user.interests.slice(0, 2).map((interest) => (
-          <View key={interest} style={styles.tag}>
-            <Text style={styles.tagText}>{interest}</Text>
-          </View>
-        ))}
-      </View>
+
+      {profile.bio && (
+        <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
+      )}
+
+      {displayInterests.length > 0 && (
+        <View style={styles.tags}>
+          {displayInterests.map((interest) => (
+            <View
+              key={interest}
+              style={[
+                styles.tag,
+                sharedInterests.includes(interest) && styles.tagShared,
+              ]}
+            >
+              <Text
+                style={[
+                  styles.tagText,
+                  sharedInterests.includes(interest) && styles.tagTextShared,
+                ]}
+              >
+                {interest}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {connectionStatus === 'none' && (
+        <Pressable
+          style={styles.connectButton}
+          onPress={(e) => {
+            e.stopPropagation();
+            onConnect();
+          }}
+        >
+          <Feather name="user-plus" size={14} color={colors.orange} />
+          <Text style={styles.connectButtonText}>Connect</Text>
+        </Pressable>
+      )}
+      {connectionStatus === 'pending_sent' && (
+        <View style={styles.statusPill}>
+          <Text style={styles.statusPillText}>Request sent</Text>
+        </View>
+      )}
+      {connectionStatus === 'connected' && (
+        <View style={[styles.statusPill, styles.statusPillConnected]}>
+          <Feather name="check" size={12} color={colors.greenSoft} />
+          <Text style={[styles.statusPillText, styles.statusPillTextConnected]}>Connected</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -71,37 +120,28 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDefault,
     padding: spacing.lg,
-    marginBottom: spacing.md,
+    backgroundColor: colors.background,
+  },
+  pressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: spacing.sm,
   },
   avatarContainer: {
-    position: 'relative',
     marginRight: spacing.md,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
   },
   avatarPlaceholder: {
-    backgroundColor: colors.borderDefault,
+    backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  onlineDot: {
-    position: 'absolute',
-    bottom: 0,
-    right: 0,
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.greenSoft,
-    borderWidth: 2,
-    borderColor: colors.background,
   },
   headerText: {
     flex: 1,
@@ -115,25 +155,77 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
+    marginTop: 2,
+  },
+  contextLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+    marginTop: 2,
   },
   bio: {
-    ...typography.body,
+    ...typography.captionSmall,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   tags: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 6,
+    marginTop: spacing.md,
   },
   tag: {
-    backgroundColor: colors.orangeFill,
+    backgroundColor: colors.neutralFill,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 12,
+    borderRadius: radius.pill,
+  },
+  tagShared: {
+    backgroundColor: colors.orangeFill,
   },
   tagText: {
     fontFamily: fonts.medium,
     fontSize: 12,
+    color: colors.textSecondary,
+  },
+  tagTextShared: {
     color: colors.orange,
+  },
+  connectButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.orange,
+    borderRadius: radius.button,
+  },
+  connectButtonText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  statusPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 4,
+    marginTop: spacing.md,
+    paddingVertical: 6,
+    borderRadius: radius.pill,
+    backgroundColor: colors.neutralFill,
+  },
+  statusPillConnected: {
+    backgroundColor: colors.greenFill,
+  },
+  statusPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  statusPillTextConnected: {
+    color: colors.greenSoft,
   },
 });

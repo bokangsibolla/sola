@@ -26,7 +26,10 @@ import type {
   PlaceVerificationSignal,
   PlaceSolaNote,
   PlaceVerificationStatus,
+  ConnectionRequest,
+  ConnectionStatus,
 } from './types';
+import type { CityWithCountry } from './explore/types';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -244,6 +247,29 @@ export async function getPopularCities(limit = 12): Promise<City[]> {
     .limit(limit);
   if (error) throw error;
   return mapCities(data ?? []);
+}
+
+export async function getPopularCitiesWithCountry(
+  limit: number = 12
+): Promise<CityWithCountry[]> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*, countries(name, slug)')
+    .eq('is_active', true)
+    .order('is_featured', { ascending: false })
+    .order('order_index')
+    .limit(limit);
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => {
+    const city = mapCity(row);
+    return {
+      ...city,
+      countryName: row.countries?.name ?? '',
+      countrySlug: row.countries?.slug ?? '',
+    };
+  });
 }
 
 export async function getAllCities(): Promise<City[]> {
@@ -2004,3 +2030,217 @@ export {
   getExploreCollectionWithItems,
   getFeaturedExploreCollections,
 } from './collections';
+
+// ---------------------------------------------------------------------------
+// Connection Requests
+// ---------------------------------------------------------------------------
+
+function mapConnectionRequest(row: any): ConnectionRequest {
+  return {
+    id: row.id,
+    senderId: row.sender_id,
+    receiverId: row.receiver_id,
+    status: row.status,
+    context: row.context,
+    createdAt: row.created_at,
+    respondedAt: row.responded_at,
+  };
+}
+
+export async function sendConnectionRequest(
+  senderId: string,
+  receiverId: string,
+  context?: string,
+): Promise<ConnectionRequest> {
+  const { data, error } = await supabase
+    .from('connection_requests')
+    .insert({ sender_id: senderId, receiver_id: receiverId, context })
+    .select()
+    .single();
+  if (error) throw error;
+  return mapConnectionRequest(data);
+}
+
+export async function respondToConnectionRequest(
+  requestId: string,
+  status: 'accepted' | 'declined',
+): Promise<void> {
+  const { error } = await supabase
+    .from('connection_requests')
+    .update({ status, responded_at: new Date().toISOString() })
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
+export async function withdrawConnectionRequest(requestId: string): Promise<void> {
+  const { error } = await supabase
+    .from('connection_requests')
+    .delete()
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
+export async function getConnectionRequests(
+  userId: string,
+  direction: 'received' | 'sent',
+): Promise<ConnectionRequest[]> {
+  const column = direction === 'received' ? 'receiver_id' : 'sender_id';
+  const { data, error } = await supabase
+    .from('connection_requests')
+    .select('*')
+    .eq(column, userId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data ?? []).map(mapConnectionRequest);
+}
+
+export async function getConnectedUserIds(userId: string): Promise<string[]> {
+  const { data, error } = await supabase
+    .from('connection_requests')
+    .select('sender_id, receiver_id')
+    .eq('status', 'accepted')
+    .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`);
+  if (error) throw error;
+  return (data ?? []).map((r) =>
+    r.sender_id === userId ? r.receiver_id : r.sender_id,
+  );
+}
+
+export async function getConnectionStatus(
+  userId: string,
+  otherUserId: string,
+): Promise<ConnectionStatus> {
+  const { data, error } = await supabase
+    .from('connection_requests')
+    .select('*')
+    .or(
+      `and(sender_id.eq.${userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${userId})`,
+    )
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) return 'none';
+  if (data.status === 'accepted') return 'connected';
+  if (data.status === 'pending' && data.sender_id === userId) return 'pending_sent';
+  if (data.status === 'pending' && data.receiver_id === userId) return 'pending_received';
+  return 'none';
+}
+
+// ---------------------------------------------------------------------------
+// Traveler Discovery
+// ---------------------------------------------------------------------------
+
+export async function getNearbyTravelers(
+  userId: string,
+  cityName: string,
+  blockedIds: string[],
+  limit: number = 10,
+): Promise<Profile[]> {
+  const excluded = [userId, ...blockedIds];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('location_city_name', cityName)
+    .eq('location_sharing_enabled', true)
+    .eq('is_discoverable', true)
+    .not('id', 'in', `(${excluded.join(',')})`)
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
+export async function getTravelersInCountry(
+  userId: string,
+  countryName: string,
+  blockedIds: string[],
+  limit: number = 10,
+): Promise<Profile[]> {
+  const excluded = [userId, ...blockedIds];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('location_country_name', countryName)
+    .eq('location_sharing_enabled', true)
+    .eq('is_discoverable', true)
+    .not('id', 'in', `(${excluded.join(',')})`)
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
+export async function getTravelersWithSharedInterests(
+  userId: string,
+  userInterests: string[],
+  blockedIds: string[],
+  limit: number = 10,
+): Promise<Profile[]> {
+  const excluded = [userId, ...blockedIds];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('is_discoverable', true)
+    .overlaps('interests', userInterests)
+    .not('id', 'in', `(${excluded.join(',')})`)
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
+export async function getSuggestedTravelers(
+  userId: string,
+  excludeIds: string[],
+  blockedIds: string[],
+  limit: number = 6,
+): Promise<Profile[]> {
+  const allExcluded = [...new Set([userId, ...excludeIds, ...blockedIds])];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('is_discoverable', true)
+    .not('id', 'in', `(${allExcluded.join(',')})`)
+    .not('interests', 'eq', '{}')
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
+export async function updateUserLocation(
+  userId: string,
+  location: {
+    lat?: number;
+    lng?: number;
+    cityName?: string;
+    countryName?: string;
+    sharingEnabled: boolean;
+  },
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      location_lat: location.lat ?? null,
+      location_lng: location.lng ?? null,
+      location_city_name: location.cityName ?? null,
+      location_country_name: location.countryName ?? null,
+      location_sharing_enabled: location.sharingEnabled,
+      location_updated_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/**
+ * Only create/open a conversation between connected users.
+ * Throws if users are not mutually connected.
+ */
+export async function getOrCreateConversationGuarded(
+  userId: string,
+  otherUserId: string,
+): Promise<string> {
+  const status = await getConnectionStatus(userId, otherUserId);
+  if (status !== 'connected') {
+    throw new Error('You must be connected to message this traveler.');
+  }
+  return getOrCreateConversation(userId, otherUserId);
+}
