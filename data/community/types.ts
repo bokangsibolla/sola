@@ -26,6 +26,8 @@ export interface CommunityThread {
   pinned: boolean;
   helpfulCount: number;
   replyCount: number;
+  authorType: string;
+  isSeed: boolean;
   createdAt: string;
   updatedAt: string;
 }

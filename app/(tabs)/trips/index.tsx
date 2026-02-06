@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -42,15 +43,18 @@ export default function TripsScreen() {
       <AppHeader
         title="Trips"
         rightComponent={
-          <Pressable
-            style={styles.addButton}
-            onPress={() => {
-              posthog.capture('add_trip_tapped');
-              router.push('/trips/new');
-            }}
-          >
-            <Ionicons name="add" size={22} color={colors.orange} />
-          </Pressable>
+          <View style={styles.headerRight}>
+            <InboxButton />
+            <Pressable
+              style={styles.addButton}
+              onPress={() => {
+                posthog.capture('add_trip_tapped');
+                router.push('/trips/new');
+              }}
+            >
+              <Ionicons name="add" size={22} color={colors.orange} />
+            </Pressable>
+          </View>
         }
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
@@ -99,6 +103,11 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   addButton: {
     width: 36,
     height: 36,

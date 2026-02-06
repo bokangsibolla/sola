@@ -197,14 +197,23 @@ export default function ThreadDetail() {
 
       {/* Author row */}
       <View style={styles.authorRow}>
-        {thread.author.avatarUrl ? (
+        {thread.authorType === 'system' ? (
+          <View style={[styles.avatar, styles.avatarSolaTeam]}>
+            <Text style={styles.avatarSolaTeamInitial}>S</Text>
+          </View>
+        ) : thread.author.avatarUrl ? (
           <Image source={{ uri: thread.author.avatarUrl }} style={styles.avatar} />
         ) : (
           <View style={[styles.avatar, styles.avatarPlaceholder]}>
             <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
           </View>
         )}
-        <Text style={styles.authorName}>{thread.author.firstName}</Text>
+        <Text style={styles.authorName}>
+          {thread.authorType === 'system' ? 'Sola Team' : thread.author.firstName}
+        </Text>
+        {thread.authorType === 'system' && (
+          <Text style={styles.teamBadge}>TEAM</Text>
+        )}
         <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
       </View>
 
@@ -370,8 +379,29 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  avatarSolaTeam: {
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarSolaTeamInitial: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.orange,
+  },
   avatarInitial: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
   authorName: { fontFamily: fonts.medium, fontSize: 14, color: colors.textPrimary },
+  teamBadge: {
+    fontFamily: fonts.semiBold,
+    fontSize: 9,
+    color: colors.orange,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: 6,
+    paddingVertical: 1,
+    borderRadius: 4,
+    overflow: 'hidden',
+    letterSpacing: 0.5,
+  },
   threadTime: { fontFamily: fonts.regular, fontSize: 13, color: colors.textMuted },
   threadBody: {
     fontFamily: fonts.regular,

@@ -23,6 +23,7 @@ import {
   searchCommunityCountries,
   getCitiesForCountry,
 } from '@/data/community/communityApi';
+import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import type { CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -43,6 +44,7 @@ export default function NewThread() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const { showGuidedComposer, markFirstPost } = useCommunityOnboarding();
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -71,13 +73,14 @@ export default function NewThread() {
         cityId: selectedCityId,
         topicId: selectedTopicId,
       });
+      markFirstPost();
       router.replace(`/(tabs)/community/thread/${threadId}`);
     } catch {
       Alert.alert('Error', 'Could not create thread. Please try again.');
     } finally {
       setSubmitting(false);
     }
-  }, [userId, canSubmit, title, body, selectedCountryId, selectedCityId, selectedTopicId, router]);
+  }, [userId, canSubmit, title, body, selectedCountryId, selectedCityId, selectedTopicId, router, markFirstPost]);
 
   const handleSelectPlace = useCallback((countryId: string | undefined, cityId: string | undefined, label: string) => {
     setSelectedCountryId(countryId);
@@ -118,7 +121,9 @@ export default function NewThread() {
         {/* Title input */}
         <TextInput
           style={styles.titleInput}
-          placeholder="What's your question?"
+          placeholder={showGuidedComposer
+            ? "e.g. Is it safe to walk alone at night in Medellín?"
+            : "What's your question?"}
           placeholderTextColor={colors.textMuted}
           value={title}
           onChangeText={setTitle}
@@ -129,7 +134,9 @@ export default function NewThread() {
         {/* Body input */}
         <TextInput
           style={styles.bodyInput}
-          placeholder="Add details to help others understand your question..."
+          placeholder={showGuidedComposer
+            ? "Share context — where you're going, what you need help with"
+            : "Add details to help others understand your question..."}
           placeholderTextColor={colors.textMuted}
           value={body}
           onChangeText={setBody}
@@ -137,6 +144,12 @@ export default function NewThread() {
           multiline
           textAlignVertical="top"
         />
+
+        {showGuidedComposer && (
+          <Text style={styles.guidedHint}>
+            Your question will be visible to women traveling to this place
+          </Text>
+        )}
 
         {/* Place selector */}
         <Text style={styles.sectionLabel}>Place (optional)</Text>
@@ -345,6 +358,14 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     minHeight: 120,
     marginBottom: spacing.xl,
+  },
+  guidedHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    lineHeight: 18,
+    marginBottom: spacing.xl,
+    marginTop: -spacing.md,
   },
 
   sectionLabel: {

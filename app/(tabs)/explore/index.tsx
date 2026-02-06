@@ -5,6 +5,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SearchBar from '@/components/explore/SearchBar';
@@ -290,22 +291,7 @@ export default function ExploreScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={
-          <Pressable
-            onPress={() => router.push('/home/dm')}
-            hitSlop={12}
-            style={styles.headerAction}
-            accessibilityRole="button"
-            accessibilityLabel="Messages"
-          >
-            <Image
-              source={require('@/assets/images/icons/icon-inbox.png')}
-              style={styles.headerIcon}
-              contentFit="contain"
-              tintColor={colors.orange}
-            />
-          </Pressable>
-        }
+        rightComponent={<InboxButton />}
       />
         <LoadingScreen />
       </AppScreen>
@@ -325,22 +311,7 @@ export default function ExploreScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={
-          <Pressable
-            onPress={() => router.push('/home/dm')}
-            hitSlop={12}
-            style={styles.headerAction}
-            accessibilityRole="button"
-            accessibilityLabel="Messages"
-          >
-            <Image
-              source={require('@/assets/images/icons/icon-inbox.png')}
-              style={styles.headerIcon}
-              contentFit="contain"
-              tintColor={colors.orange}
-            />
-          </Pressable>
-        }
+        rightComponent={<InboxButton />}
       />
         <ErrorScreen message={error.message} onRetry={refresh} />
       </AppScreen>
@@ -358,22 +329,7 @@ export default function ExploreScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={
-          <Pressable
-            onPress={() => router.push('/home/dm')}
-            hitSlop={12}
-            style={styles.headerAction}
-            accessibilityRole="button"
-            accessibilityLabel="Messages"
-          >
-            <Image
-              source={require('@/assets/images/icons/icon-inbox.png')}
-              style={styles.headerIcon}
-              contentFit="contain"
-              tintColor={colors.orange}
-            />
-          </Pressable>
-        }
+        rightComponent={<InboxButton />}
       />
       <FlatList
         data={feedItems}
@@ -391,16 +347,6 @@ const styles = StyleSheet.create({
   headerLogo: {
     height: 22,
     width: 76,
-  },
-  headerAction: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIcon: {
-    width: 22,
-    height: 22,
   },
   list: {
     flex: 1,

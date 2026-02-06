@@ -60,63 +60,63 @@ BEGIN
   SELECT id INTO topic_itinerary FROM community_topics WHERE slug = 'itineraries';
 
   -- Philippines threads
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Solo female safety in Manila — what areas to avoid at night?',
     'I''m arriving in Manila next week for a 3-night stopover. I''ll be staying in Makati but want to explore some street food in Binondo. Any areas I should be careful about after dark? I usually take Grab everywhere but just want to know the vibe.',
-    ph_country, manila_city, topic_safety)
+    ph_country, manila_city, topic_safety, 'system', true)
   RETURNING id INTO t1;
 
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Best hostels with female-only dorms in Siargao?',
     'Heading to Siargao for 5 days to learn surfing. Looking for a hostel with a female-only dorm option that''s social but not a party hostel. Budget around $15-20/night. Bonus if it''s walkable to Cloud 9.',
-    ph_country, siargao_city, topic_stays)
+    ph_country, siargao_city, topic_stays, 'system', true)
   RETURNING id INTO t2;
 
   -- Vietnam threads
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Getting around Hanoi as a solo woman — motorbike vs Grab?',
     'I keep reading that traffic in Hanoi is insane. Is it worth renting a motorbike or should I just use Grab for everything? I''m comfortable on scooters from Bali but Hanoi looks like a different level. Also, any tips for crossing the street without dying?',
-    vn_country, hanoi_city, topic_getting_around)
+    vn_country, hanoi_city, topic_getting_around, 'system', true)
   RETURNING id INTO t3;
 
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Hoi An 3-day itinerary — what would you cut?',
     'I have 3 full days in Hoi An. My list: Ancient Town walking, Marble Mountains, Basket Boat ride, Ba Na Hills, cooking class, tailoring, An Bang Beach. That''s way too much. What would you prioritize and what can I skip?',
-    vn_country, hoian_city, topic_itinerary)
+    vn_country, hoian_city, topic_itinerary, 'system', true)
   RETURNING id INTO t4;
 
   -- Thailand threads
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Temple etiquette for women in Bangkok — what to know',
     'First time visiting temples in Bangkok. I know shoulders and knees need to be covered, but are there any other rules for women specifically? Can I enter all areas of the temples? Any that are particularly worth visiting that feel safe and calm?',
-    th_country, bangkok_city, topic_culture)
+    th_country, bangkok_city, topic_culture, 'system', true)
   RETURNING id INTO t5;
 
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Meeting other solo women in Chiang Mai — coworking or hostels?',
     'I''ll be in Chiang Mai for 2 weeks working remotely. Want to meet other solo female travelers but I''m not a big drinker and hostel bar scenes aren''t my thing. Are coworking spaces a good way to connect? Any specific ones where women tend to hang out?',
-    th_country, chiangmai_city, topic_meeting)
+    th_country, chiangmai_city, topic_meeting, 'system', true)
   RETURNING id INTO t6;
 
   -- Indonesia threads
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Honest talk: is Bali still worth it for solo women?',
     'I see so many mixed opinions. Some say Bali is overrun with influencers and scams, others say it''s still magical. I''m planning 10 days, interested in yoga, rice terraces, and quieter beaches. Is Ubud still authentic or should I look at other areas? Any spots to avoid?',
-    id_country, bali_city, topic_itinerary)
+    id_country, bali_city, topic_itinerary, 'system', true)
   RETURNING id INTO t7;
 
-  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id)
+  INSERT INTO community_threads (id, author_id, title, body, country_id, city_id, topic_id, author_type, is_seed)
   VALUES (gen_random_uuid(), demo_author,
     'Solo woman in Yogyakarta — Borobudur sunrise tips?',
     'Doing the Borobudur sunrise. Is it safe to go alone or should I book a group tour? I''ve read mixed things about the touts and guides being pushy. Also, is Prambanan worth adding same day or too rushed?',
-    id_country, yogya_city, topic_culture)
+    id_country, yogya_city, topic_culture, 'system', true)
   RETURNING id INTO t8;
 
   -- Replies for first 4 threads (2 replies each)

@@ -7,6 +7,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
@@ -91,33 +92,8 @@ export default function HomeScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
-          <Pressable
-            onPress={() => {
-              posthog.capture('inbox_opened');
-              router.push('/home/dm');
-            }}
-            hitSlop={12}
-            style={styles.headerAction}
-            accessibilityRole="button"
-            accessibilityLabel="Messages"
-          >
-            <Image
-              source={require('@/assets/images/icons/icon-inbox.png')}
-              style={styles.headerIcon}
-              contentFit="contain"
-              tintColor={colors.orange}
-            />
-          </Pressable>
-        }
+        title="Travelers"
+        rightComponent={<InboxButton />}
       />
 
       <SectionList
@@ -219,20 +195,6 @@ function TravelerCardWrapper({
 }
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
-  headerAction: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerIcon: {
-    width: 22,
-    height: 22,
-  },
   feed: {
     paddingBottom: spacing.xxl,
   },
