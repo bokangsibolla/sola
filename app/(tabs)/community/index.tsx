@@ -25,7 +25,7 @@ import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding'
 import { getCommunityTopics, searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
-import type { ThreadWithAuthor, CommunityTopic, VoteDirection } from '@/data/community/types';
+import type { ThreadWithAuthor, CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
 // Thread Card Component (inline — keep it close to the feed)
@@ -39,17 +39,10 @@ function ThreadCard({
 }: {
   thread: ThreadWithAuthor;
   onPress: () => void;
-  onVote: (threadId: string, direction: 'up' | 'down') => void;
+  onVote: (threadId: string) => void;
   router: Router;
 }) {
-  const upColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
-  const downColor = thread.userVote === 'down' ? '#3B82F6' : colors.textMuted;
-  const scoreColor =
-    thread.userVote === 'up'
-      ? colors.orange
-      : thread.userVote === 'down'
-        ? '#3B82F6'
-        : colors.textMuted;
+  const helpfulColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
 
   const isSystem = thread.authorType === 'system';
   const authorName = isSystem ? 'Sola Team' : thread.author.firstName;
@@ -70,9 +63,11 @@ function ThreadCard({
   );
 
   const authorElement = (
-    <View style={styles.metaAuthorWrap}>
+    <View style={styles.authorRow}>
       {avatarContent}
-      <Text style={styles.metaAuthorName}>{authorName}</Text>
+      <Text style={styles.authorName}>{authorName}</Text>
+      <Text style={styles.authorSeparator}>&middot;</Text>
+      <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
     </View>
   );
 
@@ -81,65 +76,56 @@ function ThreadCard({
       onPress={onPress}
       style={({ pressed }) => [styles.threadCard, pressed && styles.pressed]}
     >
-      {/* Meta header row: Avatar · Author · time · topic · place */}
-      <View style={styles.metaHeader}>
-        {!isSystem ? (
-          <Pressable
-            onPress={() => router.push(`/home/user/${thread.author.id}` as any)}
-            style={styles.metaAuthorPressable}
-          >
-            {authorElement}
-          </Pressable>
-        ) : (
-          authorElement
-        )}
-        <Text style={styles.metaSeparator}>&middot;</Text>
-        <Text style={styles.metaText}>{formatTimeAgo(thread.createdAt)}</Text>
-        {thread.topicLabel && (
-          <>
-            <Text style={styles.metaSeparator}>&middot;</Text>
-            <Text style={styles.metaText} numberOfLines={1}>{thread.topicLabel}</Text>
-          </>
-        )}
-        {placeName && (
-          <>
-            <Text style={styles.metaSeparator}>&middot;</Text>
-            <Text style={styles.metaText} numberOfLines={1}>{placeName}</Text>
-          </>
-        )}
-      </View>
+      {/* Pills row: topic + place */}
+      {(thread.topicLabel || placeName) && (
+        <View style={styles.pillRow}>
+          {thread.topicLabel && (
+            <View style={styles.topicPill}>
+              <Text style={styles.topicPillText}>{thread.topicLabel}</Text>
+            </View>
+          )}
+          {placeName && (
+            <View style={styles.placePill}>
+              <Text style={styles.placePillText}>{placeName}</Text>
+            </View>
+          )}
+        </View>
+      )}
 
       {/* Title */}
       <Text style={styles.threadTitle} numberOfLines={2}>
         {thread.title}
       </Text>
 
-      {/* Footer: vote controls + reply count */}
+      {/* Author row */}
+      {!isSystem ? (
+        <Pressable
+          onPress={() => router.push(`/home/user/${thread.author.id}` as any)}
+          style={styles.authorPressable}
+        >
+          {authorElement}
+        </Pressable>
+      ) : (
+        authorElement
+      )}
+
+      {/* Footer: helpful vote + answer count */}
       <View style={styles.threadFooter}>
-        <View style={styles.voteRow}>
-          <Pressable
-            onPress={() => onVote(thread.id, 'up')}
-            hitSlop={6}
-            style={styles.voteButton}
-          >
-            <Feather name="chevron-up" size={18} color={upColor} />
-          </Pressable>
-          <Text style={[styles.voteScore, { color: scoreColor }]}>
-            {thread.voteScore}
+        <Pressable
+          onPress={() => onVote(thread.id)}
+          hitSlop={6}
+          style={styles.helpfulButton}
+        >
+          <Feather name="arrow-up" size={16} color={helpfulColor} />
+          <Text style={[styles.helpfulText, { color: helpfulColor }]}>
+            {thread.voteScore} helpful
           </Text>
-          <Pressable
-            onPress={() => onVote(thread.id, 'down')}
-            hitSlop={6}
-            style={styles.voteButton}
-          >
-            <Feather name="chevron-down" size={18} color={downColor} />
-          </Pressable>
-        </View>
+        </Pressable>
 
         <View style={styles.replyStatRow}>
           <Feather name="message-circle" size={14} color={colors.textMuted} />
           <Text style={styles.replyStatText}>
-            {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
+            {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
           </Text>
         </View>
       </View>
@@ -362,10 +348,10 @@ export default function CommunityHome() {
   }, []);
 
   // -------------------------------------------------------------------------
-  // Vote handler with optimistic update
+  // Vote handler with optimistic update (single upvote toggle)
   // -------------------------------------------------------------------------
   const handleVote = useCallback(
-    async (threadId: string, direction: 'up' | 'down') => {
+    async (threadId: string) => {
       if (!userId) return;
 
       // Capture previous state for rollback
@@ -375,21 +361,17 @@ export default function CommunityHome() {
       setThreads((current) =>
         current.map((t) => {
           if (t.id !== threadId) return t;
-          let newVote: VoteDirection;
+          let newVote: 'up' | null;
           let scoreDelta: number;
 
-          if (t.userVote === direction) {
-            // Toggle off — same direction
+          if (t.userVote === 'up') {
+            // Toggle off
             newVote = null;
-            scoreDelta = direction === 'up' ? -1 : 1;
-          } else if (t.userVote === null) {
-            // New vote
-            newVote = direction;
-            scoreDelta = direction === 'up' ? 1 : -1;
+            scoreDelta = -1;
           } else {
-            // Switching direction (e.g. up -> down or down -> up)
-            newVote = direction;
-            scoreDelta = direction === 'up' ? 2 : -2;
+            // Toggle on
+            newVote = 'up';
+            scoreDelta = 1;
           }
 
           return { ...t, userVote: newVote, voteScore: t.voteScore + scoreDelta };
@@ -397,7 +379,7 @@ export default function CommunityHome() {
       );
 
       try {
-        await castVote(userId, 'thread', threadId, direction);
+        await castVote(userId, 'thread', threadId, 'up');
       } catch {
         // Revert on failure
         setThreads(prevThreads);
@@ -436,7 +418,7 @@ export default function CommunityHome() {
           <Feather name="search" size={18} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Search discussions..."
+            placeholder="What do you want to know?"
             placeholderTextColor={colors.textMuted}
             value={searchText}
             onChangeText={setSearchText}
@@ -451,7 +433,7 @@ export default function CommunityHome() {
       ) : (
         <Pressable onPress={() => setIsSearching(true)} style={styles.searchBar}>
           <Feather name="search" size={18} color={colors.textMuted} />
-          <Text style={styles.searchBarText}>Search discussions...</Text>
+          <Text style={styles.searchBarText}>What do you want to know?</Text>
         </Pressable>
       )}
 
@@ -552,7 +534,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     borderRadius: radius.input,
     paddingHorizontal: spacing.lg,
-    height: 44,
+    height: 52,
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -563,7 +545,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     borderRadius: radius.input,
     paddingHorizontal: spacing.lg,
-    height: 44,
+    height: 52,
     gap: spacing.sm,
     marginBottom: spacing.md,
   },
@@ -632,22 +614,54 @@ const styles = StyleSheet.create({
   },
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 
-  // Meta header row (avatar + author + time + topic + place)
-  metaHeader: {
+  // Pills row (topic + place)
+  pillRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    gap: 4,
-    marginBottom: 6,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  metaAuthorPressable: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  topicPill: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
   },
-  metaAuthorWrap: {
+  topicPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  placePill: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  placePillText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textSecondary,
+  },
+
+  // Title
+  threadTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+
+  // Author row
+  authorPressable: {
+    alignSelf: 'flex-start',
+    marginBottom: spacing.md,
+  },
+  authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
+    marginBottom: spacing.md,
   },
   avatar: {
     width: 20,
@@ -665,50 +679,37 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.orange,
   },
-  metaAuthorName: {
+  authorName: {
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.textPrimary,
   },
-  metaSeparator: {
+  authorSeparator: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
   },
-  metaText: {
+  authorTime: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
-    flexShrink: 1,
   },
 
-  // Title
-  threadTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-
-  // Footer: vote controls + reply count
+  // Footer: helpful vote + answer count
   threadFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.lg,
+    justifyContent: 'space-between',
   },
-  voteRow: {
+  helpfulButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-  },
-  voteButton: {
+    gap: 4,
     padding: 2,
   },
-  voteScore: {
+  helpfulText: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    minWidth: 16,
-    textAlign: 'center',
   },
   replyStatRow: {
     flexDirection: 'row',

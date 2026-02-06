@@ -34,17 +34,12 @@ function ReplyCard({
 }: {
   reply: ReplyWithAuthor;
   userId: string;
-  onVote: (replyId: string, direction: 'up' | 'down') => void;
+  onVote: (replyId: string) => void;
   onReport: (replyId: string, authorId: string) => void;
 }) {
   const router = useRouter();
 
-  const voteColor =
-    reply.userVote === 'up'
-      ? colors.orange
-      : reply.userVote === 'down'
-        ? colors.blueSoft
-        : colors.textMuted;
+  const isHelpful = reply.userVote === 'up';
 
   return (
     <View style={styles.replyCard}>
@@ -73,34 +68,24 @@ function ReplyCard({
       </View>
       <Text style={styles.replyBody}>{reply.body}</Text>
 
-      {/* Vote controls */}
-      <View style={styles.voteRow}>
-        <Pressable
-          onPress={() => onVote(reply.id, 'up')}
-          hitSlop={6}
-          style={({ pressed }) => pressed && styles.pressed}
-        >
-          <Feather
-            name="chevron-up"
-            size={18}
-            color={reply.userVote === 'up' ? colors.orange : colors.textMuted}
-          />
-        </Pressable>
-        <Text style={[styles.voteScore, { color: voteColor }]}>
+      {/* Helpful button */}
+      <Pressable
+        onPress={() => onVote(reply.id)}
+        hitSlop={6}
+        style={({ pressed }) => [styles.helpfulButton, pressed && styles.pressed]}
+      >
+        <Feather
+          name="arrow-up"
+          size={14}
+          color={isHelpful ? colors.orange : colors.textMuted}
+        />
+        <Text style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
           {reply.voteScore}
         </Text>
-        <Pressable
-          onPress={() => onVote(reply.id, 'down')}
-          hitSlop={6}
-          style={({ pressed }) => pressed && styles.pressed}
-        >
-          <Feather
-            name="chevron-down"
-            size={18}
-            color={reply.userVote === 'down' ? colors.blueSoft : colors.textMuted}
-          />
-        </Pressable>
-      </View>
+        <Text style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
+          helpful
+        </Text>
+      </Pressable>
     </View>
   );
 }
@@ -133,20 +118,20 @@ export default function ThreadDetail() {
     }
   }, [userId, replyText, id, refresh]);
 
-  const handleVoteThread = useCallback(async (direction: 'up' | 'down') => {
+  const handleVoteThread = useCallback(async () => {
     if (!userId || !thread) return;
     try {
-      await castVote(userId, 'thread', thread.id, direction);
+      await castVote(userId, 'thread', thread.id, 'up');
       refresh();
     } catch {
       // ignore
     }
   }, [userId, thread, refresh]);
 
-  const handleVoteReply = useCallback(async (replyId: string, direction: 'up' | 'down') => {
+  const handleVoteReply = useCallback(async (replyId: string) => {
     if (!userId) return;
     try {
-      await castVote(userId, 'reply', replyId, direction);
+      await castVote(userId, 'reply', replyId, 'up');
       refresh();
     } catch {
       // ignore
@@ -194,12 +179,7 @@ export default function ThreadDetail() {
     );
   }
 
-  const threadVoteColor =
-    thread.userVote === 'up'
-      ? colors.orange
-      : thread.userVote === 'down'
-        ? colors.blueSoft
-        : colors.textMuted;
+  const isThreadHelpful = thread.userVote === 'up';
 
   const ThreadHeader = (
     <View style={styles.threadHeaderContainer}>
@@ -251,41 +231,31 @@ export default function ThreadDetail() {
 
       {/* Actions row */}
       <View style={styles.actionsRow}>
-        <View style={styles.voteRow}>
-          <Pressable
-            onPress={() => handleVoteThread('up')}
-            hitSlop={6}
-            style={({ pressed }) => pressed && styles.pressed}
-          >
-            <Feather
-              name="chevron-up"
-              size={20}
-              color={thread.userVote === 'up' ? colors.orange : colors.textMuted}
-            />
-          </Pressable>
-          <Text style={[styles.voteScore, { color: threadVoteColor }]}>
+        <Pressable
+          onPress={handleVoteThread}
+          hitSlop={6}
+          style={({ pressed }) => [styles.helpfulButton, pressed && styles.pressed]}
+        >
+          <Feather
+            name="arrow-up"
+            size={16}
+            color={isThreadHelpful ? colors.orange : colors.textMuted}
+          />
+          <Text style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
             {thread.voteScore}
           </Text>
-          <Pressable
-            onPress={() => handleVoteThread('down')}
-            hitSlop={6}
-            style={({ pressed }) => pressed && styles.pressed}
-          >
-            <Feather
-              name="chevron-down"
-              size={20}
-              color={thread.userVote === 'down' ? colors.blueSoft : colors.textMuted}
-            />
-          </Pressable>
-        </View>
+          <Text style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
+            helpful
+          </Text>
+        </Pressable>
         <Pressable onPress={handleReportThread} hitSlop={8}>
           <Feather name="flag" size={15} color={colors.textMuted} />
         </Pressable>
       </View>
 
-      {/* Replies header */}
+      {/* Answers header */}
       <Text style={styles.repliesHeader}>
-        {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
+        {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
       </Text>
     </View>
   );
@@ -326,7 +296,7 @@ export default function ThreadDetail() {
       <View style={[styles.replyInputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
         <TextInput
           style={styles.replyInput}
-          placeholder="Write a reply..."
+          placeholder="Write an answer..."
           placeholderTextColor={colors.textMuted}
           value={replyText}
           onChangeText={setReplyText}
@@ -467,17 +437,20 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderDefault,
   },
 
-  // Vote controls
-  voteRow: {
+  // Helpful button
+  helpfulButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 5,
+    paddingVertical: spacing.xs,
   },
-  voteScore: {
+  helpfulText: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    minWidth: 20,
-    textAlign: 'center',
+    color: colors.textMuted,
+  },
+  helpfulTextActive: {
+    color: colors.orange,
   },
 
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
