@@ -6,11 +6,11 @@ import type {
 } from './types';
 
 /**
- * Build the Explore feed with a city-first, women-first structure.
+ * Build the Explore feed with a search-first, women-first structure.
  *
  * Layout:
- *   1. Hero grid (collection hero + 2 city cards)
- *   2. Search bar (mid-page break)
+ *   1. Search bar (always first — primary entry point)
+ *   2. Featured collection (one editorial, data-driven — inspiration above the fold)
  *   3. City pair — first pair gets "POPULAR WITH SOLO WOMEN" label
  *   4. Interleaved: spotlights, collections, city pairs (no label)
  *   5. Remaining collections
@@ -32,19 +32,13 @@ export function buildFeed(
   const MAX_CITY_PAIRS = 4;
   let pairsShown = 0;
 
-  // --- Hero grid (collection hero + 2 city cards) ---
-  const heroCollection = ci < collections.length ? collections[ci++] : null;
-  const heroCity1 = si < cities.length ? cities[si++] : null;
-  const heroCity2 = si < cities.length ? cities[si++] : null;
-  if (heroCity1) {
-    feed.push({
-      type: 'hero-grid',
-      data: { collection: heroCollection, city1: heroCity1, city2: heroCity2 },
-    });
-  }
-
-  // --- Search bar (mid-page visual break) ---
+  // --- Search bar (always first) ---
   feed.push({ type: 'search-bar' });
+
+  // --- Featured collection (one editorial above the fold) ---
+  if (ci < collections.length) {
+    feed.push({ type: 'featured-collection', data: collections[ci++] });
+  }
 
   // --- First city pair with women-first label ---
   if (si + 1 < cities.length && pairsShown < MAX_CITY_PAIRS) {

@@ -10,6 +10,7 @@ import {
   RefreshControl,
   Modal,
   ScrollView,
+  Dimensions,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -307,6 +308,109 @@ function getFlag(iso2: string): string {
 }
 
 // ---------------------------------------------------------------------------
+// Example conversation prompts — shown when no threads exist
+// ---------------------------------------------------------------------------
+
+const EXAMPLE_PROMPTS = [
+  { icon: 'shield' as const, text: 'Is it safe to walk alone at night in Medellín?' },
+  { icon: 'map-pin' as const, text: 'Best cafés to work from in Ubud?' },
+  { icon: 'users' as const, text: 'Anyone in Lisbon this March?' },
+  { icon: 'compass' as const, text: 'First time solo — where should I start?' },
+];
+
+// ---------------------------------------------------------------------------
+// Welcome State — replaces empty state with an intuitive onboarding
+// ---------------------------------------------------------------------------
+
+function WelcomeState({ topics, onAsk }: { topics: CommunityTopic[]; onAsk: () => void }) {
+  return (
+    <View style={styles.welcome}>
+      {/* Hero */}
+      <View style={styles.welcomeHero}>
+        <Text style={styles.welcomeTitle}>Ask anything.</Text>
+        <Text style={styles.welcomeTitle}>Get real answers.</Text>
+        <Text style={styles.welcomeSubtitle}>
+          A space for solo women travelers to share advice, ask questions, and look out for each other.
+        </Text>
+      </View>
+
+      {/* How it works */}
+      <View style={styles.howItWorks}>
+        <View style={styles.howStep}>
+          <View style={styles.howIcon}>
+            <Feather name="help-circle" size={18} color={colors.orange} />
+          </View>
+          <View style={styles.howText}>
+            <Text style={styles.howStepTitle}>Ask a question</Text>
+            <Text style={styles.howStepBody}>About a destination, safety, logistics — anything</Text>
+          </View>
+        </View>
+        <View style={styles.howStep}>
+          <View style={styles.howIcon}>
+            <Feather name="message-circle" size={18} color={colors.orange} />
+          </View>
+          <View style={styles.howText}>
+            <Text style={styles.howStepTitle}>Get answers from travelers</Text>
+            <Text style={styles.howStepBody}>Women who've been there share what they know</Text>
+          </View>
+        </View>
+        <View style={styles.howStep}>
+          <View style={styles.howIcon}>
+            <Feather name="heart" size={18} color={colors.orange} />
+          </View>
+          <View style={styles.howText}>
+            <Text style={styles.howStepTitle}>Mark what's helpful</Text>
+            <Text style={styles.howStepBody}>So the best advice rises to the top</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Example prompts */}
+      <Text style={styles.promptsLabel}>PEOPLE ARE ASKING ABOUT</Text>
+      <View style={styles.promptsGrid}>
+        {EXAMPLE_PROMPTS.map((prompt, i) => (
+          <Pressable
+            key={i}
+            style={({ pressed }) => [styles.promptCard, pressed && styles.pressed]}
+            onPress={onAsk}
+          >
+            <Feather name={prompt.icon} size={16} color={colors.orange} />
+            <Text style={styles.promptText} numberOfLines={2}>{prompt.text}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* Topics */}
+      {topics.length > 0 && (
+        <>
+          <Text style={styles.promptsLabel}>BROWSE BY TOPIC</Text>
+          <View style={styles.topicRow}>
+            {topics.map((t) => (
+              <Pressable
+                key={t.id}
+                style={({ pressed }) => [styles.topicChip, pressed && styles.pressed]}
+                onPress={onAsk}
+              >
+                <Text style={styles.topicChipText}>{t.label}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
+
+      {/* CTA */}
+      <Pressable
+        style={({ pressed }) => [styles.welcomeCta, pressed && styles.welcomeCtaPressed]}
+        onPress={onAsk}
+      >
+        <Feather name="edit-3" size={18} color="#FFFFFF" />
+        <Text style={styles.welcomeCtaText}>Start a discussion</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Screen
 // ---------------------------------------------------------------------------
 
@@ -344,7 +448,9 @@ export default function CommunityHome() {
     />
   ), [router]);
 
-  const ListHeader = (
+  const hasThreads = threads.length > 0;
+
+  const ListHeader = hasThreads ? (
     <View>
       {/* Search bar */}
       {isSearching ? (
@@ -391,7 +497,7 @@ export default function CommunityHome() {
         </Pressable>
       </View>
     </View>
-  );
+  ) : null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -408,11 +514,7 @@ export default function CommunityHome() {
           loading ? (
             <ActivityIndicator style={styles.loader} color={colors.orange} />
           ) : (
-            <View style={styles.emptyState}>
-              <Feather name="message-circle" size={32} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>No discussions yet</Text>
-              <Text style={styles.emptySubtitle}>Be the first to ask a question</Text>
-            </View>
+            <WelcomeState topics={topics} onAsk={() => router.push('/(tabs)/community/new')} />
           )
         }
         refreshControl={
@@ -424,14 +526,16 @@ export default function CommunityHome() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* FAB — Ask a question */}
-      <Pressable
-        onPress={() => router.push('/(tabs)/community/new')}
-        style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
-      >
-        <Feather name="edit-3" size={20} color="#FFFFFF" />
-        <Text style={styles.fabText}>Ask</Text>
-      </Pressable>
+      {/* FAB — Ask a question (only when threads exist) */}
+      {hasThreads && (
+        <Pressable
+          onPress={() => router.push('/(tabs)/community/new')}
+          style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
+        >
+          <Feather name="edit-3" size={20} color="#FFFFFF" />
+          <Text style={styles.fabText}>Ask</Text>
+        </Pressable>
+      )}
 
       {/* Bottom Sheets */}
       <RefineSheet
@@ -576,10 +680,120 @@ const styles = StyleSheet.create({
   statItem: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   statText: { fontFamily: fonts.regular, fontSize: 12, color: colors.textMuted },
 
-  // Empty state
-  emptyState: { alignItems: 'center', paddingTop: 80, gap: spacing.sm },
-  emptyTitle: { fontFamily: fonts.semiBold, fontSize: 18, color: colors.textPrimary },
-  emptySubtitle: { fontFamily: fonts.regular, fontSize: 14, color: colors.textMuted },
+  // Welcome / empty state
+  welcome: { paddingTop: spacing.xl },
+  welcomeHero: { marginBottom: spacing.xl },
+  welcomeTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 26,
+    color: colors.textPrimary,
+    lineHeight: 32,
+  },
+  welcomeSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    marginTop: spacing.md,
+  },
+
+  // How it works
+  howItWorks: {
+    gap: spacing.lg,
+    marginBottom: spacing.xxl,
+  },
+  howStep: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
+  },
+  howIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 2,
+  },
+  howText: { flex: 1 },
+  howStepTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  howStepBody: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+
+  // Example prompts
+  promptsLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  promptsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
+  },
+  promptCard: {
+    width: (Dimensions.get('window').width - spacing.screenX * 2 - spacing.sm) / 2,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    gap: spacing.sm,
+  },
+  promptText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textPrimary,
+    lineHeight: 18,
+  },
+
+  // Topic chips
+  topicRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
+  },
+  topicChip: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  topicChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // CTA button
+  welcomeCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.orange,
+    borderRadius: radius.button,
+    paddingVertical: 14,
+    gap: spacing.sm,
+    marginBottom: spacing.xxl,
+  },
+  welcomeCtaPressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
+  welcomeCtaText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: '#FFFFFF',
+  },
 
   // FAB
   fab: {

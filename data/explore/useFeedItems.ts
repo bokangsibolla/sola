@@ -5,7 +5,7 @@ import { getFeaturedExploreCollections, getExploreCollectionItems } from '../col
 import { getDiscoveryLenses } from '../lenses';
 import { buildFeed } from './feedBuilder';
 import type { ExploreCollectionWithItems } from '../types';
-import type { FeedItem } from './types';
+import type { FeedItem, CityWithCountry } from './types';
 
 const INITIAL_FEED: FeedItem[] = [
   { type: 'end-card' },
@@ -39,9 +39,9 @@ export function useFeedItems(): UseFeedItemsResult {
     async function loadFeed() {
       setIsLoading(true);
       try {
-        // Single optimized query: 12 cities with country data joined
+        // Fetch more cities to ensure priority cities (Siargao, Ubud) are included
         const cities = await withTimeout(
-          getPopularCitiesWithCountry(12),
+          getPopularCitiesWithCountry(20),
           5000
         );
 
@@ -79,7 +79,75 @@ export function useFeedItems(): UseFeedItemsResult {
 
         if (cancelled) return;
 
-        const feed = buildFeed(collectionsWithItems, cities, lenses);
+        // Prioritize specific cities for "Popular with Solo Women"
+        // Fallback data for cities that may not be in DB yet
+        const FALLBACK_CITIES: Record<string, CityWithCountry> = {
+          siargao: {
+            id: 'fallback-siargao',
+            countryId: 'country-ph',
+            slug: 'siargao',
+            name: 'Siargao',
+            timezone: 'Asia/Manila',
+            centerLat: 9.8482,
+            centerLng: 126.0458,
+            isActive: true,
+            orderIndex: 1,
+            heroImageUrl: 'https://images.unsplash.com/photo-1573790387438-4da905039392?w=800',
+            shortBlurb: 'Surf capital of the Philippines',
+            badgeLabel: null,
+            isFeatured: true,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            // Content fields
+            title: 'Siargao',
+            subtitle: 'Philippines\' surf paradise',
+            summary: null,
+            summaryMd: null,
+            contentMd: null,
+            whyWeLoveMd: null,
+            safetyRating: 'generally_safe',
+            soloFriendly: true,
+            soloLevel: 'beginner',
+            bestMonths: null,
+            bestTimeToVisit: null,
+            currency: 'PHP',
+            language: 'Filipino, English',
+            visaNote: null,
+            highlights: null,
+            avgDailyBudgetUsd: null,
+            internetQuality: 'good',
+            englishFriendliness: 'high',
+            goodForInterests: null,
+            bestFor: null,
+            cultureEtiquetteMd: null,
+            safetyWomenMd: null,
+            portraitMd: null,
+            publishedAt: null,
+            transportMd: null,
+            topThingsToDo: null,
+            // CityWithCountry extensions
+            countryName: 'Philippines',
+            countrySlug: 'philippines',
+          },
+        };
+
+        const PRIORITY_SLUGS = ['siargao', 'ubud'];
+        const priorityCities: CityWithCountry[] = [];
+
+        for (const slug of PRIORITY_SLUGS) {
+          const found = cities.find(c => c.slug === slug);
+          if (found) {
+            priorityCities.push(found);
+          } else if (FALLBACK_CITIES[slug]) {
+            priorityCities.push(FALLBACK_CITIES[slug]);
+          }
+        }
+
+        const otherCities = cities.filter(c => !PRIORITY_SLUGS.includes(c.slug));
+        // Put priority cities first, then others, limit to 12 total for the feed
+        const prioritized = [...priorityCities, ...otherCities].slice(0, 12);
+
+        const feed = buildFeed(collectionsWithItems, prioritized, lenses);
         setFeedItems(feed);
         if (!cancelled) {
           setIsLoading(false);

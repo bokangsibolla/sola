@@ -19,7 +19,7 @@ export default function SearchBar({ onPress }: SearchBarProps) {
       </View>
       <View style={styles.textWrap}>
         <Text style={styles.title}>Where to?</Text>
-        <Text style={styles.subtitle}>Destinations · Stays · Experiences</Text>
+        <Text style={styles.subtitle}>Anywhere you want to go</Text>
       </View>
     </Pressable>
   );

@@ -145,6 +145,16 @@ export default function ExploreScreen() {
           <SearchBar onPress={() => router.push('/explore/search')} />
         );
 
+      case 'featured-collection':
+        return (
+          <View style={{ paddingHorizontal: spacing.screenX }}>
+            <EditorialCollectionCard
+              collection={item.data}
+              onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
+            />
+          </View>
+        );
+
       case 'hero-grid':
         return (
           <HeroGrid
@@ -242,6 +252,8 @@ export default function ExploreScreen() {
     switch (item.type) {
       case 'search-bar':
         return 'search-bar';
+      case 'featured-collection':
+        return `featured-${item.data.slug}`;
       case 'hero-grid':
         return `hero-grid-${item.data.city1.slug}`;
       case 'editorial-collection':
