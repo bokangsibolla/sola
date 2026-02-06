@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
 import { getCountryBySlug, getCitiesByCountry } from '@/data/api';
 import type { City } from '@/data/types';
 import { useData } from '@/hooks/useData';
@@ -227,7 +228,7 @@ export default function CountryGuideScreen() {
         const result = await getCitiesByCountry(country.id);
         setCities(result ?? []);
       } catch (err) {
-        console.error('Error fetching cities:', err);
+        Sentry.captureException(err);
         setCities([]);
       } finally {
         setCitiesLoading(false);

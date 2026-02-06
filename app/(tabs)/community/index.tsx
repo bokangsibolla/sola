@@ -20,6 +20,7 @@ import { colors, fonts, spacing, radius } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import InboxButton from '@/components/InboxButton';
+import ErrorScreen from '@/components/ErrorScreen';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { getCommunityTopics, searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
@@ -321,7 +322,7 @@ function IntroBanner({ onDismiss }: { onDismiss: () => void }) {
 export default function CommunityHome() {
   const router = useRouter();
   const { userId } = useAuth();
-  const { threads: feedThreads, loading, refreshing, hasMore, loadMore, refresh, setFilters, filters } = useCommunityFeed();
+  const { threads: feedThreads, loading, refreshing, error: feedError, hasMore, loadMore, refresh, setFilters, filters } = useCommunityFeed();
   const { showIntroBanner, dismissIntro } = useCommunityOnboarding();
 
   // Local copy of threads for optimistic vote updates
@@ -489,7 +490,14 @@ export default function CommunityHome() {
         ListEmptyComponent={
           loading ? (
             <ActivityIndicator style={styles.loader} color={colors.orange} />
-          ) : null
+          ) : feedError ? (
+            <ErrorScreen message="Could not load threads" onRetry={refresh} />
+          ) : (
+            <View style={styles.emptyState}>
+              <Feather name="message-circle" size={40} color={colors.textMuted} />
+              <Text style={styles.emptyText}>No conversations yet</Text>
+            </View>
+          )
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.orange} />
@@ -526,6 +534,8 @@ export default function CommunityHome() {
 const styles = StyleSheet.create({
   feedContent: { paddingHorizontal: spacing.screenX, paddingBottom: 100 },
   loader: { marginTop: 60 },
+  emptyState: { alignItems: 'center' as const, paddingTop: 80, gap: spacing.md },
+  emptyText: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted },
 
   // Search bar
   searchBar: {

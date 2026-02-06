@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import {
   getCountries,
@@ -41,7 +42,7 @@ export default function AllCountriesScreen() {
         setCountries(allCountries);
         setTags(availableTags);
       } catch (err) {
-        console.error('Failed to load countries:', err);
+        Sentry.captureException(err);
       } finally {
         setLoading(false);
       }

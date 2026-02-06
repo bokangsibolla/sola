@@ -170,7 +170,9 @@ export default function EditProfileScreen() {
         return;
       }
       posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length });
-      router.back();
+      Alert.alert('Saved', 'Your profile has been updated.', [
+        { text: 'OK', onPress: () => router.back() },
+      ]);
     } catch (err: any) {
       Alert.alert('Upload failed', err.message ?? 'Could not upload photo.');
     } finally {

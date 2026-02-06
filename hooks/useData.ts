@@ -12,9 +12,8 @@ export function useData<T>(
   fetcher: () => T | Promise<T>,
   deps: any[] = [],
 ): { data: T | null; loading: boolean; error: Error | null; refetch: () => void } {
-  // Build a stable query key from the stringified deps.
-  // We also include the fetcher's toString() as a rough identity when no deps differ.
-  const queryKey = ['useData', fetcher.toString().slice(0, 80), ...deps];
+  // Build a stable query key from the deps array.
+  const queryKey = ['useData', ...deps];
 
   const queryClient = useQueryClient();
 

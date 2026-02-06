@@ -12,7 +12,6 @@ import type {
   PlaceMedia,
   PlaceCategory,
   Tag,
-  GeoContent,
   Profile,
   SavedPlace,
   Collection,
@@ -802,50 +801,6 @@ export async function getPlacesGroupedByTimeForArea(
   }
 
   return result;
-}
-
-// ---------------------------------------------------------------------------
-// Geo Content (DEPRECATED - content now in countries/cities tables)
-// ---------------------------------------------------------------------------
-
-/**
- * @deprecated Content fields have been merged into the countries table.
- * Use getCountryById() or getCountryBySlug() instead, which now includes all content fields.
- * This function will be removed once the geo_content table is dropped.
- */
-export async function getCountryContent(countryId: string): Promise<GeoContent | undefined> {
-  console.warn(
-    'DEPRECATED: getCountryContent() is deprecated. ' +
-    'Use getCountryById() instead - content fields are now on the Country type.'
-  );
-  const { data, error } = await supabase
-    .from('geo_content')
-    .select('*')
-    .eq('scope', 'country')
-    .eq('country_id', countryId)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? toCamel<GeoContent>(data) : undefined;
-}
-
-/**
- * @deprecated Content fields have been merged into the cities table.
- * Use getCityById() or getCityBySlug() instead, which now includes all content fields.
- * This function will be removed once the geo_content table is dropped.
- */
-export async function getCityContent(cityId: string): Promise<GeoContent | undefined> {
-  console.warn(
-    'DEPRECATED: getCityContent() is deprecated. ' +
-    'Use getCityById() instead - content fields are now on the City type.'
-  );
-  const { data, error } = await supabase
-    .from('geo_content')
-    .select('*')
-    .eq('scope', 'city')
-    .eq('city_id', cityId)
-    .maybeSingle();
-  if (error) throw error;
-  return data ? toCamel<GeoContent>(data) : undefined;
 }
 
 // ---------------------------------------------------------------------------

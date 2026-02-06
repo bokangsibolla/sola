@@ -24,10 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // Restore session on mount
-    supabase.auth.getSession().then(({ data: { session: s } }) => {
-      setSession(s);
-      setLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        setSession(s);
+      })
+      .catch(() => {
+        // Network or storage error — continue as signed out
+      })
+      .finally(() => {
+        setLoading(false);
+      });
 
     // Listen for auth changes (sign in, sign out, token refresh)
     const {

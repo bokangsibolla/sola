@@ -11,6 +11,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getDiscoveryLensWithResults } from '@/data/lenses';
 import type { DiscoveryLensWithResults, ExploreCollectionItem } from '@/data/types';
@@ -31,7 +32,7 @@ export default function LensResultsScreen() {
         const result = await getDiscoveryLensWithResults(slug ?? '');
         setLens(result);
       } catch (err) {
-        console.error('Failed to load lens:', err);
+        Sentry.captureException(err);
       } finally {
         setLoading(false);
       }

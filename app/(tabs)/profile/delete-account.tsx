@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
 import { useAuth } from '@/state/AuthContext';
 import { onboardingStore } from '@/state/onboardingStore';
 import { deleteAccount } from '@/data/api';
@@ -62,7 +63,7 @@ export default function DeleteAccountScreen() {
               router.replace('/(onboarding)/welcome');
             } catch (error) {
               setLoading(false);
-              console.error('Account deletion failed:', error);
+              Sentry.captureException(error);
               Alert.alert(
                 'Deletion Failed',
                 'There was a problem deleting your account. Please try again or contact support.',

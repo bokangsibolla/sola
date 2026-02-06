@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { Platform } from 'react-native';
 import * as Device from 'expo-device';
+import * as Sentry from '@sentry/react-native';
 import Constants from 'expo-constants';
 import { supabase } from '@/lib/supabase';
 
@@ -62,14 +63,14 @@ export function usePushNotifications(userId: string | null) {
           .upsert({ user_id: userId, token }, { onConflict: 'user_id,token' });
 
         if (error) {
-          console.error('Failed to save push token:', error.message);
+          Sentry.captureMessage(`Failed to save push token: ${error.message}`);
           return;
         }
 
         registered.current = true;
       })
       .catch((error) => {
-        console.error('Push notification registration failed:', error);
+        Sentry.captureException(error);
       });
   }, [userId]);
 

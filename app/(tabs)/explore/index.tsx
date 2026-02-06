@@ -336,8 +336,16 @@ export default function ExploreScreen() {
         renderItem={renderItem}
         keyExtractor={keyExtractor}
         style={styles.list}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={feedItems.length === 0 ? styles.emptyContent : styles.content}
         showsVerticalScrollIndicator={false}
+        ListEmptyComponent={
+          <View style={styles.emptyFeed}>
+            <Text style={styles.emptyFeedText}>No destinations available right now</Text>
+            <Pressable onPress={refresh} style={styles.emptyFeedButton}>
+              <Text style={styles.emptyFeedLink}>Try again</Text>
+            </Pressable>
+          </View>
+        }
       />
     </AppScreen>
   );
@@ -495,6 +503,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   endCardLink: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  emptyContent: {
+    flexGrow: 1,
+    justifyContent: 'center' as const,
+  },
+  emptyFeed: {
+    alignItems: 'center' as const,
+    paddingVertical: spacing.xxl,
+    gap: spacing.md,
+  },
+  emptyFeedText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+  },
+  emptyFeedButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+  },
+  emptyFeedLink: {
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.orange,

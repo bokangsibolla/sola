@@ -47,11 +47,27 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify({ skipped: true }), { status: 200 });
     }
 
+    // Filter out recipients who have blocked the sender
+    const { data: blocks } = await supabase
+      .from("blocked_users")
+      .select("blocker_id")
+      .eq("blocked_id", record.sender_id)
+      .in("blocker_id", recipientIds);
+
+    const blockerIds = new Set((blocks ?? []).map((b) => b.blocker_id));
+    const filteredRecipientIds = recipientIds.filter((id) => !blockerIds.has(id));
+
+    if (filteredRecipientIds.length === 0) {
+      return new Response(JSON.stringify({ skipped: true, reason: "all blocked" }), {
+        status: 200,
+      });
+    }
+
     // Get push tokens for all recipients
     const { data: tokens } = await supabase
       .from("push_tokens")
       .select("token")
-      .in("user_id", recipientIds);
+      .in("user_id", filteredRecipientIds);
 
     if (!tokens || tokens.length === 0) {
       return new Response(JSON.stringify({ skipped: true, reason: "no tokens" }), {

@@ -1,5 +1,6 @@
 // data/explore/useSearch.ts
 import { useState, useEffect, useCallback } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { searchDestinations } from '../api';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -67,7 +68,7 @@ export function useSearch(): UseSearchResult {
           }))
         );
       } catch (err) {
-        console.error('Search error:', err);
+        Sentry.captureException(err);
         setResults([]);
       } finally {
         setIsSearching(false);

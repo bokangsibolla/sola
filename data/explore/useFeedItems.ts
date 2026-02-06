@@ -1,5 +1,6 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
+import * as Sentry from '@sentry/react-native';
 import { getPopularCitiesWithCountry } from '../api';
 import { getFeaturedExploreCollections, getExploreCollectionItems } from '../collections';
 import { getDiscoveryLenses } from '../lenses';
@@ -66,7 +67,7 @@ export function useFeedItems(): UseFeedItemsResult {
             );
           }
         } catch (collectionErr) {
-          console.log('Collections unavailable:', collectionErr);
+          Sentry.addBreadcrumb({ message: 'Collections unavailable', level: 'info' });
         }
 
         // Lenses (optional — returns [] if DB table doesn't exist)
@@ -74,7 +75,7 @@ export function useFeedItems(): UseFeedItemsResult {
         try {
           lenses = await withTimeout(getDiscoveryLenses(), 3000);
         } catch {
-          console.log('Lenses unavailable');
+          Sentry.addBreadcrumb({ message: 'Lenses unavailable', level: 'info' });
         }
 
         if (cancelled) return;
@@ -153,7 +154,7 @@ export function useFeedItems(): UseFeedItemsResult {
           setIsLoading(false);
         }
       } catch (err) {
-        console.log('Feed API error:', err);
+        Sentry.captureException(err);
         if (!cancelled) {
           setError(err instanceof Error ? err : new Error('Failed to load'));
           setIsLoading(false);

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
@@ -126,16 +126,28 @@ export default function CreateAccountScreen() {
           disabled={!googleRequest || loading}
           onPress={() => handleOAuth('google')}
         >
-          <Text style={styles.socialIcon}>G</Text>
-          <Text style={styles.socialText}>Continue with Google</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color={colors.textMuted} />
+          ) : (
+            <>
+              <Text style={styles.socialIcon}>G</Text>
+              <Text style={styles.socialText}>Continue with Google</Text>
+            </>
+          )}
         </Pressable>
         <Pressable
           style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
           disabled={loading}
           onPress={() => handleOAuth('apple')}
         >
-          <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-          <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+          {loading ? (
+            <ActivityIndicator size="small" color="#FFFFFF" />
+          ) : (
+            <>
+              <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+              <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+            </>
+          )}
         </Pressable>
       </View>
 

@@ -168,10 +168,15 @@ export default function DMThreadScreen() {
       <FlatList
         data={messages}
         keyExtractor={(m) => m.id}
-        contentContainerStyle={styles.messageList}
+        contentContainerStyle={messages.length === 0 ? styles.emptyMessageList : styles.messageList}
         inverted
         onEndReached={() => { if (hasMore) fetchMore(); }}
         onEndReachedThreshold={0.3}
+        ListEmptyComponent={
+          <View style={styles.emptyChat}>
+            <Text style={styles.emptyChatText}>Say hi to {other?.firstName ?? 'your new connection'}!</Text>
+          </View>
+        }
         renderItem={({ item }) => {
           const isMe = item.senderId === userId;
           return (
@@ -283,5 +288,21 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: colors.borderDefault,
+  },
+  emptyMessageList: {
+    flexGrow: 1,
+    justifyContent: 'center' as const,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  emptyChat: {
+    alignItems: 'center' as const,
+    transform: [{ scaleY: -1 }],
+  },
+  emptyChatText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+    textAlign: 'center' as const,
   },
 });

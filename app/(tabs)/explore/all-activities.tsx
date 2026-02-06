@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getAllActivities, getCityById } from '@/data/api';
 import type { Place } from '@/data/types';
@@ -47,7 +48,7 @@ export default function AllActivitiesScreen() {
           }))
         );
       } catch (err) {
-        console.error('Failed to load activities:', err);
+        Sentry.captureException(err);
       } finally {
         setLoading(false);
       }

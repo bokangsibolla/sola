@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,7 +47,7 @@ export default function YoureInScreen() {
     if (userId) {
       const data = onboardingStore.getData();
       const avatarUrl = await uploadAvatar(userId, data.photoUri).catch(() => null);
-      await supabase.from('profiles').upsert({
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: userId,
         first_name: data.firstName,
         bio: data.bio || null,
@@ -56,7 +56,14 @@ export default function YoureInScreen() {
         home_country_name: data.countryName || null,
         travel_style: data.spendingStyle || null,
         interests: data.dayStyle,
+        onboarding_completed_at: new Date().toISOString(),
       });
+
+      if (profileError) {
+        setSaving(false);
+        Alert.alert('Could not save profile', 'Please try again.');
+        return;
+      }
 
       // Create trip record if destination was selected during onboarding
       const { tripDestination, tripArriving, tripLeaving, tripNights } = data;
@@ -74,9 +81,8 @@ export default function YoureInScreen() {
             nights: tripNights || null,
             status: 'planned',
           });
-        } catch (tripError) {
+        } catch {
           // Don't block onboarding completion if trip creation fails
-          console.warn('Failed to create trip during onboarding:', tripError);
         }
       }
     }

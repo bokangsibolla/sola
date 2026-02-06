@@ -15,7 +15,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import * as SplashScreen from 'expo-splash-screen';
 
 Sentry.init({
-  dsn: 'https://bf62d1b51ae95e83475cebaed3c1222f@o4510818443001856.ingest.us.sentry.io/4510818444115968',
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
   tracesSampleRate: 0.2,
 });
 import { useFonts } from 'expo-font';
@@ -29,6 +29,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
+import { supabase } from '@/lib/supabase';
 import OfflineBanner from '@/components/OfflineBanner';
 
 // Ensure icon fonts are available (Ionicons uses native fonts, no explicit loading needed)
@@ -108,10 +109,31 @@ function AuthGate() {
 
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
       router.replace('/(tabs)/explore');
+    } else if (currentGroup === '(onboarding)' && userId && !isOnboardingCompleted) {
+      // Check DB in case onboarding was completed on another device
+      supabase
+        .from('profiles')
+        .select('onboarding_completed_at')
+        .eq('id', userId)
+        .single()
+        .then(({ data }) => {
+          if (data?.onboarding_completed_at) {
+            onboardingStore.set('onboardingCompleted', true);
+            router.replace('/(tabs)/explore');
+          }
+        });
     } else if (currentGroup === '(tabs)' && !userId) {
       router.replace('/(onboarding)/welcome');
     }
   }, [segments, router, userId, authLoading]);
+
+  if (authLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
+        <StatusBar style="auto" />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -129,6 +151,7 @@ function RootLayout() {
   const { isOffline } = useNetworkStatus();
 
   const [storeReady, setStoreReady] = useState(false);
+  const [initTimedOut, setInitTimedOut] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
     'PlusJakartaSans-Regular': require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
@@ -139,6 +162,8 @@ function RootLayout() {
 
   useEffect(() => {
     onboardingStore.hydrate().then(() => setStoreReady(true));
+    const timer = setTimeout(() => setInitTimedOut(true), 10_000);
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -146,6 +171,16 @@ function RootLayout() {
       SplashScreen.hideAsync();
     }
   }, [fontsLoaded, storeReady]);
+
+  if (initTimedOut && (!fontsLoaded || !storeReady)) {
+    SplashScreen.hideAsync();
+    return (
+      <View style={errorStyles.container}>
+        <Text style={errorStyles.title}>Taking too long to load</Text>
+        <Text style={errorStyles.message}>Please close and reopen the app.</Text>
+      </View>
+    );
+  }
 
   if (!fontsLoaded || !storeReady) return null;
 

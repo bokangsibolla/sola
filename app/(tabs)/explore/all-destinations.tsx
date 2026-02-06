@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getAllCities, getCountryById } from '@/data/api';
 import type { City } from '@/data/types';
@@ -48,7 +49,7 @@ export default function AllDestinationsScreen() {
           }))
         );
       } catch (err) {
-        console.error('Failed to load cities:', err);
+        Sentry.captureException(err);
       } finally {
         setLoading(false);
       }

@@ -13,6 +13,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -152,7 +153,7 @@ export default function PlaceDetailScreen() {
     } catch (error) {
       // Revert on error
       setSaved(saved);
-      console.error('Failed to save place:', error);
+      Sentry.captureException(error);
     }
   }, [userId, id, saved, posthog]);
 
