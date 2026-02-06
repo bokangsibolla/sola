@@ -17,8 +17,9 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useThread } from '@/data/community/useThread';
-import { toggleHelpful, createReply, reportContent } from '@/data/community/communityApi';
+import { castVote, createReply, reportContent } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
+import { formatTimeAgo } from '@/utils/timeAgo';
 import type { ReplyWithAuthor } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -28,25 +29,39 @@ import type { ReplyWithAuthor } from '@/data/community/types';
 function ReplyCard({
   reply,
   userId,
-  onHelpful,
+  onVote,
   onReport,
 }: {
   reply: ReplyWithAuthor;
   userId: string;
-  onHelpful: (replyId: string) => void;
+  onVote: (replyId: string, direction: 'up' | 'down') => void;
   onReport: (replyId: string, authorId: string) => void;
 }) {
+  const router = useRouter();
+
+  const voteColor =
+    reply.userVote === 'up'
+      ? colors.orange
+      : reply.userVote === 'down'
+        ? colors.blueSoft
+        : colors.textMuted;
+
   return (
     <View style={styles.replyCard}>
       <View style={styles.replyHeader}>
-        {reply.author.avatarUrl ? (
-          <Image source={{ uri: reply.author.avatarUrl }} style={styles.avatar} />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
-          </View>
-        )}
-        <Text style={styles.replyAuthorName}>{reply.author.firstName}</Text>
+        <Pressable
+          style={styles.authorPressable}
+          onPress={() => router.push(`/home/user/${reply.author.id}` as any)}
+        >
+          {reply.author.avatarUrl ? (
+            <Image source={{ uri: reply.author.avatarUrl }} style={styles.avatar} />
+          ) : (
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
+            </View>
+          )}
+          <Text style={styles.replyAuthorName}>{reply.author.firstName}</Text>
+        </Pressable>
         <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
         <View style={{ flex: 1 }} />
         <Pressable
@@ -57,36 +72,37 @@ function ReplyCard({
         </Pressable>
       </View>
       <Text style={styles.replyBody}>{reply.body}</Text>
-      <Pressable
-        onPress={() => onHelpful(reply.id)}
-        style={({ pressed }) => [styles.helpfulButton, pressed && styles.pressed]}
-      >
-        <Feather
-          name="heart"
-          size={14}
-          color={reply.isHelpful ? colors.orange : colors.textMuted}
-        />
-        <Text style={[styles.helpfulText, reply.isHelpful && styles.helpfulTextActive]}>
-          {reply.helpfulCount > 0 ? reply.helpfulCount : ''} Helpful
+
+      {/* Vote controls */}
+      <View style={styles.voteRow}>
+        <Pressable
+          onPress={() => onVote(reply.id, 'up')}
+          hitSlop={6}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Feather
+            name="chevron-up"
+            size={18}
+            color={reply.userVote === 'up' ? colors.orange : colors.textMuted}
+          />
+        </Pressable>
+        <Text style={[styles.voteScore, { color: voteColor }]}>
+          {reply.voteScore}
         </Text>
-      </Pressable>
+        <Pressable
+          onPress={() => onVote(reply.id, 'down')}
+          hitSlop={6}
+          style={({ pressed }) => pressed && styles.pressed}
+        >
+          <Feather
+            name="chevron-down"
+            size={18}
+            color={reply.userVote === 'down' ? colors.blueSoft : colors.textMuted}
+          />
+        </Pressable>
+      </View>
     </View>
   );
-}
-
-// ---------------------------------------------------------------------------
-// Helper
-// ---------------------------------------------------------------------------
-
-function formatTimeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 60) return `${mins}m`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d`;
-  return `${Math.floor(days / 30)}mo`;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,20 +133,20 @@ export default function ThreadDetail() {
     }
   }, [userId, replyText, id, refresh]);
 
-  const handleToggleHelpfulThread = useCallback(async () => {
+  const handleVoteThread = useCallback(async (direction: 'up' | 'down') => {
     if (!userId || !thread) return;
     try {
-      await toggleHelpful(userId, 'thread', thread.id);
+      await castVote(userId, 'thread', thread.id, direction);
       refresh();
     } catch {
       // ignore
     }
   }, [userId, thread, refresh]);
 
-  const handleToggleHelpfulReply = useCallback(async (replyId: string) => {
+  const handleVoteReply = useCallback(async (replyId: string, direction: 'up' | 'down') => {
     if (!userId) return;
     try {
-      await toggleHelpful(userId, 'reply', replyId);
+      await castVote(userId, 'reply', replyId, direction);
       refresh();
     } catch {
       // ignore
@@ -178,6 +194,13 @@ export default function ThreadDetail() {
     );
   }
 
+  const threadVoteColor =
+    thread.userVote === 'up'
+      ? colors.orange
+      : thread.userVote === 'down'
+        ? colors.blueSoft
+        : colors.textMuted;
+
   const ThreadHeader = (
     <View style={styles.threadHeaderContainer}>
       {/* Meta badges */}
@@ -198,21 +221,27 @@ export default function ThreadDetail() {
       {/* Author row */}
       <View style={styles.authorRow}>
         {thread.authorType === 'system' ? (
-          <View style={[styles.avatar, styles.avatarSolaTeam]}>
-            <Text style={styles.avatarSolaTeamInitial}>S</Text>
-          </View>
-        ) : thread.author.avatarUrl ? (
-          <Image source={{ uri: thread.author.avatarUrl }} style={styles.avatar} />
+          <>
+            <View style={[styles.avatar, styles.avatarSolaTeam]}>
+              <Text style={styles.avatarSolaTeamInitial}>S</Text>
+            </View>
+            <Text style={styles.authorName}>Sola Team</Text>
+            <Text style={styles.teamBadge}>TEAM</Text>
+          </>
         ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
-          </View>
-        )}
-        <Text style={styles.authorName}>
-          {thread.authorType === 'system' ? 'Sola Team' : thread.author.firstName}
-        </Text>
-        {thread.authorType === 'system' && (
-          <Text style={styles.teamBadge}>TEAM</Text>
+          <Pressable
+            style={styles.authorPressable}
+            onPress={() => router.push(`/home/user/${thread.author.id}` as any)}
+          >
+            {thread.author.avatarUrl ? (
+              <Image source={{ uri: thread.author.avatarUrl }} style={styles.avatar} />
+            ) : (
+              <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
+              </View>
+            )}
+            <Text style={styles.authorName}>{thread.author.firstName}</Text>
+          </Pressable>
         )}
         <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
       </View>
@@ -222,19 +251,33 @@ export default function ThreadDetail() {
 
       {/* Actions row */}
       <View style={styles.actionsRow}>
-        <Pressable
-          onPress={handleToggleHelpfulThread}
-          style={({ pressed }) => [styles.helpfulButton, pressed && styles.pressed]}
-        >
-          <Feather
-            name="heart"
-            size={15}
-            color={thread.isHelpful ? colors.orange : colors.textMuted}
-          />
-          <Text style={[styles.helpfulText, thread.isHelpful && styles.helpfulTextActive]}>
-            {thread.helpfulCount > 0 ? thread.helpfulCount : ''} Helpful
+        <View style={styles.voteRow}>
+          <Pressable
+            onPress={() => handleVoteThread('up')}
+            hitSlop={6}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            <Feather
+              name="chevron-up"
+              size={20}
+              color={thread.userVote === 'up' ? colors.orange : colors.textMuted}
+            />
+          </Pressable>
+          <Text style={[styles.voteScore, { color: threadVoteColor }]}>
+            {thread.voteScore}
           </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => handleVoteThread('down')}
+            hitSlop={6}
+            style={({ pressed }) => pressed && styles.pressed}
+          >
+            <Feather
+              name="chevron-down"
+              size={20}
+              color={thread.userVote === 'down' ? colors.blueSoft : colors.textMuted}
+            />
+          </Pressable>
+        </View>
         <Pressable onPress={handleReportThread} hitSlop={8}>
           <Feather name="flag" size={15} color={colors.textMuted} />
         </Pressable>
@@ -270,7 +313,7 @@ export default function ThreadDetail() {
           <ReplyCard
             reply={item}
             userId={userId ?? ''}
-            onHelpful={handleToggleHelpfulReply}
+            onVote={handleVoteReply}
             onReport={handleReportReply}
           />
         )}
@@ -373,6 +416,11 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.lg,
   },
+  authorPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   avatar: { width: 28, height: 28, borderRadius: 14 },
   avatarPlaceholder: {
     backgroundColor: colors.neutralFill,
@@ -418,14 +466,20 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
   },
-  helpfulButton: {
+
+  // Vote controls
+  voteRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingVertical: spacing.xs,
+    gap: spacing.xs,
   },
-  helpfulText: { fontFamily: fonts.medium, fontSize: 13, color: colors.textMuted },
-  helpfulTextActive: { color: colors.orange },
+  voteScore: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    minWidth: 20,
+    textAlign: 'center',
+  },
+
   pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 
   repliesHeader: {
@@ -439,8 +493,10 @@ const styles = StyleSheet.create({
   // Reply card
   replyCard: {
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+    paddingLeft: spacing.md,
+    marginBottom: spacing.sm,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.borderDefault,
   },
   replyHeader: {
     flexDirection: 'row',

@@ -17,7 +17,7 @@ interface UseCommunityFeedReturn {
   hasMore: boolean;
   loadMore: () => void;
   refresh: () => void;
-  setFilters: (filters: Partial<Pick<ThreadFeedParams, 'countryId' | 'cityId' | 'topicId' | 'searchQuery' | 'sort'>>) => void;
+  setFilters: (newFilters: Partial<Pick<ThreadFeedParams, 'countryId' | 'cityId' | 'topicId' | 'searchQuery' | 'sort'>>) => void;
   filters: Pick<ThreadFeedParams, 'countryId' | 'cityId' | 'topicId' | 'searchQuery' | 'sort'>;
 }
 

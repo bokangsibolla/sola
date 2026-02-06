@@ -4,6 +4,7 @@ export type ThreadStatus = 'active' | 'locked' | 'removed';
 export type ReplyStatus = 'active' | 'removed';
 export type ReportStatus = 'open' | 'reviewed' | 'actioned';
 export type CommunityEntityType = 'thread' | 'reply';
+export type VoteDirection = 'up' | 'down' | null;
 
 export interface CommunityTopic {
   id: string;
@@ -25,6 +26,7 @@ export interface CommunityThread {
   visibility: string;
   pinned: boolean;
   helpfulCount: number;
+  voteScore: number;
   replyCount: number;
   authorType: string;
   isSeed: boolean;
@@ -42,8 +44,8 @@ export interface ThreadWithAuthor extends CommunityThread {
   countryName: string | null;
   cityName: string | null;
   topicLabel: string | null;
-  /** Whether the current user has marked this helpful. */
-  isHelpful: boolean;
+  /** Current user's vote direction on this thread. */
+  userVote: VoteDirection;
 }
 
 export interface CommunityReply {
@@ -54,6 +56,7 @@ export interface CommunityReply {
   parentReplyId: string | null;
   status: ReplyStatus;
   helpfulCount: number;
+  voteScore: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -65,7 +68,7 @@ export interface ReplyWithAuthor extends CommunityReply {
     firstName: string;
     avatarUrl: string | null;
   };
-  isHelpful: boolean;
+  userVote: VoteDirection;
 }
 
 export interface CommunityReaction {
@@ -93,7 +96,7 @@ export interface ThreadFeedParams {
   cityId?: string;
   topicId?: string;
   searchQuery?: string;
-  sort: 'relevant' | 'new' | 'helpful';
+  sort: 'relevant' | 'new' | 'top';
   page: number;
   pageSize: number;
 }

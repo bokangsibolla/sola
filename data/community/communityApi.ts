@@ -14,6 +14,7 @@ import type {
   ThreadFeedParams,
   CreateThreadInput,
   CreateReplyInput,
+  VoteDirection,
 } from './types';
 
 // ---------------------------------------------------------------------------
@@ -47,10 +48,10 @@ export async function getThreadFeed(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_id_fkey(id, first_name, avatar_url),
-      countries!community_threads_country_id_fkey(name),
-      cities!community_threads_city_id_fkey(name),
-      community_topics!community_threads_topic_id_fkey(label)
+      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      countries(name),
+      cities(name),
+      community_topics(label)
     `)
     .eq('status', 'active')
     .eq('visibility', 'public');
@@ -74,13 +75,13 @@ export async function getThreadFeed(
   // Sort
   if (sort === 'new') {
     query = query.order('created_at', { ascending: false });
-  } else if (sort === 'helpful') {
-    query = query.order('helpful_count', { ascending: false });
+  } else if (sort === 'top') {
+    query = query.order('vote_score', { ascending: false });
   } else {
-    // 'relevant' — pinned first, then by helpful + recency blend
+    // 'relevant' — pinned first, then by vote_score + recency blend
     query = query
       .order('pinned', { ascending: false })
-      .order('helpful_count', { ascending: false })
+      .order('vote_score', { ascending: false })
       .order('created_at', { ascending: false });
   }
 
@@ -89,9 +90,9 @@ export async function getThreadFeed(
   const { data, error } = await query;
   if (error) throw error;
 
-  // Fetch user's reactions for these threads
+  // Fetch user's votes for these threads
   const threadIds = (data ?? []).map((t: any) => t.id);
-  const userReactions = await getUserReactionsForEntities(userId, 'thread', threadIds);
+  const userVotes = await getUserVotesForEntities(userId, 'thread', threadIds);
 
   return (data ?? []).map((row: any) => ({
     ...toCamel<CommunityThread>(row),
@@ -103,7 +104,7 @@ export async function getThreadFeed(
     countryName: row.countries?.name ?? null,
     cityName: row.cities?.name ?? null,
     topicLabel: row.community_topics?.label ?? null,
-    isHelpful: userReactions.has(row.id),
+    userVote: userVotes.get(row.id) ?? null,
   }));
 }
 
@@ -119,17 +120,17 @@ export async function getThread(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_id_fkey(id, first_name, avatar_url),
-      countries!community_threads_country_id_fkey(name),
-      cities!community_threads_city_id_fkey(name),
-      community_topics!community_threads_topic_id_fkey(label)
+      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      countries(name),
+      cities(name),
+      community_topics(label)
     `)
     .eq('id', threadId)
     .maybeSingle();
   if (error) throw error;
   if (!data) return null;
 
-  const userReactions = await getUserReactionsForEntities(userId, 'thread', [threadId]);
+  const userVotes = await getUserVotesForEntities(userId, 'thread', [threadId]);
 
   return {
     ...toCamel<CommunityThread>(data),
@@ -141,7 +142,7 @@ export async function getThread(
     countryName: data.countries?.name ?? null,
     cityName: data.cities?.name ?? null,
     topicLabel: data.community_topics?.label ?? null,
-    isHelpful: userReactions.has(threadId),
+    userVote: userVotes.get(threadId) ?? null,
   };
 }
 
@@ -193,11 +194,11 @@ export async function getThreadReplies(
     .from('community_replies')
     .select(`
       *,
-      profiles!community_replies_author_id_fkey(id, first_name, avatar_url)
+      profiles!community_replies_author_profile_fkey(id, first_name, avatar_url)
     `)
     .eq('thread_id', threadId)
     .eq('status', 'active')
-    .order('helpful_count', { ascending: false })
+    .order('vote_score', { ascending: false })
     .order('created_at', { ascending: true });
 
   if (blockedIds.length > 0) {
@@ -208,7 +209,7 @@ export async function getThreadReplies(
   if (error) throw error;
 
   const replyIds = (data ?? []).map((r: any) => r.id);
-  const userReactions = await getUserReactionsForEntities(userId, 'reply', replyIds);
+  const userVotes = await getUserVotesForEntities(userId, 'reply', replyIds);
 
   return (data ?? []).map((row: any) => ({
     ...toCamel<CommunityReply>(row),
@@ -217,7 +218,7 @@ export async function getThreadReplies(
       firstName: row.profiles?.first_name ?? '',
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
-    isHelpful: userReactions.has(row.id),
+    userVote: userVotes.get(row.id) ?? null,
   }));
 }
 
@@ -240,56 +241,73 @@ export async function createReply(
 }
 
 // ---------------------------------------------------------------------------
-// Reactions (Helpful)
+// Votes (Up / Down)
 // ---------------------------------------------------------------------------
 
-async function getUserReactionsForEntities(
+async function getUserVotesForEntities(
   userId: string,
   entityType: 'thread' | 'reply',
   entityIds: string[],
-): Promise<Set<string>> {
-  if (entityIds.length === 0) return new Set();
+): Promise<Map<string, 'up' | 'down'>> {
+  if (entityIds.length === 0) return new Map();
   const { data, error } = await supabase
     .from('community_reactions')
-    .select('entity_id')
+    .select('entity_id, vote')
     .eq('user_id', userId)
     .eq('entity_type', entityType)
     .in('entity_id', entityIds);
   if (error) throw error;
-  return new Set((data ?? []).map((r) => r.entity_id));
+  return new Map((data ?? []).map((r) => [r.entity_id, r.vote as 'up' | 'down']));
 }
 
-export async function toggleHelpful(
+/**
+ * Cast a vote on a thread or reply.
+ * - Same direction as existing vote → remove vote (toggle off)
+ * - Different direction → update vote
+ * - No existing vote → insert new vote
+ * Returns the resulting vote direction (null if removed).
+ */
+export async function castVote(
   userId: string,
   entityType: 'thread' | 'reply',
   entityId: string,
-): Promise<boolean> {
-  // Check if already reacted
+  direction: 'up' | 'down',
+): Promise<VoteDirection> {
   const { data: existing } = await supabase
     .from('community_reactions')
-    .select('id')
+    .select('id, vote')
     .eq('user_id', userId)
     .eq('entity_type', entityType)
     .eq('entity_id', entityId)
     .maybeSingle();
 
   if (existing) {
-    // Remove reaction
-    await supabase
-      .from('community_reactions')
-      .delete()
-      .eq('id', existing.id);
-    return false; // no longer helpful
+    if (existing.vote === direction) {
+      // Same direction — toggle off (remove)
+      await supabase
+        .from('community_reactions')
+        .delete()
+        .eq('id', existing.id);
+      return null;
+    } else {
+      // Different direction — update
+      await supabase
+        .from('community_reactions')
+        .update({ vote: direction })
+        .eq('id', existing.id);
+      return direction;
+    }
   } else {
-    // Add reaction
+    // New vote
     await supabase
       .from('community_reactions')
       .insert({
         user_id: userId,
         entity_type: entityType,
         entity_id: entityId,
+        vote: direction,
       });
-    return true; // now helpful
+    return direction;
   }
 }
 
