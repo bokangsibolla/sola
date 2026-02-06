@@ -15,8 +15,11 @@ COMMENT ON COLUMN community_threads.helpful_count IS 'DEPRECATED: Replaced by vo
 COMMENT ON COLUMN community_replies.helpful_count IS 'DEPRECATED: Replaced by vote_score. Frozen at pre-vote value.';
 
 -- 4. Drop unused helpful trigger functions
-DROP FUNCTION IF EXISTS community_inc_helpful() CASCADE;
-DROP FUNCTION IF EXISTS community_dec_helpful() CASCADE;
+-- Note: triggers referencing these functions were already dropped by
+-- 20260206_community_votes.sql (which runs before this migration alphabetically).
+-- Using plain DROP (no CASCADE) so the migration fails loudly if triggers still exist.
+DROP FUNCTION IF EXISTS community_inc_helpful();
+DROP FUNCTION IF EXISTS community_dec_helpful();
 
 -- 5. profiles.nationality redundant with home_country_iso2 + home_country_name
 COMMENT ON COLUMN profiles.nationality IS 'DEPRECATED: Use home_country_iso2 and home_country_name instead.';

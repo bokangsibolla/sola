@@ -3,9 +3,16 @@
 -- Create a helper function so all features can check blocks consistently
 -- ============================================================
 
+-- Note: SECURITY DEFINER is needed because RLS on blocked_users only shows
+-- the caller's own blocks. This function must check blocks between any two users.
+-- The auth.uid() guard prevents probing whether arbitrary users have blocked each other.
 CREATE OR REPLACE FUNCTION is_blocked(user_a uuid, user_b uuid)
 RETURNS boolean AS $$
 BEGIN
+  -- Only allow checking blocks involving the current user
+  IF auth.uid() NOT IN (user_a, user_b) THEN
+    RETURN false;
+  END IF;
   RETURN EXISTS (
     SELECT 1 FROM blocked_users
     WHERE (blocker_id = user_a AND blocked_id = user_b)

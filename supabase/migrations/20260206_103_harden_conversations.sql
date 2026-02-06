@@ -87,14 +87,17 @@ CREATE TABLE IF NOT EXISTS conversation_read_state (
 
 ALTER TABLE conversation_read_state ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Users can view own read state" ON conversation_read_state;
 CREATE POLICY "Users can view own read state"
   ON conversation_read_state FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can upsert own read state" ON conversation_read_state;
 CREATE POLICY "Users can upsert own read state"
   ON conversation_read_state FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update own read state" ON conversation_read_state;
 CREATE POLICY "Users can update own read state"
   ON conversation_read_state FOR UPDATE
   USING (auth.uid() = user_id);

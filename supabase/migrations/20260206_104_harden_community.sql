@@ -14,7 +14,8 @@ DROP POLICY IF EXISTS "Threads are readable when active and public" ON community
 CREATE POLICY "Threads are readable when active and public"
   ON community_threads FOR SELECT
   USING (
-    status != 'removed'
+    auth.uid() IS NOT NULL
+    AND status != 'removed'
     AND visibility = 'public'
     AND NOT EXISTS (
       SELECT 1 FROM blocked_users
@@ -30,7 +31,8 @@ DROP POLICY IF EXISTS "Replies are readable when active" ON community_replies;
 CREATE POLICY "Replies are readable when active"
   ON community_replies FOR SELECT
   USING (
-    status = 'active'
+    auth.uid() IS NOT NULL
+    AND status = 'active'
     AND NOT EXISTS (
       SELECT 1 FROM blocked_users
       WHERE blocker_id = auth.uid() AND blocked_id = community_replies.author_id

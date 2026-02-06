@@ -5,29 +5,39 @@
 -- ============================================================
 
 -- Fix timestamp columns that should be NOT NULL
+-- Pattern: SET DEFAULT → backfill NULLs → SET NOT NULL
 ALTER TABLE trip_stops ALTER COLUMN created_at SET DEFAULT now();
+UPDATE trip_stops SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE trip_stops ALTER COLUMN created_at SET NOT NULL;
 
 ALTER TABLE trip_saved_items ALTER COLUMN created_at SET DEFAULT now();
+UPDATE trip_saved_items SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE trip_saved_items ALTER COLUMN created_at SET NOT NULL;
 
 ALTER TABLE trip_matching_preferences ALTER COLUMN created_at SET DEFAULT now();
+UPDATE trip_matching_preferences SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE trip_matching_preferences ALTER COLUMN created_at SET NOT NULL;
 ALTER TABLE trip_matching_preferences ALTER COLUMN updated_at SET DEFAULT now();
+UPDATE trip_matching_preferences SET updated_at = now() WHERE updated_at IS NULL;
 ALTER TABLE trip_matching_preferences ALTER COLUMN updated_at SET NOT NULL;
 
 ALTER TABLE trip_entries ALTER COLUMN created_at SET DEFAULT now();
+UPDATE trip_entries SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE trip_entries ALTER COLUMN created_at SET NOT NULL;
 ALTER TABLE trip_entries ALTER COLUMN updated_at SET DEFAULT now();
+UPDATE trip_entries SET updated_at = now() WHERE updated_at IS NULL;
 ALTER TABLE trip_entries ALTER COLUMN updated_at SET NOT NULL;
 
 ALTER TABLE collections ALTER COLUMN created_at SET DEFAULT now();
+UPDATE collections SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE collections ALTER COLUMN created_at SET NOT NULL;
 
 ALTER TABLE push_tokens ALTER COLUMN created_at SET DEFAULT now();
+UPDATE push_tokens SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE push_tokens ALTER COLUMN created_at SET NOT NULL;
 
 ALTER TABLE connection_requests ALTER COLUMN created_at SET DEFAULT now();
+UPDATE connection_requests SET created_at = now() WHERE created_at IS NULL;
 ALTER TABLE connection_requests ALTER COLUMN created_at SET NOT NULL;
 
 -- Ensure all order_index columns are NOT NULL with default 0

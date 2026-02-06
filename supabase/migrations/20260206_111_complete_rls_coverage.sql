@@ -42,16 +42,9 @@ CREATE POLICY "Users can update messages in their conversations"
   );
 
 -- 4. Add UPDATE policy for trip_places (legacy but still used)
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'trip_places' AND policyname = 'Users can update trip places'
-  ) THEN
-    CREATE POLICY "Users can update trip places"
-      ON trip_places FOR UPDATE
-      USING (
-        EXISTS (SELECT 1 FROM trips WHERE trips.id = trip_places.trip_id AND trips.user_id = auth.uid())
-      );
-  END IF;
-END $$;
+DROP POLICY IF EXISTS "Users can update trip places" ON trip_places;
+CREATE POLICY "Users can update trip places"
+  ON trip_places FOR UPDATE
+  USING (
+    EXISTS (SELECT 1 FROM trips WHERE trips.id = trip_places.trip_id AND trips.user_id = auth.uid())
+  );

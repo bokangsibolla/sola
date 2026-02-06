@@ -76,18 +76,16 @@ WHERE t1.matching_opt_in = true
 -- public, matchable trips through RLS.
 -- ============================================================
 
+DROP POLICY IF EXISTS "Public trips are visible for matching" ON trips;
 CREATE POLICY "Public trips are visible for matching"
   ON trips FOR SELECT
   USING (
-    user_id = auth.uid()
-    OR (
-      matching_opt_in = true
-      AND status IN ('planned', 'active')
-      AND privacy_level = 'public'
-      AND NOT EXISTS (
-        SELECT 1 FROM blocked_users
-        WHERE (blocker_id = auth.uid() AND blocked_id = trips.user_id)
-           OR (blocked_id = auth.uid() AND blocker_id = trips.user_id)
-      )
+    matching_opt_in = true
+    AND status IN ('planned', 'active')
+    AND privacy_level = 'public'
+    AND NOT EXISTS (
+      SELECT 1 FROM blocked_users
+      WHERE (blocker_id = auth.uid() AND blocked_id = trips.user_id)
+         OR (blocked_id = auth.uid() AND blocker_id = trips.user_id)
     )
   );

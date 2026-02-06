@@ -9,8 +9,6 @@
 -- Timestamp columns (created_at, updated_at) already have DEFAULT now() from
 -- prior migrations, so we only UPDATE NULLs and SET NOT NULL.
 
-BEGIN;
-
 -- ============================================================================
 -- 1. Boolean columns: SET DEFAULT → UPDATE NULLs → SET NOT NULL
 -- ============================================================================
@@ -103,4 +101,3 @@ CREATE TRIGGER trg_updated_at
 
 ALTER TABLE community_topics ADD COLUMN IF NOT EXISTS created_at timestamptz NOT NULL DEFAULT now();
 
-COMMIT;

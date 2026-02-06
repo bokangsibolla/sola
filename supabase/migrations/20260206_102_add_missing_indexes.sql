@@ -132,3 +132,13 @@ CREATE INDEX IF NOT EXISTS idx_profiles_discoverable_city
 CREATE INDEX IF NOT EXISTS idx_profiles_discoverable_country
   ON profiles(location_country_name)
   WHERE location_sharing_enabled = true AND is_discoverable = true;
+
+------------------------------------------------------------------------
+-- blocked_users
+------------------------------------------------------------------------
+
+-- blocked_users: reverse lookup by blocked_id — used in all blocked-user
+-- RLS policies that check "blocked_id = auth.uid()" direction.
+-- The UNIQUE(blocker_id, blocked_id) constraint only indexes blocker_id first.
+CREATE INDEX IF NOT EXISTS idx_blocked_users_blocked
+  ON blocked_users(blocked_id);
