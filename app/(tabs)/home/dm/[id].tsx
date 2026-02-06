@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   FlatList,
@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { getConversations, getMessagesPaginated, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser } from '@/data/api';
+import { getConversations, getMessagesPaginated, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser, markMessagesAsRead } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { usePaginatedData } from '@/hooks/usePaginatedData';
 import { useRealtimeMessages } from '@/hooks/useRealtimeMessages';
@@ -72,6 +72,13 @@ export default function DMThreadScreen() {
   }, [olderMessages, realtimeMessages]);
 
   useRealtimeMessages(conversationId, userId, handleRealtimeMessage);
+
+  // Mark messages as read when the screen opens
+  useEffect(() => {
+    if (conversationId && userId) {
+      markMessagesAsRead(conversationId, userId);
+    }
+  }, [conversationId, userId]);
 
   const [sending, setSending] = useState(false);
 

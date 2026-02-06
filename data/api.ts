@@ -940,7 +940,20 @@ export async function getConversations(): Promise<Conversation[]> {
     .select('*')
     .order('last_message_at', { ascending: false });
   if (error) throw error;
-  return rowsToCamel<Conversation>(data ?? []);
+
+  // Per-user unread counts from read-state table (RLS filters to current user)
+  const { data: readStates } = await supabase
+    .from('conversation_read_state')
+    .select('conversation_id, unread_count');
+
+  const unreadMap = new Map(
+    (readStates ?? []).map((rs: any) => [rs.conversation_id, rs.unread_count])
+  );
+
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Conversation>(row),
+    unreadCount: unreadMap.get(row.id) ?? 0,
+  }));
 }
 
 export async function getMessages(conversationId: string): Promise<Message[]> {
@@ -984,7 +997,6 @@ export async function getOrCreateConversation(
       participant_ids: [userId, otherId],
       last_message: null,
       last_message_at: new Date().toISOString(),
-      unread_count: 0,
     })
     .select('id')
     .single();
@@ -1205,7 +1217,23 @@ export async function getConversationsPaginated(
   if (error) throw error;
   const hasMore = (data?.length ?? 0) > pageSize;
   const rows = (data || []).slice(0, pageSize);
-  return { data: rowsToCamel<Conversation>(rows), hasMore };
+
+  // Per-user unread counts from read-state table (RLS filters to current user)
+  const { data: readStates } = await supabase
+    .from('conversation_read_state')
+    .select('conversation_id, unread_count');
+
+  const unreadMap = new Map(
+    (readStates ?? []).map((rs: any) => [rs.conversation_id, rs.unread_count])
+  );
+
+  return {
+    data: rows.map((row: any) => ({
+      ...toCamel<Conversation>(row),
+      unreadCount: unreadMap.get(row.id) ?? 0,
+    })),
+    hasMore,
+  };
 }
 
 export async function getMessagesPaginated(
@@ -1665,11 +1693,12 @@ export async function markMessagesAsRead(
     .is('read_at', null);
   if (error) throw error;
 
-  // Reset unread count on conversation
+  // Reset per-user unread count in read-state table
   await supabase
-    .from('conversations')
-    .update({ unread_count: 0 })
-    .eq('id', conversationId);
+    .from('conversation_read_state')
+    .update({ unread_count: 0, last_read_at: new Date().toISOString() })
+    .eq('conversation_id', conversationId)
+    .eq('user_id', userId);
 }
 
 // ---------------------------------------------------------------------------
