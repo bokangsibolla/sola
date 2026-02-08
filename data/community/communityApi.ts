@@ -50,7 +50,7 @@ export async function getThreadFeed(
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
       countries(name),
-      cities(name),
+      cities(name, hero_image_url),
       community_topics(label)
     `)
     .eq('status', 'active')
@@ -103,6 +103,7 @@ export async function getThreadFeed(
     },
     countryName: row.countries?.name ?? null,
     cityName: row.cities?.name ?? null,
+    cityImageUrl: row.cities?.hero_image_url ?? null,
     topicLabel: row.community_topics?.label ?? null,
     userVote: userVotes.get(row.id) ?? null,
   }));
@@ -122,7 +123,7 @@ export async function getThread(
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
       countries(name),
-      cities(name),
+      cities(name, hero_image_url),
       community_topics(label)
     `)
     .eq('id', threadId)
@@ -141,6 +142,7 @@ export async function getThread(
     },
     countryName: data.countries?.name ?? null,
     cityName: data.cities?.name ?? null,
+    cityImageUrl: data.cities?.hero_image_url ?? null,
     topicLabel: data.community_topics?.label ?? null,
     userVote: userVotes.get(threadId) ?? null,
   };

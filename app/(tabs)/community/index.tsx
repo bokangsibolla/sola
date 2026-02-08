@@ -16,6 +16,7 @@ import type { Router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
@@ -23,13 +24,75 @@ import InboxButton from '@/components/InboxButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
-import { getCommunityTopics, searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
+import { searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
-import type { ThreadWithAuthor, CommunityTopic } from '@/data/community/types';
+import type { ThreadWithAuthor } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
-// Thread Card Component (inline — keep it close to the feed)
+// Featured Hero Card — visual header for top Sola Team thread
+// ---------------------------------------------------------------------------
+
+function FeaturedHeroCard({
+  thread,
+  onPress,
+}: {
+  thread: ThreadWithAuthor;
+  onPress: () => void;
+}) {
+  const placeName = thread.cityName ?? thread.countryName;
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.heroCard, pressed && styles.pressed]}
+    >
+      {thread.cityImageUrl ? (
+        <Image
+          source={{ uri: thread.cityImageUrl }}
+          style={StyleSheet.absoluteFill}
+          contentFit="cover"
+          transition={200}
+          pointerEvents="none"
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFill, { backgroundColor: colors.neutralFill }]} />
+      )}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.65)']}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+
+      {/* "FROM SOLA" type label */}
+      <View style={styles.heroTypeLabel}>
+        <Text style={styles.heroTypeLabelText}>FROM SOLA</Text>
+      </View>
+
+      <View style={styles.heroContent} pointerEvents="none">
+        {placeName && (
+          <View style={styles.heroPlacePill}>
+            <Feather name="map-pin" size={10} color="rgba(255,255,255,0.9)" />
+            <Text style={styles.heroPlaceText}>{placeName}</Text>
+          </View>
+        )}
+        <Text style={styles.heroTitle} numberOfLines={2}>
+          {thread.title}
+        </Text>
+        <View style={styles.heroMeta}>
+          <Text style={styles.heroMetaText}>
+            {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
+          </Text>
+          <Text style={styles.heroMetaDot}>&middot;</Text>
+          <Text style={styles.heroMetaText}>{formatTimeAgo(thread.createdAt)}</Text>
+        </View>
+      </View>
+    </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Thread Card — redesigned with visual warmth
 // ---------------------------------------------------------------------------
 
 function ThreadCard({
@@ -48,8 +111,19 @@ function ThreadCard({
   const isSystem = thread.authorType === 'system';
   const authorName = isSystem ? 'Sola Team' : thread.author.firstName;
   const placeName = thread.cityName ?? thread.countryName;
+  const hasImage = !!thread.cityImageUrl;
 
-  const avatarContent = thread.author.avatarUrl ? (
+  // Build subtitle: "Safety & comfort · Hoi An"
+  const subtitleParts: string[] = [];
+  if (thread.topicLabel) subtitleParts.push(thread.topicLabel);
+  if (placeName) subtitleParts.push(placeName);
+  const subtitle = subtitleParts.join(' · ');
+
+  const avatarContent = isSystem ? (
+    <View style={[styles.avatar, styles.avatarSystem]}>
+      <Text style={styles.avatarSystemText}>S</Text>
+    </View>
+  ) : thread.author.avatarUrl ? (
     <Image
       source={{ uri: thread.author.avatarUrl }}
       style={styles.avatar}
@@ -63,94 +137,95 @@ function ThreadCard({
     </View>
   );
 
-  const authorElement = (
-    <View style={styles.authorRow}>
-      {avatarContent}
-      <Text style={styles.authorName}>{authorName}</Text>
-      <Text style={styles.authorSeparator}>&middot;</Text>
-      <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
-    </View>
-  );
-
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.threadCard, pressed && styles.pressed]}
     >
-      {/* Pills row: topic + place */}
-      {(thread.topicLabel || placeName) && (
-        <View style={styles.pillRow}>
-          {thread.topicLabel && (
-            <View style={styles.topicPill}>
-              <Text style={styles.topicPillText}>{thread.topicLabel}</Text>
-            </View>
-          )}
-          {placeName && (
-            <View style={styles.placePill}>
-              <Text style={styles.placePillText}>{placeName}</Text>
-            </View>
-          )}
-        </View>
-      )}
+      <View style={styles.threadCardInner}>
+        {/* Left content area */}
+        <View style={styles.threadCardLeft}>
+          {/* Author row — who's asking */}
+          <View style={styles.authorRow}>
+            {!isSystem ? (
+              <Pressable
+                onPress={() => router.push(`/home/user/${thread.author.id}` as any)}
+                style={styles.authorPressable}
+              >
+                {avatarContent}
+                <Text style={styles.authorName}>{authorName}</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.authorPressable}>
+                {avatarContent}
+                <Text style={styles.authorName}>{authorName}</Text>
+                <View style={styles.teamBadge}>
+                  <Text style={styles.teamBadgeText}>TEAM</Text>
+                </View>
+              </View>
+            )}
+            <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
+          </View>
 
-      {/* Title */}
-      <Text style={styles.threadTitle} numberOfLines={2}>
-        {thread.title}
-      </Text>
-
-      {/* Author row */}
-      {!isSystem ? (
-        <Pressable
-          onPress={() => router.push(`/home/user/${thread.author.id}` as any)}
-          style={styles.authorPressable}
-        >
-          {authorElement}
-        </Pressable>
-      ) : (
-        authorElement
-      )}
-
-      {/* Footer: helpful vote + answer count */}
-      <View style={styles.threadFooter}>
-        <Pressable
-          onPress={() => onVote(thread.id)}
-          hitSlop={6}
-          style={styles.helpfulButton}
-        >
-          <Feather name="arrow-up" size={16} color={helpfulColor} />
-          <Text style={[styles.helpfulText, { color: helpfulColor }]}>
-            {thread.voteScore} helpful
+          {/* Title — the star */}
+          <Text style={styles.threadTitle} numberOfLines={2}>
+            {thread.title}
           </Text>
-        </Pressable>
 
-        <View style={styles.replyStatRow}>
-          <Feather name="message-circle" size={14} color={colors.textMuted} />
-          <Text style={styles.replyStatText}>
-            {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-          </Text>
+          {/* Subtitle: topic · place */}
+          {subtitle.length > 0 && (
+            <Text style={styles.threadSubtitle} numberOfLines={1}>
+              {subtitle}
+            </Text>
+          )}
+
+          {/* Footer: helpful + answers */}
+          <View style={styles.threadFooter}>
+            <Pressable
+              onPress={() => onVote(thread.id)}
+              hitSlop={6}
+              style={styles.helpfulButton}
+            >
+              <Feather name="arrow-up" size={14} color={helpfulColor} />
+              <Text style={[styles.footerText, { color: helpfulColor }]}>
+                {thread.voteScore} helpful
+              </Text>
+            </Pressable>
+
+            <View style={styles.replyStatRow}>
+              <Feather
+                name="message-circle"
+                size={13}
+                color={thread.replyCount > 0 ? colors.orange : colors.textMuted}
+              />
+              <Text
+                style={[
+                  styles.footerText,
+                  { color: thread.replyCount > 0 ? colors.orange : colors.textMuted },
+                ]}
+              >
+                {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
+              </Text>
+            </View>
+          </View>
         </View>
+
+        {/* Right: destination thumbnail */}
+        {hasImage && (
+          <Image
+            source={{ uri: thread.cityImageUrl! }}
+            style={styles.threadThumbnail}
+            contentFit="cover"
+            transition={200}
+          />
+        )}
       </View>
     </Pressable>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Sort helpers
-// ---------------------------------------------------------------------------
-
-const SORT_LABELS: Record<string, string> = {
-  relevant: 'Relevant',
-  new: 'New',
-  top: 'Top',
-};
-const SORT_CYCLE: Record<string, 'relevant' | 'new' | 'top'> = {
-  relevant: 'new',
-  new: 'top',
-  top: 'relevant',
-};
-
-// ---------------------------------------------------------------------------
-// Place Selector Bottom Sheet
+// Place Selector Bottom Sheet (preserved from original)
 // ---------------------------------------------------------------------------
 
 function PlaceSelectorSheet({
@@ -225,11 +300,10 @@ function PlaceSelectorSheet({
 
           {!selectedCountry ? (
             <>
-              {/* Country search */}
-              <View style={styles.searchInputRow}>
+              <View style={styles.sheetSearchRow}>
                 <Feather name="search" size={18} color={colors.textMuted} />
                 <TextInput
-                  style={styles.searchInput}
+                  style={styles.sheetSearchInput}
                   placeholder="Search country..."
                   placeholderTextColor={colors.textMuted}
                   value={searchText}
@@ -258,7 +332,6 @@ function PlaceSelectorSheet({
             </>
           ) : (
             <>
-              {/* City selection for chosen country */}
               <Pressable onPress={() => { setSelectedCountry(null); setCities([]); }} style={styles.backRow}>
                 <Feather name="arrow-left" size={18} color={colors.orange} />
                 <Text style={styles.backRowText}>{selectedCountry.name}</Text>
@@ -288,7 +361,7 @@ function PlaceSelectorSheet({
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Helpers
 // ---------------------------------------------------------------------------
 
 function getFlag(iso2: string): string {
@@ -337,20 +410,22 @@ export default function CommunityHome() {
     }
   }, [feedThreads]);
 
-  // Split threads into curated (Sola Team) and community zones
-  const solaTeamThreads = useMemo(() => threads.filter((t) => t.authorType === 'system'), [threads]);
-  const communityThreads = useMemo(() => threads.filter((t) => t.authorType !== 'system'), [threads]);
+  // Featured hero thread: first Sola Team thread with an image
+  const featuredThread = useMemo(
+    () => threads.find((t) => t.authorType === 'system' && t.cityImageUrl),
+    [threads],
+  );
 
-  const [topics, setTopics] = useState<CommunityTopic[]>([]);
+  // All remaining threads (excluding the featured one)
+  const displayThreads = useMemo(
+    () => featuredThread ? threads.filter((t) => t.id !== featuredThread.id) : threads,
+    [threads, featuredThread],
+  );
+
   const [showPlaceSelector, setShowPlaceSelector] = useState(false);
   const [placeLabel, setPlaceLabel] = useState('All places');
   const [searchText, setSearchText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
-
-  // Load topics once
-  React.useEffect(() => {
-    getCommunityTopics().then(setTopics).catch(() => {});
-  }, []);
 
   // -------------------------------------------------------------------------
   // Vote handler with optimistic update (single upvote toggle)
@@ -359,10 +434,8 @@ export default function CommunityHome() {
     async (threadId: string) => {
       if (!userId) return;
 
-      // Capture previous state for rollback
       const prevThreads = threads;
 
-      // Compute optimistic update
       setThreads((current) =>
         current.map((t) => {
           if (t.id !== threadId) return t;
@@ -370,11 +443,9 @@ export default function CommunityHome() {
           let scoreDelta: number;
 
           if (t.userVote === 'up') {
-            // Toggle off
             newVote = null;
             scoreDelta = -1;
           } else {
-            // Toggle on
             newVote = 'up';
             scoreDelta = 1;
           }
@@ -386,7 +457,6 @@ export default function CommunityHome() {
       try {
         await castVote(userId, 'thread', threadId, 'up');
       } catch {
-        // Revert on failure
         setThreads(prevThreads);
       }
     },
@@ -412,55 +482,28 @@ export default function CommunityHome() {
     />
   ), [router, handleVote]);
 
+  const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId);
+
   const ListHeader = (
     <View>
       {/* First-time intro banner */}
       {showIntroBanner && <IntroBanner onDismiss={dismissIntro} />}
 
-      {/* Topic chips — quick filter by category */}
-      {topics.length > 0 && (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.topicChipsRow}
-        >
-          <Pressable
-            onPress={() => setFilters({ topicId: undefined })}
-            style={[
-              styles.topicChip,
-              !filters.topicId && styles.topicChipActive,
-            ]}
-          >
-            <Text style={[
-              styles.topicChipText,
-              !filters.topicId && styles.topicChipTextActive,
-            ]}>All</Text>
-          </Pressable>
-          {topics.map((topic) => (
-            <Pressable
-              key={topic.id}
-              onPress={() => setFilters({ topicId: filters.topicId === topic.id ? undefined : topic.id })}
-              style={[
-                styles.topicChip,
-                filters.topicId === topic.id && styles.topicChipActive,
-              ]}
-            >
-              <Text style={[
-                styles.topicChipText,
-                filters.topicId === topic.id && styles.topicChipTextActive,
-              ]}>{topic.label}</Text>
-            </Pressable>
-          ))}
-        </ScrollView>
+      {/* Featured hero card — only when no filters active */}
+      {featuredThread && !isFiltered && (
+        <FeaturedHeroCard
+          thread={featuredThread}
+          onPress={() => router.push(`/(tabs)/community/thread/${featuredThread.id}`)}
+        />
       )}
 
-      {/* Search bar */}
+      {/* Search pill */}
       {isSearching ? (
         <View style={styles.searchInputRow}>
-          <Feather name="search" size={18} color={colors.textMuted} />
+          <Feather name="search" size={16} color={colors.textMuted} />
           <TextInput
             style={styles.searchInput}
-            placeholder="What do you want to know?"
+            placeholder="Search discussions..."
             placeholderTextColor={colors.textMuted}
             value={searchText}
             onChangeText={setSearchText}
@@ -469,66 +512,18 @@ export default function CommunityHome() {
             autoFocus
           />
           <Pressable onPress={() => { setIsSearching(false); setSearchText(''); setFilters({ searchQuery: undefined }); }}>
-            <Feather name="x" size={18} color={colors.textMuted} />
+            <Feather name="x" size={16} color={colors.textMuted} />
           </Pressable>
         </View>
       ) : (
-        <Pressable onPress={() => setIsSearching(true)} style={styles.searchBar}>
-          <Feather name="search" size={18} color={colors.textMuted} />
-          <Text style={styles.searchBarText}>What do you want to know?</Text>
+        <Pressable onPress={() => setIsSearching(true)} style={styles.searchPill}>
+          <Feather name="search" size={16} color={colors.textMuted} />
+          <Text style={styles.searchPillText}>Search discussions...</Text>
         </Pressable>
       )}
 
-      {/* Filter row */}
-      <View style={styles.filterRow}>
-        <Pressable
-          onPress={() => setShowPlaceSelector(true)}
-          style={[styles.placeButton, filters.countryId && styles.placeButtonActive]}
-        >
-          <Feather name="map-pin" size={14} color={filters.countryId ? colors.orange : colors.textMuted} />
-          <Text
-            style={[styles.placeButtonText, filters.countryId && styles.placeButtonTextActive]}
-            numberOfLines={1}
-          >
-            {placeLabel}
-          </Text>
-          {filters.countryId ? (
-            <Pressable
-              onPress={() => handleSelectPlace(undefined, undefined, 'All places')}
-              hitSlop={8}
-            >
-              <Feather name="x" size={14} color={colors.orange} />
-            </Pressable>
-          ) : (
-            <Feather name="chevron-down" size={14} color={colors.textMuted} />
-          )}
-        </Pressable>
-
-        <Pressable
-          onPress={() => setFilters({ sort: SORT_CYCLE[filters.sort] })}
-          style={styles.sortButton}
-        >
-          <Feather name="sliders" size={14} color={colors.textSecondary} />
-          <Text style={styles.sortButtonText}>{SORT_LABELS[filters.sort]}</Text>
-        </Pressable>
-      </View>
-
-      {/* Sola Team threads — curated content zone */}
-      {solaTeamThreads.length > 0 && !filters.topicId && !filters.searchQuery && (
-        <View style={styles.solaSection}>
-          <Text style={styles.solaSectionTitle}>From Sola</Text>
-          {solaTeamThreads.slice(0, 3).map((thread) => (
-            <ThreadCard
-              key={thread.id}
-              thread={thread}
-              onPress={() => router.push(`/(tabs)/community/thread/${thread.id}`)}
-              onVote={handleVote}
-              router={router}
-            />
-          ))}
-          <View style={styles.solaSectionDivider} />
-        </View>
-      )}
+      {/* Section label */}
+      <Text style={styles.sectionLabel}>RECENT DISCUSSIONS</Text>
     </View>
   );
 
@@ -539,9 +534,8 @@ export default function CommunityHome() {
         rightComponent={<InboxButton />}
       />
 
-      {/* Thread Feed — community threads only (Sola Team shown in header) */}
       <FlatList
-        data={communityThreads}
+        data={displayThreads}
         keyExtractor={(item) => item.id}
         renderItem={renderThread}
         ListHeaderComponent={ListHeader}
@@ -566,16 +560,15 @@ export default function CommunityHome() {
         showsVerticalScrollIndicator={false}
       />
 
-      {/* FAB — Ask a question */}
+      {/* FAB — circle icon only */}
       <Pressable
         onPress={() => router.push('/(tabs)/community/new')}
         style={({ pressed }) => [styles.fab, pressed && styles.fabPressed]}
       >
-        <Feather name="edit-3" size={20} color="#FFFFFF" />
-        <Text style={styles.fabText}>Ask</Text>
+        <Feather name="edit-3" size={22} color="#FFFFFF" />
       </Pressable>
 
-      {/* Place Selector Sheet */}
+      {/* Place Selector Sheet (kept for programmatic use) */}
       <PlaceSelectorSheet
         visible={showPlaceSelector}
         onClose={() => setShowPlaceSelector(false)}
@@ -589,177 +582,170 @@ export default function CommunityHome() {
 // Styles
 // ---------------------------------------------------------------------------
 
+const HERO_HEIGHT = 200;
+const THUMBNAIL_SIZE = 56;
+
 const styles = StyleSheet.create({
   feedContent: { paddingHorizontal: spacing.screenX, paddingBottom: 100 },
   loader: { marginTop: 60 },
   emptyState: { alignItems: 'center' as const, paddingTop: 80, gap: spacing.md },
   emptyText: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted },
+  pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
 
-  // Topic chips
-  topicChipsRow: {
-    paddingVertical: spacing.sm,
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  topicChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
+  // ---------------------------------------------------------------------------
+  // Featured Hero Card
+  // ---------------------------------------------------------------------------
+  heroCard: {
+    height: HERO_HEIGHT,
+    borderRadius: radius.card,
+    overflow: 'hidden',
     backgroundColor: colors.neutralFill,
+    justifyContent: 'flex-end',
+    marginBottom: spacing.lg,
   },
-  topicChipActive: {
-    backgroundColor: colors.orangeFill,
+  heroTypeLabel: {
+    position: 'absolute',
+    top: spacing.md,
+    left: spacing.md,
+    zIndex: 1,
+    backgroundColor: colors.overlaySoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
   },
-  topicChipText: {
+  heroTypeLabelText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 10,
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.8,
   },
-  topicChipTextActive: {
-    color: colors.orange,
+  heroContent: {
+    padding: spacing.lg,
+  },
+  heroPlacePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.xs,
+  },
+  heroPlaceText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.85)',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  heroTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: '#FFFFFF',
+    lineHeight: 26,
+  },
+  heroMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: spacing.sm,
+  },
+  heroMetaText: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.7)',
+  },
+  heroMetaDot: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.5)',
   },
 
-  // Search bar
-  searchBar: {
+  // ---------------------------------------------------------------------------
+  // Search Pill
+  // ---------------------------------------------------------------------------
+  searchPill: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.input,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
-    height: 52,
+    height: 44,
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
-  searchBarText: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted },
+  searchPillText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
   searchInputRow: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.input,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
-    height: 52,
+    height: 44,
     gap: spacing.sm,
-    marginBottom: spacing.md,
+    marginBottom: spacing.xl,
   },
   searchInput: {
     flex: 1,
     fontFamily: fonts.regular,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
 
-  // Filter row
-  filterRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  placeButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 36,
-    paddingHorizontal: 12,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-    gap: 6,
-  },
-  placeButtonActive: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orangeFill,
-  },
-  placeButtonText: {
-    flex: 1,
+  // ---------------------------------------------------------------------------
+  // Section Label
+  // ---------------------------------------------------------------------------
+  sectionLabel: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  placeButtonTextActive: {
-    color: colors.orange,
-  },
-  sortButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: 36,
-    paddingHorizontal: 12,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-    gap: 6,
-  },
-  sortButtonText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 0.8,
+    marginBottom: spacing.md,
   },
 
-  // Thread card
+  // ---------------------------------------------------------------------------
+  // Thread Card
+  // ---------------------------------------------------------------------------
   threadCard: {
-    backgroundColor: colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
     paddingVertical: spacing.lg,
   },
-  pressed: { opacity: 0.9, transform: [{ scale: 0.98 }] },
-
-  // Pills row (topic + place)
-  pillRow: {
+  threadCardInner: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    gap: spacing.lg,
   },
-  topicPill: {
-    backgroundColor: colors.orangeFill,
-    borderRadius: radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  topicPillText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.orange,
-  },
-  placePill: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  placePillText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-
-  // Title
-  threadTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
+  threadCardLeft: {
+    flex: 1,
   },
 
   // Author row
-  authorPressable: {
-    alignSelf: 'flex-start',
-    marginBottom: spacing.md,
-  },
   authorRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.sm,
+  },
+  authorPressable: {
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: 6,
-    marginBottom: spacing.md,
   },
   avatar: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     backgroundColor: colors.neutralFill,
+  },
+  avatarSystem: {
+    backgroundColor: colors.orange,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarSystemText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: '#FFFFFF',
   },
   avatarFallback: {
     alignItems: 'center',
@@ -776,22 +762,54 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textPrimary,
   },
-  authorSeparator: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
+  teamBadge: {
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+  },
+  teamBadgeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 9,
+    color: colors.orange,
+    letterSpacing: 0.5,
   },
   authorTime: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
   },
 
-  // Footer: helpful vote + answer count
+  // Title
+  threadTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+    color: colors.textPrimary,
+    lineHeight: 23,
+    marginBottom: spacing.xs,
+  },
+
+  // Subtitle (topic · place)
+  threadSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginBottom: spacing.md,
+  },
+
+  // Destination thumbnail
+  threadThumbnail: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+    borderRadius: radius.sm,
+    backgroundColor: colors.neutralFill,
+  },
+
+  // Footer
   threadFooter: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.xl,
   },
   helpfulButton: {
     flexDirection: 'row',
@@ -799,39 +817,19 @@ const styles = StyleSheet.create({
     gap: 4,
     padding: 2,
   },
-  helpfulText: {
+  footerText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
   },
   replyStatRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  replyStatText: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
 
-  // Sola Team section
-  solaSection: {
-    marginBottom: spacing.lg,
-  },
-  solaSectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    letterSpacing: -0.2,
-    marginBottom: spacing.sm,
-  },
-  solaSectionDivider: {
-    height: 1,
-    backgroundColor: colors.borderDefault,
-    marginTop: spacing.md,
-  },
-
-  // Intro banner
+  // ---------------------------------------------------------------------------
+  // Intro Banner
+  // ---------------------------------------------------------------------------
   introBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -862,28 +860,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // FAB
+  // ---------------------------------------------------------------------------
+  // FAB — circle icon
+  // ---------------------------------------------------------------------------
   fab: {
     position: 'absolute',
     bottom: 24,
     right: spacing.screenX,
-    flexDirection: 'row',
-    alignItems: 'center',
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: colors.orange,
-    borderRadius: radius.full,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    gap: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
     elevation: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
     shadowRadius: 6,
   },
-  fabPressed: { opacity: 0.92, transform: [{ scale: 0.98 }] },
-  fabText: { fontFamily: fonts.semiBold, fontSize: 15, color: '#FFFFFF' },
+  fabPressed: { opacity: 0.92, transform: [{ scale: 0.95 }] },
 
-  // Bottom sheet (shared)
+  // ---------------------------------------------------------------------------
+  // Bottom Sheet (shared)
+  // ---------------------------------------------------------------------------
   sheetOverlay: { flex: 1, justifyContent: 'flex-end' },
   sheetBackdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.5)' },
   sheetContainer: {
@@ -898,6 +898,22 @@ const styles = StyleSheet.create({
 
   // Place selector sheet
   placeSelectorSheet: { maxHeight: '70%' },
+  sheetSearchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.lg,
+    height: 44,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  sheetSearchInput: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
   placeResults: { maxHeight: 300 },
   placeRow: {
     flexDirection: 'row',

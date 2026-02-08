@@ -43,6 +43,7 @@ export interface ThreadWithAuthor extends CommunityThread {
   };
   countryName: string | null;
   cityName: string | null;
+  cityImageUrl: string | null;
   topicLabel: string | null;
   /** Current user's vote direction on this thread. */
   userVote: VoteDirection;
