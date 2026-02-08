@@ -17,8 +17,8 @@ export default function ActivityDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
   const { data, loading, error, refetch } = useData(
-    () => getActivityWithDetails(slug ?? ''),
-    [slug]
+    () => slug ? getActivityWithDetails(slug) : Promise.resolve(undefined),
+    [slug ?? ''],
   );
 
   const activity = data?.activity;
@@ -102,11 +102,11 @@ export default function ActivityDetailScreen() {
           )}
 
           {/* Rating row - uses Google rating if available */}
-          {activity.googleRating && (
+          {typeof activity.googleRating === 'number' && (
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={14} color={colors.textPrimary} />
               <Text style={styles.ratingText}>{activity.googleRating.toFixed(1)}</Text>
-              {activity.googleReviewCount && (
+              {activity.googleReviewCount != null && activity.googleReviewCount > 0 && (
                 <Text style={styles.reviewCount}>
                   ({activity.googleReviewCount.toLocaleString()} reviews)
                 </Text>

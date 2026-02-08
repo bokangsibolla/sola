@@ -28,7 +28,7 @@ import {
   type PlacesGroupedByTime,
 } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
-import type { Place, Tag } from '@/data/types';
+import type { City, Country, Place, Tag } from '@/data/types';
 
 // ---------------------------------------------------------------------------
 // Time-based section configuration
@@ -95,17 +95,12 @@ function tagColors(filterGroup: Tag['filterGroup']): {
 }
 
 // ---------------------------------------------------------------------------
-// Price dots
+// Price label
 // ---------------------------------------------------------------------------
 
-function PriceDots({ level }: { level: number | null }) {
-  if (!level) return null;
-  const max = 4;
-  const dots: string[] = [];
-  for (let i = 0; i < max; i++) {
-    dots.push(i < level ? '\u25CF' : '\u25CB');
-  }
-  return <Text style={styles.priceDots}>{dots.join('')}</Text>;
+function PriceLabel({ level }: { level: number | null }) {
+  if (!level || level <= 0) return null;
+  return <Text style={styles.priceLabel}>{'$'.repeat(level)}</Text>;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,12 +124,18 @@ function DurationBadge({ duration }: { duration: string | null }) {
 function PlaceCard({ place, showDuration = false }: { place: Place; showDuration?: boolean }) {
   const router = useRouter();
   const posthog = usePostHog();
-  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
+  const { data: imageUrl } = useData(
+    () => place?.id ? getPlaceFirstImage(place.id) : Promise.resolve(null),
+    [place?.id ?? ''],
+  );
   const { userId } = useAuth();
-  const { data: tags } = useData(() => getPlaceTags(place.id), [place.id]);
+  const { data: tags } = useData(
+    () => place?.id ? getPlaceTags(place.id) : Promise.resolve([]),
+    [place?.id ?? ''],
+  );
   const { data: isSaved } = useData(
-    () => userId ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
-    [userId, place.id],
+    () => (userId && place?.id) ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
+    [userId, place?.id ?? ''],
   );
   const [saved, setSaved] = useState(false);
 
@@ -153,6 +154,7 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
   return (
     <Pressable
       onPress={() => {
+        if (!place?.id) return;
         posthog.capture('place_card_tapped', { place_id: place.id, place_name: place.name });
         router.push(`/explore/place-detail/${place.id}`);
       }}
@@ -170,7 +172,16 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
           <Text style={styles.cardName} numberOfLines={1}>
             {place.name}
           </Text>
-          <PriceDots level={place.priceLevel} />
+          <View style={styles.cardTopRight}>
+            <PriceLabel level={place.priceLevel} />
+            <Pressable onPress={handleSave} hitSlop={8}>
+              <Ionicons
+                name={saved ? 'heart' : 'heart-outline'}
+                size={16}
+                color={saved ? colors.orange : colors.textMuted}
+              />
+            </Pressable>
+          </View>
         </View>
 
         {/* Duration badge for activities */}
@@ -178,10 +189,10 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
           <DurationBadge duration={place.estimatedDuration} />
         )}
 
-        {/* Tag pills */}
+        {/* Tag pills — max 2 for scannability */}
         {Array.isArray(tags) && tags.length > 0 && (
           <View style={styles.tagRow}>
-            {tags.slice(0, 3).map((tag) => {
+            {tags.slice(0, 2).map((tag) => {
               const tc = tagColors(tag.filterGroup);
               return (
                 <View
@@ -203,23 +214,6 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
             {place.whySelected || place.description}
           </Text>
         ) : null}
-
-        {/* Save button */}
-        <Pressable onPress={handleSave} style={styles.saveBtn} hitSlop={8}>
-          <Ionicons
-            name={saved ? 'heart' : 'heart-outline'}
-            size={18}
-            color={saved ? colors.orange : colors.textMuted}
-          />
-          <Text
-            style={[
-              styles.saveText,
-              { color: saved ? colors.orange : colors.textMuted },
-            ]}
-          >
-            {saved ? 'Saved' : 'Save'}
-          </Text>
-        </Pressable>
       </View>
     </Pressable>
   );
@@ -232,11 +226,14 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
 function FullDayCard({ place }: { place: Place }) {
   const router = useRouter();
   const posthog = usePostHog();
-  const { data: imageUrl } = useData(() => getPlaceFirstImage(place.id), [place.id]);
+  const { data: imageUrl } = useData(
+    () => place?.id ? getPlaceFirstImage(place.id) : Promise.resolve(null),
+    [place?.id ?? ''],
+  );
   const { userId } = useAuth();
   const { data: isSaved } = useData(
-    () => userId ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
-    [userId, place.id],
+    () => (userId && place?.id) ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
+    [userId, place?.id ?? ''],
   );
   const [saved, setSaved] = useState(false);
 
@@ -255,16 +252,26 @@ function FullDayCard({ place }: { place: Place }) {
   return (
     <Pressable
       onPress={() => {
+        if (!place?.id) return;
         posthog.capture('fullday_card_tapped', { place_id: place.id, place_name: place.name });
         router.push(`/explore/place-detail/${place.id}`);
       }}
       style={({ pressed }) => [styles.fullDayCard, pressed && styles.fullDayCardPressed]}
     >
+      <View style={styles.fullDayImageContainer}>
         {imageUrl ? (
           <Image source={{ uri: imageUrl }} style={styles.fullDayImage} contentFit="cover" transition={200} pointerEvents="none" />
         ) : (
           <View style={[styles.fullDayImage, styles.fullDayImagePlaceholder]} pointerEvents="none" />
         )}
+        <Pressable onPress={handleSave} style={styles.fullDaySaveOverlay} hitSlop={8}>
+          <Ionicons
+            name={saved ? 'heart' : 'heart-outline'}
+            size={18}
+            color={saved ? colors.orange : '#FFFFFF'}
+          />
+        </Pressable>
+      </View>
       <View style={styles.fullDayBody} pointerEvents="box-none">
         <Text style={styles.fullDayName} numberOfLines={2}>{place.name}</Text>
         {place.whySelected && (
@@ -284,13 +291,6 @@ function FullDayCard({ place }: { place: Place }) {
             </View>
           )}
         </View>
-        <Pressable onPress={handleSave} style={styles.fullDaySave} hitSlop={8}>
-          <Ionicons
-            name={saved ? 'heart' : 'heart-outline'}
-            size={20}
-            color={saved ? colors.orange : colors.textMuted}
-          />
-        </Pressable>
       </View>
     </Pressable>
   );
@@ -360,6 +360,66 @@ function CityEditorial({
           <Text style={styles.bestForText}>{bestFor}</Text>
         </View>
       )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// City Context Signals — surfaces research quality from existing data
+// ---------------------------------------------------------------------------
+
+function CityContext({ city }: { city: City }) {
+  const signals: { icon: string; label: string }[] = [];
+
+  if (city.soloLevel === 'beginner') {
+    signals.push({ icon: 'compass-outline', label: 'Good for first-time solo' });
+  } else if (city.soloLevel === 'intermediate') {
+    signals.push({ icon: 'compass-outline', label: 'Some solo experience helpful' });
+  }
+
+  if (city.safetyRating === 'very_safe' || city.safetyRating === 'generally_safe') {
+    signals.push({ icon: 'shield-checkmark-outline', label: 'Generally safe for women' });
+  }
+
+  if (city.englishFriendliness === 'high') {
+    signals.push({ icon: 'chatbubble-outline', label: 'English widely spoken' });
+  }
+
+  if (city.internetQuality === 'excellent' || city.internetQuality === 'good') {
+    signals.push({ icon: 'wifi-outline', label: 'Reliable internet' });
+  }
+
+  if (signals.length === 0) return null;
+
+  return (
+    <View style={styles.contextSection}>
+      {signals.slice(0, 3).map((signal, i) => (
+        <View key={i} style={styles.contextRow}>
+          <Ionicons name={signal.icon as any} size={16} color={colors.greenSoft} />
+          <Text style={styles.contextText}>{signal.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// City Highlights — what to expect, using existing data
+// ---------------------------------------------------------------------------
+
+function CityHighlights({ city }: { city: City }) {
+  const items = city.topThingsToDo ?? city.highlights ?? [];
+  if (items.length === 0) return null;
+
+  return (
+    <View style={styles.cityHighlightsSection}>
+      <Text style={styles.cityHighlightsLabel}>What to expect</Text>
+      {items.slice(0, 4).map((item, i) => (
+        <View key={i} style={styles.cityHighlightRow}>
+          <View style={styles.cityHighlightBullet} />
+          <Text style={styles.cityHighlightText}>{item}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -480,6 +540,12 @@ export default function PlaceScreen() {
             bestFor={city.bestFor}
           />
 
+          {/* Context signals — solo-friendliness, safety, etc. */}
+          <CityContext city={city} />
+
+          {/* Highlights — what to expect */}
+          <CityHighlights city={city} />
+
           {/* Neighborhood pills */}
           {(areas ?? []).length > 0 && (
             <View style={styles.neighborhoodSection}>
@@ -531,62 +597,74 @@ export default function PlaceScreen() {
             </View>
           )}
 
-          {/* Community discussions link */}
-          {city?.id && (
-            <View style={styles.communitySection}>
-              <View style={styles.communitySectionHeader}>
-                <Text style={styles.sectionTitle}>Community</Text>
-                <Pressable
-                  onPress={() => router.push({
-                    pathname: '/(tabs)/community',
-                    params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
-                  } as any)}
-                  style={({ pressed }) => pressed && { opacity: 0.7 }}
-                >
-                  <Text style={styles.communitySeeAll}>See all</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.communitySubtitle}>
-                Questions and tips from solo women travelers
-              </Text>
-              <Pressable
-                onPress={() => router.push({
-                  pathname: '/(tabs)/community',
-                  params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
-                } as any)}
-                style={({ pressed }) => [styles.communityCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-              >
-                <Feather name="message-circle" size={20} color={colors.orange} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.communityCardTitle}>
-                    Discussions about {city.name}
-                  </Text>
-                  <Text style={styles.communityCardSubtitle}>
-                    Ask questions, share experiences, get advice
-                  </Text>
-                </View>
-                <Feather name="chevron-right" size={18} color={colors.textMuted} />
-              </Pressable>
-            </View>
-          )}
-
           {/* Plan your days header */}
           {hasPlaces && (
             <View style={styles.planHeader}>
               <Text style={styles.planTitle}>Plan your days</Text>
-              <Text style={styles.planSubtitle}>Everything you need for your trip</Text>
+              <Text style={styles.planSubtitle}>
+                {(() => {
+                  const total = (groupedPlaces?.morning.length ?? 0)
+                    + (groupedPlaces?.afternoon.length ?? 0)
+                    + (groupedPlaces?.evening.length ?? 0)
+                    + (groupedPlaces?.fullDay.length ?? 0);
+                  return total > 0
+                    ? `${total} curated places across your day`
+                    : 'Everything you need for your trip';
+                })()}
+              </Text>
             </View>
           )}
 
           {/* Time-based sections */}
           {hasPlaces ? (
-            TIME_SECTIONS.map((section) => (
-              <TimeBasedSection
-                key={section.key}
-                section={section}
-                places={groupedPlaces?.[section.key] ?? []}
-              />
-            ))
+            <>
+              {TIME_SECTIONS.map((section) => (
+                <TimeBasedSection
+                  key={section.key}
+                  section={section}
+                  places={groupedPlaces?.[section.key] ?? []}
+                />
+              ))}
+
+              {/* Community discussions — after places for content-first hierarchy */}
+              {city?.id && (
+                <View style={styles.communitySection}>
+                  <View style={styles.communitySectionHeader}>
+                    <Text style={styles.sectionTitle}>Community</Text>
+                    <Pressable
+                      onPress={() => router.push({
+                        pathname: '/(tabs)/community',
+                        params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
+                      } as any)}
+                      style={({ pressed }) => pressed && { opacity: 0.7 }}
+                    >
+                      <Text style={styles.communitySeeAll}>See all</Text>
+                    </Pressable>
+                  </View>
+                  <Text style={styles.communitySubtitle}>
+                    Questions and tips from solo women travelers
+                  </Text>
+                  <Pressable
+                    onPress={() => router.push({
+                      pathname: '/(tabs)/community',
+                      params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
+                    } as any)}
+                    style={({ pressed }) => [styles.communityCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
+                  >
+                    <Feather name="message-circle" size={20} color={colors.orange} />
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.communityCardTitle}>
+                        Discussions about {city.name}
+                      </Text>
+                      <Text style={styles.communityCardSubtitle}>
+                        Ask questions, share experiences, get advice
+                      </Text>
+                    </View>
+                    <Feather name="chevron-right" size={18} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              )}
+            </>
           ) : (
             <View style={styles.emptyState}>
               <Text style={styles.emptyIcon}>🗺️</Text>
@@ -813,11 +891,15 @@ const styles = StyleSheet.create({
     flex: 1,
     marginRight: spacing.sm,
   },
-  priceDots: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
+  priceLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
     color: colors.textMuted,
-    letterSpacing: 1,
+  },
+  cardTopRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
 
   // Duration badge
@@ -859,17 +941,55 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Save
-  saveBtn: {
+  // Context signals
+  contextSection: {
+    marginTop: spacing.lg,
+    paddingVertical: spacing.md,
+    gap: spacing.sm,
+  },
+  contextRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    alignSelf: 'flex-end',
-    gap: 4,
-    marginTop: 4,
+    gap: spacing.sm,
   },
-  saveText: {
+  contextText: {
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 13,
+    color: colors.greenSoft,
+  },
+
+  // City highlights
+  cityHighlightsSection: {
+    marginTop: spacing.lg,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  cityHighlightsLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  cityHighlightRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  cityHighlightBullet: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.orange,
+    marginTop: 8,
+  },
+  cityHighlightText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    flex: 1,
+    lineHeight: 20,
   },
 
   // Full day card (larger format)
@@ -923,10 +1043,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textTransform: 'capitalize',
   },
-  fullDaySave: {
+  fullDayImageContainer: {
+    position: 'relative',
+  },
+  fullDaySaveOverlay: {
     position: 'absolute',
-    top: spacing.md,
-    right: spacing.md,
+    top: spacing.sm,
+    right: spacing.sm,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Plan header
@@ -983,7 +1112,6 @@ const styles = StyleSheet.create({
   communitySection: {
     marginTop: spacing.xl,
     marginBottom: spacing.lg,
-    paddingHorizontal: spacing.screenX,
   },
   communitySectionHeader: {
     flexDirection: 'row',

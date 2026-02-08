@@ -111,16 +111,25 @@ export default function PlaceDetailScreen() {
     }
   }, [id, posthog]);
 
-  const { data: place, loading, error, refetch } = useData(() => getPlaceById(id ?? ''), [id]);
-  const { data: media } = useData(() => getPlaceMedia(id ?? ''), [id]);
-  const { data: tags } = useData(() => getPlaceTags(id ?? ''), [id]);
+  const { data: place, loading, error, refetch } = useData(
+    () => id ? getPlaceById(id) : Promise.resolve(undefined),
+    [id ?? ''],
+  );
+  const { data: media } = useData(
+    () => id ? getPlaceMedia(id) : Promise.resolve([]),
+    [id ?? ''],
+  );
+  const { data: tags } = useData(
+    () => id ? getPlaceTags(id) : Promise.resolve([]),
+    [id ?? ''],
+  );
   const { data: category } = useData(
-    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(null),
-    [place?.primaryCategoryId],
+    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(undefined),
+    [place?.primaryCategoryId ?? ''],
   );
   const { data: city } = useData(
-    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(null),
-    [place?.cityId],
+    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(undefined),
+    [place?.cityId ?? ''],
   );
 
   const { userId } = useAuth();
@@ -213,12 +222,6 @@ export default function PlaceDetailScreen() {
     return `Based on your preferences, this place matches your interest in ${tagStr}.`;
   }, [tags, profile]);
 
-  const images = (media ?? []).filter((m) => m.mediaType === 'image');
-
-  // Get highlights and considerations arrays
-  const highlights = place?.highlights ?? [];
-  const considerations = place?.considerations ?? [];
-
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
@@ -230,7 +233,10 @@ export default function PlaceDetailScreen() {
     );
   }
 
-  // Determine display type (more specific than placeType)
+  // Now safe to access place properties directly
+  const images = (media ?? []).filter((m) => m.mediaType === 'image');
+  const highlights = place.highlights ?? [];
+  const considerations = place.considerations ?? [];
   const displayType = place.originalType
     ? place.originalType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : category?.name || place.placeType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
