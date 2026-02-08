@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import BackButton from '@/components/ui/BackButton';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useThread } from '@/data/community/useThread';
 import { castVote, createReply, reportContent } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
@@ -169,9 +171,9 @@ export default function ThreadDetail() {
   if (!thread) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
+        <View style={styles.headerBar}>
+          <BackButton />
+        </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Thread not found</Text>
         </View>
@@ -268,11 +270,7 @@ export default function ThreadDetail() {
     >
       {/* Header bar */}
       <View style={styles.headerBar}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>Discussion</Text>
-        <View style={{ width: 40 }} />
+        <ScreenHeader title="Discussion" />
       </View>
 
       {/* Replies list */}
@@ -338,15 +336,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingVertical: spacing.sm,
   },
-  backButton: { padding: spacing.xs },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-
   listContent: { paddingHorizontal: spacing.screenX, paddingBottom: 20 },
 
   // Thread header

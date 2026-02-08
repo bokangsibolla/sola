@@ -13,6 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { getConversations, getMessagesPaginated, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser, markMessagesAsRead } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { usePaginatedData } from '@/hooks/usePaginatedData';
@@ -161,14 +162,15 @@ export default function DMThreadScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerName}>{other?.firstName ?? 'Chat'}</Text>
-        <Pressable onPress={showMenu} hitSlop={12}>
-          <Ionicons name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
-        </Pressable>
+      <View style={styles.headerWrapper}>
+        <ScreenHeader
+          title={other?.firstName ?? 'Chat'}
+          rightComponent={
+            <Pressable onPress={showMenu} hitSlop={12} style={styles.menuButton}>
+              <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
+            </Pressable>
+          }
+        />
       </View>
 
       {/* Messages */}
@@ -224,18 +226,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  headerWrapper: {
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+    borderBottomColor: colors.borderSubtle,
   },
-  headerName: {
-    ...typography.label,
-    color: colors.textPrimary,
+  menuButton: {
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   messageList: {
     paddingHorizontal: spacing.lg,

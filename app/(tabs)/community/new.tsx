@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/state/AuthContext';
 import {
   createThread,
@@ -96,21 +97,23 @@ export default function NewThread() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.closeButton}>
-          <Feather name="x" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Ask a question</Text>
-        <Pressable
-          onPress={handleSubmit}
-          disabled={!canSubmit}
-          style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.postButtonText}>Post</Text>
-          )}
-        </Pressable>
+        <ScreenHeader
+          title="Ask a question"
+          variant="close"
+          rightComponent={
+            <Pressable
+              onPress={handleSubmit}
+              disabled={!canSubmit}
+              style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.postButtonText}>Post</Text>
+              )}
+            </Pressable>
+          }
+        />
       </View>
 
       <ScrollView
@@ -324,14 +327,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  closeButton: { padding: spacing.xs },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    textAlign: 'center',
   },
   postButton: {
     backgroundColor: colors.orange,

@@ -20,6 +20,8 @@ import AddEntrySheet from '@/components/trips/AddEntrySheet';
 import PlanTab from '@/components/trips/PlanTab';
 import PeopleTab from '@/components/trips/PeopleTab';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import BackButton from '@/components/ui/BackButton';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const TABS = ['Journey', 'Plan', 'People'];
 
@@ -87,9 +89,7 @@ export default function TripDetailScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.nav}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
         </View>
         <Text style={styles.notFound}>Trip not found</Text>
       </View>
@@ -111,13 +111,13 @@ export default function TripDetailScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <View style={{ flex: 1 }} />
-        <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
-          <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
-        </Pressable>
+        <ScreenHeader
+          rightComponent={
+            <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
+              <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
+            </Pressable>
+          }
+        />
       </View>
 
       {/* Overflow menu */}

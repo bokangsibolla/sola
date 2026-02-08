@@ -28,6 +28,7 @@ import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { useLocationConsent } from '@/hooks/useLocationConsent';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const DAY_MS = 86_400_000;
 const NAME_MAX = 50;
@@ -276,11 +277,7 @@ export default function NewTripScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="close" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.navTitle}>New trip</Text>
-        <View style={{ width: 24 }} />
+        <ScreenHeader title="New trip" variant="close" />
       </View>
 
       <ScrollView
@@ -747,11 +744,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  navTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
   },
   scrollView: {
     flex: 1,

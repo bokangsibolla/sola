@@ -11,6 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getAllActivities, getCityById } from '@/data/api';
@@ -33,7 +34,7 @@ export default function AllActivitiesScreen() {
       setLoading(true);
       try {
         const allActivities = await getAllActivities(100);
-        const cityIds = [...new Set(allActivities.map((a) => a.cityId))];
+        const cityIds = allActivities.map((a) => a.cityId).filter((v, i, arr) => arr.indexOf(v) === i);
         const cityResults = await Promise.all(
           cityIds.map((id) => getCityById(id))
         );
@@ -103,12 +104,8 @@ export default function AllActivitiesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>All Activities</Text>
-        <View style={{ width: 24 }} />
+      <View style={{ paddingHorizontal: spacing.screenX }}>
+        <ScreenHeader title="All Activities" />
       </View>
 
       {/* Search */}
@@ -152,18 +149,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
-  },
-  headerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
   },
   searchContainer: {
     flexDirection: 'row',

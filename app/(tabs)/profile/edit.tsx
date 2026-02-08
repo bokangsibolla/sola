@@ -26,6 +26,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const BIO_MAX = 140;
 const ALL_INTERESTS = [
@@ -184,11 +185,7 @@ export default function EditProfileScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav */}
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.navTitle}>Edit profile</Text>
-        <View style={{ width: 24 }} />
+        <ScreenHeader title="Edit profile" />
       </View>
 
       <ScrollView
@@ -328,10 +325,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  navTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
   },
   content: {
     paddingHorizontal: spacing.lg,

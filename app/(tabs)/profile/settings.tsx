@@ -17,6 +17,7 @@ import { usePostHog } from 'posthog-react-native';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const PRIVACY_POLICY_URL = 'https://solatravel.app/privacy';
 const TERMS_URL = 'https://solatravel.app/terms';
@@ -107,11 +108,7 @@ export default function SettingsScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.navTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
+        <ScreenHeader title="Settings" />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -226,10 +223,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  navTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
   },
   content: {
     paddingHorizontal: spacing.lg,

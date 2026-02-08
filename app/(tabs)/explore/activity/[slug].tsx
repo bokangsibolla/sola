@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from '@/components/ui/BackButton';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getActivityWithDetails } from '@/data/api';
@@ -56,9 +57,7 @@ export default function ActivityDetailScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.notFoundHeader}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Activity not found</Text>
@@ -79,13 +78,9 @@ export default function ActivityDetailScreen() {
             pointerEvents="none"
           />
           {/* Back Button Overlay */}
-          <Pressable
-            style={[styles.backButton, { top: insets.top + spacing.sm }]}
-            onPress={() => router.back()}
-            hitSlop={8}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <View style={[styles.backButton, { top: insets.top + spacing.sm }]}>
+            <BackButton />
+          </View>
           {/* Favorite Button Overlay */}
           <Pressable
             style={[styles.favoriteButton, { top: insets.top + spacing.sm }]}
