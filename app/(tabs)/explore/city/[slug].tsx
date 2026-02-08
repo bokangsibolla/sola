@@ -7,6 +7,7 @@ import {
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -25,10 +26,15 @@ import {
   isPlaceSaved,
   toggleSavePlace,
   getCountryById,
+  getCityTripCount,
+  getCityTravelerCount,
+  getDestinationTags,
   type PlacesGroupedByTime,
 } from '@/data/api';
+import { getCityThreadPreviews } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
-import type { City, Country, Place, Tag } from '@/data/types';
+import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
+import type { ThreadWithAuthor } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
 // Time-based section configuration
@@ -46,31 +52,31 @@ const TIME_SECTIONS: TimeSection[] = [
     key: 'morning',
     title: 'Your Morning',
     subtitle: 'Cafes, breakfast spots & coworking',
-    icon: '☕',
+    icon: '\u2615',
   },
   {
     key: 'afternoon',
     title: 'Your Afternoon',
     subtitle: 'Lunch, walks & attractions',
-    icon: '🍜',
+    icon: '\uD83C\uDF5C',
   },
   {
     key: 'evening',
     title: 'Your Evening',
     subtitle: 'Dinner, bars & nightlife',
-    icon: '🌙',
+    icon: '\uD83C\uDF19',
   },
   {
     key: 'fullDay',
     title: 'If You Have a Full Day',
     subtitle: 'Day trips and activities worth the time',
-    icon: '🗺️',
+    icon: '\uD83D\uDDFA\uFE0F',
   },
   {
     key: 'accommodations',
     title: 'Where to Stay',
     subtitle: 'Sola-verified places to rest',
-    icon: '🏨',
+    icon: '\uD83C\uDFE8',
   },
 ];
 
@@ -439,6 +445,7 @@ function CityContext({ city }: { city: City }) {
 
   return (
     <View style={styles.contextSection}>
+      <Text style={styles.sectionLabel}>AT A GLANCE</Text>
       {signals.slice(0, 3).map((signal, i) => (
         <View key={i} style={styles.contextRow}>
           <Ionicons name={signal.icon as any} size={16} color={colors.textSecondary} />
@@ -450,22 +457,257 @@ function CityContext({ city }: { city: City }) {
 }
 
 // ---------------------------------------------------------------------------
-// City Highlights — what to expect, using existing data
+// Women's Insights — editorial distillation of community signals
 // ---------------------------------------------------------------------------
 
-function CityHighlights({ city }: { city: City }) {
-  const items = city.topThingsToDo ?? city.highlights ?? [];
+function WomenInsights({
+  threads,
+  safetyWomenMd,
+}: {
+  threads: ThreadWithAuthor[];
+  safetyWomenMd: string | null;
+}) {
+  const insights: string[] = [];
+
+  // Thread titles are real questions/insights from women
+  for (const thread of threads.slice(0, 3)) {
+    if (thread.title && thread.title.length > 10) {
+      insights.push(thread.title);
+    }
+  }
+
+  // If we have safety markdown, extract first 2 sentences as insights
+  if (safetyWomenMd && insights.length < 4) {
+    const sentences = safetyWomenMd
+      .replace(/^#+\s.*/gm, '')
+      .replace(/\*\*/g, '')
+      .split(/[.!?]\s+/)
+      .map(s => s.trim())
+      .filter(s => s.length > 15 && s.length < 120);
+    for (const s of sentences.slice(0, 2)) {
+      if (insights.length >= 5) break;
+      insights.push(s);
+    }
+  }
+
+  if (insights.length === 0) return null;
+
+  return (
+    <View style={styles.insightsSection}>
+      <Text style={styles.sectionLabel}>FROM WOMEN WHO&apos;VE BEEN HERE</Text>
+      {insights.map((insight, i) => (
+        <View key={i} style={styles.insightRow}>
+          <View style={styles.insightAccent} />
+          <Text style={styles.insightText}>
+            {insight.endsWith('?') || insight.endsWith('.') || insight.endsWith('!')
+              ? insight
+              : insight + '.'}
+          </Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Credibility Line
+// ---------------------------------------------------------------------------
+
+function CredibilityLine({
+  threadCount,
+  tripCount,
+}: {
+  threadCount: number;
+  tripCount: number;
+}) {
+  const parts: string[] = [];
+  if (threadCount > 0) {
+    parts.push(`${threadCount} discussion${threadCount === 1 ? '' : 's'}`);
+  }
+  if (tripCount > 0) {
+    parts.push(`${tripCount} traveler${tripCount === 1 ? '' : 's'}\u2019 experiences`);
+  }
+
+  if (parts.length === 0) return null;
+
+  return (
+    <Text style={styles.credibilityLine}>
+      Based on {parts.join(' and ')}
+    </Text>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Signal Pills — what women mention most
+// ---------------------------------------------------------------------------
+
+function SignalPills({
+  city,
+  cityTags,
+}: {
+  city: City;
+  cityTags: DestinationTag[];
+}) {
+  const signals: string[] = [];
+
+  for (const tag of cityTags.slice(0, 3)) {
+    signals.push(tag.tagLabel);
+  }
+
+  const interests = city.goodForInterests ?? [];
+  for (const interest of interests.slice(0, 2)) {
+    const label = INTEREST_LABELS[interest.toLowerCase()];
+    if (label && !signals.includes(label)) {
+      signals.push(label);
+    }
+  }
+
+  const highlights = city.highlights ?? [];
+  for (const h of highlights.slice(0, 2)) {
+    if (h.length <= 25 && signals.length < 6) {
+      signals.push(h);
+    }
+  }
+
+  const unique = Array.from(new Set(signals)).slice(0, 5);
+  if (unique.length === 0) return null;
+
+  return (
+    <View style={styles.signalSection}>
+      <Text style={styles.sectionLabel}>WHAT WOMEN MENTION MOST</Text>
+      <View style={styles.signalRow}>
+        {unique.map((signal, i) => (
+          <View key={i} style={styles.signalPill}>
+            <Text style={styles.signalDiamond}>{'\u25C7'}</Text>
+            <Text style={styles.signalText}>{signal}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Thread Preview Section — inline community discussions
+// ---------------------------------------------------------------------------
+
+function ThreadPreviewSection({
+  threads,
+  totalCount,
+  cityId,
+  countryId,
+  cityName,
+  countryName,
+}: {
+  threads: ThreadWithAuthor[];
+  totalCount: number;
+  cityId: string;
+  countryId: string;
+  cityName: string;
+  countryName: string | null;
+}) {
+  const router = useRouter();
+
+  if (threads.length === 0) return null;
+
+  const placeName = cityName + (countryName ? `, ${countryName}` : '');
+
+  return (
+    <View style={styles.threadPreviewSection}>
+      <View style={styles.threadPreviewHeader}>
+        <Text style={styles.sectionLabel}>COMMUNITY DISCUSSIONS</Text>
+        {totalCount > threads.length && (
+          <Pressable
+            onPress={() => router.push({
+              pathname: '/(tabs)/community',
+              params: { countryId, cityId, placeName },
+            } as any)}
+            hitSlop={8}
+          >
+            <Text style={styles.seeAllLink}>See all</Text>
+          </Pressable>
+        )}
+      </View>
+      {threads.map((thread) => (
+        <Pressable
+          key={thread.id}
+          onPress={() => router.push(`/(tabs)/community/thread/${thread.id}` as any)}
+          style={({ pressed }) => [styles.threadCard, pressed && styles.threadCardPressed]}
+        >
+          <Feather name="message-circle" size={16} color={colors.textMuted} style={styles.threadIcon} />
+          <View style={styles.threadCardBody}>
+            <Text style={styles.threadTitle} numberOfLines={2}>{thread.title}</Text>
+            <Text style={styles.threadMeta}>
+              {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
+              {thread.topicLabel ? `  \u00B7  ${thread.topicLabel}` : ''}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.borderDefault} />
+        </Pressable>
+      ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Good to Know — cultural context
+// ---------------------------------------------------------------------------
+
+function GoodToKnow({ cultureEtiquetteMd }: { cultureEtiquetteMd: string | null }) {
+  if (!cultureEtiquetteMd) return null;
+
+  const items = cultureEtiquetteMd
+    .split('\n')
+    .map(line => line.replace(/^[-*\u2022]\s*/, '').replace(/^\d+\.\s*/, '').replace(/^#+\s*/, '').replace(/\*\*/g, '').trim())
+    .filter(line => line.length > 10 && line.length < 150)
+    .slice(0, 4);
+
   if (items.length === 0) return null;
 
   return (
-    <View style={styles.cityHighlightsSection}>
-      <Text style={styles.cityHighlightsLabel}>What to expect</Text>
-      {items.slice(0, 4).map((item, i) => (
-        <View key={i} style={styles.cityHighlightRow}>
-          <View style={styles.cityHighlightBullet} />
-          <Text style={styles.cityHighlightText}>{item}</Text>
+    <View style={styles.goodToKnowSection}>
+      <Text style={styles.sectionLabel}>GOOD TO KNOW</Text>
+      {items.map((item, i) => (
+        <View key={i} style={styles.goodToKnowRow}>
+          <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} style={{ marginTop: 2 }} />
+          <Text style={styles.goodToKnowText}>{item}</Text>
         </View>
       ))}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Traveler Presence
+// ---------------------------------------------------------------------------
+
+function TravelerPresence({
+  count,
+  tripCount,
+  cityName,
+}: {
+  count: number;
+  tripCount: number;
+  cityName: string;
+}) {
+  if (count === 0 && tripCount === 0) return null;
+
+  let message = '';
+  if (count > 0 && tripCount > 0) {
+    message = `${count} Sola traveler${count === 1 ? '' : 's'} nearby \u00B7 ${tripCount} trip${tripCount === 1 ? '' : 's'} planned`;
+  } else if (count > 0) {
+    message = `${count} Sola traveler${count === 1 ? ' is' : 's are'} in ${cityName} now`;
+  } else {
+    message = `${tripCount} traveler${tripCount === 1 ? ' has' : 's have'} planned trips to ${cityName}`;
+  }
+
+  return (
+    <View style={styles.travelerPresenceSection}>
+      <Text style={styles.sectionLabel}>WOMEN TRAVELING HERE</Text>
+      <View style={styles.travelerPresenceRow}>
+        <Ionicons name="people-outline" size={16} color={colors.textSecondary} />
+        <Text style={styles.travelerPresenceText}>{message}</Text>
+      </View>
     </View>
   );
 }
@@ -514,6 +756,26 @@ export default function PlaceScreen() {
     ['groupedPlaces', selectedAreaId, city?.id],
   );
 
+  // Women-first signals — community threads for this city
+  const { data: cityThreadData } = useData(
+    () => city?.id ? getCityThreadPreviews(city.id, 5) : Promise.resolve(null),
+    ['cityThreadPreviews', city?.id],
+  );
+
+  // Credibility signals
+  const { data: tripCount } = useData(
+    () => city?.id ? getCityTripCount(city.id) : Promise.resolve(0),
+    ['cityTripCount', city?.id],
+  );
+  const { data: travelerCount } = useData(
+    () => city?.name ? getCityTravelerCount(city.name) : Promise.resolve(0),
+    ['cityTravelerCount', city?.name],
+  );
+  const { data: cityTags } = useData(
+    () => city?.id ? getDestinationTags('city', city.id) : Promise.resolve([]),
+    ['cityDestTags', city?.id],
+  );
+
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
@@ -526,7 +788,6 @@ export default function PlaceScreen() {
   }
 
   const heroUrl = city.heroImageUrl;
-  const tagline = city.subtitle;
 
   // Check if we have any places at all
   const hasPlaces = groupedPlaces && (
@@ -539,60 +800,84 @@ export default function PlaceScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Navigation */}
+      {/* Simplified navigation */}
       <View style={styles.nav}>
         <Pressable
-          onPress={() => router.push('/(tabs)/explore' as any)}
+          onPress={() => router.back()}
           hitSlop={12}
-          style={styles.backToExplore}
+          style={styles.backButton}
         >
-          <Ionicons name="compass-outline" size={18} color={colors.textMuted} />
-          <Text style={styles.backToExploreText}>Explore</Text>
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
+          <Text style={styles.backText}>
+            {country?.name ?? 'Explore'}
+          </Text>
         </Pressable>
-      </View>
-
-      {/* Breadcrumb trail */}
-      <View style={styles.breadcrumb}>
-        <Pressable onPress={() => router.push('/(tabs)/explore' as any)}>
-          <Text style={styles.breadcrumbLink}>Explore</Text>
-        </Pressable>
-        <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={styles.breadcrumbChevron} />
-        {country && (
-          <>
-            <Pressable onPress={() => router.push(`/(tabs)/explore/country/${country.slug}` as any)}>
-              <Text style={styles.breadcrumbLink}>{country.name}</Text>
-            </Pressable>
-            <Ionicons name="chevron-forward" size={12} color={colors.textMuted} style={styles.breadcrumbChevron} />
-          </>
-        )}
-        <Text style={styles.breadcrumbCurrent}>{city?.name}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero */}
-        {heroUrl && (
-          <Image source={{ uri: heroUrl }} style={styles.hero} contentFit="cover" transition={200} />
-        )}
+        {/* Hero with overlay */}
+        <View style={styles.heroContainer}>
+          {heroUrl ? (
+            <Image source={{ uri: heroUrl }} style={styles.hero} contentFit="cover" transition={200} />
+          ) : (
+            <View style={[styles.hero, { backgroundColor: colors.neutralFill }]} />
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.55)']}
+            style={styles.heroGradient}
+          />
+          <View style={styles.heroOverlay}>
+            <Text style={styles.heroCity}>{city.name}</Text>
+            {country && (
+              <Text style={styles.heroCountry}>{country.name}</Text>
+            )}
+          </View>
+        </View>
 
         <View style={styles.content}>
-          <Text style={styles.cityName}>{city.name}</Text>
-          {tagline && (
-            <Text style={styles.tagline}>{tagline}</Text>
+          {/* 1. Women-first positioning line */}
+          {city.bestFor && (
+            <Text style={styles.positioningLine}>{city.bestFor}</Text>
           )}
 
-          {/* City editorial intro */}
-          <CityEditorial
-            summary={city.summary}
-            bestFor={city.bestFor}
-          />
+          {/* 2. "From women who've been here" insights */}
+          {cityThreadData && (
+            <WomenInsights
+              threads={cityThreadData.threads}
+              safetyWomenMd={city.safetyWomenMd ?? null}
+            />
+          )}
 
-          {/* Context signals — solo-friendliness, safety, etc. */}
+          {/* 3. Credibility sourcing */}
+          {cityThreadData && (
+            <CredibilityLine
+              threadCount={cityThreadData.totalCount}
+              tripCount={tripCount ?? 0}
+            />
+          )}
+
+          {/* 4. Signal pills */}
+          <SignalPills city={city} cityTags={cityTags ?? []} />
+
+          {/* 5. At a glance — practical context */}
           <CityContext city={city} />
 
-          {/* Highlights — what to expect */}
-          <CityHighlights city={city} />
+          {/* 6. What to expect — editorial */}
+          <CityEditorial summary={city.summary} bestFor={null} />
 
-          {/* Neighborhood pills */}
+          {/* 7. Community thread previews */}
+          {cityThreadData && cityThreadData.threads.length > 0 && city?.id && (
+            <ThreadPreviewSection
+              threads={cityThreadData.threads}
+              totalCount={cityThreadData.totalCount}
+              cityId={city.id}
+              countryId={city.countryId}
+              cityName={city.name}
+              countryName={country?.name ?? null}
+            />
+          )}
+
+          {/* 8. Neighborhood pills */}
           {(areas ?? []).length > 0 && (
             <View style={styles.neighborhoodSection}>
               <Text style={styles.neighborhoodLabel}>Explore by area</Text>
@@ -643,19 +928,15 @@ export default function PlaceScreen() {
             </View>
           )}
 
-          {/* Section intro */}
+          {/* 9. Time-based sections */}
           {hasPlaces && (
-            <View style={styles.planHeader}>
-              <Text style={styles.planTitle}>Your day in {city.name}</Text>
-              <Text style={styles.planSubtitle}>
-                We picked these by time of day so you can build your own itinerary
-              </Text>
-            </View>
-          )}
-
-          {/* Time-based sections */}
-          {hasPlaces ? (
             <>
+              <View style={styles.planHeader}>
+                <Text style={styles.planTitle}>Your day in {city.name}</Text>
+                <Text style={styles.planSubtitle}>
+                  Curated places, organized by time of day
+                </Text>
+              </View>
               {TIME_SECTIONS.map((section) => (
                 <TimeBasedSection
                   key={section.key}
@@ -663,49 +944,23 @@ export default function PlaceScreen() {
                   places={groupedPlaces?.[section.key] ?? []}
                 />
               ))}
-
-              {/* Community discussions — after places for content-first hierarchy */}
-              {city?.id && (
-                <View style={styles.communitySection}>
-                  <View style={styles.communitySectionHeader}>
-                    <Text style={styles.sectionTitle}>Community</Text>
-                    <Pressable
-                      onPress={() => router.push({
-                        pathname: '/(tabs)/community',
-                        params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
-                      } as any)}
-                      style={({ pressed }) => pressed && { opacity: 0.7 }}
-                    >
-                      <Text style={styles.communitySeeAll}>See all</Text>
-                    </Pressable>
-                  </View>
-                  <Text style={styles.communitySubtitle}>
-                    Questions and tips from solo women travelers
-                  </Text>
-                  <Pressable
-                    onPress={() => router.push({
-                      pathname: '/(tabs)/community',
-                      params: { countryId: city.countryId, cityId: city.id, placeName: city.name + (country?.name ? `, ${country.name}` : '') },
-                    } as any)}
-                    style={({ pressed }) => [styles.communityCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-                  >
-                    <Feather name="message-circle" size={20} color={colors.orange} />
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.communityCardTitle}>
-                        Discussions about {city.name}
-                      </Text>
-                      <Text style={styles.communityCardSubtitle}>
-                        Ask questions, share experiences, get advice
-                      </Text>
-                    </View>
-                    <Feather name="chevron-right" size={18} color={colors.textMuted} />
-                  </Pressable>
-                </View>
-              )}
             </>
-          ) : (
+          )}
+
+          {/* 10. Good to know — cultural context */}
+          <GoodToKnow cultureEtiquetteMd={city.cultureEtiquetteMd ?? null} />
+
+          {/* 11. Traveler presence */}
+          <TravelerPresence
+            count={travelerCount ?? 0}
+            tripCount={tripCount ?? 0}
+            cityName={city.name}
+          />
+
+          {/* Empty state */}
+          {!hasPlaces && (!cityThreadData || cityThreadData.threads.length === 0) && (
             <View style={styles.emptyState}>
-              <Text style={styles.emptyIcon}>🗺️</Text>
+              <Text style={styles.emptyIcon}>{'\uD83D\uDDFA\uFE0F'}</Text>
               <Text style={styles.emptyTitle}>We&apos;re still exploring here</Text>
               <Text style={styles.emptyText}>
                 Our team is adding places to {city.name}. Check back soon!
@@ -739,66 +994,167 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
+
+  // Navigation
   nav: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.screenX,
+    paddingVertical: spacing.md,
   },
-  backToExplore: {
+  backButton: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
-  backToExploreText: {
+  backText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.md,
-    flexWrap: 'wrap',
-  },
-  breadcrumbLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  breadcrumbChevron: {
-    marginHorizontal: spacing.xs,
-  },
-  breadcrumbCurrent: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
+    fontSize: 15,
     color: colors.textPrimary,
+  },
+
+  // Hero
+  heroContainer: {
+    position: 'relative',
+    height: 240,
   },
   hero: {
     width: '100%',
-    height: 200,
+    height: 240,
   },
+  heroGradient: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 120,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    left: spacing.screenX,
+    right: spacing.screenX,
+  },
+  heroCity: {
+    fontFamily: fonts.serif,
+    fontSize: 32,
+    color: '#FFFFFF',
+    lineHeight: 36,
+  },
+  heroCountry: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: spacing.xs,
+  },
+
+  // Content
   content: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl,
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxxxl,
   },
-  cityName: {
-    ...typography.h1,
+
+  // Positioning line
+  positioningLine: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 24,
+    color: colors.textPrimary,
+    marginBottom: spacing.xxl,
+  },
+
+  // Section label (reused across sections)
+  sectionLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+
+  // Women's insights
+  insightsSection: {
+    marginBottom: spacing.xl,
+  },
+  insightRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.md,
+  },
+  insightAccent: {
+    width: 2,
+    backgroundColor: colors.orange,
+    opacity: 0.3,
+    borderRadius: 1,
+    marginRight: spacing.md,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  insightText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textPrimary,
+    flex: 1,
+  },
+
+  // Credibility line
+  credibilityLine: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textMuted,
+    marginBottom: spacing.xxl,
+  },
+
+  // Signal pills
+  signalSection: {
+    marginBottom: spacing.xxl,
+  },
+  signalRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  signalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    gap: spacing.xs,
+  },
+  signalDiamond: {
+    fontSize: 10,
+    color: colors.textMuted,
+  },
+  signalText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
     color: colors.textPrimary,
   },
-  tagline: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+
+  // Context signals (At a glance)
+  contextSection: {
+    marginBottom: spacing.xxl,
+    gap: spacing.sm,
+  },
+  contextRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  contextText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 
   // Editorial
   editorial: {
-    marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
     paddingVertical: spacing.md,
     borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.borderSubtle,
+    borderTopColor: colors.borderSubtle,
   },
   editorialText: {
     ...typography.body,
@@ -821,9 +1177,56 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
+  // Thread previews
+  threadPreviewSection: {
+    marginBottom: spacing.xxl,
+  },
+  threadPreviewHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  seeAllLink: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  threadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  threadCardPressed: {
+    opacity: 0.7,
+  },
+  threadIcon: {
+    marginRight: spacing.md,
+    marginTop: 2,
+  },
+  threadCardBody: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  threadTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  threadMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+  },
+
   // Neighborhood section
   neighborhoodSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
   },
   neighborhoodLabel: {
     fontFamily: fonts.medium,
@@ -970,7 +1373,7 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // Description
+  // Card description
   cardDesc: {
     fontFamily: fonts.regular,
     fontSize: 13,
@@ -979,58 +1382,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
 
-  // Context signals
-  contextSection: {
-    marginTop: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.sm,
-  },
-  contextRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  contextText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-
-  // City highlights
-  cityHighlightsSection: {
-    marginTop: spacing.lg,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  cityHighlightsLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    marginBottom: spacing.sm,
-  },
-  cityHighlightRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  cityHighlightBullet: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.orange,
-    marginTop: 8,
-  },
-  cityHighlightText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    flex: 1,
-    lineHeight: 20,
-  },
-
-  // Full day card (larger format)
+  // Full day card
   fullDayCard: {
     borderWidth: 1,
     borderColor: colors.borderDefault,
@@ -1098,19 +1450,59 @@ const styles = StyleSheet.create({
 
   // Plan header
   planHeader: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.md,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
   },
   planTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 22,
+    fontSize: 20,
     color: colors.textPrimary,
   },
   planSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xs,
+  },
+
+  // Good to know
+  goodToKnowSection: {
+    marginTop: spacing.xxl,
+    marginBottom: spacing.xl,
+  },
+  goodToKnowRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  goodToKnowText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+
+  // Traveler presence
+  travelerPresenceSection: {
+    marginTop: spacing.lg,
+    marginBottom: spacing.xxl,
+    paddingTop: spacing.lg,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  travelerPresenceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  travelerPresenceText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 
   // Empty state
@@ -1146,45 +1538,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: colors.orange,
-  },
-  communitySection: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  communitySectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  communitySeeAll: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
-  communitySubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  communityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.orangeFill,
-    borderRadius: radius.card,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  communityCardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  communityCardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
   },
 });
