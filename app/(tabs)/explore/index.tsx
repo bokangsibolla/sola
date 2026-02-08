@@ -159,7 +159,7 @@ export default function ExploreScreen() {
                 ? router.push(`/explore/collection/${item.data.collection.slug}`)
                 : router.push('/explore/all-destinations')
             }
-            onCity1Press={() => router.push(`/explore/city/${item.data.city1.slug}`)}
+            onCity1Press={() => item.data.city1 && router.push(`/explore/city/${item.data.city1.slug}`)}
             onCity2Press={() =>
               item.data.city2
                 ? router.push(`/explore/city/${item.data.city2.slug}`)
@@ -247,7 +247,7 @@ export default function ExploreScreen() {
       case 'featured-collection':
         return `featured-${item.data.slug}`;
       case 'hero-grid':
-        return `hero-grid-${item.data.city1.slug}`;
+        return `hero-grid-${item.data.city1?.slug ?? 'unknown'}`;
       case 'editorial-collection':
         return `collection-${item.data.slug}`;
       case 'discovery-lenses':

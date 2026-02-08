@@ -29,11 +29,11 @@ export default function JourneyTimeline({ entries }: JourneyTimelineProps) {
 
   return (
     <View style={styles.container}>
-      {Array.from(grouped.entries()).map(([dateLabel, dayEntries]) => (
+      {grouped.map(([dateLabel, dayEntries]) => (
         <View key={dateLabel} style={styles.dateGroup}>
           <Text style={styles.dateLabel}>{dateLabel.toUpperCase()}</Text>
           {(dayEntries as TripEntry[]).map((entry) => (
-            <JourneyEntryCard key={entry.id} entry={entry} />
+            entry?.id ? <JourneyEntryCard key={entry.id} entry={entry} /> : null
           ))}
         </View>
       ))}

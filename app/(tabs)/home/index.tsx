@@ -87,7 +87,9 @@ export default function HomeScreen() {
   }, [requestLocation, posthog, queryClient]);
 
   if (isLoading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
+  if (error) {
+    return <ErrorScreen message="Something went wrong loading travelers. Pull to retry." onRetry={refetch} />;
+  }
 
   return (
     <AppScreen>

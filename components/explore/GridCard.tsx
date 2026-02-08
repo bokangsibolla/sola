@@ -1,5 +1,5 @@
 // components/explore/GridCard.tsx
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,7 +39,7 @@ export default function GridCard({
   isFavorited = false,
   showFavorite = true,
 }: GridCardProps) {
-  const [scale] = useState(new Animated.Value(1));
+  const scale = useRef(new Animated.Value(1)).current;
   const [localFavorited, setLocalFavorited] = useState(isFavorited);
 
   const onPressIn = useCallback(() => {

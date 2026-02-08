@@ -5,7 +5,7 @@ import { getPopularCitiesWithCountry } from '../api';
 import { getFeaturedExploreCollections, getExploreCollectionItems } from '../collections';
 import { getDiscoveryLenses } from '../lenses';
 import { buildFeed } from './feedBuilder';
-import type { ExploreCollectionWithItems } from '../types';
+import type { DiscoveryLens, ExploreCollectionWithItems } from '../types';
 import type { FeedItem, CityWithCountry } from './types';
 
 const INITIAL_FEED: FeedItem[] = [
@@ -71,7 +71,7 @@ export function useFeedItems(): UseFeedItemsResult {
         }
 
         // Lenses (optional — returns [] if DB table doesn't exist)
-        let lenses: any[] = [];
+        let lenses: DiscoveryLens[] = [];
         try {
           lenses = await withTimeout(getDiscoveryLenses(), 3000);
         } catch {

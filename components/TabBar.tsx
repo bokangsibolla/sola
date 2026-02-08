@@ -5,9 +5,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/constants/design';
 
-// Routes hidden from the tab bar
-const HIDDEN_ROUTES = new Set(['sos']);
-
 // Custom icon assets per route
 const TAB_ICONS: Record<string, ImageSource> = {
   explore: require('@/assets/images/icons/icon-explore.png'),
@@ -29,9 +26,6 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
       <View style={styles.border} />
       {state.routes.map((route, index) => {
         const { options } = descriptors[route.key];
-
-        // Skip hidden tabs
-        if (HIDDEN_ROUTES.has(route.name)) return null;
 
         const isFocused = state.index === index;
         const label = options.title ?? route.name;

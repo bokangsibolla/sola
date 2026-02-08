@@ -48,7 +48,7 @@ export default function LoginScreen() {
     }
   };
 
-  const canLogin = email.includes('@') && password.length >= 6 && !loading;
+  const canLogin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
 
   const handleLogin = async () => {
     posthog.capture('email_login_attempted');
@@ -147,7 +147,7 @@ export default function LoginScreen() {
         <Pressable
           style={styles.forgotRow}
           onPress={async () => {
-            if (!email.includes('@')) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
               Alert.alert('Enter your email', 'Type your email address above, then tap Forgot password.');
               return;
             }

@@ -2141,7 +2141,7 @@ export async function getNearbyTravelers(
     .eq('location_city_name', cityName)
     .eq('location_sharing_enabled', true)
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
@@ -2178,7 +2178,7 @@ export async function getTravelersInCountry(
     .eq('location_country_name', countryName)
     .eq('location_sharing_enabled', true)
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
@@ -2197,7 +2197,7 @@ export async function getTravelersWithSharedInterests(
     .select('*')
     .eq('is_discoverable', true)
     .overlaps('interests', userInterests)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
@@ -2218,7 +2218,7 @@ export async function getSuggestedTravelers(
     .from('profiles')
     .select('*')
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${allExcluded.join(',')})`)
+    .not('id', 'in', `(${allExcluded})`)
     .not('interests', 'eq', '{}')
     .order('created_at', { ascending: false })
     .limit(limit);

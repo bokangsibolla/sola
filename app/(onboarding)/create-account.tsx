@@ -56,7 +56,7 @@ export default function CreateAccountScreen() {
 
   const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
 
-  const canContinue = email.includes('@') && password.length >= 6 && !loading;
+  const canContinue = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     setLoading(true);

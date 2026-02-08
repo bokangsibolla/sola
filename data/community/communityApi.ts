@@ -63,13 +63,14 @@ export async function getThreadFeed(
 
   // Full-text search
   if (searchQuery && searchQuery.trim()) {
-    const tsQuery = searchQuery.trim().split(/\s+/).join(' & ');
-    query = query.textSearch('search_vector', tsQuery);
+    const escaped = searchQuery.trim().replace(/[&|!():*"'\\]/g, ' ');
+    const tsQuery = escaped.trim().split(/\s+/).filter(Boolean).join(' & ');
+    if (tsQuery) query = query.textSearch('search_vector', tsQuery);
   }
 
   // Exclude blocked users
   if (blockedIds.length > 0) {
-    query = query.not('author_id', 'in', `(${blockedIds.join(',')})`);
+    query = query.not('author_id', 'in', `(${blockedIds})`);
   }
 
   // Sort
@@ -204,7 +205,7 @@ export async function getThreadReplies(
     .order('created_at', { ascending: true });
 
   if (blockedIds.length > 0) {
-    query = query.not('author_id', 'in', `(${blockedIds.join(',')})`);
+    query = query.not('author_id', 'in', `(${blockedIds})`);
   }
 
   const { data, error } = await query;
@@ -369,6 +370,64 @@ export async function getCityThreadPreviews(
       community_topics(label)
     `)
     .eq('city_id', cityId)
+    .eq('status', 'active')
+    .eq('visibility', 'public')
+    .order('pinned', { ascending: false })
+    .order('vote_score', { ascending: false })
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+
+  const threads = (data ?? []).map((row: any) => ({
+    ...toCamel<CommunityThread>(row),
+    author: {
+      id: row.profiles?.id ?? row.author_id,
+      firstName: row.profiles?.first_name ?? '',
+      avatarUrl: row.profiles?.avatar_url ?? null,
+    },
+    countryName: row.countries?.name ?? null,
+    cityName: row.cities?.name ?? null,
+    cityImageUrl: row.cities?.hero_image_url ?? null,
+    topicLabel: row.community_topics?.label ?? null,
+    userVote: null,
+  }));
+
+  return { threads, totalCount: count ?? 0 };
+}
+
+// ---------------------------------------------------------------------------
+// Country Thread Previews (for country detail page)
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch a small number of community threads for a specific country,
+ * sorted by most relevant (pinned first, then vote_score + recency).
+ * Returns lightweight thread data — no user votes needed.
+ */
+export async function getCountryThreadPreviews(
+  countryId: string,
+  limit: number = 3,
+): Promise<{ threads: ThreadWithAuthor[]; totalCount: number }> {
+  // Get total count
+  const { count, error: countError } = await supabase
+    .from('community_threads')
+    .select('id', { count: 'exact', head: true })
+    .eq('country_id', countryId)
+    .eq('status', 'active')
+    .eq('visibility', 'public');
+  if (countError) throw countError;
+
+  // Get top threads
+  const { data, error } = await supabase
+    .from('community_threads')
+    .select(`
+      *,
+      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      countries(name),
+      cities(name, hero_image_url),
+      community_topics(label)
+    `)
+    .eq('country_id', countryId)
     .eq('status', 'active')
     .eq('visibility', 'public')
     .order('pinned', { ascending: false })
