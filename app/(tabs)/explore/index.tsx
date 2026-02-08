@@ -9,9 +9,9 @@ import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SearchBar from '@/components/explore/SearchBar';
+import SectionHeader from '@/components/explore/SectionHeader';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
 import { HeroGrid } from '@/components/explore/HeroGrid';
-import { QuickActionsRow } from '@/components/explore/QuickActionsRow';
 import { DiscoveryLensesSection } from '@/components/explore/DiscoveryLensesSection';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem } from '@/data/explore/types';
@@ -19,6 +19,15 @@ import type { CityWithCountry } from '@/data/explore/types';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
+
+/** Derive a useful tag from city data — badgeLabel, first interest, or country name. */
+function getCityTag(city: CityWithCountry): string {
+  if (city.badgeLabel) return city.badgeLabel;
+  if (city.goodForInterests && city.goodForInterests.length > 0) {
+    return city.goodForInterests[0];
+  }
+  return city.countryName;
+}
 
 // Frosted type label pill — sits top-left of image cards
 function TypeLabel({ label }: { label: string }) {
@@ -46,7 +55,7 @@ function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () =
           transition={200}
         />
       )}
-      <TypeLabel label="City" />
+      <TypeLabel label={getCityTag(city)} />
       <View style={styles.smallCardOverlay}>
         <Text style={styles.smallCardTitle}>{city.name}</Text>
         <Text style={styles.smallCardBlurb} numberOfLines={1}>{city.countryName}</Text>
@@ -56,32 +65,20 @@ function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () =
 }
 
 // City pair - two city cards side by side
-function CityPairCard({ cities, sectionLabel, onCityPress, onViewAll }: {
+function CityPairCard({ cities, onCityPress }: {
   cities: [CityWithCountry, CityWithCountry];
-  sectionLabel?: string;
   onCityPress: (slug: string) => void;
-  onViewAll: () => void;
 }) {
   return (
-    <View>
-      {sectionLabel && (
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionLabel}>{sectionLabel}</Text>
-          <Pressable onPress={onViewAll} hitSlop={8}>
-            <Text style={styles.seeAllLink}>See all</Text>
-          </Pressable>
-        </View>
-      )}
-      <View style={styles.pairRow}>
-        <CitySmallCard
-          city={cities[0]}
-          onPress={() => onCityPress(cities[0].slug)}
-        />
-        <CitySmallCard
-          city={cities[1]}
-          onPress={() => onCityPress(cities[1].slug)}
-        />
-      </View>
+    <View style={styles.pairRow}>
+      <CitySmallCard
+        city={cities[0]}
+        onPress={() => onCityPress(cities[0].slug)}
+      />
+      <CitySmallCard
+        city={cities[1]}
+        onPress={() => onCityPress(cities[1].slug)}
+      />
     </View>
   );
 }
@@ -106,7 +103,12 @@ function CitySpotlightCard({ city, onPress }: {
           transition={200}
         />
       )}
-      <TypeLabel label="City" />
+      <LinearGradient
+        colors={['transparent', colors.overlayMedium]}
+        style={StyleSheet.absoluteFill}
+        pointerEvents="none"
+      />
+      <TypeLabel label={getCityTag(city)} />
       <View style={styles.spotlightOverlay}>
         <Text style={styles.spotlightTitle}>{city.name}</Text>
         <Text style={styles.spotlightSubtitle}>{city.countryName}</Text>
@@ -115,23 +117,6 @@ function CitySpotlightCard({ city, onPress }: {
         )}
       </View>
     </Pressable>
-  );
-}
-
-// End card component
-function EndCard() {
-  const router = useRouter();
-  return (
-    <View style={styles.endCard}>
-      <Text style={styles.endCardText}>More destinations coming soon</Text>
-      <Pressable
-        style={styles.endCardButton}
-        onPress={() => router.push('/explore/all-destinations')}
-        hitSlop={8}
-      >
-        <Text style={styles.endCardLink}>Browse all destinations</Text>
-      </Pressable>
-    </View>
   );
 }
 
@@ -146,14 +131,21 @@ export default function ExploreScreen() {
           <SearchBar onPress={() => router.push('/explore/search')} />
         );
 
+      case 'section-header':
+        return (
+          <SectionHeader
+            title={item.title}
+            subtitle={item.subtitle}
+            variant={item.variant}
+          />
+        );
+
       case 'featured-collection':
         return (
-          <View style={{ paddingHorizontal: spacing.screenX }}>
-            <EditorialCollectionCard
-              collection={item.data}
-              onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
-            />
-          </View>
+          <EditorialCollectionCard
+            collection={item.data}
+            onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
+          />
         );
 
       case 'hero-grid':
@@ -187,17 +179,17 @@ export default function ExploreScreen() {
       case 'discovery-lenses':
         return <DiscoveryLensesSection lenses={item.data} />;
 
-      case 'quick-actions':
-        return <QuickActionsRow />;
-
       case 'city-pair':
         return (
-          <CityPairCard
-            cities={item.data}
-            sectionLabel={item.sectionLabel}
-            onCityPress={(slug) => router.push(`/explore/city/${slug}`)}
-            onViewAll={() => router.push('/explore/all-destinations')}
-          />
+          <View>
+            {item.sectionLabel && (
+              <Text style={styles.sectionLabel}>{item.sectionLabel}</Text>
+            )}
+            <CityPairCard
+              cities={item.data}
+              onCityPress={(slug) => router.push(`/explore/city/${slug}`)}
+            />
+          </View>
         );
 
       case 'city-spotlight':
@@ -227,7 +219,7 @@ export default function ExploreScreen() {
               pointerEvents="none"
             />
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.6)']}
+              colors={['transparent', colors.overlayMedium]}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
@@ -241,9 +233,6 @@ export default function ExploreScreen() {
           </Pressable>
         );
 
-      case 'end-card':
-        return <EndCard />;
-
       default:
         return null;
     }
@@ -253,6 +242,8 @@ export default function ExploreScreen() {
     switch (item.type) {
       case 'search-bar':
         return 'search-bar';
+      case 'section-header':
+        return `section-${item.title}`;
       case 'featured-collection':
         return `featured-${item.data.slug}`;
       case 'hero-grid':
@@ -261,8 +252,6 @@ export default function ExploreScreen() {
         return `collection-${item.data.slug}`;
       case 'discovery-lenses':
         return 'discovery-lenses';
-      case 'quick-actions':
-        return 'quick-actions';
       case 'city-pair':
         return `city-pair-${item.data[0].slug}-${item.data[1].slug}`;
       case 'city-spotlight':
@@ -271,8 +260,6 @@ export default function ExploreScreen() {
         return `activity-cluster-${item.citySlug}`;
       case 'meet-travellers':
         return 'meet-travellers';
-      case 'end-card':
-        return 'end-card';
       default:
         return `item-${index}`;
     }
@@ -361,7 +348,8 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingVertical: spacing.lg,
-    gap: spacing.xl,
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.lg,
   },
   pressed: {
     opacity: 0.9,
@@ -373,9 +361,9 @@ const styles = StyleSheet.create({
     top: spacing.md,
     left: spacing.md,
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlaySoft,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   typeLabelText: {
@@ -384,24 +372,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.9)',
     textTransform: 'uppercase',
     letterSpacing: 0.8,
-  },
-  // Section header
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.md,
-  },
-  sectionLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    letterSpacing: 1,
-    color: colors.textMuted,
-  },
-  seeAllLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
   },
   // City pair row
   pairRow: {
@@ -419,7 +389,7 @@ const styles = StyleSheet.create({
   smallCardOverlay: {
     padding: spacing.md,
     paddingTop: spacing.xl,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlaySoft,
   },
   smallCardTitle: {
     fontFamily: fonts.semiBold,
@@ -443,7 +413,6 @@ const styles = StyleSheet.create({
   spotlightOverlay: {
     padding: spacing.lg,
     paddingTop: 60,
-    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   spotlightTitle: {
     fontFamily: fonts.semiBold,
@@ -487,26 +456,6 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
     marginTop: spacing.xs,
   },
-  // End card
-  endCard: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl,
-    gap: spacing.md,
-  },
-  endCardText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  endCardButton: {
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-  },
-  endCardLink: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
   emptyContent: {
     flexGrow: 1,
     justifyContent: 'center' as const,
@@ -529,5 +478,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.orange,
+  },
+  sectionLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 18,
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+    marginBottom: spacing.md,
   },
 });

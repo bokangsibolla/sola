@@ -19,6 +19,10 @@ export const colors = {
   emergencyFill: '#FDEAEA',
   // Neutral fills
   neutralFill: '#F3F3F3',
+  // Overlay gradients (standardized)
+  overlaySoft: 'rgba(0,0,0,0.35)',
+  overlayMedium: 'rgba(0,0,0,0.55)',
+  overlayStrong: 'rgba(0,0,0,0.7)',
   // Tab bar
   tabBarBackground: '#FAF9F7',
   tabBarBorder: '#EBE7E3',
@@ -45,6 +49,17 @@ export const radius = {
   card: 14,
   button: 16,
   full: 999,
+};
+
+export const cardHeight = {
+  sm: 160,
+  md: 220,
+  lg: 300,
+};
+
+export const pressedState = {
+  opacity: 0.9,
+  transform: [{ scale: 0.98 }] as const,
 };
 
 export const fonts = {

@@ -6,6 +6,15 @@ import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { ExploreCollectionWithItems } from '@/data/types';
 
+/** Derive a useful tag from city data — badgeLabel, first interest, or country name. */
+function getCityTag(city: CityWithCountry): string {
+  if (city.badgeLabel) return city.badgeLabel;
+  if (city.goodForInterests && city.goodForInterests.length > 0) {
+    return city.goodForInterests[0];
+  }
+  return city.countryName;
+}
+
 function TypeLabel({ label }: { label: string }) {
   return (
     <View style={styles.typeLabel}>
@@ -51,7 +60,7 @@ export function HeroGrid({
             />
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.65)']}
+            colors={['transparent', colors.overlayStrong]}
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
@@ -86,11 +95,11 @@ export function HeroGrid({
             />
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.65)']}
+            colors={['transparent', colors.overlayStrong]}
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
-          <TypeLabel label="City" />
+          <TypeLabel label={getCityTag(city1)} />
           <View style={styles.topCardContent} pointerEvents="none">
             <Text style={styles.topCardTitle}>{city1.name}</Text>
             <Text style={styles.topCardSubtitle}>{city1.countryName}</Text>
@@ -117,11 +126,11 @@ export function HeroGrid({
             />
           )}
           <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)']}
+            colors={['transparent', colors.overlayStrong]}
             style={StyleSheet.absoluteFill}
             pointerEvents="none"
           />
-          <TypeLabel label="City" />
+          <TypeLabel label={getCityTag(city1)} />
           <View style={styles.bottomCardContent} pointerEvents="none">
             <Text style={styles.bottomCardTitle} numberOfLines={1}>
               {city1.name}
@@ -150,11 +159,11 @@ export function HeroGrid({
               />
             )}
             <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.7)']}
+              colors={['transparent', colors.overlayStrong]}
               style={StyleSheet.absoluteFill}
               pointerEvents="none"
             />
-            <TypeLabel label="City" />
+            <TypeLabel label={getCityTag(city2)} />
             <View style={styles.bottomCardContent} pointerEvents="none">
               <Text style={styles.bottomCardTitle} numberOfLines={1}>
                 {city2.name}
@@ -186,9 +195,9 @@ const styles = StyleSheet.create({
     top: spacing.md,
     left: spacing.md,
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlaySoft,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   typeLabelText: {
@@ -224,7 +233,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: colors.orange,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     marginBottom: spacing.sm,
   },

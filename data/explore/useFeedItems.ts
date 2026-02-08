@@ -9,7 +9,7 @@ import type { ExploreCollectionWithItems } from '../types';
 import type { FeedItem, CityWithCountry } from './types';
 
 const INITIAL_FEED: FeedItem[] = [
-  { type: 'end-card' },
+  { type: 'search-bar' },
 ];
 
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {

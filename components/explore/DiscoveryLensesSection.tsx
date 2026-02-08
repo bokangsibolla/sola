@@ -2,7 +2,7 @@ import { ScrollView, Pressable, Text, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { DiscoveryLens } from '@/data/types';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 const ICON_MAP: Record<string, keyof typeof Feather.glyphMap> = {
   sunrise: 'sunrise',
@@ -60,16 +60,14 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.xs,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     backgroundColor: colors.orangeFill,
     borderRadius: radius.full,
     height: 40,
   },
-  pillPressed: {
-    opacity: 0.8,
-  },
+  pillPressed: pressedState,
   pillText: {
     fontFamily: fonts.medium,
     fontSize: 13,

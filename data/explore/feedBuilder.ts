@@ -40,12 +40,12 @@ export function buildFeed(
     feed.push({ type: 'featured-collection', data: collections[ci++] });
   }
 
-  // --- First city pair with women-first label ---
+  // --- First city pair with section label ---
   if (si + 1 < cities.length && pairsShown < MAX_CITY_PAIRS) {
     feed.push({
       type: 'city-pair',
       data: [cities[si], cities[si + 1]],
-      sectionLabel: 'POPULAR WITH SOLO WOMEN',
+      sectionLabel: 'Popular with solo women',
     });
     si += 2;
     pairsShown++;
@@ -87,14 +87,8 @@ export function buildFeed(
     feed.push({ type: 'city-spotlight', data: cities[si++], activities: [] });
   }
 
-  // --- Quick actions (bottom) ---
-  feed.push({ type: 'quick-actions' });
-
   // --- Meet travellers ---
   feed.push({ type: 'meet-travellers' });
-
-  // --- End card ---
-  feed.push({ type: 'end-card' });
 
   return feed;
 }

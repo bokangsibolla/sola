@@ -6,7 +6,6 @@ import {
   CitySpotlightSection,
   ActivityClusterSection
 } from './sections';
-import { FeedEndCard } from './FeedEndCard';
 import type { FeedItem as FeedItemType } from '@/data/explore/types';
 import type { CityWithCountry } from '@/data/explore/types';
 import { spacing } from '@/constants/design';
@@ -67,9 +66,6 @@ export function FeedItem({ item }: FeedItemProps) {
           citySlug={item.citySlug}
         />
       );
-
-    case 'end-card':
-      return <FeedEndCard />;
 
     default:
       return null;

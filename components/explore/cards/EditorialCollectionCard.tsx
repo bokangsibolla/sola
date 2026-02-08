@@ -30,7 +30,7 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
         />
       )}
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.7)']}
+        colors={['transparent', colors.overlayStrong]}
         style={styles.gradient}
         pointerEvents="none"
       />
@@ -77,9 +77,9 @@ const styles = StyleSheet.create({
     top: spacing.lg,
     left: spacing.lg,
     zIndex: 1,
-    backgroundColor: 'rgba(0,0,0,0.35)',
+    backgroundColor: colors.overlaySoft,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
   },
   typeLabelText: {
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     backgroundColor: colors.orange,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
+    paddingVertical: spacing.xs,
     borderRadius: radius.sm,
     marginBottom: spacing.sm,
   },

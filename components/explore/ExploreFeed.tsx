@@ -27,8 +27,6 @@ export function ExploreFeed() {
         return `city-${item.data.id}`;
       case 'activity-cluster':
         return `activities-${item.citySlug}-${index}`;
-      case 'end-card':
-        return 'end-card';
       default:
         return `item-${index}`;
     }

@@ -15,7 +15,7 @@ export default function SearchBar({ onPress }: SearchBarProps) {
       accessibilityLabel="Search destinations and experiences"
     >
       <View style={styles.iconWrap}>
-        <Feather name="search" size={18} color={colors.orange} />
+        <Feather name="search" size={16} color={colors.orange} />
       </View>
       <View style={styles.textWrap}>
         <Text style={styles.title}>Where to?</Text>
@@ -33,22 +33,22 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    paddingVertical: 14,
+    paddingVertical: 10,
     paddingHorizontal: spacing.lg,
-    gap: spacing.md,
+    gap: spacing.sm,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.06,
-    shadowRadius: 12,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.04,
+    shadowRadius: 8,
+    elevation: 2,
   },
   pressed: {
     backgroundColor: colors.neutralFill,
   },
   iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -58,12 +58,12 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   subtitle: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
     marginTop: 1,
   },

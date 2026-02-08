@@ -1,7 +1,7 @@
 import { ScrollView, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 interface QuickAction {
   label: string;
@@ -69,15 +69,13 @@ const styles = StyleSheet.create({
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.xs,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    paddingVertical: spacing.md,
     backgroundColor: colors.neutralFill,
     borderRadius: radius.full,
   },
-  pillPressed: {
-    opacity: 0.7,
-  },
+  pillPressed: pressedState,
   pillLabel: {
     fontFamily: fonts.medium,
     fontSize: 13,

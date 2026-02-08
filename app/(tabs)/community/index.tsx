@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -337,6 +337,10 @@ export default function CommunityHome() {
     }
   }, [feedThreads]);
 
+  // Split threads into curated (Sola Team) and community zones
+  const solaTeamThreads = useMemo(() => threads.filter((t) => t.authorType === 'system'), [threads]);
+  const communityThreads = useMemo(() => threads.filter((t) => t.authorType !== 'system'), [threads]);
+
   const [topics, setTopics] = useState<CommunityTopic[]>([]);
   const [showPlaceSelector, setShowPlaceSelector] = useState(false);
   const [placeLabel, setPlaceLabel] = useState('All places');
@@ -413,6 +417,43 @@ export default function CommunityHome() {
       {/* First-time intro banner */}
       {showIntroBanner && <IntroBanner onDismiss={dismissIntro} />}
 
+      {/* Topic chips — quick filter by category */}
+      {topics.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.topicChipsRow}
+        >
+          <Pressable
+            onPress={() => setFilters({ topicId: undefined })}
+            style={[
+              styles.topicChip,
+              !filters.topicId && styles.topicChipActive,
+            ]}
+          >
+            <Text style={[
+              styles.topicChipText,
+              !filters.topicId && styles.topicChipTextActive,
+            ]}>All</Text>
+          </Pressable>
+          {topics.map((topic) => (
+            <Pressable
+              key={topic.id}
+              onPress={() => setFilters({ topicId: filters.topicId === topic.id ? undefined : topic.id })}
+              style={[
+                styles.topicChip,
+                filters.topicId === topic.id && styles.topicChipActive,
+              ]}
+            >
+              <Text style={[
+                styles.topicChipText,
+                filters.topicId === topic.id && styles.topicChipTextActive,
+              ]}>{topic.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+
       {/* Search bar */}
       {isSearching ? (
         <View style={styles.searchInputRow}>
@@ -471,6 +512,23 @@ export default function CommunityHome() {
           <Text style={styles.sortButtonText}>{SORT_LABELS[filters.sort]}</Text>
         </Pressable>
       </View>
+
+      {/* Sola Team threads — curated content zone */}
+      {solaTeamThreads.length > 0 && !filters.topicId && !filters.searchQuery && (
+        <View style={styles.solaSection}>
+          <Text style={styles.solaSectionTitle}>From Sola</Text>
+          {solaTeamThreads.slice(0, 3).map((thread) => (
+            <ThreadCard
+              key={thread.id}
+              thread={thread}
+              onPress={() => router.push(`/(tabs)/community/thread/${thread.id}`)}
+              onVote={handleVote}
+              router={router}
+            />
+          ))}
+          <View style={styles.solaSectionDivider} />
+        </View>
+      )}
     </View>
   );
 
@@ -481,9 +539,9 @@ export default function CommunityHome() {
         rightComponent={<InboxButton />}
       />
 
-      {/* Thread Feed */}
+      {/* Thread Feed — community threads only (Sola Team shown in header) */}
       <FlatList
-        data={threads}
+        data={communityThreads}
         keyExtractor={(item) => item.id}
         renderItem={renderThread}
         ListHeaderComponent={ListHeader}
@@ -536,6 +594,30 @@ const styles = StyleSheet.create({
   loader: { marginTop: 60 },
   emptyState: { alignItems: 'center' as const, paddingTop: 80, gap: spacing.md },
   emptyText: { fontFamily: fonts.regular, fontSize: 15, color: colors.textMuted },
+
+  // Topic chips
+  topicChipsRow: {
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  topicChip: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.neutralFill,
+  },
+  topicChipActive: {
+    backgroundColor: colors.orangeFill,
+  },
+  topicChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  topicChipTextActive: {
+    color: colors.orange,
+  },
 
   // Search bar
   searchBar: {
@@ -730,6 +812,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
+  },
+
+  // Sola Team section
+  solaSection: {
+    marginBottom: spacing.lg,
+  },
+  solaSectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    letterSpacing: -0.2,
+    marginBottom: spacing.sm,
+  },
+  solaSectionDivider: {
+    height: 1,
+    backgroundColor: colors.borderDefault,
+    marginTop: spacing.md,
   },
 
   // Intro banner
