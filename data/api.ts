@@ -375,7 +375,7 @@ export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]>
     .eq('entity_type', 'country')
     .in('tag_slug', tagSlugs);
   if (error) throw error;
-  const ids = [...new Set((data ?? []).map((r) => r.entity_id))];
+  const ids = (data ?? []).map((r) => r.entity_id).filter((v, i, arr) => arr.indexOf(v) === i);
   if (ids.length === 0) return [];
   const { data: countries, error: cError } = await supabase
     .from('countries')
@@ -403,17 +403,16 @@ export async function getUniqueDestinationTagSlugs(
   const { data, error } = await query;
   if (error) throw error;
 
-  const seen = new Map<string, string>();
+  const seen = new Set<string>();
+  const result: { tagSlug: string; tagLabel: string }[] = [];
   for (const row of data ?? []) {
     if (!seen.has(row.tag_slug)) {
-      seen.set(row.tag_slug, row.tag_label);
+      seen.add(row.tag_slug);
+      result.push({ tagSlug: row.tag_slug, tagLabel: row.tag_label });
     }
   }
 
-  return Array.from(seen.entries()).map(([tagSlug, tagLabel]) => ({
-    tagSlug,
-    tagLabel,
-  }));
+  return result;
 }
 
 // ---------------------------------------------------------------------------
@@ -2121,7 +2120,8 @@ export async function getNearbyTravelers(
   blockedIds: string[],
   limit: number = 10,
 ): Promise<Profile[]> {
-  const excluded = [userId, ...blockedIds];
+  const excluded = [userId].concat(Array.isArray(blockedIds) ? blockedIds : []).filter(Boolean);
+  if (excluded.length === 0) return [];
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -2140,7 +2140,8 @@ export async function getTravelersInCountry(
   blockedIds: string[],
   limit: number = 10,
 ): Promise<Profile[]> {
-  const excluded = [userId, ...blockedIds];
+  const excluded = [userId].concat(Array.isArray(blockedIds) ? blockedIds : []).filter(Boolean);
+  if (excluded.length === 0) return [];
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -2159,7 +2160,8 @@ export async function getTravelersWithSharedInterests(
   blockedIds: string[],
   limit: number = 10,
 ): Promise<Profile[]> {
-  const excluded = [userId, ...blockedIds];
+  const excluded = [userId].concat(Array.isArray(blockedIds) ? blockedIds : []).filter(Boolean);
+  if (excluded.length === 0) return [];
   const { data, error } = await supabase
     .from('profiles')
     .select('*')
@@ -2177,7 +2179,11 @@ export async function getSuggestedTravelers(
   blockedIds: string[],
   limit: number = 6,
 ): Promise<Profile[]> {
-  const allExcluded = [...new Set([userId, ...excludeIds, ...blockedIds])];
+  const allExcluded = [userId]
+    .concat(Array.isArray(excludeIds) ? excludeIds : [])
+    .concat(Array.isArray(blockedIds) ? blockedIds : [])
+    .filter((v, i, arr) => Boolean(v) && arr.indexOf(v) === i);
+  if (allExcluded.length === 0) return [];
   const { data, error } = await supabase
     .from('profiles')
     .select('*')

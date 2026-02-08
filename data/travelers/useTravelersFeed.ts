@@ -64,7 +64,7 @@ export function useTravelersFeed(): TravelersFeedData {
 
   const nearbyIds = (nearbyQuery.data ?? countryQuery.data ?? []).map((p) => p.id);
   const interestsIds = (interestsQuery.data ?? []).map((p) => p.id);
-  const excludeFromSuggested = [...nearbyIds, ...interestsIds];
+  const excludeFromSuggested = nearbyIds.concat(interestsIds);
 
   const suggestedQuery = useQuery({
     queryKey: ['travelers', 'suggested', userId, excludeFromSuggested.join(',')],

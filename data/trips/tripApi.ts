@@ -340,3 +340,114 @@ export async function getConnectedProfiles(userId: string, searchQuery?: string)
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
 }
+
+// ── Public Trip Reads (for traveler profiles) ────────────────
+
+export async function getPublicTripsGrouped(
+  targetUserId: string,
+): Promise<GroupedTrips> {
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('user_id', targetUserId)
+    .order('arriving', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+
+  const trips = rowsToCamel<TripFull>(data ?? []);
+
+  const tripIds = trips.map((t) => t.id);
+  if (tripIds.length === 0) return { current: null, upcoming: [], past: [] };
+
+  const { data: stopsData } = await supabase
+    .from('trip_stops')
+    .select('*')
+    .in('trip_id', tripIds)
+    .order('stop_order', { ascending: true });
+  const allStops = rowsToCamel<TripStop>(stopsData ?? []);
+
+  const stopsMap = new Map<string, TripStop[]>();
+  for (const stop of allStops) {
+    const arr = stopsMap.get(stop.tripId) || [];
+    arr.push(stop);
+    stopsMap.set(stop.tripId, arr);
+  }
+
+  const withStops: TripWithStops[] = trips.map((t) => ({
+    ...t,
+    stops: stopsMap.get(t.id) || [],
+  }));
+
+  let current: TripWithStops | null = null;
+  const upcoming: TripWithStops[] = [];
+  const past: TripWithStops[] = [];
+
+  for (const trip of withStops) {
+    if (trip.status === 'active') {
+      current = trip;
+    } else if (trip.status === 'completed') {
+      past.push(trip);
+    } else if (trip.status === 'planned') {
+      upcoming.push(trip);
+    }
+  }
+
+  past.sort((a, b) => (b.leaving ?? '').localeCompare(a.leaving ?? ''));
+
+  return { current, upcoming, past };
+}
+
+export interface VisitedCountry {
+  countryIso2: string;
+  countryName: string;
+  tripCount: number;
+}
+
+export async function getVisitedCountries(
+  targetUserId: string,
+): Promise<VisitedCountry[]> {
+  const { data: tripsData, error } = await supabase
+    .from('trips')
+    .select('id')
+    .eq('user_id', targetUserId)
+    .eq('status', 'completed');
+  if (error) throw error;
+
+  const tripIds = (tripsData ?? []).map((t: { id: string }) => t.id);
+  if (tripIds.length === 0) return [];
+
+  const { data: stopsData } = await supabase
+    .from('trip_stops')
+    .select('country_iso2, trip_id')
+    .in('trip_id', tripIds);
+
+  if (!stopsData || stopsData.length === 0) return [];
+
+  const countryMap = new Map<string, Set<string>>();
+  const iso2s: string[] = [];
+  for (const stop of stopsData) {
+    const iso = stop.country_iso2;
+    if (!countryMap.has(iso)) {
+      countryMap.set(iso, new Set<string>());
+      iso2s.push(iso);
+    }
+    countryMap.get(iso)!.add(stop.trip_id);
+  }
+  const { data: countriesData } = await supabase
+    .from('countries')
+    .select('iso2, name')
+    .in('iso2', iso2s);
+
+  const nameMap = new Map<string, string>();
+  for (const c of countriesData ?? []) {
+    nameMap.set(c.iso2, c.name);
+  }
+
+  const result: VisitedCountry[] = iso2s.map((iso) => ({
+    countryIso2: iso,
+    countryName: nameMap.get(iso) ?? iso,
+    tripCount: countryMap.get(iso)?.size ?? 0,
+  }));
+
+  result.sort((a, b) => b.tripCount - a.tripCount);
+  return result;
+}
