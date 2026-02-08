@@ -33,7 +33,7 @@ export default function ProfileScreen() {
 
   const { data: profile, loading: loadingProfile, error: errorProfile, refetch: refetchProfile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
-    [userId],
+    ['profile', userId],
   );
 
   // Re-fetch profile every time tab is focused (picks up edits)
@@ -46,8 +46,8 @@ export default function ProfileScreen() {
   const country = profile?.homeCountryIso2
     ? countries.find((c) => c.iso2 === profile.homeCountryIso2)
     : undefined;
-  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), [userId]);
-  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), [userId]);
+  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), ['collections', userId]);
+  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), ['savedPlaces', userId]);
 
   if (loadingProfile || loadingCol || loadingSaved) return <LoadingScreen />;
   if (errorProfile) return <ErrorScreen message={errorProfile.message} onRetry={refetchProfile} />;
