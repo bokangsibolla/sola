@@ -113,33 +113,33 @@ export default function PlaceDetailScreen() {
 
   const { data: place, loading, error, refetch } = useData(
     () => id ? getPlaceById(id) : Promise.resolve(undefined),
-    [id ?? ''],
+    ['place', id ?? ''],
   );
   const { data: media } = useData(
     () => id ? getPlaceMedia(id) : Promise.resolve([]),
-    [id ?? ''],
+    ['placeMedia', id ?? ''],
   );
   const { data: tags } = useData(
     () => id ? getPlaceTags(id) : Promise.resolve([]),
-    [id ?? ''],
+    ['placeTags', id ?? ''],
   );
   const { data: category } = useData(
     () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(undefined),
-    [place?.primaryCategoryId ?? ''],
+    ['category', place?.primaryCategoryId ?? ''],
   );
   const { data: city } = useData(
     () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(undefined),
-    [place?.cityId ?? ''],
+    ['city', place?.cityId ?? ''],
   );
 
   const { userId } = useAuth();
   const { data: profile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
-    [userId],
+    ['profile', userId],
   );
   const { data: isSaved } = useData(
     () => (userId && id) ? isPlaceSaved(userId, id) : Promise.resolve(false),
-    [userId, id],
+    ['placeSaved', userId, id],
   );
   const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -234,7 +234,8 @@ export default function PlaceDetailScreen() {
   }
 
   // Now safe to access place properties directly
-  const images = (media ?? []).filter((m) => m.mediaType === 'image');
+  const mediaArr = Array.isArray(media) ? media : [];
+  const images = mediaArr.filter((m) => m.mediaType === 'image');
   const highlights = place.highlights ?? [];
   const considerations = place.considerations ?? [];
   const displayType = place.originalType

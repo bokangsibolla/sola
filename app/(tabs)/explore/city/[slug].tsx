@@ -126,16 +126,16 @@ function PlaceCard({ place, showDuration = false }: { place: Place; showDuration
   const posthog = usePostHog();
   const { data: imageUrl } = useData(
     () => place?.id ? getPlaceFirstImage(place.id) : Promise.resolve(null),
-    [place?.id ?? ''],
+    ['placeImage', place?.id ?? ''],
   );
   const { userId } = useAuth();
   const { data: tags } = useData(
     () => place?.id ? getPlaceTags(place.id) : Promise.resolve([]),
-    [place?.id ?? ''],
+    ['placeTags', place?.id ?? ''],
   );
   const { data: isSaved } = useData(
     () => (userId && place?.id) ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
-    [userId, place?.id ?? ''],
+    ['placeSaved', userId, place?.id ?? ''],
   );
   const [saved, setSaved] = useState(false);
 
@@ -228,12 +228,12 @@ function FullDayCard({ place }: { place: Place }) {
   const posthog = usePostHog();
   const { data: imageUrl } = useData(
     () => place?.id ? getPlaceFirstImage(place.id) : Promise.resolve(null),
-    [place?.id ?? ''],
+    ['placeImage', place?.id ?? ''],
   );
   const { userId } = useAuth();
   const { data: isSaved } = useData(
     () => (userId && place?.id) ? isPlaceSaved(userId, place.id) : Promise.resolve(false),
-    [userId, place?.id ?? ''],
+    ['placeSaved', userId, place?.id ?? ''],
   );
   const [saved, setSaved] = useState(false);
 
@@ -365,28 +365,74 @@ function CityEditorial({
 }
 
 // ---------------------------------------------------------------------------
-// City Context Signals — surfaces research quality from existing data
+// City Context Signals — surfaces unique per-city data
 // ---------------------------------------------------------------------------
+
+const INTEREST_LABELS: Record<string, string> = {
+  food: 'Food lovers',
+  culture: 'Culture seekers',
+  nature: 'Nature & outdoors',
+  history: 'History buffs',
+  photography: 'Photography',
+  adventure: 'Adventure',
+  nightlife: 'Nightlife',
+  beach: 'Beach life',
+  beaches: 'Beach life',
+  diving: 'Diving & snorkeling',
+  relaxation: 'Relaxation',
+  wellness: 'Wellness & yoga',
+  'digital-nomad': 'Digital nomads',
+  'digital nomad': 'Digital nomads',
+  shopping: 'Shopping',
+  surfing: 'Surfing',
+  hiking: 'Hiking',
+  art: 'Art & galleries',
+  music: 'Live music',
+  architecture: 'Architecture',
+};
+
+function formatBudget(usd: number): string {
+  if (usd <= 25) return 'Very budget-friendly';
+  if (usd <= 40) return 'Budget-friendly';
+  if (usd <= 60) return 'Moderate cost';
+  return 'Higher budget';
+}
 
 function CityContext({ city }: { city: City }) {
   const signals: { icon: string; label: string }[] = [];
 
-  if (city.soloLevel === 'beginner') {
-    signals.push({ icon: 'compass-outline', label: 'Good for first-time solo' });
-  } else if (city.soloLevel === 'intermediate') {
+  // Budget — varies meaningfully ($20–$80)
+  if (city.avgDailyBudgetUsd) {
+    signals.push({
+      icon: 'wallet-outline',
+      label: `${formatBudget(city.avgDailyBudgetUsd)} (~$${city.avgDailyBudgetUsd}/day)`,
+    });
+  }
+
+  // Best time to visit — varies per city
+  if (city.bestTimeToVisit) {
+    signals.push({ icon: 'calendar-outline', label: `Best: ${city.bestTimeToVisit}` });
+  }
+
+  // Top interests — unique per city, show first 2
+  const interests = city.goodForInterests ?? [];
+  const mapped = interests
+    .map((i) => INTEREST_LABELS[i.toLowerCase()])
+    .filter(Boolean);
+  // Deduplicate (e.g. "beach" and "beaches" both map to "Beach life")
+  const unique = Array.from(new Set(mapped));
+  if (unique.length > 0) {
+    signals.push({
+      icon: 'sparkles-outline',
+      label: `Great for ${unique.slice(0, 2).join(' & ').toLowerCase()}`,
+    });
+  }
+
+  // Solo level — only show if NOT beginner (since most are beginner)
+  if (city.soloLevel === 'intermediate') {
     signals.push({ icon: 'compass-outline', label: 'Some solo experience helpful' });
-  }
-
-  if (city.safetyRating === 'very_safe' || city.safetyRating === 'generally_safe') {
-    signals.push({ icon: 'shield-checkmark-outline', label: 'Generally safe for women' });
-  }
-
-  if (city.englishFriendliness === 'high') {
-    signals.push({ icon: 'chatbubble-outline', label: 'English widely spoken' });
-  }
-
-  if (city.internetQuality === 'excellent' || city.internetQuality === 'good') {
-    signals.push({ icon: 'wifi-outline', label: 'Reliable internet' });
+  } else if (city.soloLevel === 'expert') {
+    signals.push({ icon: 'compass-outline', label: 'Best for experienced solo travelers' });
   }
 
   if (signals.length === 0) return null;
@@ -395,7 +441,7 @@ function CityContext({ city }: { city: City }) {
     <View style={styles.contextSection}>
       {signals.slice(0, 3).map((signal, i) => (
         <View key={i} style={styles.contextRow}>
-          <Ionicons name={signal.icon as any} size={16} color={colors.greenSoft} />
+          <Ionicons name={signal.icon as any} size={16} color={colors.textSecondary} />
           <Text style={styles.contextText}>{signal.label}</Text>
         </View>
       ))}
@@ -440,14 +486,14 @@ export default function PlaceScreen() {
     }
   }, [slug, posthog]);
 
-  const { data: city, loading, error, refetch } = useData(() => getCityBySlug(slug ?? ''), [slug]);
+  const { data: city, loading, error, refetch } = useData(() => getCityBySlug(slug ?? ''), ['cityBySlug', slug]);
   const { data: country } = useData(
     () => city?.countryId ? getCountryById(city.countryId) : Promise.resolve(null),
-    [city?.countryId],
+    ['country', city?.countryId],
   );
   const { data: areas } = useData(
     () => city ? getAreasByCity(city.id) : Promise.resolve([]),
-    [city?.id],
+    ['cityAreas', city?.id],
   );
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
@@ -465,7 +511,7 @@ export default function PlaceScreen() {
         accommodations: [],
       } as PlacesGroupedByTime);
     },
-    [selectedAreaId, city?.id],
+    ['groupedPlaces', selectedAreaId, city?.id],
   );
 
   if (loading) return <LoadingScreen />;
@@ -597,20 +643,12 @@ export default function PlaceScreen() {
             </View>
           )}
 
-          {/* Plan your days header */}
+          {/* Section intro */}
           {hasPlaces && (
             <View style={styles.planHeader}>
-              <Text style={styles.planTitle}>Plan your days</Text>
+              <Text style={styles.planTitle}>Your day in {city.name}</Text>
               <Text style={styles.planSubtitle}>
-                {(() => {
-                  const total = (groupedPlaces?.morning.length ?? 0)
-                    + (groupedPlaces?.afternoon.length ?? 0)
-                    + (groupedPlaces?.evening.length ?? 0)
-                    + (groupedPlaces?.fullDay.length ?? 0);
-                  return total > 0
-                    ? `${total} curated places across your day`
-                    : 'Everything you need for your trip';
-                })()}
+                We picked these by time of day so you can build your own itinerary
               </Text>
             </View>
           )}
@@ -953,9 +991,9 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   contextText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.greenSoft,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
   },
 
   // City highlights
