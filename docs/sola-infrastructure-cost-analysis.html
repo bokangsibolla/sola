@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sola — Total Operating Costs & Launch Strategy</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.6;
+    font-size: 11pt;
+    background: #fff;
+  }
+
+  .page {
+    padding: 48px 56px;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  /* Cover */
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 90vh;
+    page-break-after: always;
+  }
+  .cover-badge {
+    display: inline-block;
+    background: #FFF5F1;
+    color: #E5653A;
+    font-size: 10pt;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    padding: 6px 14px;
+    border-radius: 4px;
+    margin-bottom: 24px;
+  }
+  .cover h1 {
+    font-size: 32pt;
+    font-weight: 700;
+    line-height: 1.15;
+    color: #111;
+    margin-bottom: 16px;
+  }
+  .cover h1 span { color: #E5653A; }
+  .cover .subtitle {
+    font-size: 14pt;
+    color: #666;
+    font-weight: 400;
+    margin-bottom: 40px;
+    max-width: 480px;
+  }
+  .cover-meta {
+    font-size: 10pt;
+    color: #999;
+    border-top: 1px solid #eee;
+    padding-top: 20px;
+  }
+  .cover-meta strong { color: #666; }
+
+  /* Sections */
+  h2 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: #111;
+    margin-top: 40px;
+    margin-bottom: 8px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E5653A;
+  }
+  h3 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 28px;
+    margin-bottom: 8px;
+  }
+  h4 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: #555;
+    margin-top: 20px;
+    margin-bottom: 6px;
+  }
+
+  p { margin-bottom: 12px; color: #333; }
+  strong { color: #111; }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0 24px;
+    font-size: 10pt;
+  }
+  thead th {
+    background: #f8f8f8;
+    font-weight: 600;
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid #ddd;
+    color: #333;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  tbody td {
+    padding: 9px 12px;
+    border-bottom: 1px solid #eee;
+    vertical-align: top;
+  }
+  tbody tr:last-child td { border-bottom: 1px solid #ddd; }
+  .total-row td {
+    font-weight: 700;
+    background: #FFF5F1;
+    border-bottom: 2px solid #E5653A;
+    color: #111;
+  }
+  .subtotal-row td {
+    font-weight: 600;
+    background: #f8f8f8;
+    border-bottom: 1px solid #ccc;
+    color: #333;
+  }
+  .section-label td {
+    font-weight: 600;
+    font-size: 9pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    padding-top: 16px;
+    border-bottom: none;
+  }
+
+  /* Callout boxes */
+  .callout {
+    background: #f9f9f9;
+    border-left: 3px solid #E5653A;
+    padding: 16px 20px;
+    margin: 16px 0;
+    border-radius: 0 6px 6px 0;
+  }
+  .callout.green { border-left-color: #22c55e; background: #f0fdf4; }
+  .callout.yellow { border-left-color: #eab308; background: #fefce8; }
+  .callout.blue { border-left-color: #3b82f6; background: #eff6ff; }
+  .callout.red { border-left-color: #ef4444; background: #fef2f2; }
+  .callout p { margin-bottom: 4px; }
+  .callout p:last-child { margin-bottom: 0; }
+  .callout-title {
+    font-weight: 600;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    color: #555;
+  }
+
+  /* Lists */
+  ul, ol { margin: 8px 0 16px 20px; }
+  li { margin-bottom: 6px; color: #444; }
+
+  /* Highlight numbers */
+  .big-number {
+    font-size: 28pt;
+    font-weight: 700;
+    color: #E5653A;
+    line-height: 1;
+  }
+  .big-number-sub {
+    font-size: 11pt;
+    font-weight: 400;
+    color: #999;
+    display: block;
+    margin-top: 2px;
+  }
+  .big-label {
+    font-size: 10pt;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-top: 4px;
+  }
+  .stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 20px;
+    margin: 24px 0;
+    text-align: center;
+  }
+  .stat-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px 12px;
+  }
+
+  /* Two column layout */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin: 16px 0;
+  }
+  .col-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 20px;
+  }
+  .col-card h4 {
+    margin-top: 0;
+    color: #333;
+    font-size: 10pt;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .col-card .amount {
+    font-size: 20pt;
+    font-weight: 700;
+    color: #E5653A;
+    margin: 8px 0 4px;
+  }
+  .col-card .detail {
+    font-size: 9.5pt;
+    color: #888;
+  }
+
+  /* Code-like blocks */
+  .formula {
+    background: #f4f4f4;
+    padding: 12px 16px;
+    border-radius: 6px;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 9.5pt;
+    margin: 12px 0;
+    color: #555;
+    line-height: 1.7;
+  }
+
+  /* Page breaks */
+  .page-break { page-break-before: always; }
+
+  /* Trap cards */
+  .trap-card {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 20px;
+    margin: 16px 0;
+  }
+  .trap-number {
+    display: inline-block;
+    background: #E5653A;
+    color: #fff;
+    font-weight: 700;
+    font-size: 10pt;
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    text-align: center;
+    border-radius: 50%;
+    margin-right: 10px;
+  }
+  .trap-title {
+    display: inline;
+    font-weight: 600;
+    font-size: 12pt;
+    color: #111;
+  }
+  .trap-body { margin-top: 10px; }
+
+  /* Phase timeline */
+  .phase {
+    border-left: 3px solid #E5653A;
+    padding: 0 0 24px 24px;
+    margin-left: 12px;
+    position: relative;
+  }
+  .phase:last-child { border-left-color: transparent; }
+  .phase::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 0;
+    width: 14px;
+    height: 14px;
+    background: #E5653A;
+    border-radius: 50%;
+    border: 3px solid #fff;
+  }
+  .phase-header {
+    font-weight: 600;
+    font-size: 12pt;
+    color: #111;
+    margin-bottom: 2px;
+  }
+  .phase-cost {
+    font-size: 10pt;
+    color: #E5653A;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  /* Footer */
+  .footer {
+    margin-top: 48px;
+    padding-top: 16px;
+    border-top: 1px solid #eee;
+    font-size: 9pt;
+    color: #aaa;
+    text-align: center;
+  }
+
+  @media print {
+    .page { padding: 36px 48px; }
+    .cover { min-height: auto; padding-bottom: 40px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ================================================================ -->
+  <!-- COVER -->
+  <!-- ================================================================ -->
+  <div class="cover">
+    <div class="cover-badge">Internal Document</div>
+    <h1>Total Operating Costs &<br>Launch <span>Strategy</span></h1>
+    <p class="subtitle">Every real bill we pay to run Sola — app infrastructure, business tools, APIs, and hosting — with growth projections from 0 to 10,000 users.</p>
+    <div class="cover-meta">
+      <strong>Prepared for:</strong> Sola Team<br>
+      <strong>Date:</strong> February 8, 2026<br>
+      <strong>Stack:</strong> React Native (Expo) + Supabase + PostHog + Sentry<br>
+      <strong>Business Tools:</strong> Google Workspace + Lovable + Figma + Notion
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- EXECUTIVE SUMMARY -->
+  <!-- ================================================================ -->
+  <h2>Executive Summary</h2>
+  <p>Sola's total monthly operating cost is split between <strong>app infrastructure</strong> (scales with users) and <strong>business overhead</strong> (fixed costs we pay regardless of user count). Here's the full picture.</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="big-number">$422</div>
+      <div class="big-label">100 users/mo</div>
+    </div>
+    <div class="stat-card">
+      <div class="big-number">$447</div>
+      <div class="big-label">1,000 users/mo</div>
+    </div>
+    <div class="stat-card">
+      <div class="big-number">$462</div>
+      <div class="big-label">5,000 users/mo</div>
+    </div>
+    <div class="stat-card">
+      <div class="big-number">$500</div>
+      <div class="big-label">10,000 users/mo</div>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="col-card">
+      <h4>Business Overhead (Fixed)</h4>
+      <div class="amount">~$422/mo</div>
+      <div class="detail">Google Workspace, Lovable, AI tools (Claude, ChatGPT, Gemini), Figma, Notion, domain, Apple Dev. Does NOT scale with users.</div>
+    </div>
+    <div class="col-card">
+      <h4>App Infrastructure (Variable)</h4>
+      <div class="amount">$8 &rarr; $80/mo</div>
+      <div class="detail">Supabase, PostHog, Sentry, Expo Push. Scales with users — but very slowly for a text-heavy app.</div>
+    </div>
+  </div>
+
+  <div class="callout green">
+    <div class="callout-title">Bottom Line</div>
+    <p><strong>Total burn at 10,000 users: ~$500/month.</strong> Business overhead ($422) dwarfs infrastructure ($80). AI tools alone ($280/mo) cost more than everything else combined. Even at zero users, we're paying $422/mo to operate. The app infrastructure itself is remarkably cheap.</p>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- COMPLETE BILL INVENTORY -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <h2>1. Every Bill We Pay</h2>
+  <p>Every service, subscription, and API that costs money — or will cost money — organized by whether it scales with users or not.</p>
+
+  <h3>A. Business Overhead (Fixed — Paid Regardless of User Count)</h3>
+  <table>
+    <thead>
+      <tr><th>Service</th><th>What It's For</th><th>Monthly Cost</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Google Workspace (Business Standard)</td><td>Team email (@solatravel.app), Drive, Calendar</td><td>$42</td><td>3 users &times; $14/user</td></tr>
+      <tr><td>Lovable</td><td>Marketing website hosting</td><td>$20</td><td>Custom domain, landing pages</td></tr>
+      <tr><td>Apple Developer Program</td><td>iOS App Store distribution</td><td>$8.25</td><td>$99/yr amortized</td></tr>
+      <tr><td>Domain registration</td><td>solatravel.app (or similar)</td><td>~$1.50</td><td>~$15-18/yr amortized</td></tr>
+      <tr><td>Figma</td><td>UI/UX design</td><td>$15-45</td><td>1-3 Pro seats at $15/user. Free tier works for 1 person with &le;3 files.</td></tr>
+      <tr><td>Notion</td><td>Docs, roadmap, internal wiki</td><td>$20-30</td><td>Team plan: 2-3 users &times; $10/user. Free tier works for solo.</td></tr>
+      <tr><td>Canva</td><td>Social media graphics, ASO assets</td><td>$0-13</td><td>Free tier may be enough. Pro = $13/mo.</td></tr>
+      <tr><td>Social media scheduler</td><td>Buffer / Later / Typefully</td><td>$0-15</td><td>Free tiers often enough for launch.</td></tr>
+      <tr class="section-label"><td colspan="4">AI &amp; Development Tools</td></tr>
+      <tr><td>Claude (Anthropic)</td><td>AI development, code, strategy</td><td>$200</td><td>Max plan or multi-seat Pro</td></tr>
+      <tr><td>ChatGPT (OpenAI)</td><td>Writing, research, team productivity</td><td>$60</td><td>3 users &times; $20/user (Plus)</td></tr>
+      <tr><td>Google Gemini</td><td>AI assistant, research</td><td>$20</td><td>1 Advanced seat</td></tr>
+      <tr class="subtotal-row"><td colspan="2"><strong>Business overhead subtotal</strong></td><td><strong>$387-455</strong></td><td>Mid estimate: ~$422/mo</td></tr>
+    </tbody>
+  </table>
+
+  <h3>B. App Infrastructure (Variable — Scales with Users)</h3>
+  <table>
+    <thead>
+      <tr><th>Service</th><th>What It's For</th><th>Cost at 100 Users</th><th>Cost at 10K Users</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Supabase (Free &rarr; Pro)</td><td>Database, auth, storage, realtime, edge functions</td><td>$0</td><td>$25 + $5-15 overages</td></tr>
+      <tr><td>PostHog</td><td>Product analytics (~40 events)</td><td>$0</td><td>$0-30</td></tr>
+      <tr><td>Sentry</td><td>Error tracking, crash reports</td><td>$0</td><td>$0-26</td></tr>
+      <tr><td>Expo Push Notifications</td><td>DM push notifications</td><td>$0</td><td>$0</td></tr>
+      <tr><td>Unsplash</td><td>Editorial hero images (hotlinked)</td><td>$0</td><td>$0</td></tr>
+      <tr class="subtotal-row"><td colspan="2"><strong>Infrastructure subtotal</strong></td><td><strong>$0</strong></td><td><strong>$30-80</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>C. API &amp; Development Costs (Occasional / One-Time)</h3>
+  <table>
+    <thead>
+      <tr><th>Service</th><th>What It's For</th><th>Monthly Cost</th><th>Notes</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Google Places API</td><td>Seeding place data (restaurants, stays, activities)</td><td>$0</td><td>$200/mo free credit from Google Cloud. Used only in scripts, not in production app. One-time seeding cost per new city.</td></tr>
+      <tr><td>Pexels API</td><td>Stock photos for place galleries</td><td>$0</td><td>Free tier. Used in seeding scripts only.</td></tr>
+      <tr><td>Unsplash API</td><td>Fallback images for seeding</td><td>$0</td><td>Free tier (50 req/hr). Production images are hotlinked, not API calls.</td></tr>
+      <tr><td>EAS Build (Expo)</td><td>iOS/Android builds</td><td>$0</td><td>Free tier: 30 builds/mo. Plenty for pre-launch. Beyond: $99/mo.</td></tr>
+      <tr><td>Claude Code / AI tools</td><td>Development assistance</td><td>Variable</td><td>Development cost, not operational. Stops when shipping stops.</td></tr>
+      <tr class="subtotal-row"><td colspan="2"><strong>API/Dev subtotal</strong></td><td><strong>$0</strong></td><td>Free tiers cover us through 10K users</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout yellow">
+    <div class="callout-title">Google Places API — Watch This</div>
+    <p>Google gives $200/mo free credit for Cloud APIs. Our seeding scripts use Place Details + Place Photos. Each new city seeded costs ~$5-15 in API calls (one-time). <strong>As long as we're seeding &lt;15 new cities per month, it's free.</strong> But if we do a big content push across 30+ cities at once, we could exceed the free credit. Batch content seeding carefully.</p>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- COMBINED COST AT SCALE -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <h2>2. Total Monthly Burn at Each Scale</h2>
+  <p>Business overhead + app infrastructure = what we actually spend each month.</p>
+
+  <h3>100 Users — Soft Launch / Beta</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Service</th><th>Monthly Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr class="section-label"><td colspan="3">Business Overhead</td></tr>
+      <tr><td>Email &amp; Workspace</td><td>Google Workspace (3 users, Standard)</td><td>$42</td></tr>
+      <tr><td>Website</td><td>Lovable</td><td>$20</td></tr>
+      <tr><td>App Store</td><td>Apple Developer</td><td>$8.25</td></tr>
+      <tr><td>Domain</td><td>Domain registrar</td><td>$1.50</td></tr>
+      <tr><td>Design</td><td>Figma (1 Pro seat)</td><td>$15</td></tr>
+      <tr><td>Productivity</td><td>Notion (Team, 3 users)</td><td>$30</td></tr>
+      <tr><td>Social</td><td>Canva Free + Buffer Free</td><td>$0</td></tr>
+      <tr class="section-label"><td colspan="3">AI &amp; Development Tools</td></tr>
+      <tr><td>AI (Development)</td><td>Claude Max / Pro</td><td>$200</td></tr>
+      <tr><td>AI (Team)</td><td>ChatGPT Plus (3 seats)</td><td>$60</td></tr>
+      <tr><td>AI (Research)</td><td>Google Gemini Advanced</td><td>$20</td></tr>
+      <tr class="section-label"><td colspan="3">App Infrastructure</td></tr>
+      <tr><td>Backend</td><td>Supabase Free</td><td>$0</td></tr>
+      <tr><td>Analytics</td><td>PostHog Free</td><td>$0</td></tr>
+      <tr><td>Errors</td><td>Sentry Free</td><td>$0</td></tr>
+      <tr><td>Push</td><td>Expo Push (free)</td><td>$0</td></tr>
+      <tr><td>APIs</td><td>Google Places ($200 free credit)</td><td>$0</td></tr>
+      <tr class="total-row"><td colspan="2"><strong>Total Monthly Burn</strong></td><td><strong>~$397</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>1,000 Users — Post-Launch</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Change from Previous</th><th>Monthly Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Business overhead</td><td>No change</td><td>$397</td></tr>
+      <tr><td>Supabase</td><td>Upgrade Free &rarr; Pro</td><td>$25</td></tr>
+      <tr><td>PostHog / Sentry / Push</td><td>Still free tier</td><td>$0</td></tr>
+      <tr class="total-row"><td colspan="2"><strong>Total Monthly Burn</strong></td><td><strong>~$422</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>5,000 Users — Traction</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Change from Previous</th><th>Monthly Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Business overhead</td><td>Maybe add Canva Pro for ASO</td><td>$410</td></tr>
+      <tr><td>Supabase Pro + overages</td><td>Storage may hit ~5GB</td><td>$25-30</td></tr>
+      <tr><td>PostHog / Sentry</td><td>Still within free tiers</td><td>$0</td></tr>
+      <tr class="total-row"><td colspan="2"><strong>Total Monthly Burn</strong></td><td><strong>~$435-440</strong></td></tr>
+    </tbody>
+  </table>
+
+  <h3>10,000 Users — Pre-Monetization Target</h3>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Change from Previous</th><th>Monthly Cost</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Business overhead</td><td>Might add social scheduler</td><td>$422</td></tr>
+      <tr><td>Supabase Pro + overages</td><td>Bandwidth climbing</td><td>$30-40</td></tr>
+      <tr><td>PostHog</td><td>May exceed 1M events/mo</td><td>$0-30</td></tr>
+      <tr><td>Sentry</td><td>May exceed 5K errors/mo</td><td>$0-26</td></tr>
+      <tr class="total-row"><td colspan="2"><strong>Total Monthly Burn</strong></td><td><strong>~$455-520</strong></td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="callout-title">The Real Story</div>
+    <p>At every scale, <strong>business overhead dominates</strong> — AI tools alone ($280/mo) cost more than app infrastructure will ever cost at 10K users. The app literally runs for free until 1,000 users. Infrastructure only becomes a meaningful cost line if we add photo uploads, video, or maps.</p>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- COST PER USER -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <h2>3. Cost Per Active User</h2>
+
+  <table>
+    <thead>
+      <tr><th>Scale</th><th>Total Monthly</th><th>Infra Only</th><th>MAU</th><th>Total Cost/User</th><th>Infra Cost/User</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Soft launch</td><td>$397</td><td>$0</td><td>100</td><td>$3.97</td><td>$0.00</td></tr>
+      <tr><td>Post-launch</td><td>$422</td><td>$25</td><td>1,000</td><td>$0.42</td><td>$0.025</td></tr>
+      <tr><td>Traction</td><td>$438</td><td>$28</td><td>5,000</td><td>$0.088</td><td>$0.006</td></tr>
+      <tr><td>Pre-monetization</td><td>$490</td><td>$68</td><td>10,000</td><td>$0.049</td><td>$0.007</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout green">
+    <div class="callout-title">Why Sola is Cheap to Run</div>
+    <p><strong>Text-first content</strong> &mdash; community threads, trip journals, DMs are all tiny payloads. <strong>Unsplash-hosted images</strong> &mdash; editorial images cost us zero bandwidth. <strong>Minimal user uploads</strong> &mdash; only avatars (one small image per user). <strong>Low-volume chat</strong> &mdash; 1:1 DMs, not group/media chat. <strong>No video, no maps API, no real-time location tracking.</strong></p>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- COST TRAPS -->
+  <!-- ================================================================ -->
+  <h2>4. Top Cost Traps</h2>
+  <p>Things that look cheap now but can surprise us at scale.</p>
+
+  <div class="trap-card">
+    <span class="trap-number">1</span>
+    <span class="trap-title">PostHog Event Explosion (the silent killer)</span>
+    <div class="trap-body">
+      <p>We track ~40 event types across 25 files. At low usage this is fine. But if users are sticky:</p>
+      <div class="formula">
+        Low usage:  10K MAU &times; 5 sessions &times; 8 events = 400K events/mo &#10004; free<br>
+        High usage: 10K MAU &times; 15 sessions &times; 12 events = 1.8M events/mo &#10008; $248/mo overage
+      </div>
+      <p><strong>Fix:</strong> Set a PostHog usage alert at 500K events/mo. When approaching limits, cut generic <code>screen_viewed</code> events and keep only specific action events. Alternatively, self-host PostHog on a $5/mo VPS.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">2</span>
+    <span class="trap-title">Supabase Bandwidth from Image Serving</span>
+    <div class="trap-body">
+      <p>Place images in our Supabase Storage bucket download through our bandwidth quota on every city page load. Supabase isn't a CDN.</p>
+      <div class="formula">
+        10K MAU &times; 5 sessions &times; 7MB images = 350GB/mo<br>
+        Pro includes 250GB. Overage: 100GB &times; $0.09 = $9/mo
+      </div>
+      <p><strong>Fix (when needed):</strong> Move place images to Unsplash URLs or Cloudflare R2 ($0 egress). Use expo-image caching aggressively.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">3</span>
+    <span class="trap-title">User Photo Uploads Beyond Avatars</span>
+    <div class="trap-body">
+      <p>Users <em>will</em> request trip photo journals. The math changes fast:</p>
+      <div class="formula">
+        10K users &times; 3 trips &times; 20 photos &times; 500KB = 300GB storage = $75/mo
+      </div>
+      <p><strong>Rule:</strong> Don't add user photo uploads beyond avatars until monetization is in place.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">4</span>
+    <span class="trap-title">AI Tool Subscriptions Are Your #1 Cost</span>
+    <div class="trap-body">
+      <p>Claude ($200) + ChatGPT ($60) + Gemini ($20) = <strong>$280/mo</strong>. That's more than all other business tools and app infrastructure combined. These are development costs, not operational costs &mdash; they should decrease after launch.</p>
+      <p><strong>Fix:</strong> After v1 ships, audit which AI tools the team actually uses daily. Consider: do all 3 people need ChatGPT Plus? Does everyone need all three services? Consolidating to 1-2 AI tools post-launch could save $100-200/mo.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">5</span>
+    <span class="trap-title">Google Workspace Seat Creep</span>
+    <div class="trap-body">
+      <p>At $14/user/mo on Business Standard, every new team member or contractor costs $168/yr. If you add 2 more seats for marketing or support, that's $336/yr extra.</p>
+      <p><strong>Fix:</strong> Use Business Starter ($7/user) for non-core roles. Consider whether some team members only need free Google accounts with shared drives.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">6</span>
+    <span class="trap-title">Google Places API Burst Costs</span>
+    <div class="trap-body">
+      <p>The $200/mo free credit resets monthly. Place Details costs $0.017/call, Photo costs $0.007/call. Seeding a new city with 50 places and 5 photos each = ~$21.</p>
+      <div class="formula">
+        Seeding 10 cities in one month = ~$210 &rarr; $10 out of pocket<br>
+        Seeding 20 cities in one month = ~$420 &rarr; $220 out of pocket
+      </div>
+      <p><strong>Fix:</strong> Spread content seeding across months. Never seed more than ~10 cities in one billing cycle.</p>
+    </div>
+  </div>
+
+  <div class="trap-card">
+    <span class="trap-number">7</span>
+    <span class="trap-title">EAS Build Limits</span>
+    <div class="trap-body">
+      <p>Expo's free tier includes 30 builds/month. During active development that's fine. But if you're doing frequent hotfixes post-launch, you could burn through them. The next tier is $99/mo.</p>
+      <p><strong>Fix:</strong> Test thoroughly before submitting. Batch fixes into weekly releases. Use OTA updates (expo-updates) for JS-only changes to avoid full rebuilds.</p>
+    </div>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- LAUNCH STRATEGY -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <h2>5. Bootstrapped Launch Strategy</h2>
+  <p>A phased approach to growing safely without surprise bills.</p>
+
+  <div class="phase">
+    <div class="phase-header">Phase 0: Beta (Now &rarr; 100 users)</div>
+    <div class="phase-cost">Total burn: ~$397/mo (all business overhead, $0 infra)</div>
+    <ul>
+      <li>Stay on <strong>Supabase Free plan</strong></li>
+      <li>Invite-only TestFlight (control growth)</li>
+      <li><strong>Limit</strong> DMs to 10 conversations per user</li>
+      <li><strong>Disable</strong> trip matching (useless at low user counts)</li>
+      <li>Seed content for 4 launch countries (PH, VN, TH, ID) using Google Places free credit</li>
+      <li>Monitor weekly: Supabase Dashboard &rarr; DB size, bandwidth</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">Phase 1: Public Launch (100 &rarr; 1,000 users)</div>
+    <div class="phase-cost">Total burn: ~$422/mo (+$25 for Supabase Pro)</div>
+    <ul>
+      <li>Upgrade to <strong>Supabase Pro</strong> before going public (daily backups are critical)</li>
+      <li>Launch in App Store &mdash; SE Asia focus only</li>
+      <li><strong>Limit</strong> community to 1 post per user per day</li>
+      <li><strong>Limit</strong> avatar uploads to 500KB max</li>
+      <li>Set PostHog alert at 500K events/mo, Sentry alert at 3K errors/mo</li>
+      <li>Don't add new Google Workspace seats &mdash; use shared access where possible</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">Phase 2: Growth (1,000 &rarr; 5,000 users)</div>
+    <div class="phase-cost">Total burn: ~$435-440/mo</div>
+    <ul>
+      <li><strong>Enable trip matching</strong> (now useful with enough user density)</li>
+      <li>Start planning monetization &mdash; plenty of runway at this cost</li>
+      <li>Consider moving place images to Cloudflare R2 if bandwidth is climbing</li>
+      <li>Audit PostHog events &mdash; cut low-value generic events if approaching 700K/mo</li>
+      <li>Spread new city content seeding to stay within Google Places free credit</li>
+    </ul>
+  </div>
+
+  <div class="phase">
+    <div class="phase-header">Phase 3: Pre-Monetization (5,000 &rarr; 10,000 users)</div>
+    <div class="phase-cost">Total burn: ~$455-520/mo</div>
+    <ul>
+      <li><strong>Introduce monetization before 10K users</strong></li>
+      <li>Suggested: Premium profile features ($4.99/mo) via RevenueCat</li>
+      <li>Even 2% conversion = 200 subscribers = <strong>$1,000/mo revenue</strong> &mdash; covers all costs 4-5x over</li>
+      <li>If PostHog costs spike, switch to self-hosted on a $5/mo VPS</li>
+      <li>Audit Google Workspace &mdash; do all seats need Business Standard?</li>
+      <li>Add API rate limiting to prevent scrapers from burning bandwidth</li>
+    </ul>
+  </div>
+
+  <!-- ================================================================ -->
+  <!-- MONITORING -->
+  <!-- ================================================================ -->
+  <div class="page-break"></div>
+  <h2>6. Weekly Monitoring Checklist</h2>
+  <p>Check these numbers every Monday. Takes 5 minutes.</p>
+
+  <h3>App Infrastructure</h3>
+  <table>
+    <thead>
+      <tr><th>Metric</th><th>Alert At</th><th>Action At</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Supabase DB size</td><td>4 GB</td><td>6 GB &mdash; review query efficiency, archive old data</td></tr>
+      <tr><td>Supabase Storage</td><td>50 GB</td><td>80 GB &mdash; move images to Cloudflare R2</td></tr>
+      <tr><td>Supabase Bandwidth</td><td>200 GB/mo</td><td>230 GB &mdash; optimize image sizes, add CDN</td></tr>
+      <tr><td>Realtime connections</td><td>400 peak</td><td>450 &mdash; check for connection leaks</td></tr>
+      <tr><td>Edge Function calls</td><td>1.5M/mo</td><td>1.8M &mdash; batch DM notifications</td></tr>
+      <tr><td>PostHog events</td><td>500K, then 800K</td><td>900K &mdash; cut low-value events</td></tr>
+      <tr><td>Sentry errors</td><td>3K/mo</td><td>4K &mdash; investigate top error sources</td></tr>
+    </tbody>
+  </table>
+
+  <h3>Business &amp; API Costs</h3>
+  <table>
+    <thead>
+      <tr><th>What to Check</th><th>Where</th><th>Watch For</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Google Cloud billing</td><td>console.cloud.google.com/billing</td><td>Places API exceeding $200 free credit</td></tr>
+      <tr><td>Google Workspace seats</td><td>admin.google.com</td><td>Unused seats still billing</td></tr>
+      <tr><td>EAS build count</td><td>expo.dev dashboard</td><td>Approaching 30 builds/mo</td></tr>
+      <tr><td>App Store crash rate</td><td>App Store Connect</td><td>Above 1% &mdash; hotfix priority</td></tr>
+      <tr><td>Lovable bandwidth</td><td>Lovable dashboard</td><td>If marketing site gets traffic spikes</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ================================================================ -->
+  <!-- FINAL SUMMARY -->
+  <!-- ================================================================ -->
+  <h2>7. Final Summary</h2>
+
+  <table>
+    <thead>
+      <tr><th>Users</th><th>Total/Month</th><th>Infra</th><th>Overhead</th><th>Biggest Risk</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>100</td><td>$397</td><td>$0</td><td>$397</td><td>AI tools ($280) are the biggest line item</td></tr>
+      <tr><td>1,000</td><td>$422</td><td>$25</td><td>$397</td><td>Forgetting to upgrade Supabase (data loss)</td></tr>
+      <tr><td>5,000</td><td>$438</td><td>$28</td><td>$410</td><td>PostHog approaching limit</td></tr>
+      <tr><td>10,000</td><td>$490</td><td>$68</td><td>$422</td><td>PostHog overage + Google API bursts</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout">
+    <div class="callout-title">Revenue Break-Even</div>
+    <p>At $490/mo total cost and a $4.99/mo subscription, we need <strong>98 paying subscribers</strong> to break even. That's 1% of 10,000 users. Most consumer apps convert 2-5% to paid. At 2% conversion (200 subs), we'd generate $1,000/mo &mdash; <strong>double our total operating costs.</strong> If we cut AI tool subscriptions post-launch, break-even drops to just 14 subscribers.</p>
+  </div>
+
+  <div class="callout red">
+    <div class="callout-title">What Could Change This Math</div>
+    <p>Three features would significantly increase costs if added: <strong>(1) User photo uploads</strong> for trip journals (+$75-300/mo in storage). <strong>(2) Real-time features</strong> like typing indicators or presence (+$10-50/mo in Realtime). <strong>(3) Maps integration</strong> like Google Maps SDK (~$7 per 1,000 map loads). None of these are needed for v1. Resist adding them until revenue supports it.</p>
+  </div>
+
+  <div class="footer">
+    Sola &mdash; Total Operating Cost Analysis &mdash; February 2026 &mdash; Confidential
+  </div>
+
+</div>
+</body>
+</html>

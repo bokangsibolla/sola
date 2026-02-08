@@ -463,38 +463,66 @@ function CityContext({ city }: { city: City }) {
 function WomenInsights({
   threads,
   safetyWomenMd,
+  highlights,
+  fallbackText,
 }: {
   threads: ThreadWithAuthor[];
   safetyWomenMd: string | null;
+  highlights: string[];
+  fallbackText: string | null;
 }) {
   const insights: string[] = [];
+  let sectionTitle = 'FROM WOMEN WHO\u2019VE BEEN HERE';
 
-  // Thread titles are real questions/insights from women
-  for (const thread of threads.slice(0, 3)) {
-    if (thread.title && thread.title.length > 10) {
-      insights.push(thread.title);
-    }
+  // 1. Community thread titles — only statements, not bare questions
+  //    Skip titles that are short questions ("any X in Y?"), all-caps, or too vague
+  for (const thread of threads.slice(0, 5)) {
+    if (insights.length >= 3) break;
+    const t = thread.title?.trim();
+    if (!t || t.length < 20) continue; // too short to be a real insight
+    if (t === t.toUpperCase()) continue; // all-caps spam
+    if (t.endsWith('?') && t.length < 50) continue; // short questions aren't insights
+    insights.push(t);
   }
 
-  // If we have safety markdown, extract first 2 sentences as insights
+  // 2. safetyWomenMd sentences — real editorial content
   if (safetyWomenMd && insights.length < 4) {
+    if (insights.length === 0) sectionTitle = 'WHAT WOMEN SHOULD KNOW';
     const sentences = safetyWomenMd
       .replace(/^#+\s.*/gm, '')
       .replace(/\*\*/g, '')
       .split(/[.!?]\s+/)
       .map(s => s.trim())
-      .filter(s => s.length > 15 && s.length < 120);
-    for (const s of sentences.slice(0, 2)) {
+      .filter(s => s.length > 20 && s.length < 120);
+    for (const s of sentences.slice(0, 3)) {
       if (insights.length >= 5) break;
       insights.push(s);
     }
   }
 
-  if (insights.length === 0) return null;
+  // 3. City highlights
+  if (highlights.length > 0 && insights.length < 3) {
+    if (insights.length === 0) sectionTitle = 'WHAT MAKES THIS CITY SPECIAL';
+    for (const h of highlights.slice(0, 3)) {
+      if (insights.length >= 5) break;
+      insights.push(`Known for: ${h}`);
+    }
+  }
+
+  // 4. Ultimate fallback — never return null
+  if (insights.length === 0 && fallbackText) {
+    sectionTitle = 'WHAT MAKES THIS CITY SPECIAL';
+    insights.push(fallbackText);
+  }
+
+  if (insights.length === 0) {
+    // Absolute edge case — should never happen
+    return null;
+  }
 
   return (
     <View style={styles.insightsSection}>
-      <Text style={styles.sectionLabel}>FROM WOMEN WHO&apos;VE BEEN HERE</Text>
+      <Text style={styles.sectionLabel}>{sectionTitle}</Text>
       {insights.map((insight, i) => (
         <View key={i} style={styles.insightRow}>
           <View style={styles.insightAccent} />
@@ -841,12 +869,12 @@ export default function PlaceScreen() {
           )}
 
           {/* 2. "From women who've been here" insights */}
-          {cityThreadData && (
-            <WomenInsights
-              threads={cityThreadData.threads}
-              safetyWomenMd={city.safetyWomenMd ?? null}
-            />
-          )}
+          <WomenInsights
+            threads={cityThreadData?.threads ?? []}
+            safetyWomenMd={city.safetyWomenMd ?? null}
+            highlights={city.highlights ?? []}
+            fallbackText={city.subtitle ?? city.bestFor ?? null}
+          />
 
           {/* 3. Credibility sourcing */}
           {cityThreadData && (

@@ -20,7 +20,7 @@ export function useTripMatches(tripId: string | undefined, matchingOptIn: boolea
       const matches = await getTripOverlapMatches(tripId, userId);
       if (matches.length === 0) return [];
 
-      const userIds = [...new Set(matches.map((m) => m.theirUserId))];
+      const userIds = matches.map((m) => m.theirUserId).filter((v, i, arr) => arr.indexOf(v) === i);
       const { data: profiles } = await supabase
         .from('profiles')
         .select('*')

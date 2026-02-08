@@ -101,19 +101,6 @@ export default function ActivityDetailScreen() {
             </View>
           )}
 
-          {/* Rating row - uses Google rating if available */}
-          {typeof activity.googleRating === 'number' && (
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={colors.textPrimary} />
-              <Text style={styles.ratingText}>{activity.googleRating.toFixed(1)}</Text>
-              {activity.googleReviewCount != null && activity.googleReviewCount > 0 && (
-                <Text style={styles.reviewCount}>
-                  ({activity.googleReviewCount.toLocaleString()} reviews)
-                </Text>
-              )}
-            </View>
-          )}
-
           <View style={styles.divider} />
 
           <View style={styles.infoRow}>
@@ -286,22 +273,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     flex: 1,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.sm,
-  },
-  ratingText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  reviewCount: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
   },
   divider: {
     height: 1,

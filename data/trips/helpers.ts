@@ -99,13 +99,16 @@ export const TRAVEL_STYLE_OPTIONS = [
   { key: 'budget', label: 'Budget' },
 ] as const;
 
-export function groupEntriesByDate(entries: { createdAt: string }[]): Map<string, typeof entries> {
-  const groups = new Map<string, typeof entries>();
+export function groupEntriesByDate(entries: { createdAt: string }[]): [string, typeof entries][] {
+  const groupMap = new Map<string, typeof entries>();
+  const keys: string[] = [];
   for (const entry of entries) {
     const key = formatDateRelative(entry.createdAt);
-    const group = groups.get(key) || [];
-    group.push(entry);
-    groups.set(key, group);
+    if (!groupMap.has(key)) {
+      groupMap.set(key, []);
+      keys.push(key);
+    }
+    groupMap.get(key)!.push(entry);
   }
-  return groups;
+  return keys.map((k) => [k, groupMap.get(k)!]);
 }

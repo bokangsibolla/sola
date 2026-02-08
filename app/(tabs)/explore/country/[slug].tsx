@@ -1,32 +1,25 @@
 import { useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { getCountryBySlug, getCitiesByCountry } from '@/data/api';
-import type { City } from '@/data/types';
+import type { City, Country } from '@/data/types';
+import type { ThreadWithAuthor } from '@/data/community/types';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import MarkdownContent from '@/components/MarkdownContent';
-import CollapsibleSection from '@/components/CollapsibleSection';
 import { getEmergencyNumbers } from '@/data/safety';
-import { Feather } from '@expo/vector-icons';
+import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import type { Country } from '@/data/types';
 
 // ---------------------------------------------------------------------------
 // Constants & Helpers
 // ---------------------------------------------------------------------------
-
-const SOLO_LEVEL_LABELS: Record<string, string> = {
-  beginner: 'First-time solo travelers',
-  intermediate: 'Travelers with some experience',
-  expert: 'Experienced solo adventurers',
-};
 
 const SAFETY_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   very_safe: { label: 'Very Safe', color: colors.greenSoft, bg: colors.greenFill },
@@ -38,76 +31,29 @@ const SAFETY_LABELS: Record<string, { label: string; color: string; bg: string }
 const ENGLISH_MAP: Record<string, string> = { high: 'Widely spoken', moderate: 'Moderate', low: 'Limited' };
 const INTERNET_MAP: Record<string, string> = { excellent: 'Excellent', good: 'Good', fair: 'Fair', poor: 'Poor' };
 
-// ---------------------------------------------------------------------------
-// Who This Is For Section
-// ---------------------------------------------------------------------------
+/**
+ * Parse raw markdown into a lead sentence + bullet list.
+ */
+function parsePracticalContent(md: string): { lead: string; bullets: string[] } {
+  const cleaned = md
+    .replace(/^#+\s.*/gm, '')
+    .replace(/\*\*/g, '')
+    .replace(/^[-*]\s*/gm, '')
+    .trim();
 
-function WhoThisIsFor({ content }: { content: Country }) {
-  const personas: string[] = [];
+  const sentences = cleaned
+    .split(/[.!?]\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 5);
 
-  // Add solo level persona
-  if (content.soloLevel && SOLO_LEVEL_LABELS[content.soloLevel]) {
-    personas.push(SOLO_LEVEL_LABELS[content.soloLevel]);
-  }
+  const lead = sentences[0] ? sentences[0] + '.' : cleaned.slice(0, 120);
+  const bullets = sentences.slice(1).filter(s => s.length > 10 && s.length < 150);
 
-  // Add interest-based personas
-  if (content.goodForInterests && content.goodForInterests.length > 0) {
-    content.goodForInterests.forEach((interest) => {
-      personas.push(interest);
-    });
-  }
-
-  if (personas.length === 0) return null;
-
-  return (
-    <View style={styles.whoSection}>
-      <Text style={styles.whoTitle}>Who this is for</Text>
-      {personas.slice(0, 4).map((persona, i) => (
-        <View key={i} style={styles.personaRow}>
-          <Text style={styles.personaCheck}>✓</Text>
-          <Text style={styles.personaText}>{persona}</Text>
-        </View>
-      ))}
-    </View>
-  );
+  return { lead, bullets };
 }
 
 // ---------------------------------------------------------------------------
-// Safety Context Section
-// ---------------------------------------------------------------------------
-
-function SafetyContext({ content }: { content: Country }) {
-  const safety = content.safetyRating ? SAFETY_LABELS[content.safetyRating] : null;
-
-  if (!safety && !content.safetyWomenMd) return null;
-
-  return (
-    <View style={styles.safetySection}>
-      <View style={styles.safetyHeader}>
-        <Ionicons name="shield-checkmark" size={20} color={colors.greenSoft} />
-        <Text style={styles.safetyTitle}>Safety for solo women</Text>
-      </View>
-
-      {safety && (
-        <View style={[styles.safetyBadge, { backgroundColor: safety.bg }]}>
-          <Text style={[styles.safetyBadgeText, { color: safety.color }]}>
-            {safety.label}
-          </Text>
-        </View>
-      )}
-
-      {content.safetyWomenMd && (
-        <Text style={styles.safetyText} numberOfLines={3}>
-          {content.safetyWomenMd.replace(/[#*_]/g, '').slice(0, 200)}
-          {content.safetyWomenMd.length > 200 ? '...' : ''}
-        </Text>
-      )}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Enhanced City Card
+// City Card (kept from original)
 // ---------------------------------------------------------------------------
 
 function CityCard({ city }: { city: City }) {
@@ -122,63 +68,36 @@ function CityCard({ city }: { city: City }) {
       }}
       style={({ pressed }) => [styles.cityCard, pressed && styles.cityCardPressed]}
     >
-        {/* Full-width image */}
-        {city.heroImageUrl ? (
-          <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} pointerEvents="none" />
-        ) : (
-          <View style={[styles.cityImage, styles.cityImagePlaceholder]} pointerEvents="none" />
-        )}
+      {city.heroImageUrl ? (
+        <Image source={{ uri: city.heroImageUrl }} style={styles.cityImage} contentFit="cover" transition={200} pointerEvents="none" />
+      ) : (
+        <View style={[styles.cityImage, styles.cityImagePlaceholder]} pointerEvents="none" />
+      )}
 
-        {/* Content below image */}
-        <View style={styles.cityBody} pointerEvents="none">
-          <View style={styles.cityHeader}>
-            <Text style={styles.cityName}>{city.name}</Text>
-            <View style={styles.cityArrow}>
-              <Ionicons name="arrow-forward" size={16} color={colors.orange} />
-            </View>
-          </View>
-          {city.subtitle && (
-            <Text style={styles.cityPurpose} numberOfLines={2}>
-              {city.subtitle}
-            </Text>
-          )}
-          {city.bestFor && (
-            <View style={styles.cityBestFor}>
-              <Text style={styles.cityBestForValue}>{city.bestFor}</Text>
-            </View>
-          )}
-          <View style={styles.cityExploreRow}>
-            <Text style={styles.cityExploreHint}>Plan your days here</Text>
-            <Ionicons name="arrow-forward" size={14} color={colors.orange} />
+      <View style={styles.cityBody} pointerEvents="none">
+        <View style={styles.cityHeader}>
+          <Text style={styles.cityName}>{city.name}</Text>
+          <View style={styles.cityArrow}>
+            <Ionicons name="arrow-forward" size={16} color={colors.orange} />
           </View>
         </View>
+        {city.subtitle && (
+          <Text style={styles.cityPurpose} numberOfLines={2}>
+            {city.subtitle}
+          </Text>
+        )}
+        {city.bestFor && (
+          <View style={styles.cityBestFor}>
+            <Text style={styles.cityBestForValue}>{city.bestFor}</Text>
+          </View>
+        )}
+      </View>
     </Pressable>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Portrait Section
-// ---------------------------------------------------------------------------
-
-function PortraitSection({ portraitMd }: { portraitMd: string }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <View style={styles.portraitSection}>
-      <Text style={styles.portraitTitle}>The experience</Text>
-      <View style={!expanded ? styles.portraitCollapsed : undefined}>
-        <MarkdownContent>{portraitMd}</MarkdownContent>
-      </View>
-      {!expanded && <View style={styles.portraitFade} />}
-      <Pressable onPress={() => setExpanded((v) => !v)}>
-        <Text style={styles.readMore}>{expanded ? 'Read less' : 'Read more'}</Text>
-      </Pressable>
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Emergency Row
+// Emergency Row (kept from original)
 // ---------------------------------------------------------------------------
 
 function EmergencyRow({ label, number }: { label: string; number: string }) {
@@ -186,6 +105,62 @@ function EmergencyRow({ label, number }: { label: string; number: string }) {
     <View style={styles.emergencyRow}>
       <Text style={styles.emergencyLabel}>{label}</Text>
       <Text style={styles.emergencyNumber}>{number}</Text>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Thread Preview Section (inline community discussions)
+// ---------------------------------------------------------------------------
+
+function ThreadPreviewSection({
+  threads,
+  totalCount,
+  countryId,
+  countryName,
+}: {
+  threads: ThreadWithAuthor[];
+  totalCount: number;
+  countryId: string;
+  countryName: string;
+}) {
+  const router = useRouter();
+
+  if (threads.length === 0) return null;
+
+  return (
+    <View style={styles.threadSection}>
+      <View style={styles.threadSectionHeader}>
+        <Text style={styles.sectionLabel}>FROM THE COMMUNITY</Text>
+        {totalCount > threads.length && (
+          <Pressable
+            onPress={() => router.push({
+              pathname: '/(tabs)/community',
+              params: { countryId, countryName },
+            } as any)}
+            hitSlop={8}
+          >
+            <Text style={styles.seeAllLink}>See all</Text>
+          </Pressable>
+        )}
+      </View>
+      {threads.map((thread) => (
+        <Pressable
+          key={thread.id}
+          onPress={() => router.push(`/(tabs)/community/thread/${thread.id}` as any)}
+          style={({ pressed }) => [styles.threadCard, pressed && styles.threadCardPressed]}
+        >
+          <Feather name="message-circle" size={16} color={colors.textMuted} style={styles.threadIcon} />
+          <View style={styles.threadCardBody}>
+            <Text style={styles.threadTitle} numberOfLines={2}>{thread.title}</Text>
+            <Text style={styles.threadMeta}>
+              {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
+              {thread.topicLabel ? `  \u00B7  ${thread.topicLabel}` : ''}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={16} color={colors.borderDefault} />
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -211,8 +186,8 @@ export default function CountryGuideScreen() {
     [slug],
   );
 
-  // Fetch cities directly with useState/useEffect to avoid caching issues
-  const [cities, setCities] = useState<any[]>([]);
+  // Fetch cities
+  const [cities, setCities] = useState<City[]>([]);
   const [citiesLoading, setCitiesLoading] = useState(true);
 
   useEffect(() => {
@@ -238,6 +213,12 @@ export default function CountryGuideScreen() {
     fetchCities();
   }, [country?.id]);
 
+  // Community thread previews
+  const { data: threadData } = useData(
+    () => country?.id ? getCountryThreadPreviews(country.id, 3) : Promise.resolve(null),
+    ['countryThreadPreviews', country?.id],
+  );
+
   // Wait for both country and cities to load
   if (countryLoading || (country && citiesLoading)) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -251,24 +232,28 @@ export default function CountryGuideScreen() {
 
   const emergency = getEmergencyNumbers(country.iso2);
   const heroImage = country.heroImageUrl;
+  const safety = country.safetyRating ? SAFETY_LABELS[country.safetyRating] : null;
 
-  // Quick facts for reference section
-  const quickFacts = [
-    { icon: 'calendar-outline', label: 'Best time', value: country.bestMonths },
-    { icon: 'cash-outline', label: 'Currency', value: country.currency },
-    { icon: 'language-outline', label: 'Language', value: country.language },
-    { icon: 'chatbubble-outline', label: 'English', value: country.englishFriendliness ? ENGLISH_MAP[country.englishFriendliness] : null },
-    { icon: 'wifi-outline', label: 'Internet', value: country.internetQuality ? INTERNET_MAP[country.internetQuality] : null },
-  ].filter((f) => f.value);
+  // At a glance facts
+  const essentials = [
+    { label: 'Best time', value: country.bestMonths },
+    { label: 'Currency', value: country.currency },
+    { label: 'Language', value: country.language },
+    { label: 'English', value: country.englishFriendliness ? ENGLISH_MAP[country.englishFriendliness] : null },
+    { label: 'Internet', value: country.internetQuality ? INTERNET_MAP[country.internetQuality] : null },
+  ].filter((f) => f.value) as { label: string; value: string }[];
 
-  // Collapsible practical sections (moved down)
-  const collapsibleSections = [
-    { title: 'Getting there', icon: 'airplane-outline', content: country.gettingThereMd },
-    { title: 'Visa & entry', icon: 'document-text-outline', content: [country.visaEntryMd, country.visaNote].filter(Boolean).join('\n\n') || null },
-    { title: 'Money & payments', icon: 'card-outline', content: country.moneyMd },
-    { title: 'SIM & internet', icon: 'wifi-outline', content: country.simConnectivityMd },
-    { title: 'Culture & etiquette', icon: 'people-outline', content: country.cultureEtiquetteMd },
-  ].filter((s) => s.content);
+  // Practical info cards
+  const practicalSections = [
+    { title: 'Getting There', content: country.gettingThereMd },
+    { title: 'Visa & Entry', content: [country.visaEntryMd, country.visaNote].filter(Boolean).join('\n\n') || null },
+    { title: 'Money & Payments', content: country.moneyMd },
+    { title: 'SIM & Internet', content: country.simConnectivityMd },
+    { title: 'Culture & Etiquette', content: country.cultureEtiquetteMd },
+  ].filter((s) => s.content) as { title: string; content: string }[];
+
+  // Safety women markdown parsed
+  const safetyParsed = country.safetyWomenMd ? parsePracticalContent(country.safetyWomenMd) : null;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -284,9 +269,17 @@ export default function CountryGuideScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* 1. Hero with vibe statement */}
-        <View style={styles.hero} pointerEvents="none">
-          {heroImage && <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} pointerEvents="none" />}
+        {/* 1. Hero with LinearGradient */}
+        <View style={styles.heroContainer}>
+          {heroImage ? (
+            <Image source={{ uri: heroImage }} style={styles.heroImage} contentFit="cover" transition={200} pointerEvents="none" />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: colors.neutralFill }]} pointerEvents="none" />
+          )}
+          <LinearGradient
+            colors={['transparent', 'rgba(0,0,0,0.55)']}
+            style={styles.heroGradient}
+          />
           <View style={styles.heroOverlay} pointerEvents="none">
             <Text style={styles.heroName}>{country.name}</Text>
             {country.subtitle && <Text style={styles.heroTagline}>{country.subtitle}</Text>}
@@ -294,11 +287,11 @@ export default function CountryGuideScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* 1. CITIES FIRST - Primary navigation ("Where do you want to go?") */}
+          {/* 2. Cities — primary navigation */}
           <View style={styles.citiesSection}>
             <View style={styles.citiesSectionHeader}>
               <Text style={styles.sectionTitle}>
-                {citiesLoading ? 'Loading cities...' : cities.length > 0 ? 'Where do you want to go?' : 'Cities coming soon'}
+                {cities.length > 0 ? 'Where do you want to go?' : 'Cities coming soon'}
               </Text>
               {cities.length > 0 && (
                 <Text style={styles.sectionHint}>
@@ -307,106 +300,97 @@ export default function CountryGuideScreen() {
               )}
             </View>
             <Text style={styles.sectionSubtitle}>
-              {citiesLoading
-                ? 'Finding cities in this country...'
-                : cities.length > 0
-                  ? 'Pick your base and discover what to do there'
-                  : 'We are adding cities to this country'}
+              {cities.length > 0
+                ? 'Pick your base and discover what to do there'
+                : 'We are adding cities to this country'}
             </Text>
             {cities.map((city) => (
               <CityCard key={city.slug} city={city} />
             ))}
           </View>
 
-          {/* 2. Who this is for (brief orientation) */}
-          <WhoThisIsFor content={country} />
-
-          {/* 3. Safety context */}
-          <SafetyContext content={country} />
-
-          {/* 4. The experience (brief editorial) */}
-          {country.portraitMd && <PortraitSection portraitMd={country.portraitMd} />}
-
-          {/* 5. Quick facts (reference) */}
-          {quickFacts.length > 0 && (
-            <View style={styles.quickFactsSection}>
-              <Text style={styles.sectionTitle}>Quick facts</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.factsScroll}
-                style={styles.factsContainer}
-              >
-                {quickFacts.map((fact) => (
-                  <View key={fact.label} style={styles.factCard}>
-                    <Ionicons name={fact.icon as any} size={18} color={colors.orange} />
-                    <Text style={styles.factLabel}>{fact.label}</Text>
-                    <Text style={styles.factValue} numberOfLines={2}>{fact.value}</Text>
-                  </View>
-                ))}
-              </ScrollView>
+          {/* 3. At a Glance — essentials */}
+          {essentials.length > 0 && (
+            <View style={styles.essentialsSection}>
+              <Text style={styles.sectionLabel}>AT A GLANCE</Text>
+              {essentials.map((fact, i) => (
+                <View
+                  key={fact.label}
+                  style={[
+                    styles.essentialRow,
+                    i < essentials.length - 1 && styles.essentialRowBorder,
+                  ]}
+                >
+                  <Text style={styles.essentialLabel}>{fact.label}</Text>
+                  <Text style={styles.essentialValue}>{fact.value}</Text>
+                </View>
+              ))}
             </View>
           )}
 
-          {/* 6. Practical info (collapsible, secondary) */}
-          {collapsibleSections.length > 0 && (
-            <>
-              <View style={styles.divider}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>Plan your trip</Text>
-                <View style={styles.dividerLine} />
-              </View>
-
-              {collapsibleSections.map((section) => (
-                <CollapsibleSection key={section.title} title={section.title} icon={section.icon}>
-                  <MarkdownContent>{section.content!}</MarkdownContent>
-                </CollapsibleSection>
-              ))}
-            </>
-          )}
-
-          {/* Community discussions link */}
-          {country?.id && (
-            <View style={styles.communitySection}>
-              <View style={styles.communitySectionHeader}>
-                <Text style={styles.sectionTitle}>Community</Text>
-                <Pressable
-                  onPress={() => router.push({
-                    pathname: '/(tabs)/community',
-                    params: { countryId: country.id, countryName: country.name },
-                  } as any)}
-                  style={({ pressed }) => pressed && { opacity: 0.7 }}
-                >
-                  <Text style={styles.communitySeeAll}>See all</Text>
-                </Pressable>
-              </View>
-              <Text style={styles.communitySubtitle}>
-                Questions and tips from solo women travelers
-              </Text>
-              <Pressable
-                onPress={() => router.push({
-                  pathname: '/(tabs)/community',
-                  params: { countryId: country.id, countryName: country.name },
-                } as any)}
-                style={({ pressed }) => [styles.communityCard, pressed && { opacity: 0.9, transform: [{ scale: 0.98 }] }]}
-              >
-                <Feather name="message-circle" size={20} color={colors.orange} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.communityCardTitle}>
-                    Discussions about {country.name}
-                  </Text>
-                  <Text style={styles.communityCardSubtitle}>
-                    Ask questions, share experiences, get advice
+          {/* 4. Safety section */}
+          {(safety || safetyParsed) && (
+            <View style={styles.safetySection}>
+              <Text style={styles.sectionLabel}>SAFETY</Text>
+              {safety && (
+                <View style={[styles.safetyBadge, { backgroundColor: safety.bg }]}>
+                  <Text style={[styles.safetyBadgeText, { color: safety.color }]}>
+                    {safety.label}
                   </Text>
                 </View>
-                <Feather name="chevron-right" size={18} color={colors.textMuted} />
-              </Pressable>
+              )}
+              {safetyParsed && (
+                <>
+                  <Text style={styles.safetyLead}>{safetyParsed.lead}</Text>
+                  {safetyParsed.bullets.slice(0, 4).map((bullet, i) => (
+                    <View key={i} style={styles.safetyBulletRow}>
+                      <View style={styles.safetyBulletDot} />
+                      <Text style={styles.safetyBulletText}>
+                        {bullet.endsWith('.') ? bullet : bullet + '.'}
+                      </Text>
+                    </View>
+                  ))}
+                </>
+              )}
             </View>
           )}
 
-          {/* 9. Emergency contacts (footer) */}
+          {/* 5. Practical info cards */}
+          {practicalSections.length > 0 && (
+            <View style={styles.practicalSection}>
+              {practicalSections.map((section) => {
+                const parsed = parsePracticalContent(section.content);
+                return (
+                  <View key={section.title} style={styles.practicalCard}>
+                    <Text style={styles.practicalCardTitle}>{section.title}</Text>
+                    <Text style={styles.practicalCardLead}>{parsed.lead}</Text>
+                    {parsed.bullets.slice(0, 4).map((bullet, i) => (
+                      <View key={i} style={styles.practicalBulletRow}>
+                        <View style={styles.practicalAccent} />
+                        <Text style={styles.practicalBulletText}>
+                          {bullet.endsWith('.') ? bullet : bullet + '.'}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })}
+            </View>
+          )}
+
+          {/* 6. Country thread previews */}
+          {threadData && threadData.threads.length > 0 && (
+            <ThreadPreviewSection
+              threads={threadData.threads}
+              totalCount={threadData.totalCount}
+              countryId={country.id}
+              countryName={country.name}
+            />
+          )}
+
+          {/* 7. Emergency contacts */}
           <View style={styles.emergencySection}>
-            <Text style={styles.sectionTitle}>Emergency numbers</Text>
+            <Text style={styles.sectionLabel}>EMERGENCY</Text>
             <View style={styles.emergencyCard}>
               <EmergencyRow label="Police" number={emergency.police} />
               <EmergencyRow label="Ambulance" number={emergency.ambulance} />
@@ -449,129 +433,55 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  hero: {
-    height: 220,
+
+  // Hero
+  heroContainer: {
     position: 'relative',
+    height: 240,
   },
   heroImage: {
     width: '100%',
-    height: '100%',
+    height: 240,
   },
-  heroOverlay: {
+  heroGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.lg,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    height: 140,
+  },
+  heroOverlay: {
+    position: 'absolute',
+    bottom: spacing.xl,
+    left: spacing.lg,
+    right: spacing.lg,
   },
   heroName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 28,
+    fontFamily: fonts.serif,
+    fontSize: 32,
     color: '#FFFFFF',
+    lineHeight: 36,
   },
   heroTagline: {
     fontFamily: fonts.regular,
     fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
+
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },
 
-  // Who this is for
-  whoSection: {
-    marginBottom: spacing.xl,
-    paddingBottom: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  whoTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  personaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.xs,
-  },
-  personaCheck: {
+  // Section labels (reused)
+  sectionLabel: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.greenSoft,
-  },
-  personaText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-
-  // Portrait / "The experience"
-  portraitSection: {
-    marginBottom: spacing.xl,
-  },
-  portraitTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 22,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  portraitCollapsed: {
-    maxHeight: 96,
-    overflow: 'hidden',
-  },
-  portraitFade: {
-    height: 24,
-    marginTop: -24,
-    backgroundColor: 'transparent',
-  },
-  readMore: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-    marginTop: spacing.sm,
-  },
-
-  // Safety context
-  safetySection: {
-    marginBottom: spacing.xl,
-    padding: spacing.lg,
-    backgroundColor: colors.greenFill,
-    borderRadius: radius.card,
-  },
-  safetyHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
-  },
-  safetyTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  safetyBadge: {
-    alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-    marginBottom: spacing.sm,
-  },
-  safetyBadgeText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-  },
-  safetyText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 20,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
   },
 
   // Cities section
@@ -601,7 +511,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
 
-  // Enhanced city cards - MEDIUM treatment (between country/place)
+  // City cards
   cityCard: {
     borderRadius: radius.card,
     overflow: 'hidden',
@@ -658,113 +568,168 @@ const styles = StyleSheet.create({
     borderRadius: radius.pill,
     alignSelf: 'flex-start',
   },
-  cityBestForLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
   cityBestForValue: {
     fontFamily: fonts.medium,
     fontSize: 12,
     color: colors.orange,
   },
-  cityExploreRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  cityExploreHint: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.orange,
-  },
 
-  // Experiences / Highlights
-  experiencesSection: {
-    marginBottom: spacing.xl,
-    paddingTop: spacing.lg,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  highlightsList: {
-    gap: spacing.md,
-  },
-  highlightItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  highlightNumber: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  highlightNumberText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.orange,
-  },
-  highlightItemText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-
-  // Quick facts
-  quickFactsSection: {
+  // Essentials (At a Glance)
+  essentialsSection: {
     marginBottom: spacing.xl,
   },
-  factsContainer: {
-    marginHorizontal: -spacing.lg,
-    marginTop: spacing.sm,
+  essentialRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
   },
-  factsScroll: {
-    paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+  essentialRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
   },
-  factCard: {
-    width: 100,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.sm,
-    padding: spacing.md,
-    gap: 4,
-  },
-  factLabel: {
+  essentialLabel: {
     fontFamily: fonts.regular,
-    fontSize: 12,
+    fontSize: 14,
     color: colors.textMuted,
   },
-  factValue: {
+  essentialValue: {
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.textPrimary,
   },
 
-  // Divider
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: spacing.xl,
-    gap: spacing.md,
+  // Safety section
+  safetySection: {
+    marginBottom: spacing.xl,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: colors.borderDefault,
+  safetyBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+    marginBottom: spacing.md,
   },
-  dividerText: {
+  safetyBadgeText: {
     fontFamily: fonts.medium,
     fontSize: 13,
+  },
+  safetyLead: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  safetyBulletRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+    paddingLeft: spacing.xs,
+  },
+  safetyBulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.orange,
+    marginTop: 7,
+    marginRight: spacing.sm,
+  },
+  safetyBulletText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    flex: 1,
+  },
+
+  // Practical info cards
+  practicalSection: {
+    marginBottom: spacing.xl,
+  },
+  practicalCard: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  practicalCardTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  practicalCardLead: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
+  practicalBulletRow: {
+    flexDirection: 'row',
+    marginBottom: spacing.sm,
+  },
+  practicalAccent: {
+    width: 2,
+    backgroundColor: colors.orange,
+    opacity: 0.3,
+    borderRadius: 1,
+    marginRight: spacing.md,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  practicalBulletText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    flex: 1,
+  },
+
+  // Thread previews
+  threadSection: {
+    marginBottom: spacing.xl,
+  },
+  threadSectionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  seeAllLink: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  threadCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  threadCardPressed: {
+    opacity: 0.7,
+  },
+  threadIcon: {
+    marginRight: spacing.md,
+    marginTop: 2,
+  },
+  threadCardBody: {
+    flex: 1,
+    marginRight: spacing.sm,
+  },
+  threadTitle: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  threadMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
     color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 1,
+    marginTop: spacing.xs,
   },
 
   // Emergency
@@ -776,7 +741,6 @@ const styles = StyleSheet.create({
     borderColor: colors.borderDefault,
     borderRadius: radius.card,
     overflow: 'hidden',
-    marginTop: spacing.sm,
   },
   emergencyRow: {
     flexDirection: 'row',
@@ -793,45 +757,5 @@ const styles = StyleSheet.create({
   emergencyNumber: {
     ...typography.label,
     color: colors.orange,
-  },
-  communitySection: {
-    marginTop: spacing.xl,
-    marginBottom: spacing.lg,
-  },
-  communitySectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.xs,
-  },
-  communitySeeAll: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
-  communitySubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: spacing.md,
-  },
-  communityCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.orangeFill,
-    borderRadius: radius.card,
-    padding: spacing.lg,
-    gap: spacing.md,
-  },
-  communityCardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  communityCardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
   },
 });
