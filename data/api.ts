@@ -1499,6 +1499,19 @@ export async function deleteTrip(tripId: string): Promise<void> {
   if (error) throw error;
 }
 
+/**
+ * Count how many trips have this city as a destination.
+ * Used on city detail page for credibility sourcing.
+ */
+export async function getCityTripCount(cityId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('trips')
+    .select('id', { count: 'exact', head: true })
+    .eq('destination_city_id', cityId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Trip Places
 // ---------------------------------------------------------------------------
@@ -2132,6 +2145,23 @@ export async function getNearbyTravelers(
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
+}
+
+/**
+ * Count discoverable travelers currently in a city.
+ * Used on city detail page for traveler presence signal.
+ */
+export async function getCityTravelerCount(
+  cityName: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('location_city_name', cityName)
+    .eq('location_sharing_enabled', true)
+    .eq('is_discoverable', true);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function getTravelersInCountry(
