@@ -1,6 +1,6 @@
 // app/(tabs)/explore/index.tsx
 import React from 'react';
-import { FlatList, ScrollView, StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
+import { FlatList, ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -17,7 +17,7 @@ import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const MAX_COUNTRIES_SHOWN = 6;
 
 // ── Inline components for zones ──────────────────────────────
 
@@ -95,12 +95,17 @@ export default function ExploreScreen() {
           </View>
         );
 
-      case 'countries-grid':
+      case 'countries-grid': {
+        const visible = item.data.slice(0, MAX_COUNTRIES_SHOWN);
+        const hasMore = item.data.length > MAX_COUNTRIES_SHOWN;
         return (
           <View style={styles.zone}>
-            <SectionHeader title="Choose a destination" />
+            <SectionHeader
+              title="Choose a destination"
+              onSeeAll={hasMore ? () => router.push('/(tabs)/explore/all-destinations') : undefined}
+            />
             <View style={styles.countriesGrid}>
-              {item.data.map((country, index) => (
+              {visible.map((country, index) => (
                 <CountryCard
                   key={country.id}
                   country={country}
@@ -111,6 +116,7 @@ export default function ExploreScreen() {
             </View>
           </View>
         );
+      }
 
       case 'popular-cities':
         return (
