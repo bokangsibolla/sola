@@ -1,6 +1,6 @@
 import React from 'react';
 import { Platform, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
-import { colors, fonts } from '@/constants/design';
+import { colors, fonts, radius } from '@/constants/design';
 
 interface PrimaryButtonProps {
   label: string;
@@ -39,8 +39,8 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.orange,
-    height: 48,
-    borderRadius: 24,
+    height: 52,
+    borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
     width: '100%',
@@ -53,10 +53,11 @@ const styles = StyleSheet.create({
     opacity: 0.35,
   },
   buttonText: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
     color: colors.background,
-    letterSpacing: 0.3,
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
   },
   buttonTextDisabled: {
     opacity: 0.9,

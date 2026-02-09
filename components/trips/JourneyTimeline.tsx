@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 import { groupEntriesByDate } from '@/data/trips/helpers';
 import type { TripEntry } from '@/data/trips/types';
 import JourneyEntryCard from './JourneyEntryCard';
@@ -63,7 +63,7 @@ const styles = StyleSheet.create({
   emptyIcon: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',

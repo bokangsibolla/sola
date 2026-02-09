@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     height: 50,
-    borderRadius: 25,
+    borderRadius: radius.button,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     flexDirection: 'row',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,

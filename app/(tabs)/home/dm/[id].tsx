@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',

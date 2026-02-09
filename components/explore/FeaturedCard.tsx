@@ -3,7 +3,7 @@ import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: CARD_WIDTH,
     height: CARD_HEIGHT,
-    borderRadius: 16,
+    borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
     position: 'relative',
@@ -135,7 +135,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 16,
+    borderRadius: radius.none,
   },
   badgeHighlight: {
     backgroundColor: colors.orange,
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',

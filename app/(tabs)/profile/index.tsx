@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: radius.full,
   },
   avatarPlaceholder: {
     backgroundColor: colors.borderDefault,
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: radius.card,
   },
   tagText: {
     fontFamily: fonts.medium,

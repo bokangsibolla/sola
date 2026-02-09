@@ -548,7 +548,7 @@ const styles = StyleSheet.create({
   cityArrow: {
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.full,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -628,7 +628,7 @@ const styles = StyleSheet.create({
   safetyBulletDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     marginTop: 7,
     marginRight: spacing.sm,

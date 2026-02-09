@@ -771,7 +771,7 @@ const styles = StyleSheet.create({
   coverIconCircle: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: radius.full,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -793,7 +793,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1064,7 +1064,7 @@ const styles = StyleSheet.create({
   buddyAvatar: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1073,7 +1073,7 @@ const styles = StyleSheet.create({
   buddyAvatarImg: {
     width: 24,
     height: 24,
-    borderRadius: 12,
+    borderRadius: radius.full,
   },
   buddyName: {
     fontFamily: fonts.medium,
@@ -1092,7 +1092,7 @@ const styles = StyleSheet.create({
   addBuddyIcon: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1118,7 +1118,7 @@ const styles = StyleSheet.create({
   trackerIcon: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
@@ -1155,7 +1155,7 @@ const styles = StyleSheet.create({
   toggle: {
     width: 44,
     height: 26,
-    borderRadius: 13,
+    borderRadius: radius.full,
     backgroundColor: colors.borderDefault,
     padding: 2,
     justifyContent: 'center',
@@ -1166,7 +1166,7 @@ const styles = StyleSheet.create({
   toggleDot: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.full,
     backgroundColor: '#FFFFFF',
   },
   toggleDotActive: {
@@ -1192,7 +1192,7 @@ const styles = StyleSheet.create({
   radioOuter: {
     width: 20,
     height: 20,
-    borderRadius: 10,
+    borderRadius: radius.full,
     borderWidth: 2,
     borderColor: colors.borderDefault,
     alignItems: 'center',
@@ -1204,7 +1204,7 @@ const styles = StyleSheet.create({
   radioInner: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
   },
   privacyText: {
@@ -1259,15 +1259,15 @@ const styles = StyleSheet.create({
   },
   sheetContainer: {
     backgroundColor: colors.background,
-    borderTopLeftRadius: spacing.xl,
-    borderTopRightRadius: spacing.xl,
+    borderTopLeftRadius: radius.card,
+    borderTopRightRadius: radius.card,
     paddingTop: spacing.md,
     paddingHorizontal: spacing.lg,
   },
   sheetHandle: {
     width: 36,
     height: 4,
-    borderRadius: 2,
+    borderRadius: radius.xs,
     backgroundColor: colors.borderDefault,
     alignSelf: 'center',
     marginBottom: spacing.xl,
@@ -1288,7 +1288,7 @@ const styles = StyleSheet.create({
   kindIcon: {
     width: 44,
     height: 44,
-    borderRadius: 22,
+    borderRadius: radius.full,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',

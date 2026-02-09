@@ -13,7 +13,7 @@ import CurrentTripCard from '@/components/trips/CurrentTripCard';
 import TripListCard from '@/components/trips/TripListCard';
 import TripEmptyState from '@/components/trips/TripEmptyState';
 import { useTrips } from '@/data/trips/useTrips';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 
 export default function TripsScreen() {
   const router = useRouter();
@@ -111,7 +111,7 @@ const styles = StyleSheet.create({
   addButton: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.orange,
     alignItems: 'center',

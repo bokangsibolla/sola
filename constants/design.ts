@@ -42,12 +42,14 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 8,
-  md: 12,
-  pill: 12,
-  input: 14,
-  card: 14,
-  button: 16,
+  none: 0,
+  xs: 2,
+  sm: 4,
+  md: 6,
+  pill: 4,
+  input: 6,
+  card: 8,
+  button: 2,
   full: 999,
 };
 

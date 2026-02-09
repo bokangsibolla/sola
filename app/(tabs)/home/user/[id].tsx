@@ -393,7 +393,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: radius.full,
     marginBottom: spacing.md,
   },
   avatarPlaceholder: {
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: radius.card,
   },
   tagShared: {
     backgroundColor: colors.orangeFill,

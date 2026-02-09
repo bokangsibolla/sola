@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
     right: spacing.lg,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',

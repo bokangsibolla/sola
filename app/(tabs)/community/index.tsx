@@ -734,7 +734,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
   },
   avatarSystem: {
@@ -869,7 +869,7 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',
@@ -893,7 +893,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingHorizontal: spacing.screenX,
   },
-  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
+  sheetHandle: { width: 36, height: 4, borderRadius: radius.xs, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.lg },
 
   // Place selector sheet

@@ -205,7 +205,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: radius.full,
     marginRight: spacing.md,
   },
   avatarPlaceholder: {
@@ -242,7 +242,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: colors.orange,
-    borderRadius: 10,
+    borderRadius: radius.full,
     minWidth: 20,
     height: 20,
     alignItems: 'center',

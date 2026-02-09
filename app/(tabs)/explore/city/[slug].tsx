@@ -1394,7 +1394,7 @@ const styles = StyleSheet.create({
   tagPill: {
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 8,
+    borderRadius: radius.card,
   },
   tagText: {
     fontFamily: fonts.medium,
@@ -1470,7 +1470,7 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(0,0,0,0.3)',
     alignItems: 'center',
     justifyContent: 'center',

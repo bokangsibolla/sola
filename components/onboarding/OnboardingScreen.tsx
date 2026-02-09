@@ -7,7 +7,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import ProgressBar from './ProgressIndicator';
 import PrimaryButton from '@/components/ui/PrimaryButton';
 import { onboardingStore } from '@/state/onboardingStore';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface OnboardingScreenProps {
   /** Current stage (1-based) - used for progress indicator */
@@ -115,7 +115,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.neutralFill,

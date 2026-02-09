@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingHorizontal: spacing.screenX,
   },
-  handle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
+  handle: { width: 36, height: 4, borderRadius: radius.xs, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
   title: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.xs },
   subtitle: { fontFamily: fonts.regular, fontSize: 14, color: colors.textSecondary, marginBottom: spacing.lg },
 

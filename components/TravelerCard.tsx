@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: radius.full,
   },
   avatarPlaceholder: {
     backgroundColor: colors.neutralFill,
@@ -178,15 +178,17 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: radius.pill,
+    borderRadius: radius.none,
   },
   tagShared: {
     backgroundColor: colors.orangeFill,
   },
   tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 10,
     color: colors.textSecondary,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   tagTextShared: {
     color: colors.orange,
@@ -204,8 +206,10 @@ const styles = StyleSheet.create({
   },
   connectButtonText: {
     fontFamily: fonts.semiBold,
-    fontSize: 14,
+    fontSize: 11,
     color: colors.orange,
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
   },
   statusPill: {
     flexDirection: 'row',
@@ -214,16 +218,18 @@ const styles = StyleSheet.create({
     gap: 4,
     marginTop: spacing.md,
     paddingVertical: 6,
-    borderRadius: radius.pill,
+    borderRadius: radius.xs,
     backgroundColor: colors.neutralFill,
   },
   statusPillConnected: {
     backgroundColor: colors.greenFill,
   },
   statusPillText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
+    fontFamily: fonts.semiBold,
+    fontSize: 10,
     color: colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
   },
   statusPillTextConnected: {
     color: colors.greenSoft,

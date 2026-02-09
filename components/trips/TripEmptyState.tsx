@@ -127,7 +127,7 @@ const styles = StyleSheet.create({
   featureIcon: {
     width: 36,
     height: 36,
-    borderRadius: 18,
+    borderRadius: radius.full,
     backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',

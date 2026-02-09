@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   moodDot: {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: radius.full,
   },
   comfortText: {
     fontFamily: fonts.medium,

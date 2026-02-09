@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   container: {},
   imageContainer: {
     position: 'relative',
-    borderRadius: 12,
+    borderRadius: radius.card,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',

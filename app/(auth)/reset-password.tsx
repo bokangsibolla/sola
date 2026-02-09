@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { supabase } from '@/lib/supabase';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 export default function ResetPasswordScreen() {
   const router = useRouter();
@@ -109,7 +109,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F3F3F3',
@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,

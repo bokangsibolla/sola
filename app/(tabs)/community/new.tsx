@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     maxHeight: '70%',
   },
-  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
+  sheetHandle: { width: 36, height: 4, borderRadius: radius.xs, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.lg },
   searchRow: {
     flexDirection: 'row',
