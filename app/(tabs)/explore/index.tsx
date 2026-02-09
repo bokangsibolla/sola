@@ -47,9 +47,9 @@ function CityCard({ city, onPress }: { city: CityWithCountry; onPress: () => voi
 
 function CollectionRow({
   collection,
-  onPress
+  onPress,
 }: {
-  collection: { title: string; heroImageUrl: string | null; items: { length: number } };
+  collection: { title: string; subtitle: string | null; heroImageUrl: string | null; items: { length: number } };
   onPress: () => void;
 }) {
   return (
@@ -65,9 +65,13 @@ function CollectionRow({
       />
       <View style={styles.collectionRowText}>
         <Text style={styles.collectionRowTitle} numberOfLines={2}>{collection.title}</Text>
-        <Text style={styles.collectionRowCount}>
-          {collection.items.length} {collection.items.length === 1 ? 'destination' : 'destinations'}
-        </Text>
+        {collection.subtitle ? (
+          <Text style={styles.collectionRowSubtitle} numberOfLines={1}>{collection.subtitle}</Text>
+        ) : (
+          <Text style={styles.collectionRowCount}>
+            {collection.items.length} {collection.items.length === 1 ? 'destination' : 'destinations'}
+          </Text>
+        )}
       </View>
     </Pressable>
   );
@@ -83,7 +87,7 @@ export default function ExploreScreen() {
     switch (item.type) {
       case 'featured-collection':
         return (
-          <View style={styles.zone}>
+          <View style={styles.zoneHero}>
             <EditorialCollectionCard
               collection={item.data}
               onPress={() => router.push(`/(tabs)/explore/collection/${item.data.slug}`)}
@@ -94,15 +98,15 @@ export default function ExploreScreen() {
       case 'countries-grid':
         return (
           <View style={styles.zone}>
-            <SectionHeader title="Where do you want to go?" />
+            <SectionHeader title="Choose a destination" />
             <View style={styles.countriesGrid}>
-              {item.data.map((country) => (
-                <View key={country.id} style={styles.countriesGridItem}>
-                  <CountryCard
-                    country={country}
-                    onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
-                  />
-                </View>
+              {item.data.map((country, index) => (
+                <CountryCard
+                  key={country.id}
+                  country={country}
+                  index={index}
+                  onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
+                />
               ))}
             </View>
           </View>
@@ -110,9 +114,9 @@ export default function ExploreScreen() {
 
       case 'popular-cities':
         return (
-          <View style={styles.zoneNoPadding}>
+          <View style={styles.zoneWide}>
             <View style={styles.zonePaddedHeader}>
-              <SectionHeader title="Popular destinations" />
+              <SectionHeader title="Loved by solo women" />
             </View>
             <ScrollView
               horizontal
@@ -133,8 +137,8 @@ export default function ExploreScreen() {
       case 'collections-section':
         return (
           <View style={styles.zone}>
-            <SectionHeader title="Explore by theme" />
-            <View style={styles.collectionsListGap}>
+            <SectionHeader title="Ways to travel solo" />
+            <View style={styles.collectionsList}>
               {item.data.map((collection) => (
                 <CollectionRow
                   key={collection.id}
@@ -148,18 +152,16 @@ export default function ExploreScreen() {
 
       case 'community-signal':
         return (
-          <View style={styles.zone}>
+          <View style={styles.zoneCommunity}>
             <Pressable
               onPress={() => router.push('/(tabs)/community')}
               style={({ pressed }) => [styles.communityCard, pressed && styles.pressed]}
             >
-              <View style={styles.communityContent}>
-                <Text style={styles.communityLabel}>FROM THE COMMUNITY</Text>
-                <Text style={styles.communityTitle}>
-                  Real questions from women traveling solo
-                </Text>
-                <Text style={styles.communityAction}>Join the conversation</Text>
-              </View>
+              <Text style={styles.communityLabel}>FROM WOMEN TRAVELING SOLO RIGHT NOW</Text>
+              <Text style={styles.communityTitle}>
+                Real questions. Honest answers.
+              </Text>
+              <Text style={styles.communityAction}>Join the conversation</Text>
             </Pressable>
           </View>
         );
@@ -246,30 +248,38 @@ const styles = StyleSheet.create({
   list: {
     paddingBottom: spacing.xxxxl,
   },
+
+  // Zone spacing — varied rhythm, not uniform
+  zoneHero: {
+    paddingHorizontal: spacing.screenX,
+    marginTop: spacing.lg,
+  },
   zone: {
     paddingHorizontal: spacing.screenX,
-    marginTop: spacing.xl,
+    marginTop: spacing.xxxl,
   },
-  zoneNoPadding: {
-    marginTop: spacing.xl,
+  zoneWide: {
+    marginTop: spacing.xxxl,
   },
   zonePaddedHeader: {
     paddingHorizontal: spacing.screenX,
+  },
+  zoneCommunity: {
+    paddingHorizontal: spacing.screenX,
+    marginTop: spacing.xxxxl,
+    marginBottom: spacing.xl,
   },
   pressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
   },
 
-  // Countries grid
+  // Countries grid — 2-column, cards handle their own asymmetric heights
   countriesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
     marginTop: spacing.md,
-  },
-  countriesGridItem: {
-    width: (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2,
   },
 
   // Popular cities horizontal scroll
@@ -279,8 +289,8 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   cityCard: {
-    width: 160,
-    height: 200,
+    width: 150,
+    height: 190,
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
@@ -294,19 +304,19 @@ const styles = StyleSheet.create({
   },
   cityCardName: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
   },
   cityCardCountry: {
     fontFamily: fonts.regular,
-    fontSize: 12,
+    fontSize: 11,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
 
-  // Collections list
-  collectionsListGap: {
-    gap: spacing.md,
+  // Collections — editorial feel, not settings rows
+  collectionsList: {
+    gap: spacing.lg,
     marginTop: spacing.md,
   },
   collectionRow: {
@@ -315,52 +325,60 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     overflow: 'hidden',
-    height: 80,
+    height: 96,
   },
   collectionRowPressed: {
     opacity: pressedState.opacity,
   },
   collectionRowImage: {
-    width: 80,
-    height: 80,
+    width: 96,
+    height: 96,
   },
   collectionRowText: {
     flex: 1,
     paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     justifyContent: 'center',
   },
   collectionRowTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textPrimary,
+    lineHeight: 20,
+  },
+  collectionRowSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
   collectionRowCount: {
     fontFamily: fonts.regular,
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xs,
   },
 
-  // Community signal
+  // Community signal — warm, living, not promotional
   communityCard: {
     backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     padding: spacing.xl,
   },
-  communityContent: {},
   communityLabel: {
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.medium,
     fontSize: 10,
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
     color: colors.orange,
     textTransform: 'uppercase',
     marginBottom: spacing.sm,
   },
   communityTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontFamily: fonts.serif,
+    fontSize: 22,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    lineHeight: 28,
+    marginBottom: spacing.md,
   },
   communityAction: {
     fontFamily: fonts.medium,

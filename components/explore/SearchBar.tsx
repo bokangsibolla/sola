@@ -15,11 +15,11 @@ export default function SearchBar({ onPress }: SearchBarProps) {
       accessibilityLabel="Search destinations and experiences"
     >
       <View style={styles.iconWrap}>
-        <Feather name="search" size={16} color={colors.orange} />
+        <Feather name="search" size={16} color={colors.textMuted} />
       </View>
       <View style={styles.textWrap}>
-        <Text style={styles.title}>Where to?</Text>
-        <Text style={styles.subtitle}>Anywhere you want to go</Text>
+        <Text style={styles.title}>Where feels right?</Text>
+        <Text style={styles.subtitle}>A country, city, or vibe</Text>
       </View>
     </Pressable>
   );
@@ -29,24 +29,20 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.textPrimary,
-    paddingVertical: 10,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
     marginHorizontal: spacing.screenX,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.xs,
   },
   pressed: {
-    backgroundColor: colors.neutralFill,
+    opacity: 0.85,
   },
   iconWrap: {
-    width: 30,
-    height: 30,
-    borderRadius: radius.xs,
-    backgroundColor: colors.orangeFill,
+    width: 28,
+    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -54,7 +50,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontFamily: fonts.semiBold,
+    fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.textPrimary,
   },
