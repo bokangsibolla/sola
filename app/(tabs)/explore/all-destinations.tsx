@@ -19,6 +19,15 @@ import { colors, fonts, spacing, radius, pressedState } from '@/constants/design
 import { getCountries, getAllCities } from '@/data/api';
 import type { Country, City } from '@/data/types';
 
+/** Chunk an array into pairs for 2-column grid rendering */
+function toPairs<T>(arr: T[]): [T, T | undefined][] {
+  const pairs: [T, T | undefined][] = [];
+  for (let i = 0; i < arr.length; i += 2) {
+    pairs.push([arr[i], arr[i + 1]]);
+  }
+  return pairs;
+}
+
 interface CityRow extends City {
   countryName: string;
   countrySlug: string;
@@ -179,15 +188,31 @@ export default function AllDestinationsScreen() {
           <>
             <Text style={styles.countriesSectionTitle}>Countries</Text>
             <View style={styles.countriesGrid}>
-              {filteredCountries.map((country, index) => (
-                <CountryCard
-                  key={country.id}
-                  country={country}
-                  index={index}
-                  onPress={() =>
-                    router.push(`/(tabs)/explore/country/${country.slug}`)
-                  }
-                />
+              {toPairs(filteredCountries).map(([left, right], rowIndex) => (
+                <View key={rowIndex} style={styles.countriesRow}>
+                  <View style={styles.countriesCell}>
+                    <CountryCard
+                      country={left}
+                      index={rowIndex * 2}
+                      onPress={() =>
+                        router.push(`/(tabs)/explore/country/${left.slug}`)
+                      }
+                    />
+                  </View>
+                  {right ? (
+                    <View style={styles.countriesCell}>
+                      <CountryCard
+                        country={right}
+                        index={rowIndex * 2 + 1}
+                        onPress={() =>
+                          router.push(`/(tabs)/explore/country/${right.slug}`)
+                        }
+                      />
+                    </View>
+                  ) : (
+                    <View style={styles.countriesCell} />
+                  )}
+                </View>
               ))}
             </View>
           </>
@@ -273,9 +298,14 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
   },
   countriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.md,
+  },
+  countriesRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  countriesCell: {
+    flex: 1,
   },
   pressed: {
     opacity: pressedState.opacity,

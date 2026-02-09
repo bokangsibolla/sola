@@ -1,17 +1,9 @@
 // components/explore/cards/CountryCard.tsx
-import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 import type { Country } from '@/data/types';
-
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const GAP = spacing.md;
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - GAP) / 2;
-
-// Alternate heights for visual asymmetry — avoids "box grid" feel
-const CARD_HEIGHT_SHORT = CARD_WIDTH * 0.75;
-const CARD_HEIGHT_TALL = CARD_WIDTH * 0.95;
 
 interface CountryCardProps {
   country: Country;
@@ -22,14 +14,15 @@ interface CountryCardProps {
 
 export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
   const imageUrl = country.heroImageUrl ?? undefined;
-  const cardHeight = index % 2 === 0 ? CARD_HEIGHT_SHORT : CARD_HEIGHT_TALL;
+  // Alternate aspect ratios for visual asymmetry
+  const aspectRatio = index % 2 === 0 ? 1.35 : 1.05;
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [
         styles.card,
-        { height: cardHeight },
+        { aspectRatio },
         pressed && styles.pressed,
       ]}
     >
@@ -55,11 +48,9 @@ export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
   );
 }
 
-export { CARD_WIDTH as COUNTRY_CARD_WIDTH, GAP as COUNTRY_CARD_GAP };
-
 const styles = StyleSheet.create({
   card: {
-    width: CARD_WIDTH,
+    width: '100%',
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,

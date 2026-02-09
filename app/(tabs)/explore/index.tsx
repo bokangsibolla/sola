@@ -15,9 +15,19 @@ import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCol
 import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
+import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 const MAX_COUNTRIES_SHOWN = 6;
+
+/** Chunk an array into pairs for 2-column grid rendering */
+function toPairs<T>(arr: T[]): [T, T | undefined][] {
+  const pairs: [T, T | undefined][] = [];
+  for (let i = 0; i < arr.length; i += 2) {
+    pairs.push([arr[i], arr[i + 1]]);
+  }
+  return pairs;
+}
 
 // ── Inline components for zones ──────────────────────────────
 
@@ -98,6 +108,7 @@ export default function ExploreScreen() {
       case 'countries-grid': {
         const visible = item.data.slice(0, MAX_COUNTRIES_SHOWN);
         const hasMore = item.data.length > MAX_COUNTRIES_SHOWN;
+        const rows = toPairs(visible);
         return (
           <View style={styles.zone}>
             <SectionHeader
@@ -105,13 +116,27 @@ export default function ExploreScreen() {
               onSeeAll={hasMore ? () => router.push('/(tabs)/explore/all-destinations') : undefined}
             />
             <View style={styles.countriesGrid}>
-              {visible.map((country, index) => (
-                <CountryCard
-                  key={country.id}
-                  country={country}
-                  index={index}
-                  onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
-                />
+              {rows.map(([left, right], rowIndex) => (
+                <View key={rowIndex} style={styles.countriesRow}>
+                  <View style={styles.countriesCell}>
+                    <CountryCard
+                      country={left}
+                      index={rowIndex * 2}
+                      onPress={() => router.push(`/(tabs)/explore/country/${left.slug}`)}
+                    />
+                  </View>
+                  {right ? (
+                    <View style={styles.countriesCell}>
+                      <CountryCard
+                        country={right}
+                        index={rowIndex * 2 + 1}
+                        onPress={() => router.push(`/(tabs)/explore/country/${right.slug}`)}
+                      />
+                    </View>
+                  ) : (
+                    <View style={styles.countriesCell} />
+                  )}
+                </View>
               ))}
             </View>
           </View>
@@ -280,12 +305,17 @@ const styles = StyleSheet.create({
     transform: pressedState.transform,
   },
 
-  // Countries grid — 2-column, cards handle their own asymmetric heights
+  // Countries grid — explicit rows of 2
   countriesGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.md,
     marginTop: spacing.md,
+  },
+  countriesRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  countriesCell: {
+    flex: 1,
   },
 
   // Popular cities horizontal scroll
