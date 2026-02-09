@@ -1,5 +1,6 @@
 // app/(tabs)/explore/index.tsx
-import { FlatList, StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
+import React from 'react';
+import { FlatList, ScrollView, StyleSheet, View, Text, Pressable, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -11,226 +12,156 @@ import ErrorScreen from '@/components/ErrorScreen';
 import SearchBar from '@/components/explore/SearchBar';
 import SectionHeader from '@/components/explore/SectionHeader';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
-import { HeroGrid } from '@/components/explore/HeroGrid';
-import { DiscoveryLensesSection } from '@/components/explore/DiscoveryLensesSection';
+import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { useFeedItems } from '@/data/explore/useFeedItems';
-import type { FeedItem } from '@/data/explore/types';
-import type { CityWithCountry } from '@/data/explore/types';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import type { FeedItem, CityWithCountry } from '@/data/explore/types';
+import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 
-/** Derive a useful tag from city data — badgeLabel, first interest, or country name. */
-function getCityTag(city: CityWithCountry): string {
-  if (city.badgeLabel) return city.badgeLabel;
-  if (city.goodForInterests && city.goodForInterests.length > 0) {
-    return city.goodForInterests[0];
-  }
-  return city.countryName;
-}
+// ── Inline components for zones ──────────────────────────────
 
-// Frosted type label pill — sits top-left of image cards
-function TypeLabel({ label }: { label: string }) {
-  return (
-    <View style={styles.typeLabel}>
-      <Text style={styles.typeLabelText}>{label}</Text>
-    </View>
-  );
-}
-
-// City card with hero image
-function CitySmallCard({ city, onPress }: { city: CityWithCountry; onPress: () => void }) {
+function CityCard({ city, onPress }: { city: CityWithCountry; onPress: () => void }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.smallCard, pressed && styles.pressed]}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${city.name}, ${city.countryName}`}
+      style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
     >
-      {city.heroImageUrl && (
-        <Image
-          source={{ uri: city.heroImageUrl }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={200}
-        />
-      )}
-      <TypeLabel label={getCityTag(city)} />
-      <View style={styles.smallCardOverlay}>
-        <Text style={styles.smallCardTitle}>{city.name}</Text>
-        <Text style={styles.smallCardBlurb} numberOfLines={1}>{city.countryName}</Text>
+      <Image
+        source={{ uri: city.heroImageUrl ?? undefined }}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        transition={200}
+      />
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.55)']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.cityCardContent}>
+        <Text style={styles.cityCardName} numberOfLines={1}>{city.name}</Text>
+        <Text style={styles.cityCardCountry} numberOfLines={1}>{city.countryName}</Text>
       </View>
     </Pressable>
   );
 }
 
-// City pair - two city cards side by side
-function CityPairCard({ cities, onCityPress }: {
-  cities: [CityWithCountry, CityWithCountry];
-  onCityPress: (slug: string) => void;
-}) {
-  return (
-    <View style={styles.pairRow}>
-      <CitySmallCard
-        city={cities[0]}
-        onPress={() => onCityPress(cities[0].slug)}
-      />
-      <CitySmallCard
-        city={cities[1]}
-        onPress={() => onCityPress(cities[1].slug)}
-      />
-    </View>
-  );
-}
-
-// City spotlight card with hero image
-function CitySpotlightCard({ city, onPress }: {
-  city: CityWithCountry;
+function CollectionRow({
+  collection,
+  onPress
+}: {
+  collection: { title: string; heroImageUrl: string | null; items: { length: number } };
   onPress: () => void;
 }) {
   return (
     <Pressable
-      style={({ pressed }) => [styles.spotlightCard, pressed && styles.pressed]}
       onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={`${city.name}, ${city.countryName}`}
+      style={({ pressed }) => [styles.collectionRow, pressed && styles.collectionRowPressed]}
     >
-      {city.heroImageUrl && (
-        <Image
-          source={{ uri: city.heroImageUrl }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={200}
-        />
-      )}
-      <LinearGradient
-        colors={['transparent', colors.overlayMedium]}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
+      <Image
+        source={{ uri: collection.heroImageUrl ?? undefined }}
+        style={styles.collectionRowImage}
+        contentFit="cover"
+        transition={200}
       />
-      <TypeLabel label={getCityTag(city)} />
-      <View style={styles.spotlightOverlay}>
-        <Text style={styles.spotlightTitle}>{city.name}</Text>
-        <Text style={styles.spotlightSubtitle}>{city.countryName}</Text>
-        {city.shortBlurb && (
-          <Text style={styles.spotlightBlurb} numberOfLines={2}>{city.shortBlurb}</Text>
-        )}
+      <View style={styles.collectionRowText}>
+        <Text style={styles.collectionRowTitle} numberOfLines={2}>{collection.title}</Text>
+        <Text style={styles.collectionRowCount}>
+          {collection.items.length} {collection.items.length === 1 ? 'destination' : 'destinations'}
+        </Text>
       </View>
     </Pressable>
   );
 }
 
+// ── Main screen ──────────────────────────────────────────────
+
 export default function ExploreScreen() {
-  const router = useRouter();
   const { feedItems, isLoading, error, refresh } = useFeedItems();
+  const router = useRouter();
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
-      case 'search-bar':
-        return (
-          <SearchBar onPress={() => router.push('/explore/search')} />
-        );
-
-      case 'section-header':
-        return (
-          <SectionHeader
-            title={item.title}
-            subtitle={item.subtitle}
-            variant={item.variant}
-          />
-        );
-
       case 'featured-collection':
         return (
-          <EditorialCollectionCard
-            collection={item.data}
-            onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
-          />
-        );
-
-      case 'hero-grid':
-        return (
-          <HeroGrid
-            collection={item.data.collection}
-            city1={item.data.city1}
-            city2={item.data.city2}
-            onCollectionPress={() =>
-              item.data.collection
-                ? router.push(`/explore/collection/${item.data.collection.slug}`)
-                : router.push('/explore/all-destinations')
-            }
-            onCity1Press={() => item.data.city1 && router.push(`/explore/city/${item.data.city1.slug}`)}
-            onCity2Press={() =>
-              item.data.city2
-                ? router.push(`/explore/city/${item.data.city2.slug}`)
-                : router.push('/explore/all-destinations')
-            }
-          />
-        );
-
-      case 'editorial-collection':
-        return (
-          <EditorialCollectionCard
-            collection={item.data}
-            onPress={() => router.push(`/explore/collection/${item.data.slug}`)}
-          />
-        );
-
-      case 'discovery-lenses':
-        return <DiscoveryLensesSection lenses={item.data} />;
-
-      case 'city-pair':
-        return (
-          <View>
-            {item.sectionLabel && (
-              <Text style={styles.sectionLabel}>{item.sectionLabel}</Text>
-            )}
-            <CityPairCard
-              cities={item.data}
-              onCityPress={(slug) => router.push(`/explore/city/${slug}`)}
+          <View style={styles.zone}>
+            <EditorialCollectionCard
+              collection={item.data}
+              onPress={() => router.push(`/(tabs)/explore/collection/${item.data.slug}`)}
             />
           </View>
         );
 
-      case 'city-spotlight':
+      case 'countries-grid':
         return (
-          <CitySpotlightCard
-            city={item.data}
-            onPress={() => router.push(`/explore/city/${item.data.slug}`)}
-          />
-        );
-
-      case 'activity-cluster':
-        return null;
-
-      case 'meet-travellers':
-        return (
-          <Pressable
-            style={({ pressed }) => [styles.meetCard, pressed && styles.pressed]}
-            onPress={() => router.push('/home/dm')}
-            accessibilityRole="button"
-            accessibilityLabel="Meet other travellers"
-          >
-            <Image
-              source={require('@/assets/images/pexels-paddleboarding.png')}
-              style={StyleSheet.absoluteFill}
-              contentFit="cover"
-              transition={200}
-              pointerEvents="none"
-            />
-            <LinearGradient
-              colors={['transparent', colors.overlayMedium]}
-              style={StyleSheet.absoluteFill}
-              pointerEvents="none"
-            />
-            <TypeLabel label="Community" />
-            <View style={styles.meetCardContent} pointerEvents="none">
-              <Text style={styles.meetCardTitle}>Meet other travellers</Text>
-              <Text style={styles.meetCardSubtitle}>
-                Connect with solo women exploring the world
-              </Text>
+          <View style={styles.zone}>
+            <SectionHeader title="Where do you want to go?" />
+            <View style={styles.countriesGrid}>
+              {item.data.map((country) => (
+                <View key={country.id} style={styles.countriesGridItem}>
+                  <CountryCard
+                    country={country}
+                    onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
+                  />
+                </View>
+              ))}
             </View>
-          </Pressable>
+          </View>
+        );
+
+      case 'popular-cities':
+        return (
+          <View style={styles.zoneNoPadding}>
+            <View style={styles.zonePaddedHeader}>
+              <SectionHeader title="Popular destinations" />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.citiesScroll}
+            >
+              {item.data.map((city) => (
+                <CityCard
+                  key={city.id}
+                  city={city}
+                  onPress={() => router.push(`/(tabs)/explore/city/${city.slug}`)}
+                />
+              ))}
+            </ScrollView>
+          </View>
+        );
+
+      case 'collections-section':
+        return (
+          <View style={styles.zone}>
+            <SectionHeader title="Explore by theme" />
+            <View style={styles.collectionsListGap}>
+              {item.data.map((collection) => (
+                <CollectionRow
+                  key={collection.id}
+                  collection={collection}
+                  onPress={() => router.push(`/(tabs)/explore/collection/${collection.slug}`)}
+                />
+              ))}
+            </View>
+          </View>
+        );
+
+      case 'community-signal':
+        return (
+          <View style={styles.zone}>
+            <Pressable
+              onPress={() => router.push('/(tabs)/community')}
+              style={({ pressed }) => [styles.communityCard, pressed && styles.pressed]}
+            >
+              <View style={styles.communityContent}>
+                <Text style={styles.communityLabel}>FROM THE COMMUNITY</Text>
+                <Text style={styles.communityTitle}>
+                  Real questions from women traveling solo
+                </Text>
+                <Text style={styles.communityAction}>Join the conversation</Text>
+              </View>
+            </Pressable>
+          </View>
         );
 
       default:
@@ -238,69 +169,42 @@ export default function ExploreScreen() {
     }
   };
 
-  const keyExtractor = (item: FeedItem, index: number): string => {
-    switch (item.type) {
-      case 'search-bar':
-        return 'search-bar';
-      case 'section-header':
-        return `section-${item.title}`;
-      case 'featured-collection':
-        return `featured-${item.data.slug}`;
-      case 'hero-grid':
-        return `hero-grid-${item.data.city1?.slug ?? 'unknown'}`;
-      case 'editorial-collection':
-        return `collection-${item.data.slug}`;
-      case 'discovery-lenses':
-        return 'discovery-lenses';
-      case 'city-pair':
-        return `city-pair-${item.data[0].slug}-${item.data[1].slug}`;
-      case 'city-spotlight':
-        return `city-spotlight-${item.data.slug}`;
-      case 'activity-cluster':
-        return `activity-cluster-${item.citySlug}`;
-      case 'meet-travellers':
-        return 'meet-travellers';
-      default:
-        return `item-${index}`;
-    }
-  };
+  const keyExtractor = (item: FeedItem, index: number) => `${item.type}-${index}`;
 
-  // Show loading screen only on initial load with no feed items
-  if (isLoading && feedItems.length <= 1) {
+  if (isLoading && feedItems.length === 0) {
     return (
       <AppScreen>
         <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={<InboxButton />}
-      />
+          title=""
+          leftComponent={
+            <Image
+              source={require('@/assets/images/sola-logo.png')}
+              style={styles.headerLogo}
+              contentFit="contain"
+            />
+          }
+          rightComponent={<InboxButton />}
+        />
         <LoadingScreen />
       </AppScreen>
     );
   }
 
-  // Show error screen if there's an error and no feed items
-  if (error && feedItems.length <= 1) {
+  if (error && feedItems.length === 0) {
     return (
       <AppScreen>
         <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={<InboxButton />}
-      />
-        <ErrorScreen message={error.message} onRetry={refresh} />
+          title=""
+          leftComponent={
+            <Image
+              source={require('@/assets/images/sola-logo.png')}
+              style={styles.headerLogo}
+              contentFit="contain"
+            />
+          }
+          rightComponent={<InboxButton />}
+        />
+        <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
   }
@@ -318,25 +222,21 @@ export default function ExploreScreen() {
         }
         rightComponent={<InboxButton />}
       />
+      <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
       <FlatList
         data={feedItems}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        style={styles.list}
-        contentContainerStyle={feedItems.length === 0 ? styles.emptyContent : styles.content}
+        contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
-          <View style={styles.emptyFeed}>
-            <Text style={styles.emptyFeedText}>No destinations available right now</Text>
-            <Pressable onPress={refresh} style={styles.emptyFeedButton}>
-              <Text style={styles.emptyFeedLink}>Try again</Text>
-            </Pressable>
-          </View>
-        }
+        onRefresh={refresh}
+        refreshing={isLoading}
       />
     </AppScreen>
   );
 }
+
+// ── Styles ───────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   headerLogo: {
@@ -344,146 +244,127 @@ const styles = StyleSheet.create({
     width: 76,
   },
   list: {
-    flex: 1,
+    paddingBottom: spacing.xxxxl,
   },
-  content: {
-    paddingVertical: spacing.lg,
+  zone: {
     paddingHorizontal: spacing.screenX,
-    gap: spacing.lg,
+    marginTop: spacing.xl,
+  },
+  zoneNoPadding: {
+    marginTop: spacing.xl,
+  },
+  zonePaddedHeader: {
+    paddingHorizontal: spacing.screenX,
   },
   pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+    opacity: pressedState.opacity,
+    transform: pressedState.transform,
   },
-  // Type label pill
-  typeLabel: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    zIndex: 1,
-    backgroundColor: colors.overlaySoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  typeLabelText: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.9)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  // City pair row
-  pairRow: {
+
+  // Countries grid
+  countriesGrid: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: spacing.md,
+    marginTop: spacing.md,
   },
-  smallCard: {
-    flex: 1,
-    height: 160,
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
+  countriesGridItem: {
+    width: (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2,
   },
-  smallCardOverlay: {
-    padding: spacing.md,
-    paddingTop: spacing.xl,
-    backgroundColor: colors.overlaySoft,
+
+  // Popular cities horizontal scroll
+  citiesScroll: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
-  smallCardTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  smallCardBlurb: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  // City spotlight
-  spotlightCard: {
-    height: 220,
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
-  },
-  spotlightOverlay: {
-    padding: spacing.lg,
-    paddingTop: 60,
-  },
-  spotlightTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 22,
-    color: '#FFFFFF',
-  },
-  spotlightSubtitle: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: 2,
-  },
-  spotlightBlurb: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.75)',
-    marginTop: spacing.xs,
-  },
-  // Meet travellers card
-  meetCard: {
+  cityCard: {
+    width: 160,
     height: 200,
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
   },
-  meetCardContent: {
+  cityCardContent: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.lg,
+    padding: spacing.md,
   },
-  meetCardTitle: {
+  cityCardName: {
     fontFamily: fonts.semiBold,
-    fontSize: 22,
+    fontSize: 16,
     color: '#FFFFFF',
   },
-  meetCardSubtitle: {
+  cityCardCountry: {
     fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xs,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: 2,
   },
-  emptyContent: {
-    flexGrow: 1,
-    justifyContent: 'center' as const,
-  },
-  emptyFeed: {
-    alignItems: 'center' as const,
-    paddingVertical: spacing.xxl,
+
+  // Collections list
+  collectionsListGap: {
     gap: spacing.md,
+    marginTop: spacing.md,
   },
-  emptyFeedText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
+  collectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    height: 80,
   },
-  emptyFeedButton: {
-    paddingVertical: spacing.sm,
+  collectionRowPressed: {
+    opacity: pressedState.opacity,
+  },
+  collectionRowImage: {
+    width: 80,
+    height: 80,
+  },
+  collectionRowText: {
+    flex: 1,
     paddingHorizontal: spacing.lg,
+    justifyContent: 'center',
   },
-  emptyFeedLink: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
-  sectionLabel: {
+  collectionRowTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 18,
+    fontSize: 14,
     color: colors.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: spacing.md,
+  },
+  collectionRowCount: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+
+  // Community signal
+  communityCard: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.xl,
+  },
+  communityContent: {},
+  communityLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 10,
+    letterSpacing: 0.5,
+    color: colors.orange,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
+  },
+  communityTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+  },
+  communityAction: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
   },
 });
