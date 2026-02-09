@@ -20,13 +20,12 @@ import { colors, fonts, spacing, radius, pressedState } from '@/constants/design
 
 const MAX_COUNTRIES_SHOWN = 6;
 
-/** Chunk an array into pairs for 2-column grid rendering */
-function toPairs<T>(arr: T[]): [T, T | undefined][] {
-  const pairs: [T, T | undefined][] = [];
-  for (let i = 0; i < arr.length; i += 2) {
-    pairs.push([arr[i], arr[i + 1]]);
-  }
-  return pairs;
+/** Split array into two columns for masonry layout */
+function toColumns<T>(arr: T[]): [T[], T[]] {
+  const left: T[] = [];
+  const right: T[] = [];
+  arr.forEach((item, i) => (i % 2 === 0 ? left : right).push(item));
+  return [left, right];
 }
 
 // ── Inline components for zones ──────────────────────────────
@@ -108,36 +107,34 @@ export default function ExploreScreen() {
       case 'countries-grid': {
         const visible = item.data.slice(0, MAX_COUNTRIES_SHOWN);
         const hasMore = item.data.length > MAX_COUNTRIES_SHOWN;
-        const rows = toPairs(visible);
+        const [leftCol, rightCol] = toColumns(visible);
         return (
           <View style={styles.zone}>
             <SectionHeader
               title="Choose a destination"
               onSeeAll={hasMore ? () => router.push('/(tabs)/explore/all-destinations') : undefined}
             />
-            <View style={styles.countriesGrid}>
-              {rows.map(([left, right], rowIndex) => (
-                <View key={rowIndex} style={styles.countriesRow}>
-                  <View style={styles.countriesCell}>
-                    <CountryCard
-                      country={left}
-                      index={rowIndex * 2}
-                      onPress={() => router.push(`/(tabs)/explore/country/${left.slug}`)}
-                    />
-                  </View>
-                  {right ? (
-                    <View style={styles.countriesCell}>
-                      <CountryCard
-                        country={right}
-                        index={rowIndex * 2 + 1}
-                        onPress={() => router.push(`/(tabs)/explore/country/${right.slug}`)}
-                      />
-                    </View>
-                  ) : (
-                    <View style={styles.countriesCell} />
-                  )}
-                </View>
-              ))}
+            <View style={styles.masonry}>
+              <View style={styles.masonryColumn}>
+                {leftCol.map((country, i) => (
+                  <CountryCard
+                    key={country.id}
+                    country={country}
+                    index={i * 2}
+                    onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
+                  />
+                ))}
+              </View>
+              <View style={[styles.masonryColumn, styles.masonryColumnRight]}>
+                {rightCol.map((country, i) => (
+                  <CountryCard
+                    key={country.id}
+                    country={country}
+                    index={i * 2 + 1}
+                    onPress={() => router.push(`/(tabs)/explore/country/${country.slug}`)}
+                  />
+                ))}
+              </View>
             </View>
           </View>
         );
@@ -305,17 +302,18 @@ const styles = StyleSheet.create({
     transform: pressedState.transform,
   },
 
-  // Countries grid — explicit rows of 2
-  countriesGrid: {
+  // Masonry — two columns with stagger offset
+  masonry: {
+    flexDirection: 'row',
     gap: spacing.md,
     marginTop: spacing.md,
   },
-  countriesRow: {
-    flexDirection: 'row',
+  masonryColumn: {
+    flex: 1,
     gap: spacing.md,
   },
-  countriesCell: {
-    flex: 1,
+  masonryColumnRight: {
+    paddingTop: spacing.xxxl,
   },
 
   // Popular cities horizontal scroll

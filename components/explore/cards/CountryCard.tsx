@@ -5,17 +5,22 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 import type { Country } from '@/data/types';
 
+/**
+ * Masonry-style height pattern — repeats every 3 cards per column.
+ * Creates a varied rhythm: tall → short → medium.
+ */
+const ASPECT_RATIOS = [0.78, 1.1, 0.9, 1.05, 0.82, 0.95];
+
 interface CountryCardProps {
   country: Country;
   onPress: () => void;
-  /** Grid index — odd cards are taller for asymmetric rhythm */
+  /** Position index — drives height variation */
   index?: number;
 }
 
 export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
   const imageUrl = country.heroImageUrl ?? undefined;
-  // Alternate aspect ratios for visual asymmetry
-  const aspectRatio = index % 2 === 0 ? 1.35 : 1.05;
+  const aspectRatio = ASPECT_RATIOS[index % ASPECT_RATIOS.length];
 
   return (
     <Pressable
@@ -34,7 +39,8 @@ export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
         pointerEvents="none"
       />
       <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.55)']}
+        colors={['transparent', 'transparent', 'rgba(0,0,0,0.65)']}
+        locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFillObject}
         pointerEvents="none"
       />
@@ -51,7 +57,7 @@ export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
 const styles = StyleSheet.create({
   card: {
     width: '100%',
-    borderRadius: radius.card,
+    borderRadius: spacing.md,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
   },
@@ -64,17 +70,18 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.md,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
   },
   name: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
+    fontSize: 15,
     color: '#FFFFFF',
   },
   signal: {
     fontFamily: fonts.regular,
     fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
+    color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
   },
 });
