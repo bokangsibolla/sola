@@ -12,15 +12,15 @@ export interface ActivityWithCity extends Place {
 }
 
 export type FeedItem =
-  | { type: 'search-bar' }
-  | { type: 'section-header'; title: string; subtitle?: string; variant: 'default' | 'editorial' }
   | { type: 'featured-collection'; data: ExploreCollectionWithItems }
-  | { type: 'hero-grid'; data: { collection: ExploreCollectionWithItems | null; city1: CityWithCountry; city2: CityWithCountry | null } }
+  | { type: 'countries-grid'; data: Country[] }
+  | { type: 'popular-cities'; data: CityWithCountry[] }
+  | { type: 'collections-section'; data: ExploreCollectionWithItems[] }
+  | { type: 'community-signal' }
+  // Keep these for potential future use but they won't be emitted by the new builder:
+  | { type: 'section-header'; data: { title: string; subtitle?: string; variant: 'default' | 'editorial' } }
   | { type: 'editorial-collection'; data: ExploreCollectionWithItems }
-  | { type: 'discovery-lenses'; data: DiscoveryLens[] }
   | { type: 'city-pair'; data: [CityWithCountry, CityWithCountry]; sectionLabel?: string }
-  | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] }
-  | { type: 'activity-cluster'; data: ActivityWithCity[]; cityName: string; citySlug: string }
-  | { type: 'meet-travellers' };
+  | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] };
 
 export type FeedItemType = FeedItem['type'];
