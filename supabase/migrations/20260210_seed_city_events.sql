@@ -408,7 +408,7 @@ INSERT INTO city_events (id, city_id, name, slug, event_type, description, solo_
  'Ramayana Ballet Season', 'yogya-ramayana', 'seasonal',
  'The spectacular Ramayana Ballet performs at Prambanan Temple during dry season full moon nights, combining traditional Javanese dance, gamelan music, and the Hindu epic against the backdrop of illuminated 9th-century temples. Over 200 performers bring the story of Rama and Sita to life with elaborate costumes, acrobatics, and pyrotechnics. The outdoor theater creates an unforgettable cultural experience unique to Java.',
  'Book tickets online in advance for best seating (VIP section recommended for unobstructed views). The performance runs 7:30-9:30pm—arrive by 7pm for good parking and pre-show temple photos. Bring a light jacket as it gets cool in the evening. The venue is safe and well-organized for solo travelers. Tours from Yogyakarta include round-trip transport and often combine with dinner, solving the return taxi challenge.',
- 5, 10, 'Dry season months, performances typically on full moon nights and weekends', 'seasonal',
+ 5, 10, 'Dry season months, performances typically on full moon nights and weekends', 'annual',
  NULL, false, 'moderate', 3),
 
 -- Indonesia - Gili Islands (city-gili)
