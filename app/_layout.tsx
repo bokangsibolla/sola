@@ -33,6 +33,7 @@ import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
 import { PreferencesProvider } from '@/state/PreferencesContext';
+import { AppModeProvider } from '@/state/AppModeContext';
 import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import OfflineBanner from '@/components/OfflineBanner';
@@ -204,11 +205,13 @@ function RootLayout() {
         >
           <AuthProvider>
             <PreferencesProvider>
-              <SafeAreaProvider>
-                <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <AuthGate />
-                </ThemeProvider>
-              </SafeAreaProvider>
+              <AppModeProvider>
+                <SafeAreaProvider>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <AuthGate />
+                  </ThemeProvider>
+                </SafeAreaProvider>
+              </AppModeProvider>
             </PreferencesProvider>
           </AuthProvider>
         </PostHogProvider>
