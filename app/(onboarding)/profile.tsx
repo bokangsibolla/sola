@@ -21,6 +21,7 @@ import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { countries } from '@/data/geo';
+import { getCurrencyForCountry } from '@/lib/currency';
 import { colors, fonts, radius } from '@/constants/design';
 
 const BIO_MAX = 140;
@@ -112,6 +113,7 @@ export default function ProfileScreen() {
   const handleCountrySelect = (iso2: string) => {
     setSelectedCountry(iso2);
     setSearch('');
+    onboardingStore.set('preferredCurrency', getCurrencyForCountry(iso2));
   };
 
   const handleBioChange = (text: string) => {

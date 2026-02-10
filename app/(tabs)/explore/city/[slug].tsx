@@ -29,8 +29,10 @@ import {
   getCityTripCount,
   getCityTravelerCount,
   getDestinationTags,
+  getProfileById,
   type PlacesGroupedByTime,
 } from '@/data/api';
+import { formatDailyBudget } from '@/lib/currency';
 import { getCityThreadPreviews } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
 import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
@@ -397,21 +399,21 @@ const INTEREST_LABELS: Record<string, string> = {
   architecture: 'Architecture',
 };
 
-function formatBudget(usd: number): string {
+function formatBudgetLabel(usd: number): string {
   if (usd <= 25) return 'Very budget-friendly';
   if (usd <= 40) return 'Budget-friendly';
   if (usd <= 60) return 'Moderate cost';
   return 'Higher budget';
 }
 
-function CityContext({ city }: { city: City }) {
+function CityContext({ city, preferredCurrency }: { city: City; preferredCurrency: string }) {
   const signals: { icon: string; label: string }[] = [];
 
   // Budget — varies meaningfully ($20–$80)
   if (city.avgDailyBudgetUsd) {
     signals.push({
       icon: 'wallet-outline',
-      label: `${formatBudget(city.avgDailyBudgetUsd)} (~$${city.avgDailyBudgetUsd}/day)`,
+      label: `${formatBudgetLabel(city.avgDailyBudgetUsd)} (${formatDailyBudget(city.avgDailyBudgetUsd, preferredCurrency)})`,
     });
   }
 
@@ -804,6 +806,14 @@ export default function PlaceScreen() {
     ['cityDestTags', city?.id],
   );
 
+  // User profile for currency preference
+  const { userId } = useAuth();
+  const { data: userProfile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
+  const preferredCurrency = userProfile?.preferredCurrency || 'USD';
+
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
@@ -888,7 +898,7 @@ export default function PlaceScreen() {
           <SignalPills city={city} cityTags={cityTags ?? []} />
 
           {/* 5. At a glance — practical context */}
-          <CityContext city={city} />
+          <CityContext city={city} preferredCurrency={preferredCurrency} />
 
           {/* 6. What to expect — editorial */}
           <CityEditorial summary={city.summary} bestFor={null} />

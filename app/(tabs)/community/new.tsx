@@ -24,7 +24,10 @@ import {
   searchCommunityCountries,
   getCitiesForCountry,
 } from '@/data/community/communityApi';
+import { getProfileById } from '@/data/api';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
+import { requireVerification } from '@/lib/verification';
+import { useData } from '@/hooks/useData';
 import type { CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -46,6 +49,10 @@ export default function NewThread() {
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
   const { showGuidedComposer, markFirstPost } = useCommunityOnboarding();
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -65,6 +72,7 @@ export default function NewThread() {
 
   const handleSubmit = useCallback(async () => {
     if (!userId || !canSubmit) return;
+    if (!requireVerification(profile?.verificationStatus || 'unverified', 'post in the community')) return;
     setSubmitting(true);
     try {
       const threadId = await createThread(userId, {
