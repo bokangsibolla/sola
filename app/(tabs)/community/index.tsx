@@ -543,7 +543,11 @@ export default function CommunityHome() {
       )}
 
       {/* Section label */}
-      <Text style={styles.sectionLabel}>RECENT DISCUSSIONS</Text>
+      <Text style={styles.sectionLabel}>
+        {mode === 'travelling' && activeTripInfo
+          ? `DISCUSSIONS ABOUT ${activeTripInfo.city.name.toUpperCase()}`
+          : 'RECENT DISCUSSIONS'}
+      </Text>
     </View>
   );
 

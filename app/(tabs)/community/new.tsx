@@ -18,6 +18,7 @@ import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import {
   createThread,
   getCommunityTopics,
@@ -48,6 +49,7 @@ export default function NewThread() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const { mode, activeTripInfo } = useAppMode();
   const { showGuidedComposer, markFirstPost } = useCommunityOnboarding();
   const { data: profile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
@@ -67,6 +69,14 @@ export default function NewThread() {
   useEffect(() => {
     getCommunityTopics().then(setTopics).catch(() => {});
   }, []);
+
+  // Pre-fill destination tag in travelling mode
+  useEffect(() => {
+    if (mode === 'travelling' && activeTripInfo?.city.id) {
+      setSelectedCityId(activeTripInfo.city.id);
+      setPlaceLabel(activeTripInfo.city.name);
+    }
+  }, [mode, activeTripInfo]);
 
   const canSubmit = title.trim().length > 0 && body.trim().length > 0 && !submitting;
 
