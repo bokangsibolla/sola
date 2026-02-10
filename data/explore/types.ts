@@ -11,6 +11,13 @@ export interface ActivityWithCity extends Place {
   imageUrl: string | null;
 }
 
+export interface SavedPlaceWithDetails {
+  placeId: string;
+  placeName: string;
+  imageUrl: string | null;
+  cityName: string | null;
+}
+
 export type FeedItem =
   | { type: 'featured-collection'; data: ExploreCollectionWithItems }
   | { type: 'countries-grid'; data: Country[] }
@@ -25,6 +32,11 @@ export type FeedItem =
   // Travelling mode feed items
   | { type: 'saved-in-city'; data: { cityName: string; places: Place[] } }
   | { type: 'places-in-city'; data: { cityName: string; places: Place[] } }
-  | { type: 'know-before-you-go'; data: { countryIso2: string } };
+  | { type: 'know-before-you-go'; data: { countryIso2: string } }
+  // Personal "you" layer — only shown when data exists
+  | { type: 'your-saves'; data: { places: SavedPlaceWithDetails[]; totalCount: number } }
+  | { type: 'upcoming-trip'; data: { tripId: string; destinationName: string; citySlug: string | null; countryIso2: string; daysUntil: number } }
+  | { type: 'continue-exploring'; data: { cityName: string; citySlug: string; heroImageUrl: string | null } }
+  | { type: 'community-activity'; data: { newReplyCount: number; threads: { id: string; title: string }[] } };
 
 export type FeedItemType = FeedItem['type'];

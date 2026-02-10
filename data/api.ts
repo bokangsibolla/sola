@@ -880,6 +880,59 @@ export async function getSavedPlacesCountForCity(userId: string, cityId: string)
   return count ?? 0;
 }
 
+/**
+ * Get saved places with name, image, and city for feed display.
+ * Returns most recent saves first, limited to 10.
+ */
+export async function getSavedPlacesWithDetails(
+  userId: string,
+  limit = 10,
+): Promise<{ placeId: string; placeName: string; imageUrl: string | null; cityName: string | null }[]> {
+  const { data, error } = await supabase
+    .from('saved_places')
+    .select(`
+      place_id,
+      places!inner(name, city_id, cities(name)),
+      created_at
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const results: { placeId: string; placeName: string; imageUrl: string | null; cityName: string | null }[] = [];
+
+  for (const row of data ?? []) {
+    const place = (row as any).places;
+    if (!place) continue;
+
+    // Get first image for the place
+    let imageUrl: string | null = null;
+    try {
+      const { data: media } = await supabase
+        .from('place_media')
+        .select('url')
+        .eq('place_id', row.place_id)
+        .order('order_index')
+        .limit(1)
+        .maybeSingle();
+      imageUrl = media?.url ?? null;
+    } catch {
+      // Non-critical
+    }
+
+    results.push({
+      placeId: row.place_id,
+      placeName: place.name,
+      imageUrl,
+      cityName: place.cities?.name ?? null,
+    });
+  }
+
+  return results;
+}
+
 export async function isPlaceSaved(userId: string, placeId: string): Promise<boolean> {
   const { count, error } = await supabase
     .from('saved_places')
