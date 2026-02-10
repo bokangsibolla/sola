@@ -36,6 +36,7 @@ import { formatDailyBudget } from '@/lib/currency';
 import { useCurrency } from '@/hooks/useCurrency';
 import { getCityThreadPreviews } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
 
@@ -813,6 +814,7 @@ export default function PlaceScreen() {
   );
 
   const { userId } = useAuth();
+  const { mode } = useAppMode();
   const { data: savedInCityCount } = useData(
     () => (userId && city?.id) ? getSavedPlacesCountForCity(userId, city.id) : Promise.resolve(0),
     ['savedInCity', userId, city?.id],
@@ -903,8 +905,8 @@ export default function PlaceScreen() {
             />
           )}
 
-          {/* Save-cluster nudge — prompt trip creation when user saves 2+ places */}
-          {(savedInCityCount ?? 0) >= 2 && (
+          {/* Save-cluster nudge — prompt trip creation when user saves 2+ places (discover mode only) */}
+          {mode === 'discover' && (savedInCityCount ?? 0) >= 2 && (
             <Pressable
               style={styles.tripNudge}
               onPress={() => {

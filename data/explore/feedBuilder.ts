@@ -1,5 +1,5 @@
 // data/explore/feedBuilder.ts
-import type { ExploreCollectionWithItems } from '../types';
+import type { ExploreCollectionWithItems, Place } from '../types';
 import type { Country } from '../types';
 import type { FeedItem, CityWithCountry } from './types';
 
@@ -57,8 +57,8 @@ export function buildFeed(
  * before the normal discover feed.
  */
 export function buildTravellingFeed(
-  savedPlacesInCity: any[],
-  allPlacesInCity: any[],
+  savedPlacesInCity: Place[],
+  allPlacesInCity: Place[],
   countryIso2: string,
   cityName: string,
   collections: ExploreCollectionWithItems[],
@@ -72,8 +72,8 @@ export function buildTravellingFeed(
   }
 
   if (allPlacesInCity.length > 0) {
-    const savedIds = new Set(savedPlacesInCity.map((p: any) => p.id));
-    const unsaved = allPlacesInCity.filter((p: any) => !savedIds.has(p.id));
+    const savedIds = new Set(savedPlacesInCity.map((p) => p.id));
+    const unsaved = allPlacesInCity.filter((p) => !savedIds.has(p.id));
     if (unsaved.length > 0) {
       feed.push({ type: 'places-in-city', data: { cityName, places: unsaved } });
     }

@@ -1,5 +1,5 @@
 // app/(tabs)/explore/index.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FlatList, ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -15,11 +15,13 @@ import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCol
 import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { Feather } from '@expo/vector-icons';
 import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
+import { useData } from '@/hooks/useData';
+import { getPlaceFirstImage } from '@/data/api';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import { useAppMode } from '@/state/AppModeContext';
 import { getEmergencyNumbers } from '@/data/safety';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
-import type { Country } from '@/data/types';
+import type { Country, Place } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 const MAX_COUNTRIES_SHOWN = 6;
@@ -85,6 +87,40 @@ function CollectionRow({
             {collection.items.length} {collection.items.length === 1 ? 'destination' : 'destinations'}
           </Text>
         )}
+      </View>
+    </Pressable>
+  );
+}
+
+// ── Place card for travelling feed sections ─────────────────
+
+function PlaceFeedCard({ place, onPress }: { place: Place; onPress: () => void }) {
+  const { data: imageUrl } = useData(
+    () => getPlaceFirstImage(place.id),
+    ['placeImage', place.id],
+  );
+
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+    >
+      {imageUrl ? (
+        <Image
+          source={{ uri: imageUrl }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={200}
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.neutralFill }]} />
+      )}
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.55)']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.cityCardContent}>
+        <Text style={styles.cityCardName} numberOfLines={1}>{place.name}</Text>
       </View>
     </Pressable>
   );
@@ -237,26 +273,12 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.citiesScroll}
             >
-              {item.data.places.map((place: any) => (
-                <Pressable
+              {item.data.places.map((place) => (
+                <PlaceFeedCard
                   key={place.id}
-                  style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+                  place={place}
                   onPress={() => router.push(`/(tabs)/explore/place-detail/${place.id}`)}
-                >
-                  <Image
-                    source={{ uri: place.heroImageUrl ?? undefined }}
-                    style={StyleSheet.absoluteFillObject}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.55)']}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <View style={styles.cityCardContent}>
-                    <Text style={styles.cityCardName} numberOfLines={1}>{place.name}</Text>
-                  </View>
-                </Pressable>
+                />
               ))}
             </ScrollView>
           </View>
@@ -273,26 +295,12 @@ export default function ExploreScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.citiesScroll}
             >
-              {item.data.places.slice(0, 10).map((place: any) => (
-                <Pressable
+              {item.data.places.slice(0, 10).map((place) => (
+                <PlaceFeedCard
                   key={place.id}
-                  style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+                  place={place}
                   onPress={() => router.push(`/(tabs)/explore/place-detail/${place.id}`)}
-                >
-                  <Image
-                    source={{ uri: place.heroImageUrl ?? undefined }}
-                    style={StyleSheet.absoluteFillObject}
-                    contentFit="cover"
-                    transition={200}
-                  />
-                  <LinearGradient
-                    colors={['transparent', 'rgba(0,0,0,0.55)']}
-                    style={StyleSheet.absoluteFillObject}
-                  />
-                  <View style={styles.cityCardContent}>
-                    <Text style={styles.cityCardName} numberOfLines={1}>{place.name}</Text>
-                  </View>
-                </Pressable>
+                />
               ))}
             </ScrollView>
           </View>

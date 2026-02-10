@@ -429,10 +429,12 @@ export default function CommunityHome() {
     // Travelling mode: boost threads matching current trip destination to top
     if (mode === 'travelling' && activeTripInfo) {
       const tripCityName = activeTripInfo.city.name.toLowerCase();
+      const tripCityId = activeTripInfo.city.id;
 
       return [...remaining].sort((a, b) => {
-        const aMatch = (a.cityName?.toLowerCase() === tripCityName) || (a.countryName?.toLowerCase().includes(tripCityName));
-        const bMatch = (b.cityName?.toLowerCase() === tripCityName) || (b.countryName?.toLowerCase().includes(tripCityName));
+        // Match by city ID first (most precise), then by city name
+        const aMatch = (tripCityId && a.cityId === tripCityId) || (a.cityName?.toLowerCase() === tripCityName);
+        const bMatch = (tripCityId && b.cityId === tripCityId) || (b.cityName?.toLowerCase() === tripCityName);
         if (aMatch && !bMatch) return -1;
         if (!aMatch && bMatch) return 1;
         return 0; // preserve existing order within groups
@@ -545,7 +547,7 @@ export default function CommunityHome() {
       {/* Section label */}
       <Text style={styles.sectionLabel}>
         {mode === 'travelling' && activeTripInfo
-          ? `DISCUSSIONS ABOUT ${activeTripInfo.city.name.toUpperCase()}`
+          ? `${activeTripInfo.city.name.toUpperCase()} & MORE`
           : 'RECENT DISCUSSIONS'}
       </Text>
     </View>

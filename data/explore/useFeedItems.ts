@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
 import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity } from '../api';
+import type { Place } from '../types';
 import { getExploreCollections, getExploreCollectionItems } from '../collections';
 import { buildFeed, buildTravellingFeed } from './feedBuilder';
 import { useAppMode } from '@/state/AppModeContext';
@@ -86,21 +87,21 @@ export function useFeedItems(): UseFeedItemsResult {
 
         if (mode === 'travelling' && activeTripInfo?.city.id && userId) {
           // Fetch city-specific data for travelling mode
-          let savedInCity: any[] = [];
-          let placesInCity: any[] = [];
+          let savedInCity: Place[] = [];
+          let placesInCity: Place[] = [];
 
           try {
             const [allSaved, allCityPlaces] = await Promise.all([
-              getSavedPlaces(userId),
-              getPlacesByCity(activeTripInfo.city.id),
+              withTimeout(getSavedPlaces(userId), 5000, 'getSavedPlaces'),
+              withTimeout(getPlacesByCity(activeTripInfo.city.id), 5000, 'getPlacesByCity'),
             ]);
 
             // Filter saved places to those in the trip city
-            const cityPlaceIds = new Set(allCityPlaces.map((p: any) => p.id));
+            const cityPlaceIds = new Set(allCityPlaces.map((p) => p.id));
             savedInCity = allSaved
-              .filter((sp: any) => cityPlaceIds.has(sp.placeId))
-              .map((sp: any) => allCityPlaces.find((p: any) => p.id === sp.placeId))
-              .filter(Boolean);
+              .filter((sp) => cityPlaceIds.has(sp.placeId))
+              .map((sp) => allCityPlaces.find((p) => p.id === sp.placeId))
+              .filter((p): p is Place => p !== undefined);
 
             placesInCity = allCityPlaces;
           } catch {

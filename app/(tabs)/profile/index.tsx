@@ -263,10 +263,10 @@ const styles = StyleSheet.create({
   travellingBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     backgroundColor: colors.orangeFill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full,
     marginTop: spacing.sm,
   },

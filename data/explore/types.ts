@@ -23,8 +23,8 @@ export type FeedItem =
   | { type: 'city-pair'; data: [CityWithCountry, CityWithCountry]; sectionLabel?: string }
   | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] }
   // Travelling mode feed items
-  | { type: 'saved-in-city'; data: { cityName: string; places: any[] } }
-  | { type: 'places-in-city'; data: { cityName: string; places: any[] } }
+  | { type: 'saved-in-city'; data: { cityName: string; places: Place[] } }
+  | { type: 'places-in-city'; data: { cityName: string; places: Place[] } }
   | { type: 'know-before-you-go'; data: { countryIso2: string } };
 
 export type FeedItemType = FeedItem['type'];
