@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     right: spacing.lg,
   },
   heroName: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.semiBold,
     fontSize: 36,
     color: '#FFFFFF',
     lineHeight: 40,

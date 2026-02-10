@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   heading: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.semiBold,
     fontSize: 24,
     color: colors.textPrimary,
     lineHeight: 30,
