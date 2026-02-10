@@ -109,7 +109,11 @@ function ThreadCard({
   const helpfulColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
 
   const isSystem = thread.authorType === 'system';
-  const authorName = isSystem ? 'Sola Team' : thread.author.firstName;
+  const authorName = isSystem
+    ? 'Sola Team'
+    : thread.author.username
+      ? `${thread.author.firstName} @${thread.author.username}`
+      : thread.author.firstName;
   const placeName = thread.cityName ?? thread.countryName;
   const hasImage = !!thread.cityImageUrl;
 

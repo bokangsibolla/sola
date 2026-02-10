@@ -53,6 +53,7 @@ export default function UserProfileScreen() {
     trips,
     tripOverlaps,
     visitedCountries,
+    userManagedCountries,
     totalTripCount,
     isLoading,
     error,
@@ -218,6 +219,9 @@ export default function UserProfileScreen() {
             </View>
           )}
           <Text style={styles.name}>{profile.firstName}</Text>
+          {profile.username && (
+            <Text style={styles.username}>@{profile.username}</Text>
+          )}
           {(profile.homeCountryName || profile.nationality) && (
             <Text style={styles.origin}>
               {profile.homeCountryIso2 ? getFlag(profile.homeCountryIso2) + ' ' : ''}
@@ -308,8 +312,24 @@ export default function UserProfileScreen() {
           </>
         )}
 
-        {/* Visited Countries */}
+        {/* Visited Countries (from trips) */}
         <VisitedCountries countries={visitedCountries} />
+
+        {/* User-listed countries (self-reported) */}
+        {userManagedCountries.length > 0 && (
+          <View style={styles.userCountriesSection}>
+            <Text style={styles.sectionTitle}>Countries visited</Text>
+            <View style={styles.tags}>
+              {userManagedCountries.map((vc) => (
+                <View key={vc.countryId} style={styles.tag}>
+                  <Text style={styles.tagText}>
+                    {vc.countryIso2 ? getFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </ScrollView>
 
       {/* Connection Bottom Bar */}
@@ -405,6 +425,12 @@ const styles = StyleSheet.create({
     ...typography.h2,
     color: colors.textPrimary,
   },
+  username: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
   origin: {
     ...typography.body,
     color: colors.textMuted,
@@ -466,6 +492,9 @@ const styles = StyleSheet.create({
   },
   tagTextShared: {
     color: colors.orange,
+  },
+  userCountriesSection: {
+    marginBottom: spacing.xl,
   },
   pastHeader: {
     flexDirection: 'row',

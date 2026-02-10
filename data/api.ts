@@ -1410,6 +1410,160 @@ export async function setUserOnlineStatus(
 }
 
 // ---------------------------------------------------------------------------
+// Username
+// ---------------------------------------------------------------------------
+
+const RESERVED_USERNAMES = [
+  'admin', 'support', 'sola', 'moderator', 'mod', 'help',
+  'official', 'staff', 'system', 'null', 'undefined',
+  'deleted', 'anonymous', 'test', 'root', 'superuser',
+];
+
+const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
+
+export interface UsernameValidation {
+  valid: boolean;
+  available: boolean;
+  error?: string;
+}
+
+export function validateUsernameFormat(username: string): { valid: boolean; error?: string } {
+  const normalized = username.toLowerCase();
+  if (normalized.length < 3) return { valid: false, error: 'Must be at least 3 characters' };
+  if (normalized.length > 30) return { valid: false, error: 'Must be 30 characters or less' };
+  if (!USERNAME_REGEX.test(normalized)) return { valid: false, error: 'Only lowercase letters, numbers, and underscores' };
+  if (RESERVED_USERNAMES.includes(normalized)) return { valid: false, error: 'This username is not available' };
+  return { valid: true };
+}
+
+export async function checkUsernameAvailability(
+  username: string,
+  currentUserId?: string,
+): Promise<UsernameValidation> {
+  const formatCheck = validateUsernameFormat(username);
+  if (!formatCheck.valid) return { valid: false, available: false, error: formatCheck.error };
+
+  const normalized = username.toLowerCase();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', normalized)
+    .maybeSingle();
+
+  if (error) throw error;
+  const available = !data || data.id === currentUserId;
+  return { valid: true, available, error: available ? undefined : 'Username is already taken' };
+}
+
+// ---------------------------------------------------------------------------
+// Search Travelers by Username
+// ---------------------------------------------------------------------------
+
+export interface TravelerSearchResult {
+  id: string;
+  username: string;
+  firstName: string;
+  avatarUrl: string | null;
+  homeCountryName: string | null;
+  homeCountryIso2: string | null;
+  verificationStatus: string;
+}
+
+export async function searchTravelersByUsername(
+  query: string,
+  currentUserId: string,
+  limit: number = 20,
+): Promise<TravelerSearchResult[]> {
+  const normalized = query.toLowerCase().trim();
+  if (normalized.length < 2) return [];
+
+  const blockedIds = await getBlockedUserIds(currentUserId);
+
+  let dbQuery = supabase
+    .from('profiles')
+    .select('id, username, first_name, avatar_url, home_country_name, home_country_iso2, verification_status')
+    .neq('id', currentUserId)
+    .not('username', 'is', null)
+    .ilike('username', `%${normalized}%`)
+    .eq('is_discoverable', true)
+    .limit(limit);
+
+  if (blockedIds.length > 0) {
+    dbQuery = dbQuery.not('id', 'in', `(${blockedIds.join(',')})`);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    username: row.username,
+    firstName: row.first_name,
+    avatarUrl: row.avatar_url,
+    homeCountryName: row.home_country_name,
+    homeCountryIso2: row.home_country_iso2,
+    verificationStatus: row.verification_status ?? 'unverified',
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// User Visited Countries
+// ---------------------------------------------------------------------------
+
+export interface UserVisitedCountry {
+  countryId: string;
+  countryIso2: string;
+  countryName: string;
+  createdAt: string;
+}
+
+export async function getUserVisitedCountries(userId: string): Promise<UserVisitedCountry[]> {
+  const { data, error } = await supabase
+    .from('user_visited_countries')
+    .select('country_id, created_at, countries(iso2, name)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    countryId: row.country_id,
+    countryIso2: row.countries?.iso2 ?? '',
+    countryName: row.countries?.name ?? '',
+    createdAt: row.created_at,
+  }));
+}
+
+export async function setVisitedCountries(
+  userId: string,
+  countryIds: string[],
+): Promise<void> {
+  const { error: deleteError } = await supabase
+    .from('user_visited_countries')
+    .delete()
+    .eq('user_id', userId);
+  if (deleteError) throw deleteError;
+
+  if (countryIds.length === 0) return;
+
+  const rows = countryIds.map((cid) => ({ user_id: userId, country_id: cid }));
+  const { error: insertError } = await supabase
+    .from('user_visited_countries')
+    .insert(rows);
+  if (insertError) throw insertError;
+}
+
+export async function getCountriesList(): Promise<{ id: string; iso2: string; name: string }[]> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('id, iso2, name')
+    .eq('is_active', true)
+    .order('name');
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ---------------------------------------------------------------------------
 // Trip CRUD
 // ---------------------------------------------------------------------------
 

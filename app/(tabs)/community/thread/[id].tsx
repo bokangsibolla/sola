@@ -57,7 +57,10 @@ function ReplyCard({
               <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
             </View>
           )}
-          <Text style={styles.replyAuthorName}>{reply.author.firstName}</Text>
+          <Text style={styles.replyAuthorName}>
+            {reply.author.firstName}
+            {reply.author.username ? ` @${reply.author.username}` : ''}
+          </Text>
         </Pressable>
         <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
         <View style={{ flex: 1 }} />
@@ -222,7 +225,10 @@ export default function ThreadDetail() {
                 <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
               </View>
             )}
-            <Text style={styles.authorName}>{thread.author.firstName}</Text>
+            <Text style={styles.authorName}>
+              {thread.author.firstName}
+              {thread.author.username ? ` @${thread.author.username}` : ''}
+            </Text>
           </Pressable>
         )}
         <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>

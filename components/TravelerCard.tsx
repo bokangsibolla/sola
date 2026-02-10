@@ -48,6 +48,9 @@ export default function TravelerCard({
         </View>
         <View style={styles.headerText}>
           <Text style={styles.name}>{profile.firstName}</Text>
+          {profile.username && (
+            <Text style={styles.username}>@{profile.username}</Text>
+          )}
           {(profile.locationCityName || profile.homeCountryName) && (
             <Text style={styles.location}>
               {profile.locationCityName ?? profile.homeCountryName}
@@ -150,6 +153,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: colors.textPrimary,
+  },
+  username: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 1,
   },
   location: {
     fontFamily: fonts.regular,

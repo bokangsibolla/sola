@@ -6,7 +6,9 @@ import {
   getProfileById,
   getConnectionStatus,
   getConnectionRequests,
+  getUserVisitedCountries,
 } from '@/data/api';
+import type { UserVisitedCountry } from '@/data/api';
 import {
   getPublicTripsGrouped,
   getVisitedCountries,
@@ -27,6 +29,7 @@ export interface TravelerProfileData {
   contextLabel: string | undefined;
   trips: GroupedTrips;
   visitedCountries: VisitedCountry[];
+  userManagedCountries: UserVisitedCountry[];
   tripOverlaps: Map<string, string>;
   totalTripCount: number;
   isLoading: boolean;
@@ -73,6 +76,13 @@ export function useTravelerProfile(targetUserId: string | undefined): TravelerPr
   const countriesQuery = useQuery({
     queryKey: ['travelerProfile', 'countries', targetUserId],
     queryFn: () => getVisitedCountries(targetUserId!),
+    enabled: !!targetUserId,
+    staleTime: 60_000,
+  });
+
+  const userManagedCountriesQuery = useQuery({
+    queryKey: ['travelerProfile', 'userVisitedCountries', targetUserId],
+    queryFn: () => getUserVisitedCountries(targetUserId!),
     enabled: !!targetUserId,
     staleTime: 60_000,
   });
@@ -138,6 +148,7 @@ export function useTravelerProfile(targetUserId: string | undefined): TravelerPr
     trips,
     tripOverlaps,
     visitedCountries: countriesQuery.data ?? [],
+    userManagedCountries: userManagedCountriesQuery.data ?? [],
     totalTripCount,
     isLoading,
     error,
@@ -146,6 +157,7 @@ export function useTravelerProfile(targetUserId: string | undefined): TravelerPr
       refetchStatus();
       tripsQuery.refetch();
       countriesQuery.refetch();
+      userManagedCountriesQuery.refetch();
     },
   };
 }

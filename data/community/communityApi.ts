@@ -48,7 +48,7 @@ export async function getThreadFeed(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -100,6 +100,7 @@ export async function getThreadFeed(
     author: {
       id: row.profiles?.id ?? row.author_id,
       firstName: row.profiles?.first_name ?? '',
+      username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
     countryName: row.countries?.name ?? null,
@@ -122,7 +123,7 @@ export async function getThread(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -139,6 +140,7 @@ export async function getThread(
     author: {
       id: data.profiles?.id ?? data.author_id,
       firstName: data.profiles?.first_name ?? '',
+      username: data.profiles?.username ?? null,
       avatarUrl: data.profiles?.avatar_url ?? null,
     },
     countryName: data.countries?.name ?? null,
@@ -197,7 +199,7 @@ export async function getThreadReplies(
     .from('community_replies')
     .select(`
       *,
-      profiles!community_replies_author_profile_fkey(id, first_name, avatar_url)
+      profiles!community_replies_author_profile_fkey(id, first_name, username, avatar_url)
     `)
     .eq('thread_id', threadId)
     .eq('status', 'active')
@@ -219,6 +221,7 @@ export async function getThreadReplies(
     author: {
       id: row.profiles?.id ?? row.author_id,
       firstName: row.profiles?.first_name ?? '',
+      username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
     userVote: userVotes.get(row.id) ?? null,
@@ -364,7 +367,7 @@ export async function getCityThreadPreviews(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -383,6 +386,7 @@ export async function getCityThreadPreviews(
     author: {
       id: row.profiles?.id ?? row.author_id,
       firstName: row.profiles?.first_name ?? '',
+      username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
     countryName: row.countries?.name ?? null,
@@ -422,7 +426,7 @@ export async function getCountryThreadPreviews(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -441,6 +445,7 @@ export async function getCountryThreadPreviews(
     author: {
       id: row.profiles?.id ?? row.author_id,
       firstName: row.profiles?.first_name ?? '',
+      username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
     countryName: row.countries?.name ?? null,

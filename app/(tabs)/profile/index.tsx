@@ -7,7 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { getCollections, getProfileById, getSavedPlaces } from '@/data/api';
+import { getCollections, getProfileById, getSavedPlaces, getUserVisitedCountries } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -36,20 +36,22 @@ export default function ProfileScreen() {
     ['profile', userId],
   );
 
-  // Re-fetch profile every time tab is focused (picks up edits)
-  useFocusEffect(
-    useCallback(() => {
-      refetchProfile();
-    }, [refetchProfile]),
-  );
-
   const country = profile?.homeCountryIso2
     ? countries.find((c) => c.iso2 === profile.homeCountryIso2)
     : undefined;
   const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), ['collections', userId]);
   const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), ['savedPlaces', userId]);
+  const { data: visitedCountries, loading: loadingVC, refetch: refetchVC } = useData(() => userId ? getUserVisitedCountries(userId) : Promise.resolve([]), ['visitedCountries', userId]);
 
-  if (loadingProfile || loadingCol || loadingSaved) return <LoadingScreen />;
+  // Re-fetch profile every time tab is focused (picks up edits)
+  useFocusEffect(
+    useCallback(() => {
+      refetchProfile();
+      refetchVC();
+    }, [refetchProfile, refetchVC]),
+  );
+
+  if (loadingProfile || loadingCol || loadingSaved || loadingVC) return <LoadingScreen />;
   if (errorProfile) return <ErrorScreen message={errorProfile.message} onRetry={refetchProfile} />;
   if (errorCol) return <ErrorScreen message={errorCol.message} onRetry={refetchCol} />;
   if (errorSaved) return <ErrorScreen message={errorSaved.message} onRetry={refetchSaved} />;
@@ -86,6 +88,9 @@ export default function ProfileScreen() {
             )}
           </View>
           <Text style={styles.name}>{profile?.firstName || 'Traveler'}</Text>
+          {profile?.username && (
+            <Text style={styles.username}>@{profile.username}</Text>
+          )}
           {country && (
             <Text style={styles.origin}>
               {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}{country.name}
@@ -102,6 +107,24 @@ export default function ProfileScreen() {
               {(profile?.interests ?? []).map((interest) => (
                 <View key={interest} style={styles.tag}>
                   <Text style={styles.tagText}>{interest}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
+        {/* Countries visited */}
+        {(visitedCountries ?? []).length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>
+              {(visitedCountries ?? []).length} {(visitedCountries ?? []).length === 1 ? 'country' : 'countries'} visited
+            </Text>
+            <View style={styles.tags}>
+              {(visitedCountries ?? []).map((vc) => (
+                <View key={vc.countryId} style={styles.tag}>
+                  <Text style={styles.tagText}>
+                    {vc.countryIso2 ? countryFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -215,6 +238,12 @@ const styles = StyleSheet.create({
   name: {
     ...typography.h2,
     color: colors.textPrimary,
+  },
+  username: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   origin: {
     ...typography.body,
