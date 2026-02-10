@@ -362,6 +362,29 @@ export interface Trip {
   createdAt: string;
 }
 
+export interface CityEvent {
+  id: string;
+  cityId: string;
+  name: string;
+  slug: string;
+  eventType: 'festival' | 'holiday' | 'seasonal' | 'parade' | 'conference' | 'sports';
+  description: string | null;
+  soloTip: string | null;
+  startMonth: number;
+  endMonth: number;
+  specificDates: string | null;
+  recurrence: 'annual' | 'one_time';
+  year: number | null;
+  heroImageUrl: string | null;
+  websiteUrl: string | null;
+  isFree: boolean;
+  crowdLevel: 'low' | 'moderate' | 'high' | null;
+  isActive: boolean;
+  orderIndex: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface TripPlace {
   tripId: string;
   placeId: string;
