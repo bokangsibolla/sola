@@ -2280,8 +2280,20 @@ export async function submitVerificationSelfie(
   const ext = selfieUri.split('.').pop()?.toLowerCase() ?? 'jpg';
   const filePath = `${userId}/selfie.${ext}`;
 
-  const response = await fetch(selfieUri);
-  const blob = await response.blob();
+  // Fetch the selfie image as a blob — on React Native this can fail if the
+  // URI is stale, the file was cleaned up, or permissions changed.
+  let blob: Blob;
+  try {
+    const response = await fetch(selfieUri);
+    if (!response.ok) {
+      throw new Error(`Failed to read selfie image (HTTP ${response.status})`);
+    }
+    blob = await response.blob();
+  } catch (err) {
+    throw new Error(
+      `Could not load your selfie photo. Please try taking a new one. (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
 
   const { error: uploadError } = await supabase.storage
     .from('verification-selfies')
@@ -2290,7 +2302,11 @@ export async function submitVerificationSelfie(
       upsert: true,
     });
 
-  if (uploadError) throw uploadError;
+  if (uploadError) {
+    throw new Error(
+      `Selfie upload failed. Please check your connection and try again. (${uploadError.message})`,
+    );
+  }
 
   const { error: updateError } = await supabase
     .from('profiles')
@@ -2302,6 +2318,16 @@ export async function submitVerificationSelfie(
     .eq('id', userId);
 
   if (updateError) throw updateError;
+
+  // Notify the team — fire-and-forget so a notification failure never
+  // blocks the user after a successful submission.
+  try {
+    await supabase.functions.invoke('notify-verification', {
+      body: { userId },
+    });
+  } catch {
+    // Silently ignore — the selfie was already submitted successfully.
+  }
 }
 
 export async function getVerificationStatus(

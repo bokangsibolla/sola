@@ -84,34 +84,22 @@ export async function changeLanguage(lang: SupportedLanguage): Promise<void> {
 
 /**
  * Initialize i18n. Call once at app startup.
- * Restores the user's saved language preference, falling back to device language.
+ * Always starts with English. Device language detection and AsyncStorage
+ * restore are disabled until screen-level i18n migration is complete.
  */
 export async function initI18n(): Promise<void> {
-  let savedLang: string | null = null;
-  try {
-    savedLang = await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY);
-  } catch {
-    // ignore
-  }
-
-  const initialLang = (savedLang && isSupportedLanguage(savedLang))
-    ? savedLang
-    : getDeviceLanguage();
+  // Clear any stale language preference from previous sessions
+  AsyncStorage.removeItem(LANGUAGE_STORAGE_KEY).catch(() => {});
 
   await i18n.use(initReactI18next).init({
     resources: {
       en: { translation: en },
     },
-    lng: 'en', // Start with English, then switch
+    lng: 'en',
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
   });
-
-  // If the target language isn't English, lazy-load and switch
-  if (initialLang !== 'en') {
-    await changeLanguage(initialLang as SupportedLanguage);
-  }
 }
 
 export default i18n;

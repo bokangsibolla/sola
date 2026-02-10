@@ -102,7 +102,16 @@
     "stillExploringMessage": "Our team is adding places to {{city}}. Check back soon!",
     "browseOther": "Browse other cities",
     "basedOn": "Based on {{sources}}",
-    "morePlaces": "+{{count}} more places"
+    "morePlaces": "+{{count}} more places",
+    "chooseDestination": "Choose a destination",
+    "lovedBySoloWomen": "Loved by solo women",
+    "waysToTravel": "Ways to travel solo",
+    "destination_one": "{{count}} destination",
+    "destination_other": "{{count}} destinations",
+    "fromWomenNow": "FROM WOMEN TRAVELING SOLO RIGHT NOW",
+    "realQuestions": "Real questions. Honest answers.",
+    "joinConversation": "Join the conversation",
+    "perNight": "/night"
   },
   "placeDetail": {
     "ourTake": "OUR TAKE",
@@ -118,12 +127,61 @@
     "saved": "Saved"
   },
   "community": {
+    "title": "Community",
     "newPost": "New Post",
     "replies_one": "{{count}} reply",
-    "replies_other": "{{count}} replies"
+    "replies_other": "{{count}} replies",
+    "fromSola": "FROM SOLA",
+    "answer_one": "{{count}} answer",
+    "answer_other": "{{count}} answers",
+    "helpful": "helpful",
+    "team": "TEAM",
+    "whereAreYouGoing": "Where are you going?",
+    "searchCountry": "Search country\u2026",
+    "allPlaces": "All places",
+    "allOf": "All of {{name}}",
+    "searchDiscussions": "Search discussions\u2026",
+    "recentDiscussions": "RECENT DISCUSSIONS",
+    "couldNotLoad": "Could not load threads",
+    "noConversations": "No conversations yet",
+    "introBannerTitle": "Real questions from women traveling solo.",
+    "introBannerSubtitle": "Ask anything \u2014 safety, stays, transport, experiences."
+  },
+  "trips": {
+    "title": "Trips",
+    "upcoming": "UPCOMING",
+    "pastTrips": "PAST TRIPS"
+  },
+  "home": {
+    "title": "Travelers",
+    "travelersNearYou": "Travelers near you",
+    "womenIn": "Women in {{city}}",
+    "womenExploringNearby": "Women exploring nearby",
+    "sharedInterests": "Shared interests",
+    "womenWhoEnjoy": "Women who enjoy similar things",
+    "suggestedForYou": "Suggested for you",
+    "discoverMore": "Discover more travelers",
+    "noTravelersTitle": "No travelers nearby yet",
+    "noTravelersSubtitle": "Enable location sharing to find women in your area, or check back soon",
+    "loadError": "Something went wrong loading travelers. Pull to retry."
+  },
+  "profile": {
+    "title": "Profile",
+    "traveler": "Traveler",
+    "interests": "Interests",
+    "placesSaved_one": "{{count}} place saved",
+    "placesSaved_other": "{{count}} places saved",
+    "collections": "Collections",
+    "collection_one": "{{count}} collection",
+    "collection_other": "{{count}} collections",
+    "emptyCollections": "Save places into collections as you explore.",
+    "editProfile": "Edit profile",
+    "messages": "Messages"
   },
   "currency": {
     "selectCurrency": "Select Currency",
+    "searchPlaceholder": "Search by name or code\u2026",
+    "noCurrenciesFound": "No currencies found",
     "budgetFriendly": "Budget-friendly",
     "veryBudgetFriendly": "Very budget-friendly",
     "moderate": "Moderate cost",
