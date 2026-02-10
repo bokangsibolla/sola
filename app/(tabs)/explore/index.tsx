@@ -9,21 +9,17 @@ import AppHeader from '@/components/AppHeader';
 import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import SearchBar from '@/components/explore/SearchBar';
 import SectionHeader from '@/components/explore/SectionHeader';
-import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
 import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { Feather } from '@expo/vector-icons';
 import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
 import { ModeIndicatorPill } from '@/components/explore/ModeIndicatorPill';
-import { ExploreModesCard } from '@/components/explore/ExploreModesCard';
+import { IntentHero } from '@/components/explore/IntentHero';
 import { TravellingModeWelcomeSheet } from '@/components/explore/TravellingModeWelcomeSheet';
-import { TripPromptCard } from '@/components/explore/TripPromptCard';
 import { useData } from '@/hooks/useData';
 import { getPlaceFirstImage } from '@/data/api';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import { useAppMode } from '@/state/AppModeContext';
-import { useExploreOnboarding } from '@/data/explore/useExploreOnboarding';
 import { getEmergencyNumbers } from '@/data/safety';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
 import type { Place } from '@/data/types';
@@ -136,8 +132,7 @@ function PlaceFeedCard({ place, onPress }: { place: Place; onPress: () => void }
 export default function ExploreScreen() {
   const { feedItems, isLoading, error, refresh } = useFeedItems();
   const router = useRouter();
-  const { mode, activeTripInfo, justActivated, clearJustActivated } = useAppMode();
-  const { showModesCard, dismissModesCard, showTripPrompt, dismissTripPrompt } = useExploreOnboarding();
+  const { activeTripInfo, justActivated, clearJustActivated } = useAppMode();
   const [showModeSheet, setShowModeSheet] = useState(false);
 
   const headerLeft = (
@@ -157,16 +152,6 @@ export default function ExploreScreen() {
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
-      case 'featured-collection':
-        return (
-          <View style={styles.zoneHero}>
-            <EditorialCollectionCard
-              collection={item.data}
-              onPress={() => router.push(`/(tabs)/explore/collection/${item.data.slug}`)}
-            />
-          </View>
-        );
-
       case 'countries-grid': {
         const visible = item.data.slice(0, MAX_COUNTRIES_SHOWN);
         const hasMore = item.data.length > MAX_COUNTRIES_SHOWN;
@@ -207,7 +192,7 @@ export default function ExploreScreen() {
         return (
           <View style={styles.zoneWide}>
             <View style={styles.zonePaddedHeader}>
-              <SectionHeader title="Loved by solo women" />
+              <SectionHeader title="Featured cities" />
             </View>
             <ScrollView
               horizontal
@@ -366,7 +351,6 @@ export default function ExploreScreen() {
         leftComponent={headerLeft}
         rightComponent={headerRight}
       />
-      <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
       <FlatList
         data={feedItems}
         renderItem={renderItem}
@@ -375,14 +359,7 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
         onRefresh={refresh}
         refreshing={isLoading}
-        ListHeaderComponent={
-          <>
-            {showModesCard && <ExploreModesCard onDismiss={dismissModesCard} />}
-            {mode === 'discover' && showTripPrompt && !activeTripInfo && (
-              <TripPromptCard onDismiss={dismissTripPrompt} />
-            )}
-          </>
-        }
+        ListHeaderComponent={<IntentHero />}
       />
       <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
       {justActivated && activeTripInfo && (
@@ -413,10 +390,6 @@ const styles = StyleSheet.create({
   },
 
   // Zone spacing — varied rhythm, not uniform
-  zoneHero: {
-    paddingHorizontal: spacing.screenX,
-    marginTop: spacing.lg,
-  },
   zone: {
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.xxxl,
@@ -543,7 +516,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   communityTitle: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.semiBold,
     fontSize: 22,
     color: colors.textPrimary,
     lineHeight: 28,

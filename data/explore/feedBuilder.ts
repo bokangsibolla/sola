@@ -4,12 +4,16 @@ import type { Country } from '../types';
 import type { FeedItem, CityWithCountry } from './types';
 
 /**
- * Build the explore feed as distinct zones:
- * 1. Featured editorial (one rotating collection)
- * 2. Countries grid (all countries)
- * 3. Popular cities (horizontal scroll)
- * 4. Collections section (all active collections)
- * 5. Community signal
+ * Build the explore feed as distinct zones.
+ *
+ * The IntentHero component now handles above-the-fold orientation,
+ * so the feed starts with browse content, not a featured collection.
+ *
+ * Order:
+ * 1. Countries grid (destination browsing)
+ * 2. Popular cities (horizontal scroll)
+ * 3. Collections section (all active collections together)
+ * 4. Community signal
  */
 export function buildFeed(
   collections: ExploreCollectionWithItems[],
@@ -18,34 +22,23 @@ export function buildFeed(
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
-  // Zone 2: Featured editorial — rotate by day of week
-  if (collections.length > 0) {
-    const dayIndex = new Date().getDay(); // 0-6
-    const featured = collections[dayIndex % collections.length];
-    feed.push({ type: 'featured-collection', data: featured });
-  }
-
-  // Zone 3: Countries grid
+  // Zone 1: Countries grid — primary browse entry
   if (countries.length > 0) {
     feed.push({ type: 'countries-grid', data: countries });
   }
 
-  // Zone 4: Popular cities — date-seeded shuffle within featured
+  // Zone 2: Popular cities — date-seeded shuffle within featured
   if (cities.length > 0) {
     const shuffled = shuffleCitiesByDate(cities);
     feed.push({ type: 'popular-cities', data: shuffled });
   }
 
-  // Zone 5: Collections section (all collections, not just the featured one)
-  if (collections.length > 1) {
-    // Exclude the one already shown as featured
-    const dayIndex = new Date().getDay();
-    const featuredIndex = dayIndex % collections.length;
-    const remaining = collections.filter((_, i) => i !== featuredIndex);
-    feed.push({ type: 'collections-section', data: remaining });
+  // Zone 3: All collections together — shown after intent is established
+  if (collections.length > 0) {
+    feed.push({ type: 'collections-section', data: collections });
   }
 
-  // Zone 6: Community signal
+  // Zone 4: Community signal
   feed.push({ type: 'community-signal' });
 
   return feed;
