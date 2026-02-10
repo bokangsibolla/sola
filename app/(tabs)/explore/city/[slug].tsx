@@ -29,6 +29,7 @@ import {
   getCityTripCount,
   getCityTravelerCount,
   getDestinationTags,
+  getSavedPlacesCountForCity,
   type PlacesGroupedByTime,
 } from '@/data/api';
 import { formatDailyBudget } from '@/lib/currency';
@@ -811,6 +812,12 @@ export default function PlaceScreen() {
     ['cityDestTags', city?.id],
   );
 
+  const { userId } = useAuth();
+  const { data: savedInCityCount } = useData(
+    () => (userId && city?.id) ? getSavedPlacesCountForCity(userId, city.id) : Promise.resolve(0),
+    ['savedInCity', userId, city?.id],
+  );
+
   const { currency: preferredCurrency } = useCurrency();
 
   if (loading) return <LoadingScreen />;
@@ -894,6 +901,29 @@ export default function PlaceScreen() {
               threadCount={cityThreadData.totalCount}
               tripCount={tripCount ?? 0}
             />
+          )}
+
+          {/* Save-cluster nudge — prompt trip creation when user saves 2+ places */}
+          {(savedInCityCount ?? 0) >= 2 && (
+            <Pressable
+              style={styles.tripNudge}
+              onPress={() => {
+                posthog.capture('save_cluster_nudge_tapped', { city_slug: slug, city_name: city.name });
+                router.push({
+                  pathname: '/trips/new',
+                  params: { cityName: city.name, cityId: city.id, countryIso2: country?.iso2 },
+                } as any);
+              }}
+            >
+              <Ionicons name="airplane-outline" size={18} color={colors.orange} />
+              <View style={styles.tripNudgeText}>
+                <Text style={styles.tripNudgeTitle}>Got dates for {city.name}?</Text>
+                <Text style={styles.tripNudgeSubtitle}>
+                  You&apos;ve saved {savedInCityCount} places here. Add dates and we&apos;ll help you on the ground.
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </Pressable>
           )}
 
           {/* 4. Signal pills */}
@@ -1178,6 +1208,32 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.textPrimary,
+  },
+
+  // Trip nudge card
+  tripNudge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    marginBottom: spacing.xxl,
+    gap: spacing.md,
+  },
+  tripNudgeText: {
+    flex: 1,
+  },
+  tripNudgeTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  tripNudgeSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginTop: 2,
   },
 
   // Context signals (At a glance)

@@ -870,6 +870,16 @@ export async function getSavedPlaces(userId: string): Promise<SavedPlace[]> {
   return rowsToCamel<SavedPlace>(data ?? []);
 }
 
+export async function getSavedPlacesCountForCity(userId: string, cityId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('saved_places')
+    .select('id, places!inner(city_id)', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('places.city_id', cityId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 export async function isPlaceSaved(userId: string, placeId: string): Promise<boolean> {
   const { count, error } = await supabase
     .from('saved_places')
