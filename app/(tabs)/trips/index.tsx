@@ -13,12 +13,14 @@ import CurrentTripCard from '@/components/trips/CurrentTripCard';
 import TripListCard from '@/components/trips/TripListCard';
 import TripEmptyState from '@/components/trips/TripEmptyState';
 import { useTrips } from '@/data/trips/useTrips';
+import { useAppMode } from '@/state/AppModeContext';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 export default function TripsScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const { trips, loading, error, refetch } = useTrips();
+  const { mode } = useAppMode();
   const [showPast, setShowPast] = useState(false);
 
   useEffect(() => {
@@ -37,6 +39,39 @@ export default function TripsScreen() {
   const upcoming = trips.upcoming ?? [];
   const past = trips.past ?? [];
   const isEmpty = !trips.current && upcoming.length === 0 && past.length === 0;
+
+  // Travelling Mode: active trip takes over the screen
+  if (mode === 'travelling' && trips.current) {
+    return (
+      <AppScreen>
+        <AppHeader
+          title={trips.current.destinationName || 'Your Trip'}
+          rightComponent={
+            <View style={styles.headerRight}>
+              <InboxButton />
+              <Pressable
+                style={styles.addButton}
+                onPress={() => router.push(`/trips/${trips.current!.id}`)}
+              >
+                <Ionicons name="expand-outline" size={18} color={colors.orange} />
+              </Pressable>
+            </View>
+          }
+        />
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+          <CurrentTripCard trip={trips.current} />
+          {upcoming.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionLabel}>UPCOMING</Text>
+              {upcoming.map((trip) => (
+                <TripListCard key={trip.id} trip={trip} />
+              ))}
+            </View>
+          )}
+        </ScrollView>
+      </AppScreen>
+    );
+  }
 
   return (
     <AppScreen>

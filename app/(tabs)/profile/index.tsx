@@ -12,6 +12,7 @@ import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
@@ -26,6 +27,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { userId } = useAuth();
   const posthog = usePostHog();
+  const { mode, activeTripInfo } = useAppMode();
 
   useEffect(() => {
     posthog.capture('profile_screen_viewed');
@@ -95,6 +97,14 @@ export default function ProfileScreen() {
             <Text style={styles.origin}>
               {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}{country.name}
             </Text>
+          )}
+          {mode === 'travelling' && activeTripInfo && (
+            <View style={styles.travellingBadge}>
+              <Ionicons name="navigate" size={14} color={colors.orange} />
+              <Text style={styles.travellingBadgeText}>
+                Currently in {activeTripInfo.city.name}
+              </Text>
+            </View>
           )}
           {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
         </View>
@@ -249,6 +259,21 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textMuted,
     marginTop: spacing.xs,
+  },
+  travellingBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: radius.full,
+    marginTop: spacing.sm,
+  },
+  travellingBadgeText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
   },
   bio: {
     ...typography.body,

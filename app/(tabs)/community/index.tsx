@@ -26,6 +26,7 @@ import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
 import type { ThreadWithAuthor } from '@/data/community/types';
 
@@ -399,6 +400,7 @@ function IntroBanner({ onDismiss }: { onDismiss: () => void }) {
 export default function CommunityHome() {
   const router = useRouter();
   const { userId } = useAuth();
+  const { mode, activeTripInfo } = useAppMode();
   const { threads: feedThreads, loading, refreshing, error: feedError, hasMore, loadMore, refresh, setFilters, filters } = useCommunityFeed();
   const { showIntroBanner, dismissIntro } = useCommunityOnboarding();
 
@@ -420,11 +422,25 @@ export default function CommunityHome() {
     [threads],
   );
 
-  // All remaining threads (excluding the featured one)
-  const displayThreads = useMemo(
-    () => featuredThread ? threads.filter((t) => t.id !== featuredThread.id) : threads,
-    [threads, featuredThread],
-  );
+  // All remaining threads (excluding the featured one), boosted by destination in travelling mode
+  const displayThreads = useMemo(() => {
+    const remaining = featuredThread ? threads.filter((t) => t.id !== featuredThread.id) : threads;
+
+    // Travelling mode: boost threads matching current trip destination to top
+    if (mode === 'travelling' && activeTripInfo) {
+      const tripCityName = activeTripInfo.city.name.toLowerCase();
+
+      return [...remaining].sort((a, b) => {
+        const aMatch = (a.cityName?.toLowerCase() === tripCityName) || (a.countryName?.toLowerCase().includes(tripCityName));
+        const bMatch = (b.cityName?.toLowerCase() === tripCityName) || (b.countryName?.toLowerCase().includes(tripCityName));
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0; // preserve existing order within groups
+      });
+    }
+
+    return remaining;
+  }, [threads, featuredThread, mode, activeTripInfo]);
 
   const [showPlaceSelector, setShowPlaceSelector] = useState(false);
   const [placeLabel, setPlaceLabel] = useState('All places');

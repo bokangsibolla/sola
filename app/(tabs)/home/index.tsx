@@ -22,6 +22,7 @@ import { sendConnectionRequest, getConnectionStatus } from '@/data/api';
 import { useLocationConsent } from '@/hooks/useLocationConsent';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
@@ -30,6 +31,7 @@ export default function HomeScreen() {
   const { userId } = useAuth();
   const posthog = usePostHog();
   const queryClient = useQueryClient();
+  const { mode } = useAppMode();
   const [locationDismissed, setLocationDismissed] = useState(false);
   const { query, setQuery, results: searchResults, isSearching } = useTravelerSearch(userId ?? undefined);
   const isSearchActive = query.length > 0;
@@ -53,33 +55,64 @@ export default function HomeScreen() {
     posthog.capture('home_screen_viewed');
   }, [posthog]);
 
-  // Build sections, only include non-empty ones
+  // Build sections with mode-dependent ordering
   const sections: { key: string; title: string; subtitle?: string; data: Profile[] }[] = [];
-  if (nearby.length > 0) {
-    sections.push({
-      key: 'nearby',
-      title: 'Travelers near you',
-      subtitle: userProfile?.locationCityName
-        ? `Women in ${userProfile.locationCityName}`
-        : 'Women exploring nearby',
-      data: nearby,
-    });
-  }
-  if (sharedInterests.length > 0) {
-    sections.push({
-      key: 'interests',
-      title: 'Shared interests',
-      subtitle: 'Women who enjoy similar things',
-      data: sharedInterests,
-    });
-  }
-  if (suggested.length > 0) {
-    sections.push({
-      key: 'suggested',
-      title: 'Suggested for you',
-      subtitle: 'Discover more travelers',
-      data: suggested,
-    });
+
+  if (mode === 'travelling') {
+    // Travelling: nearby first (on-the-ground orientation)
+    if (nearby.length > 0) {
+      sections.push({
+        key: 'nearby',
+        title: 'Women near you right now',
+        subtitle: userProfile?.locationCityName
+          ? `In ${userProfile.locationCityName}`
+          : 'Exploring nearby',
+        data: nearby,
+      });
+    }
+    if (sharedInterests.length > 0) {
+      sections.push({
+        key: 'interests',
+        title: 'Shared interests',
+        subtitle: 'Women who enjoy similar things',
+        data: sharedInterests,
+      });
+    }
+    if (suggested.length > 0) {
+      sections.push({
+        key: 'suggested',
+        title: 'More travelers',
+        data: suggested,
+      });
+    }
+  } else {
+    // Discover: suggested first (browse-oriented)
+    if (suggested.length > 0) {
+      sections.push({
+        key: 'suggested',
+        title: 'Suggested for you',
+        subtitle: 'Discover more travelers',
+        data: suggested,
+      });
+    }
+    if (sharedInterests.length > 0) {
+      sections.push({
+        key: 'interests',
+        title: 'Shared interests',
+        subtitle: 'Women who enjoy similar things',
+        data: sharedInterests,
+      });
+    }
+    if (nearby.length > 0) {
+      sections.push({
+        key: 'nearby',
+        title: 'Travelers near you',
+        subtitle: userProfile?.locationCityName
+          ? `Women in ${userProfile.locationCityName}`
+          : 'Women exploring nearby',
+        data: nearby,
+      });
+    }
   }
 
   const handleLocationEnable = useCallback(async () => {
