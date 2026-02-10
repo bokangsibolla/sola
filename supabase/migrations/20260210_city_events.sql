@@ -42,3 +42,17 @@ CREATE POLICY "city_events_service_update" ON city_events
 
 CREATE POLICY "city_events_service_delete" ON city_events
   FOR DELETE USING (auth.role() = 'service_role');
+
+-- Auto-update updated_at on row changes
+CREATE OR REPLACE FUNCTION update_city_events_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = now();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER set_city_events_updated_at
+  BEFORE UPDATE ON city_events
+  FOR EACH ROW
+  EXECUTE FUNCTION update_city_events_updated_at();

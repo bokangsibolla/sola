@@ -1031,7 +1031,7 @@ export async function getEventsByCity(
   );
 
   // Filter by month if provided
-  if (month) {
+  if (month != null) {
     events = events.filter((e) => {
       if (e.startMonth <= e.endMonth) {
         // Normal range: e.g., March(3) to May(5)

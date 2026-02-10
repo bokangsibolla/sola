@@ -775,18 +775,20 @@ function EventsSection({ cityId, userId }: { cityId: string; userId: string | nu
     }
   }, [upcomingTrip?.arriving]);
 
-  const { data: events } = useData(
-    () => getEventsByCity(cityId, selectedMonth),
-    ['cityEvents', cityId, selectedMonth],
-  );
-
-  // Don't render section at all if city has zero events in any month
+  // Fetch all events once, filter by month in-memory (avoids double API call)
   const { data: allEvents } = useData(
     () => getEventsByCity(cityId),
     ['cityEventsAll', cityId],
   );
 
   if (!allEvents || allEvents.length === 0) return null;
+
+  const events = allEvents.filter((e) => {
+    if (e.startMonth <= e.endMonth) {
+      return selectedMonth >= e.startMonth && selectedMonth <= e.endMonth;
+    }
+    return selectedMonth >= e.startMonth || selectedMonth <= e.endMonth;
+  });
 
   return (
     <View style={styles.eventsSection}>

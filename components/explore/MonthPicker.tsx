@@ -12,11 +12,11 @@ interface MonthPickerProps {
 export function MonthPicker({ selectedMonth, onSelect }: MonthPickerProps) {
   const scrollRef = useRef<ScrollView>(null);
 
-  // Auto-scroll to selected month on mount
+  // Auto-scroll to selected month when it changes (including trip-aware default)
   useEffect(() => {
     const offset = Math.max(0, (selectedMonth - 2) * 60);
     scrollRef.current?.scrollTo({ x: offset, animated: false });
-  }, []);
+  }, [selectedMonth]);
 
   return (
     <ScrollView
