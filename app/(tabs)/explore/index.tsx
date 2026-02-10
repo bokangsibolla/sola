@@ -15,6 +15,7 @@ import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCol
 import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { Feather } from '@expo/vector-icons';
 import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
+import { ModeIndicatorPill } from '@/components/explore/ModeIndicatorPill';
 import { useData } from '@/hooks/useData';
 import { getPlaceFirstImage } from '@/data/api';
 import { useFeedItems } from '@/data/explore/useFeedItems';
@@ -142,23 +143,20 @@ export default function ExploreScreen() {
     }
   }, [justActivated, clearJustActivated]);
 
-  const headerLeft =
-    mode === 'travelling' && activeTripInfo ? (
-      <Pressable onPress={() => setShowModeSheet(true)}>
-        <Text style={styles.travellingTitle}>
-          {activeTripInfo.city.name}
-          <Text style={styles.travellingDays}>{' \u00B7 '}{activeTripInfo.daysLeft}d left</Text>
-        </Text>
-      </Pressable>
-    ) : (
-      <Pressable onPress={() => setShowModeSheet(true)}>
-        <Image
-          source={require('@/assets/images/sola-logo.png')}
-          style={styles.headerLogo}
-          contentFit="contain"
-        />
-      </Pressable>
-    );
+  const headerLeft = (
+    <Image
+      source={require('@/assets/images/sola-logo.png')}
+      style={styles.headerLogo}
+      contentFit="contain"
+    />
+  );
+
+  const headerRight = (
+    <View style={styles.headerRight}>
+      <ModeIndicatorPill onPress={() => setShowModeSheet(true)} />
+      <InboxButton />
+    </View>
+  );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
@@ -342,7 +340,7 @@ export default function ExploreScreen() {
         <AppHeader
           title=""
           leftComponent={headerLeft}
-          rightComponent={<InboxButton />}
+          rightComponent={headerRight}
         />
         <LoadingScreen />
         <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
@@ -356,7 +354,7 @@ export default function ExploreScreen() {
         <AppHeader
           title=""
           leftComponent={headerLeft}
-          rightComponent={<InboxButton />}
+          rightComponent={headerRight}
         />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
         <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
@@ -369,7 +367,7 @@ export default function ExploreScreen() {
       <AppHeader
         title=""
         leftComponent={headerLeft}
-        rightComponent={<InboxButton />}
+        rightComponent={headerRight}
       />
       <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
       {justActivated && activeTripInfo && (
@@ -410,15 +408,10 @@ const styles = StyleSheet.create({
     height: 22,
     width: 76,
   },
-  travellingTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
-  travellingDays: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
   modeBanner: {
     flexDirection: 'row',
