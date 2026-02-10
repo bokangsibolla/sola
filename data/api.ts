@@ -17,6 +17,7 @@ import type {
   Collection,
   Trip,
   TripPlace,
+  CityEvent,
   Conversation,
   Message,
   DestinationTag,
@@ -972,6 +973,98 @@ export async function getTripById(id: string): Promise<Trip | undefined> {
     .maybeSingle();
   if (error) throw error;
   return data ? toCamel<Trip>(data) : undefined;
+}
+
+// ---------------------------------------------------------------------------
+// City Events
+// ---------------------------------------------------------------------------
+
+export function mapCityEvent(row: Record<string, any>): CityEvent {
+  return {
+    id: row.id,
+    cityId: row.city_id,
+    name: row.name,
+    slug: row.slug,
+    eventType: row.event_type,
+    description: row.description,
+    soloTip: row.solo_tip,
+    startMonth: row.start_month,
+    endMonth: row.end_month,
+    specificDates: row.specific_dates,
+    recurrence: row.recurrence,
+    year: row.year,
+    heroImageUrl: row.hero_image_url,
+    websiteUrl: row.website_url,
+    isFree: row.is_free,
+    crowdLevel: row.crowd_level,
+    isActive: row.is_active,
+    orderIndex: row.order_index,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+/**
+ * Get events for a city, optionally filtered by month.
+ * Handles events spanning multiple months (e.g., start_month=11, end_month=2 wraps around year).
+ * Filters out expired one_time events (year < current year).
+ */
+export async function getEventsByCity(
+  cityId: string,
+  month?: number,
+): Promise<CityEvent[]> {
+  const { data, error } = await supabase
+    .from('city_events')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .order('order_index');
+
+  if (error) throw error;
+
+  let events = (data ?? []).map(mapCityEvent);
+
+  // Filter out expired one-time events
+  const currentYear = new Date().getFullYear();
+  events = events.filter(
+    (e) => e.recurrence === 'annual' || (e.year != null && e.year >= currentYear),
+  );
+
+  // Filter by month if provided
+  if (month) {
+    events = events.filter((e) => {
+      if (e.startMonth <= e.endMonth) {
+        // Normal range: e.g., March(3) to May(5)
+        return month >= e.startMonth && month <= e.endMonth;
+      }
+      // Wrapping range: e.g., November(11) to February(2)
+      return month >= e.startMonth || month <= e.endMonth;
+    });
+  }
+
+  return events;
+}
+
+/**
+ * Get the user's next upcoming trip to a specific city.
+ * Used for smart month default on the events section.
+ */
+export async function getUpcomingTripForCity(
+  userId: string,
+  cityId: string,
+): Promise<Trip | null> {
+  const today = new Date().toISOString().split('T')[0];
+  const { data, error } = await supabase
+    .from('trips')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('destination_city_id', cityId)
+    .gte('arriving', today)
+    .order('arriving', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Trip>(data) : null;
 }
 
 // ---------------------------------------------------------------------------
