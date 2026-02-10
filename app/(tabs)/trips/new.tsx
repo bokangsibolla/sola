@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
+
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
@@ -156,14 +156,18 @@ export default function NewTripScreen() {
   };
 
   const handlePickCover = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [16, 9],
-      quality: 0.8,
-    });
-    if (!result.canceled && result.assets[0]) {
-      setCoverUri(result.assets[0].uri);
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ['images'],
+        allowsEditing: true,
+        aspect: [16, 9],
+        quality: 0.8,
+      });
+      if (!result.canceled && result.assets[0]) {
+        setCoverUri(result.assets[0].uri);
+      }
+    } catch {
+      // Image picker failed — cover photo is optional, just skip
     }
   };
 
@@ -287,45 +291,36 @@ export default function NewTripScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* ── Cover Photo ─────────────────────────────────────── */}
-        <Pressable
-          style={({ pressed }) => [styles.coverArea, pressed && { opacity: 0.85 }]}
-          onPress={handlePickCover}
-        >
-          {coverUri ? (
-            <>
-              <Image source={{ uri: coverUri }} style={styles.coverImage} contentFit="cover" />
-              <View style={styles.coverEditBadge}>
-                <Ionicons name="camera" size={14} color="#FFFFFF" />
-              </View>
-            </>
-          ) : (
-            <>
-              <Image
-                source={require('@/assets/images/pexels-driving.png')}
-                style={[styles.coverImage, { opacity: 0.3 }]}
-                contentFit="cover"
-              />
-              <LinearGradient
-                colors={['transparent', 'rgba(0,0,0,0.15)']}
-                style={StyleSheet.absoluteFillObject}
-              />
-              <View style={styles.coverPlaceholder}>
-                <View style={styles.coverIconCircle}>
-                  <Ionicons name="camera-outline" size={24} color={colors.orange} />
-                </View>
-                <Text style={styles.coverTitle}>Add a cover photo</Text>
-                <Text style={styles.coverHint}>Make your trip memorable</Text>
-              </View>
-            </>
-          )}
-          {/* Trip kind badge */}
-          {tripKind && (
-            <View style={styles.kindBadge}>
-              <Text style={styles.kindBadgeText}>{KIND_LABELS[tripKind]}</Text>
+        {/* ── Cover Photo (optional) ────────────────────────── */}
+        {coverUri ? (
+          <Pressable
+            style={({ pressed }) => [styles.coverArea, pressed && { opacity: 0.85 }]}
+            onPress={handlePickCover}
+          >
+            <Image source={{ uri: coverUri }} style={styles.coverImage} contentFit="cover" />
+            <View style={styles.coverEditBadge}>
+              <Ionicons name="camera" size={14} color="#FFFFFF" />
             </View>
-          )}
-        </Pressable>
+            {tripKind && (
+              <View style={styles.kindBadge}>
+                <Text style={styles.kindBadgeText}>{KIND_LABELS[tripKind]}</Text>
+              </View>
+            )}
+          </Pressable>
+        ) : (
+          <View style={styles.coverOptionalRow}>
+            {tripKind && (
+              <View style={styles.kindBadgeInline}>
+                <Ionicons name={TRIP_KINDS.find((k) => k.key === tripKind)?.icon as any ?? 'airplane-outline'} size={14} color={colors.orange} />
+                <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
+              </View>
+            )}
+            <Pressable style={styles.coverOptionalButton} onPress={handlePickCover}>
+              <Ionicons name="camera-outline" size={16} color={colors.textMuted} />
+              <Text style={styles.coverOptionalText}>Add cover photo</Text>
+            </Pressable>
+          </View>
+        )}
 
         {/* ── Destinations ────────────────────────────────────── */}
         <View style={styles.section}>
@@ -762,31 +757,6 @@ const styles = StyleSheet.create({
   coverImage: {
     ...StyleSheet.absoluteFillObject,
   },
-  coverPlaceholder: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-  },
-  coverIconCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: radius.full,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
-  coverTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  coverHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
   coverEditBadge: {
     position: 'absolute',
     bottom: spacing.md,
@@ -797,6 +767,25 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.5)',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  coverOptionalRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderDefault,
+  },
+  coverOptionalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  coverOptionalText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textMuted,
   },
   kindBadge: {
     position: 'absolute',
@@ -813,6 +802,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+  },
+  kindBadgeInline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  kindBadgeInlineText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
   },
 
   // ── Sections ──
