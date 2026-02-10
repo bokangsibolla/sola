@@ -21,6 +21,10 @@ export type FeedItem =
   | { type: 'section-header'; data: { title: string; subtitle?: string; variant: 'default' | 'editorial' } }
   | { type: 'editorial-collection'; data: ExploreCollectionWithItems }
   | { type: 'city-pair'; data: [CityWithCountry, CityWithCountry]; sectionLabel?: string }
-  | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] };
+  | { type: 'city-spotlight'; data: CityWithCountry; activities: ActivityWithCity[] }
+  // Travelling mode feed items
+  | { type: 'saved-in-city'; data: { cityName: string; places: any[] } }
+  | { type: 'places-in-city'; data: { cityName: string; places: any[] } }
+  | { type: 'know-before-you-go'; data: { countryIso2: string } };
 
 export type FeedItemType = FeedItem['type'];

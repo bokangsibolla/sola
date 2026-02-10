@@ -1,9 +1,11 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { getPopularCitiesWithCountry, getCountries } from '../api';
+import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity } from '../api';
 import { getExploreCollections, getExploreCollectionItems } from '../collections';
-import { buildFeed } from './feedBuilder';
+import { buildFeed, buildTravellingFeed } from './feedBuilder';
+import { useAppMode } from '@/state/AppModeContext';
+import { useAuth } from '@/state/AuthContext';
 import type { ExploreCollectionWithItems } from '../types';
 import type { FeedItem } from './types';
 
@@ -30,6 +32,8 @@ export function useFeedItems(): UseFeedItemsResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { mode, activeTripInfo } = useAppMode();
+  const { userId } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
@@ -78,7 +82,44 @@ export function useFeedItems(): UseFeedItemsResult {
 
         if (cancelled) return;
 
-        const feed = buildFeed(collectionsWithItems, citiesResult, countriesResult);
+        let feed: FeedItem[];
+
+        if (mode === 'travelling' && activeTripInfo?.city.id && userId) {
+          // Fetch city-specific data for travelling mode
+          let savedInCity: any[] = [];
+          let placesInCity: any[] = [];
+
+          try {
+            const [allSaved, allCityPlaces] = await Promise.all([
+              getSavedPlaces(userId),
+              getPlacesByCity(activeTripInfo.city.id),
+            ]);
+
+            // Filter saved places to those in the trip city
+            const cityPlaceIds = new Set(allCityPlaces.map((p: any) => p.id));
+            savedInCity = allSaved
+              .filter((sp: any) => cityPlaceIds.has(sp.placeId))
+              .map((sp: any) => allCityPlaces.find((p: any) => p.id === sp.placeId))
+              .filter(Boolean);
+
+            placesInCity = allCityPlaces;
+          } catch {
+            // Non-critical — continue with empty city data
+          }
+
+          feed = buildTravellingFeed(
+            savedInCity,
+            placesInCity,
+            activeTripInfo.city.countryIso2,
+            activeTripInfo.city.name,
+            collectionsWithItems,
+            citiesResult,
+            countriesResult,
+          );
+        } else {
+          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult);
+        }
+
         setFeedItems(feed);
       } catch (e) {
         if (!cancelled) {
@@ -92,7 +133,7 @@ export function useFeedItems(): UseFeedItemsResult {
 
     loadFeed();
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, mode, activeTripInfo?.city?.id, userId]);
 
   return {
     feedItems,

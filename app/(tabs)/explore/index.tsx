@@ -13,9 +13,11 @@ import SearchBar from '@/components/explore/SearchBar';
 import SectionHeader from '@/components/explore/SectionHeader';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
 import { CountryCard } from '@/components/explore/cards/CountryCard';
+import { Feather } from '@expo/vector-icons';
 import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import { useAppMode } from '@/state/AppModeContext';
+import { getEmergencyNumbers } from '@/data/safety';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -215,6 +217,101 @@ export default function ExploreScreen() {
             </Pressable>
           </View>
         );
+
+      case 'saved-in-city':
+        return (
+          <View style={styles.zoneWide}>
+            <View style={styles.zonePaddedHeader}>
+              <SectionHeader title={`Your saved places in ${item.data.cityName}`} />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.citiesScroll}
+            >
+              {item.data.places.map((place: any) => (
+                <Pressable
+                  key={place.id}
+                  style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+                  onPress={() => router.push(`/(tabs)/explore/place-detail/${place.id}`)}
+                >
+                  <Image
+                    source={{ uri: place.heroImageUrl ?? undefined }}
+                    style={StyleSheet.absoluteFillObject}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.55)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={styles.cityCardContent}>
+                    <Text style={styles.cityCardName} numberOfLines={1}>{place.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        );
+
+      case 'places-in-city':
+        return (
+          <View style={styles.zoneWide}>
+            <View style={styles.zonePaddedHeader}>
+              <SectionHeader title={`Places in ${item.data.cityName}`} />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.citiesScroll}
+            >
+              {item.data.places.slice(0, 10).map((place: any) => (
+                <Pressable
+                  key={place.id}
+                  style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+                  onPress={() => router.push(`/(tabs)/explore/place-detail/${place.id}`)}
+                >
+                  <Image
+                    source={{ uri: place.heroImageUrl ?? undefined }}
+                    style={StyleSheet.absoluteFillObject}
+                    contentFit="cover"
+                    transition={200}
+                  />
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.55)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={styles.cityCardContent}>
+                    <Text style={styles.cityCardName} numberOfLines={1}>{place.name}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        );
+
+      case 'know-before-you-go': {
+        const emergency = getEmergencyNumbers(item.data.countryIso2);
+        return (
+          <View style={styles.zone}>
+            <SectionHeader title="Good to know" />
+            <View style={styles.safetyCard}>
+              <View style={styles.safetyRow}>
+                <Feather name="phone" size={16} color={colors.emergency} />
+                <Text style={styles.safetyText}>
+                  Emergency: {emergency.general || emergency.police}
+                </Text>
+              </View>
+              <View style={styles.safetyRow}>
+                <Feather name="shield" size={16} color={colors.greenSoft} />
+                <Text style={styles.safetyText}>
+                  Police: {emergency.police} {'\u00B7'} Ambulance: {emergency.ambulance}
+                </Text>
+              </View>
+            </View>
+          </View>
+        );
+      }
 
       default:
         return null;
@@ -435,5 +532,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.orange,
+  },
+
+  // Safety card — travelling mode
+  safetyCard: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  safetyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  safetyText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
 });

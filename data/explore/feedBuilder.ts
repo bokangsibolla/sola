@@ -52,6 +52,45 @@ export function buildFeed(
 }
 
 /**
+ * Build the explore feed for travelling mode.
+ * Prepends city-specific content (saved places, all places, safety info)
+ * before the normal discover feed.
+ */
+export function buildTravellingFeed(
+  savedPlacesInCity: any[],
+  allPlacesInCity: any[],
+  countryIso2: string,
+  cityName: string,
+  collections: ExploreCollectionWithItems[],
+  cities: CityWithCountry[],
+  countries: Country[],
+): FeedItem[] {
+  const feed: FeedItem[] = [];
+
+  if (savedPlacesInCity.length > 0) {
+    feed.push({ type: 'saved-in-city', data: { cityName, places: savedPlacesInCity } });
+  }
+
+  if (allPlacesInCity.length > 0) {
+    const savedIds = new Set(savedPlacesInCity.map((p: any) => p.id));
+    const unsaved = allPlacesInCity.filter((p: any) => !savedIds.has(p.id));
+    if (unsaved.length > 0) {
+      feed.push({ type: 'places-in-city', data: { cityName, places: unsaved } });
+    }
+  }
+
+  if (countryIso2) {
+    feed.push({ type: 'know-before-you-go', data: { countryIso2 } });
+  }
+
+  // Append the normal discover feed below
+  const normalFeed = buildFeed(collections, cities, countries);
+  feed.push(...normalFeed);
+
+  return feed;
+}
+
+/**
  * Shuffle cities with a date-based seed so order changes daily
  * but stays stable within a single day.
  */
