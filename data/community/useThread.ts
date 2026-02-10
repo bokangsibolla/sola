@@ -27,7 +27,8 @@ export function useThread(threadId: string): UseThreadReturn {
     if (!userId || !threadId) return;
     try {
       setLoading(true);
-      const blockedIds = await getBlockedUserIds(userId);
+      let blockedIds: string[] = [];
+      try { blockedIds = await getBlockedUserIds(userId); } catch { /* fallback to empty */ }
       const [threadData, repliesData] = await Promise.all([
         getThread(userId, threadId),
         getThreadReplies(userId, threadId, blockedIds),

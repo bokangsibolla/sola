@@ -1,4 +1,6 @@
-// gesture-handler MUST be imported first, before any other imports
+// Hermes polyfill MUST be first — fixes Set/Map iteration across all dependencies
+import '@/lib/hermes-polyfill';
+// gesture-handler MUST be imported before other UI imports
 import 'react-native-gesture-handler';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -8,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, spacing, radius } from '@/constants/design';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -29,6 +32,9 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
+import { PreferencesProvider } from '@/state/PreferencesContext';
+import { AppModeProvider } from '@/state/AppModeContext';
+import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import OfflineBanner from '@/components/OfflineBanner';
 
@@ -57,33 +63,33 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
 const errorStyles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 24,
+    padding: spacing.xl,
   },
   title: {
     fontSize: 20,
     fontWeight: '600',
-    color: '#0E0E0E',
-    marginBottom: 8,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
   },
   message: {
     fontSize: 14,
-    color: '#9A9A9A',
+    color: colors.textMuted,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   button: {
-    backgroundColor: '#E5653A',
-    paddingHorizontal: 24,
-    paddingVertical: 12,
-    borderRadius: 16,
+    backgroundColor: colors.orange,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.button,
   },
   buttonText: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#FFFFFF',
+    color: colors.background,
   },
 });
 
@@ -151,6 +157,7 @@ function RootLayout() {
   const { isOffline } = useNetworkStatus();
 
   const [storeReady, setStoreReady] = useState(false);
+  const [i18nReady, setI18nReady] = useState(false);
   const [initTimedOut, setInitTimedOut] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -162,17 +169,18 @@ function RootLayout() {
 
   useEffect(() => {
     onboardingStore.hydrate().then(() => setStoreReady(true));
+    initI18n().then(() => setI18nReady(true)).catch(() => setI18nReady(true));
     const timer = setTimeout(() => setInitTimedOut(true), 10_000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && storeReady) {
+    if (fontsLoaded && storeReady && i18nReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, storeReady]);
+  }, [fontsLoaded, storeReady, i18nReady]);
 
-  if (initTimedOut && (!fontsLoaded || !storeReady)) {
+  if (initTimedOut && (!fontsLoaded || !storeReady || !i18nReady)) {
     SplashScreen.hideAsync();
     return (
       <View style={errorStyles.container}>
@@ -182,7 +190,7 @@ function RootLayout() {
     );
   }
 
-  if (!fontsLoaded || !storeReady) return null;
+  if (!fontsLoaded || !storeReady || !i18nReady) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -196,11 +204,15 @@ function RootLayout() {
           }}
         >
           <AuthProvider>
-            <SafeAreaProvider>
-              <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                <AuthGate />
-              </ThemeProvider>
-            </SafeAreaProvider>
+            <PreferencesProvider>
+              <AppModeProvider>
+                <SafeAreaProvider>
+                  <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+                    <AuthGate />
+                  </ThemeProvider>
+                </SafeAreaProvider>
+              </AppModeProvider>
+            </PreferencesProvider>
           </AuthProvider>
         </PostHogProvider>
       </QueryClientProvider>

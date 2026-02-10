@@ -10,6 +10,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from '@/components/ui/BackButton';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
@@ -79,9 +80,7 @@ export default function LensResultsScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.loadingContainer}>
@@ -95,9 +94,7 @@ export default function LensResultsScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.header}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
           <View style={{ width: 24 }} />
         </View>
         <View style={styles.emptyContainer}>
@@ -111,9 +108,7 @@ export default function LensResultsScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-        </Pressable>
+        <BackButton />
         <View style={{ width: 24 }} />
       </View>
 

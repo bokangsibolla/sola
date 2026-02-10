@@ -4,6 +4,7 @@ import { Image } from 'expo-image';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from '@/components/ui/BackButton';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getActivityWithDetails } from '@/data/api';
@@ -16,16 +17,16 @@ export default function ActivityDetailScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
 
   const { data, loading, error, refetch } = useData(
-    () => getActivityWithDetails(slug ?? ''),
-    [slug]
+    () => slug ? getActivityWithDetails(slug) : Promise.resolve(undefined),
+    [slug ?? ''],
   );
 
   const activity = data?.activity;
   const media = data?.media ?? [];
   const tags = data?.tags ?? [];
 
-  // Get the hero image URL from media or use a placeholder
-  const heroImageUrl = media[0]?.url ?? 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800';
+  // Get the hero image URL from media (null if no media available)
+  const heroImageUrl = media[0]?.url ?? null;
 
   // Format price level as dollar signs (1-4 scale)
   const formatPriceLevel = (level: number | null): string => {
@@ -56,9 +57,7 @@ export default function ActivityDetailScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.notFoundHeader}>
-          <Pressable onPress={() => router.back()} hitSlop={8}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
         </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Activity not found</Text>
@@ -72,20 +71,20 @@ export default function ActivityDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View style={styles.heroContainer} pointerEvents="box-none">
-          <Image
-            source={{ uri: heroImageUrl }}
-            style={styles.heroImage}
-            contentFit="cover"
-            pointerEvents="none"
-          />
+          {heroImageUrl ? (
+            <Image
+              source={{ uri: heroImageUrl }}
+              style={styles.heroImage}
+              contentFit="cover"
+              pointerEvents="none"
+            />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: colors.neutralFill }]} pointerEvents="none" />
+          )}
           {/* Back Button Overlay */}
-          <Pressable
-            style={[styles.backButton, { top: insets.top + spacing.sm }]}
-            onPress={() => router.back()}
-            hitSlop={8}
-          >
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <View style={[styles.backButton, { top: insets.top + spacing.sm }]}>
+            <BackButton />
+          </View>
           {/* Favorite Button Overlay */}
           <Pressable
             style={[styles.favoriteButton, { top: insets.top + spacing.sm }]}
@@ -103,19 +102,6 @@ export default function ActivityDetailScreen() {
             <View style={styles.locationRow}>
               <Ionicons name="location" size={16} color={colors.textSecondary} />
               <Text style={styles.location}>{activity.address}</Text>
-            </View>
-          )}
-
-          {/* Rating row - uses Google rating if available */}
-          {activity.googleRating && (
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={colors.textPrimary} />
-              <Text style={styles.ratingText}>{activity.googleRating.toFixed(1)}</Text>
-              {activity.googleReviewCount && (
-                <Text style={styles.reviewCount}>
-                  ({activity.googleReviewCount.toLocaleString()} reviews)
-                </Text>
-              )}
             </View>
           )}
 
@@ -257,7 +243,7 @@ const styles = StyleSheet.create({
     left: spacing.screenX,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -267,7 +253,7 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255,255,255,0.95)',
     alignItems: 'center',
     justifyContent: 'center',
@@ -291,22 +277,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textSecondary,
     flex: 1,
-  },
-  ratingRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.sm,
-  },
-  ratingText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
-  },
-  reviewCount: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
   },
   divider: {
     height: 1,

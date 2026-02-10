@@ -17,6 +17,7 @@ import { usePostHog } from 'posthog-react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import BackButton from '@/components/ui/BackButton';
 import { useSearch, SearchResult } from '@/data/explore';
 import { getPopularCitiesWithCountry } from '@/data/api';
 import type { CityWithCountry } from '@/data/explore/types';
@@ -139,9 +140,7 @@ export default function SearchScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={handleBack} hitSlop={12} style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
+        <BackButton onPress={handleBack} />
 
         <View style={styles.inputContainer}>
           <Feather name="search" size={17} color={colors.orange} />
@@ -323,12 +322,6 @@ const styles = StyleSheet.create({
     gap: spacing.md,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.borderDefault,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   inputContainer: {
     flex: 1,

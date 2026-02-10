@@ -14,7 +14,7 @@ import Animated, {
 import { usePostHog } from 'posthog-react-native';
 import AnimatedBackground from '@/components/onboarding/AnimatedBackground';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const heroImages = [
   require('@/assets/images/pexels-driving.png'),
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     height: 48,
-    borderRadius: 24,
+    borderRadius: radius.button,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
     alignItems: 'center',

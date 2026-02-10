@@ -16,14 +16,19 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import {
   createThread,
   getCommunityTopics,
   searchCommunityCountries,
   getCitiesForCountry,
 } from '@/data/community/communityApi';
+import { getProfileById } from '@/data/api';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
+import { requireVerification } from '@/lib/verification';
+import { useData } from '@/hooks/useData';
 import type { CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -44,7 +49,12 @@ export default function NewThread() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
+  const { mode, activeTripInfo } = useAppMode();
   const { showGuidedComposer, markFirstPost } = useCommunityOnboarding();
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
 
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
@@ -60,10 +70,19 @@ export default function NewThread() {
     getCommunityTopics().then(setTopics).catch(() => {});
   }, []);
 
+  // Pre-fill destination tag in travelling mode
+  useEffect(() => {
+    if (mode === 'travelling' && activeTripInfo?.city.id) {
+      setSelectedCityId(activeTripInfo.city.id);
+      setPlaceLabel(activeTripInfo.city.name);
+    }
+  }, [mode, activeTripInfo]);
+
   const canSubmit = title.trim().length > 0 && body.trim().length > 0 && !submitting;
 
   const handleSubmit = useCallback(async () => {
     if (!userId || !canSubmit) return;
+    if (!requireVerification(profile?.verificationStatus || 'unverified', 'post in the community')) return;
     setSubmitting(true);
     try {
       const threadId = await createThread(userId, {
@@ -96,21 +115,23 @@ export default function NewThread() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.closeButton}>
-          <Feather name="x" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Ask a question</Text>
-        <Pressable
-          onPress={handleSubmit}
-          disabled={!canSubmit}
-          style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text style={styles.postButtonText}>Post</Text>
-          )}
-        </Pressable>
+        <ScreenHeader
+          title="Ask a question"
+          variant="close"
+          rightComponent={
+            <Pressable
+              onPress={handleSubmit}
+              disabled={!canSubmit}
+              style={[styles.postButton, !canSubmit && styles.postButtonDisabled]}
+            >
+              {submitting ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <Text style={styles.postButtonText}>Post</Text>
+              )}
+            </Pressable>
+          }
+        />
       </View>
 
       <ScrollView
@@ -325,14 +346,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
   },
-  closeButton: { padding: spacing.xs },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
   postButton: {
     backgroundColor: colors.orange,
     borderRadius: radius.button,
@@ -417,7 +430,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     maxHeight: '70%',
   },
-  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
+  sheetHandle: { width: 36, height: 4, borderRadius: radius.xs, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.lg },
   searchRow: {
     flexDirection: 'row',

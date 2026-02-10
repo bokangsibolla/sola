@@ -67,10 +67,6 @@ export const AnalyticsEvents = {
   TRIP_CREATED: 'trip_created',
   TRIP_DETAIL_VIEWED: 'trip_detail_viewed',
   TRIP_PLACE_ADDED: 'trip_place_added',
-
-  // Safety
-  SOS_TAPPED: 'sos_tapped',
-  EMERGENCY_NUMBERS_VIEWED: 'emergency_numbers_viewed',
 } as const;
 
 export type AnalyticsEvent = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];

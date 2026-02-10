@@ -25,6 +25,7 @@ import type {
   PlaceVerificationSignal,
   PlaceSolaNote,
   PlaceVerificationStatus,
+  PlaceWithCity,
   ConnectionRequest,
   ConnectionStatus,
 } from './types';
@@ -85,6 +86,9 @@ export function mapCountry(row: Record<string, any>): Country {
     isFeatured: row.is_featured,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    imageSource: row.image_source,
+    imageAttribution: row.image_attribution,
+    imageCachedAt: row.image_cached_at,
     // Content fields (merged from geo_content)
     title: row.title,
     subtitle: row.subtitle,
@@ -141,6 +145,9 @@ export function mapCity(row: Record<string, any>): City {
     isFeatured: row.is_featured,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    imageSource: row.image_source,
+    imageAttribution: row.image_attribution,
+    imageCachedAt: row.image_cached_at,
     // Content fields (merged from geo_content)
     title: row.title,
     subtitle: row.subtitle,
@@ -602,6 +609,34 @@ export async function getActivitiesByCity(cityId: string): Promise<Place[]> {
   return rowsToCamel<Place>(data ?? []);
 }
 
+/**
+ * Get top places for a country, ordered by featured status and curation score.
+ * Joins through cities to resolve country, and includes first media image.
+ */
+export async function getTopPlacesByCountry(
+  countryId: string,
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select(`
+      *,
+      cities!inner(name, country_id),
+      place_media(url)
+    `)
+    .eq('cities.country_id', countryId)
+    .eq('is_active', true)
+    .order('is_featured', { ascending: false })
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
+}
+
 export async function getAllActivities(limit = 50): Promise<Place[]> {
   const { data, error } = await supabase
     .from('places')
@@ -833,6 +868,16 @@ export async function getSavedPlaces(userId: string): Promise<SavedPlace[]> {
     .eq('user_id', userId);
   if (error) throw error;
   return rowsToCamel<SavedPlace>(data ?? []);
+}
+
+export async function getSavedPlacesCountForCity(userId: string, cityId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('saved_places')
+    .select('id, places!inner(city_id)', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('places.city_id', cityId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function isPlaceSaved(userId: string, placeId: string): Promise<boolean> {
@@ -1308,6 +1353,8 @@ export interface UpdateProfileInput {
   currentCityName?: string | null;
   interests?: string[];
   travelStyle?: string | null;
+  preferredCurrency?: string;
+  preferredLanguage?: string;
 }
 
 export async function updateProfile(
@@ -1326,6 +1373,8 @@ export async function updateProfile(
   if (updates.currentCityName !== undefined) payload.current_city_name = updates.currentCityName;
   if (updates.interests !== undefined) payload.interests = updates.interests;
   if (updates.travelStyle !== undefined) payload.travel_style = updates.travelStyle;
+  if (updates.preferredCurrency !== undefined) payload.preferred_currency = updates.preferredCurrency;
+  if (updates.preferredLanguage !== undefined) payload.preferred_language = updates.preferredLanguage;
 
   const { data, error } = await supabase
     .from('profiles')
@@ -1403,6 +1452,160 @@ export async function setUserOnlineStatus(
     .update({ is_online: isOnline })
     .eq('id', userId);
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Username
+// ---------------------------------------------------------------------------
+
+const RESERVED_USERNAMES = [
+  'admin', 'support', 'sola', 'moderator', 'mod', 'help',
+  'official', 'staff', 'system', 'null', 'undefined',
+  'deleted', 'anonymous', 'test', 'root', 'superuser',
+];
+
+const USERNAME_REGEX = /^[a-z0-9_]{3,30}$/;
+
+export interface UsernameValidation {
+  valid: boolean;
+  available: boolean;
+  error?: string;
+}
+
+export function validateUsernameFormat(username: string): { valid: boolean; error?: string } {
+  const normalized = username.toLowerCase();
+  if (normalized.length < 3) return { valid: false, error: 'Must be at least 3 characters' };
+  if (normalized.length > 30) return { valid: false, error: 'Must be 30 characters or less' };
+  if (!USERNAME_REGEX.test(normalized)) return { valid: false, error: 'Only lowercase letters, numbers, and underscores' };
+  if (RESERVED_USERNAMES.includes(normalized)) return { valid: false, error: 'This username is not available' };
+  return { valid: true };
+}
+
+export async function checkUsernameAvailability(
+  username: string,
+  currentUserId?: string,
+): Promise<UsernameValidation> {
+  const formatCheck = validateUsernameFormat(username);
+  if (!formatCheck.valid) return { valid: false, available: false, error: formatCheck.error };
+
+  const normalized = username.toLowerCase();
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', normalized)
+    .maybeSingle();
+
+  if (error) throw error;
+  const available = !data || data.id === currentUserId;
+  return { valid: true, available, error: available ? undefined : 'Username is already taken' };
+}
+
+// ---------------------------------------------------------------------------
+// Search Travelers by Username
+// ---------------------------------------------------------------------------
+
+export interface TravelerSearchResult {
+  id: string;
+  username: string;
+  firstName: string;
+  avatarUrl: string | null;
+  homeCountryName: string | null;
+  homeCountryIso2: string | null;
+  verificationStatus: string;
+}
+
+export async function searchTravelersByUsername(
+  query: string,
+  currentUserId: string,
+  limit: number = 20,
+): Promise<TravelerSearchResult[]> {
+  const normalized = query.toLowerCase().trim();
+  if (normalized.length < 2) return [];
+
+  const blockedIds = await getBlockedUserIds(currentUserId);
+
+  let dbQuery = supabase
+    .from('profiles')
+    .select('id, username, first_name, avatar_url, home_country_name, home_country_iso2, verification_status')
+    .neq('id', currentUserId)
+    .not('username', 'is', null)
+    .ilike('username', `%${normalized}%`)
+    .eq('is_discoverable', true)
+    .limit(limit);
+
+  if (blockedIds.length > 0) {
+    dbQuery = dbQuery.not('id', 'in', `(${blockedIds.join(',')})`);
+  }
+
+  const { data, error } = await dbQuery;
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    username: row.username,
+    firstName: row.first_name,
+    avatarUrl: row.avatar_url,
+    homeCountryName: row.home_country_name,
+    homeCountryIso2: row.home_country_iso2,
+    verificationStatus: row.verification_status ?? 'unverified',
+  }));
+}
+
+// ---------------------------------------------------------------------------
+// User Visited Countries
+// ---------------------------------------------------------------------------
+
+export interface UserVisitedCountry {
+  countryId: string;
+  countryIso2: string;
+  countryName: string;
+  createdAt: string;
+}
+
+export async function getUserVisitedCountries(userId: string): Promise<UserVisitedCountry[]> {
+  const { data, error } = await supabase
+    .from('user_visited_countries')
+    .select('country_id, created_at, countries(iso2, name)')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    countryId: row.country_id,
+    countryIso2: row.countries?.iso2 ?? '',
+    countryName: row.countries?.name ?? '',
+    createdAt: row.created_at,
+  }));
+}
+
+export async function setVisitedCountries(
+  userId: string,
+  countryIds: string[],
+): Promise<void> {
+  const { error: deleteError } = await supabase
+    .from('user_visited_countries')
+    .delete()
+    .eq('user_id', userId);
+  if (deleteError) throw deleteError;
+
+  if (countryIds.length === 0) return;
+
+  const rows = countryIds.map((cid) => ({ user_id: userId, country_id: cid }));
+  const { error: insertError } = await supabase
+    .from('user_visited_countries')
+    .insert(rows);
+  if (insertError) throw insertError;
+}
+
+export async function getCountriesList(): Promise<{ id: string; iso2: string; name: string }[]> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('id, iso2, name')
+    .eq('is_active', true)
+    .order('name');
+  if (error) throw error;
+  return data ?? [];
 }
 
 // ---------------------------------------------------------------------------
@@ -1497,6 +1700,19 @@ export async function deleteTrip(tripId: string): Promise<void> {
     .delete()
     .eq('id', tripId);
   if (error) throw error;
+}
+
+/**
+ * Count how many trips have this city as a destination.
+ * Used on city detail page for credibility sourcing.
+ */
+export async function getCityTripCount(cityId: string): Promise<number> {
+  const { count, error } = await supabase
+    .from('trips')
+    .select('id', { count: 'exact', head: true })
+    .eq('destination_city_id', cityId);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 // ---------------------------------------------------------------------------
@@ -2128,10 +2344,27 @@ export async function getNearbyTravelers(
     .eq('location_city_name', cityName)
     .eq('location_sharing_enabled', true)
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
+}
+
+/**
+ * Count discoverable travelers currently in a city.
+ * Used on city detail page for traveler presence signal.
+ */
+export async function getCityTravelerCount(
+  cityName: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('profiles')
+    .select('id', { count: 'exact', head: true })
+    .eq('location_city_name', cityName)
+    .eq('location_sharing_enabled', true)
+    .eq('is_discoverable', true);
+  if (error) throw error;
+  return count ?? 0;
 }
 
 export async function getTravelersInCountry(
@@ -2148,7 +2381,7 @@ export async function getTravelersInCountry(
     .eq('location_country_name', countryName)
     .eq('location_sharing_enabled', true)
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
@@ -2167,7 +2400,7 @@ export async function getTravelersWithSharedInterests(
     .select('*')
     .eq('is_discoverable', true)
     .overlaps('interests', userInterests)
-    .not('id', 'in', `(${excluded.join(',')})`)
+    .not('id', 'in', `(${excluded})`)
     .limit(limit);
   if (error) throw error;
   return rowsToCamel<Profile>(data ?? []);
@@ -2188,7 +2421,7 @@ export async function getSuggestedTravelers(
     .from('profiles')
     .select('*')
     .eq('is_discoverable', true)
-    .not('id', 'in', `(${allExcluded.join(',')})`)
+    .not('id', 'in', `(${allExcluded})`)
     .not('interests', 'eq', '{}')
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -2233,4 +2466,78 @@ export async function getOrCreateConversationGuarded(
     throw new Error('You must be connected to message this traveler.');
   }
   return getOrCreateConversation(userId, otherUserId);
+}
+
+// ---------------------------------------------------------------------------
+// User Verification (Selfie)
+// ---------------------------------------------------------------------------
+
+export async function submitVerificationSelfie(
+  userId: string,
+  selfieUri: string,
+): Promise<void> {
+  const ext = selfieUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const filePath = `${userId}/selfie.${ext}`;
+
+  // Fetch the selfie image as a blob — on React Native this can fail if the
+  // URI is stale, the file was cleaned up, or permissions changed.
+  let blob: Blob;
+  try {
+    const response = await fetch(selfieUri);
+    if (!response.ok) {
+      throw new Error(`Failed to read selfie image (HTTP ${response.status})`);
+    }
+    blob = await response.blob();
+  } catch (err) {
+    throw new Error(
+      `Could not load your selfie photo. Please try taking a new one. (${err instanceof Error ? err.message : String(err)})`,
+    );
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from('verification-selfies')
+    .upload(filePath, blob, {
+      contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+      upsert: true,
+    });
+
+  if (uploadError) {
+    throw new Error(
+      `Selfie upload failed. Please check your connection and try again. (${uploadError.message})`,
+    );
+  }
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      verification_status: 'pending',
+      verification_selfie_url: filePath,
+      verification_submitted_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+
+  if (updateError) throw updateError;
+
+  // Notify the team — fire-and-forget so a notification failure never
+  // blocks the user after a successful submission.
+  try {
+    await supabase.functions.invoke('notify-verification', {
+      body: { userId },
+    });
+  } catch {
+    // Silently ignore — the selfie was already submitted successfully.
+  }
+}
+
+export async function getVerificationStatus(
+  userId: string,
+): Promise<'unverified' | 'pending' | 'verified' | 'rejected'> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('verification_status')
+    .eq('id', userId)
+    .single();
+
+  if (error) throw error;
+  return data.verification_status;
 }

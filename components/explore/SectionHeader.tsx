@@ -41,8 +41,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.screenX,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
     marginTop: spacing.sm,
   },
   textContainer: {

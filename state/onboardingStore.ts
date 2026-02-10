@@ -19,6 +19,7 @@ interface OnboardingData {
   tripArriving: string;
   tripLeaving: string;
   tripNights: number;
+  preferredCurrency: string;
   stayPreference: string;
   spendingStyle: string;
   tripFlexibleDates: boolean;
@@ -53,6 +54,7 @@ const defaults: OnboardingData = {
   tripArriving: '',
   tripLeaving: '',
   tripNights: 0,
+  preferredCurrency: 'USD',
   stayPreference: '',
   spendingStyle: '',
   tripFlexibleDates: false,

@@ -39,7 +39,7 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
   // Fetch blocked users once
   useEffect(() => {
     if (!userId) return;
-    getBlockedUserIds(userId).then(setBlockedIds).catch(() => {});
+    getBlockedUserIds(userId).then(setBlockedIds).catch(() => setBlockedIds([]));
   }, [userId]);
 
   const fetchThreads = useCallback(async (pageNum: number, isRefresh: boolean) => {

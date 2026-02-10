@@ -14,9 +14,15 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useAuth } from '@/state/AuthContext';
+import { useData } from '@/hooks/useData';
+import { getProfileById, updateProfile } from '@/data/api';
+import { getSupportedCurrencies, getSymbol } from '@/lib/currency';
+import { getSupportedLanguages, changeLanguage, type SupportedLanguage } from '@/lib/i18n';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const PRIVACY_POLICY_URL = 'https://solatravel.app/privacy';
 const TERMS_URL = 'https://solatravel.app/terms';
@@ -30,6 +36,12 @@ const VISIBILITY_LABELS: Record<string, string> = {
   public: 'Public',
 };
 
+const VERIFICATION_DISPLAY: Record<string, { label: string; color: string; icon: keyof typeof Ionicons.glyphMap }> = {
+  verified: { label: 'Verified', color: colors.greenSoft, icon: 'shield-checkmark' },
+  pending: { label: 'Under Review', color: colors.orange, icon: 'time-outline' },
+  rejected: { label: 'Retry Verification', color: colors.emergency, icon: 'alert-circle-outline' },
+  unverified: { label: 'Not Verified', color: colors.textMuted, icon: 'shield-outline' },
+};
 
 function showPicker(
   title: string,
@@ -67,14 +79,24 @@ function showPicker(
 export default function SettingsScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { signOut } = useAuth();
+  const { userId, signOut } = useAuth();
   const posthog = usePostHog();
+
+  const { data: profile, refetch: refetchProfile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
 
   useEffect(() => {
     posthog.capture('settings_screen_viewed');
   }, [posthog]);
 
   const [privacy, setPrivacy] = useState(onboardingStore.get('privacyDefaults'));
+
+  const verificationStatus = profile?.verificationStatus || 'unverified';
+  const verificationInfo = VERIFICATION_DISPLAY[verificationStatus] || VERIFICATION_DISPLAY.unverified;
+  const currentCurrency = profile?.preferredCurrency || 'USD';
+  const currentLanguage = (profile?.preferredLanguage || 'en') as SupportedLanguage;
 
   const updatePrivacy = (
     key: keyof typeof privacy,
@@ -85,6 +107,43 @@ export default function SettingsScreen() {
     setPrivacy(updated);
     posthog.capture('privacy_setting_changed', { setting: key, value: values[index] });
     onboardingStore.set('privacyDefaults', updated as typeof privacy);
+  };
+
+  const handleCurrencyPicker = () => {
+    const currencies = getSupportedCurrencies();
+    const labels = currencies.map((c) => `${c.symbol} ${c.code} \u2014 ${c.label}`);
+    const currentIdx = currencies.findIndex((c) => c.code === currentCurrency);
+
+    showPicker('Select Currency', labels, currentIdx, async (i) => {
+      const selected = currencies[i].code;
+      if (selected === currentCurrency || !userId) return;
+      try {
+        await updateProfile(userId, { preferredCurrency: selected });
+        posthog.capture('currency_changed', { currency: selected });
+        refetchProfile();
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    });
+  };
+
+  const handleLanguagePicker = () => {
+    const languages = getSupportedLanguages();
+    const labels = languages.map((l) => l.label);
+    const currentIdx = languages.findIndex((l) => l.code === currentLanguage);
+
+    showPicker('Select Language', labels, currentIdx, async (i) => {
+      const selected = languages[i].code;
+      if (selected === currentLanguage || !userId) return;
+      try {
+        await changeLanguage(selected);
+        await updateProfile(userId, { preferredLanguage: selected });
+        posthog.capture('language_changed', { language: selected });
+        refetchProfile();
+      } catch (error) {
+        Sentry.captureException(error);
+      }
+    });
   };
 
   const handleLogout = () => {
@@ -104,19 +163,51 @@ export default function SettingsScreen() {
     ]);
   };
 
+  const languageLabel = getSupportedLanguages().find((l) => l.code === currentLanguage)?.label || 'English';
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.navTitle}>Settings</Text>
-        <View style={{ width: 24 }} />
+        <ScreenHeader title="Settings" />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Verification */}
+        <Text style={styles.sectionTitle}>Verification</Text>
+
+        <Pressable
+          style={styles.settingRow}
+          onPress={() => router.push('/(tabs)/profile/verify' as any)}
+        >
+          <Ionicons name={verificationInfo.icon} size={18} color={verificationInfo.color} />
+          <Text style={styles.settingLabel}>Identity Verification</Text>
+          <Text style={[styles.settingValue, { color: verificationInfo.color }]}>
+            {verificationInfo.label}
+          </Text>
+          {verificationStatus !== 'verified' && (
+            <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+          )}
+        </Pressable>
+
+        {/* Preferences */}
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Preferences</Text>
+
+        <Pressable style={styles.settingRow} onPress={handleCurrencyPicker}>
+          <Ionicons name="wallet-outline" size={18} color={colors.textPrimary} />
+          <Text style={styles.settingLabel}>Currency</Text>
+          <Text style={styles.settingValue}>{getSymbol(currentCurrency)} {currentCurrency}</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+
+        <Pressable style={styles.settingRow} onPress={handleLanguagePicker}>
+          <Ionicons name="language-outline" size={18} color={colors.textPrimary} />
+          <Text style={styles.settingLabel}>Language</Text>
+          <Text style={styles.settingValue}>{languageLabel}</Text>
+          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+        </Pressable>
+
         {/* Privacy */}
-        <Text style={styles.sectionTitle}>Privacy</Text>
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Privacy</Text>
 
         <Pressable
           style={styles.settingRow}
@@ -226,10 +317,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  navTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
   },
   content: {
     paddingHorizontal: spacing.lg,

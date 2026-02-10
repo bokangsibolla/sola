@@ -16,6 +16,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import BackButton from '@/components/ui/BackButton';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useThread } from '@/data/community/useThread';
 import { castVote, createReply, reportContent } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
@@ -55,7 +57,10 @@ function ReplyCard({
               <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
             </View>
           )}
-          <Text style={styles.replyAuthorName}>{reply.author.firstName}</Text>
+          <Text style={styles.replyAuthorName}>
+            {reply.author.firstName}
+            {reply.author.username ? ` @${reply.author.username}` : ''}
+          </Text>
         </Pressable>
         <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
         <View style={{ flex: 1 }} />
@@ -169,9 +174,9 @@ export default function ThreadDetail() {
   if (!thread) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
+        <View style={styles.headerBar}>
+          <BackButton />
+        </View>
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Thread not found</Text>
         </View>
@@ -220,7 +225,10 @@ export default function ThreadDetail() {
                 <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
               </View>
             )}
-            <Text style={styles.authorName}>{thread.author.firstName}</Text>
+            <Text style={styles.authorName}>
+              {thread.author.firstName}
+              {thread.author.username ? ` @${thread.author.username}` : ''}
+            </Text>
           </Pressable>
         )}
         <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
@@ -268,11 +276,7 @@ export default function ThreadDetail() {
     >
       {/* Header bar */}
       <View style={styles.headerBar}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle} numberOfLines={1}>Discussion</Text>
-        <View style={{ width: 40 }} />
+        <ScreenHeader title="Discussion" />
       </View>
 
       {/* Replies list */}
@@ -338,15 +342,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingVertical: spacing.sm,
   },
-  backButton: { padding: spacing.xs },
-  headerTitle: {
-    flex: 1,
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-
   listContent: { paddingHorizontal: spacing.screenX, paddingBottom: 20 },
 
   // Thread header
@@ -359,7 +354,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: radius.pill,
     overflow: 'hidden',
     textTransform: 'uppercase',
   },
@@ -370,7 +365,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: 10,
+    borderRadius: radius.pill,
     overflow: 'hidden',
   },
   threadTitle: {
@@ -391,7 +386,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.sm,
   },
-  avatar: { width: 28, height: 28, borderRadius: 14 },
+  avatar: { width: 28, height: 28, borderRadius: radius.full },
   avatarPlaceholder: {
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
@@ -416,7 +411,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 6,
     paddingVertical: 1,
-    borderRadius: 4,
+    borderRadius: radius.sm,
     overflow: 'hidden',
     letterSpacing: 0.5,
   },
@@ -516,7 +511,7 @@ const styles = StyleSheet.create({
   sendButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',

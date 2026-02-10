@@ -12,6 +12,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import {
@@ -92,12 +93,8 @@ export default function AllCountriesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>All Countries</Text>
-        <View style={{ width: 24 }} />
+      <View style={{ paddingHorizontal: spacing.screenX }}>
+        <ScreenHeader title="All Countries" />
       </View>
 
       {/* Search */}
@@ -172,18 +169,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
-  },
-  headerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
   },
   searchContainer: {
     flexDirection: 'row',

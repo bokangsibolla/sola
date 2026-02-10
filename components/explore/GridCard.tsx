@@ -1,9 +1,9 @@
 // components/explore/GridCard.tsx
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = 12;
@@ -39,7 +39,7 @@ export default function GridCard({
   isFavorited = false,
   showFavorite = true,
 }: GridCardProps) {
-  const [scale] = useState(new Animated.Value(1));
+  const scale = useRef(new Animated.Value(1)).current;
   const [localFavorited, setLocalFavorited] = useState(isFavorited);
 
   const onPressIn = useCallback(() => {
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     width: GRID_CARD_WIDTH,
     height: GRID_CARD_WIDTH, // Square aspect ratio
-    borderRadius: 14,
+    borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
     position: 'relative',
@@ -168,7 +168,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.92)',
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 12,
+    borderRadius: radius.none,
   },
   badgeText: {
     fontFamily: fonts.medium,
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     right: spacing.sm,
     width: 28,
     height: 28,
-    borderRadius: 14,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',

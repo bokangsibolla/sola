@@ -44,9 +44,13 @@ export async function resolveLensResults(
   if (matchError) throw matchError;
   if (!matches || matches.length === 0) return [];
 
-  const uniqueEntities = Array.from(
-    new Map(matches.map(m => [`${m.entity_type}:${m.entity_id}`, m])).values()
-  );
+  const seenKeys = new Set<string>();
+  const uniqueEntities = matches.filter(m => {
+    const key = `${m.entity_type}:${m.entity_id}`;
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
 
   let filtered = uniqueEntities;
   if (lens.excludeTags.length > 0) {

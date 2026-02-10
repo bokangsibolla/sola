@@ -412,7 +412,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 14,
     paddingVertical: 6,
-    borderRadius: 20,
+    borderRadius: radius.pill,
   },
   nightsText: {
     fontFamily: fonts.semiBold,

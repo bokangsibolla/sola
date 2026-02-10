@@ -26,6 +26,7 @@ import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
+import { useAppMode } from '@/state/AppModeContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
 import type { ThreadWithAuthor } from '@/data/community/types';
 
@@ -109,7 +110,11 @@ function ThreadCard({
   const helpfulColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
 
   const isSystem = thread.authorType === 'system';
-  const authorName = isSystem ? 'Sola Team' : thread.author.firstName;
+  const authorName = isSystem
+    ? 'Sola Team'
+    : thread.author.username
+      ? `${thread.author.firstName} @${thread.author.username}`
+      : thread.author.firstName;
   const placeName = thread.cityName ?? thread.countryName;
   const hasImage = !!thread.cityImageUrl;
 
@@ -395,6 +400,7 @@ function IntroBanner({ onDismiss }: { onDismiss: () => void }) {
 export default function CommunityHome() {
   const router = useRouter();
   const { userId } = useAuth();
+  const { mode, activeTripInfo } = useAppMode();
   const { threads: feedThreads, loading, refreshing, error: feedError, hasMore, loadMore, refresh, setFilters, filters } = useCommunityFeed();
   const { showIntroBanner, dismissIntro } = useCommunityOnboarding();
 
@@ -416,11 +422,27 @@ export default function CommunityHome() {
     [threads],
   );
 
-  // All remaining threads (excluding the featured one)
-  const displayThreads = useMemo(
-    () => featuredThread ? threads.filter((t) => t.id !== featuredThread.id) : threads,
-    [threads, featuredThread],
-  );
+  // All remaining threads (excluding the featured one), boosted by destination in travelling mode
+  const displayThreads = useMemo(() => {
+    const remaining = featuredThread ? threads.filter((t) => t.id !== featuredThread.id) : threads;
+
+    // Travelling mode: boost threads matching current trip destination to top
+    if (mode === 'travelling' && activeTripInfo) {
+      const tripCityName = activeTripInfo.city.name.toLowerCase();
+      const tripCityId = activeTripInfo.city.id;
+
+      return [...remaining].sort((a, b) => {
+        // Match by city ID first (most precise), then by city name
+        const aMatch = (tripCityId && a.cityId === tripCityId) || (a.cityName?.toLowerCase() === tripCityName);
+        const bMatch = (tripCityId && b.cityId === tripCityId) || (b.cityName?.toLowerCase() === tripCityName);
+        if (aMatch && !bMatch) return -1;
+        if (!aMatch && bMatch) return 1;
+        return 0; // preserve existing order within groups
+      });
+    }
+
+    return remaining;
+  }, [threads, featuredThread, mode, activeTripInfo]);
 
   const [showPlaceSelector, setShowPlaceSelector] = useState(false);
   const [placeLabel, setPlaceLabel] = useState('All places');
@@ -523,7 +545,11 @@ export default function CommunityHome() {
       )}
 
       {/* Section label */}
-      <Text style={styles.sectionLabel}>RECENT DISCUSSIONS</Text>
+      <Text style={styles.sectionLabel}>
+        {mode === 'travelling' && activeTripInfo
+          ? `${activeTripInfo.city.name.toUpperCase()} & MORE`
+          : 'RECENT DISCUSSIONS'}
+      </Text>
     </View>
   );
 
@@ -734,7 +760,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 22,
     height: 22,
-    borderRadius: 11,
+    borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
   },
   avatarSystem: {
@@ -869,7 +895,7 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: radius.full,
     backgroundColor: colors.orange,
     alignItems: 'center',
     justifyContent: 'center',
@@ -893,7 +919,7 @@ const styles = StyleSheet.create({
     paddingTop: spacing.md,
     paddingHorizontal: spacing.screenX,
   },
-  sheetHandle: { width: 36, height: 4, borderRadius: 2, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
+  sheetHandle: { width: 36, height: 4, borderRadius: radius.xs, backgroundColor: colors.borderDefault, alignSelf: 'center', marginBottom: spacing.xl },
   sheetTitle: { fontFamily: fonts.semiBold, fontSize: 20, color: colors.textPrimary, marginBottom: spacing.lg },
 
   // Place selector sheet

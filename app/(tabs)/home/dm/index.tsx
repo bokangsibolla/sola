@@ -1,11 +1,12 @@
 import { useEffect } from 'react';
 import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { getConversationsPaginated, getProfileById, getBlockedUserIds } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { usePaginatedData } from '@/hooks/usePaginatedData';
@@ -53,21 +54,37 @@ export default function DMListScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title="Messages"
-        leftComponent={
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
-        }
-      />
+      <ScreenHeader title="Messages" />
 
       {visibleConversations.length === 0 ? (
-        <View style={styles.empty}>
-          <Ionicons name="chatbubbles-outline" size={32} color={colors.textMuted} />
-          <Text style={styles.emptyText}>
-            No conversations yet. Say hi to a fellow traveler.
+        <View style={styles.emptyContainer}>
+          {/* Warm photo with soft overlay */}
+          <View style={styles.emptyImageWrapper}>
+            <Image
+              source={require('@/assets/images/pexels-paddleboarding.png')}
+              style={styles.emptyImage}
+              contentFit="cover"
+              transition={300}
+            />
+            <LinearGradient
+              colors={['transparent', 'rgba(255,255,255,0.4)']}
+              style={styles.emptyImageOverlay}
+            />
+          </View>
+
+          {/* Warm copy */}
+          <Text style={styles.emptyHeadline}>Your travel conversations</Text>
+          <Text style={styles.emptySubtext}>
+            Connect with fellow travelers heading your way
           </Text>
+
+          {/* CTA to find travelers */}
+          <Pressable
+            style={styles.ctaButton}
+            onPress={() => router.back()}
+          >
+            <Text style={styles.ctaText}>Find travelers</Text>
+          </Pressable>
         </View>
       ) : (
         <FlatList
@@ -104,10 +121,10 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
       }}
     >
       {other.avatarUrl ? (
-        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 96, height: 96 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
+        <Image source={{ uri: getImageUrl(other.avatarUrl, { width: 104, height: 104 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
       ) : (
         <View style={[styles.avatar, styles.avatarPlaceholder]}>
-          <Ionicons name="person" size={18} color={colors.textMuted} />
+          <Ionicons name="person" size={20} color={colors.textMuted} />
         </View>
       )}
       <View style={styles.rowText}>
@@ -132,31 +149,67 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
 }
 
 const styles = StyleSheet.create({
-  empty: {
+  /* ── Empty state ── */
+  emptyContainer: {
     alignItems: 'center',
-    paddingVertical: spacing.xxl * 2,
-    gap: spacing.md,
+    paddingTop: spacing.xxxl,
+    paddingHorizontal: spacing.xl,
   },
-  emptyText: {
+  emptyImageWrapper: {
+    width: 200,
+    height: 200,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
+  },
+  emptyImage: {
+    width: '100%',
+    height: '100%',
+  },
+  emptyImageOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  emptyHeadline: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    lineHeight: 26,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  emptySubtext: {
     ...typography.body,
     color: colors.textMuted,
     textAlign: 'center',
+    marginBottom: spacing.xxl,
   },
+  ctaButton: {
+    backgroundColor: colors.orange,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.button,
+  },
+  ctaText: {
+    ...typography.button,
+    color: colors.background,
+  },
+
+  /* ── Conversation rows ── */
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.md,
+    paddingVertical: spacing.md + 2,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 52,
+    height: 52,
+    borderRadius: radius.full,
     marginRight: spacing.md,
   },
   avatarPlaceholder: {
-    backgroundColor: colors.borderDefault,
+    backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -189,7 +242,7 @@ const styles = StyleSheet.create({
   },
   badge: {
     backgroundColor: colors.orange,
-    borderRadius: 10,
+    borderRadius: radius.full,
     minWidth: 20,
     height: 20,
     alignItems: 'center',

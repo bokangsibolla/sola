@@ -42,9 +42,13 @@ export async function getExploreCollectionItems(
   if (!matches || matches.length === 0) return [];
 
   // Deduplicate
-  const uniqueEntities = Array.from(
-    new Map(matches.map(m => [`${m.entity_type}:${m.entity_id}`, m])).values()
-  );
+  const seenKeys = new Set<string>();
+  const uniqueEntities = matches.filter(m => {
+    const key = `${m.entity_type}:${m.entity_id}`;
+    if (seenKeys.has(key)) return false;
+    seenKeys.add(key);
+    return true;
+  });
 
   // Filter out entities with exclude_tags
   let filtered = uniqueEntities;

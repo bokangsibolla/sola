@@ -1,22 +1,22 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { getPopularCitiesWithCountry } from '../api';
-import { getFeaturedExploreCollections, getExploreCollectionItems } from '../collections';
-import { getDiscoveryLenses } from '../lenses';
-import { buildFeed } from './feedBuilder';
+import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity } from '../api';
+import type { Place } from '../types';
+import { getExploreCollections, getExploreCollectionItems } from '../collections';
+import { buildFeed, buildTravellingFeed } from './feedBuilder';
+import { useAppMode } from '@/state/AppModeContext';
+import { useAuth } from '@/state/AuthContext';
 import type { ExploreCollectionWithItems } from '../types';
-import type { FeedItem, CityWithCountry } from './types';
+import type { FeedItem } from './types';
 
-const INITIAL_FEED: FeedItem[] = [
-  { type: 'search-bar' },
-];
+const INITIAL_FEED: FeedItem[] = [];
 
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
   return Promise.race([
     promise,
-    new Promise<T>((_, reject) =>
-      setTimeout(() => reject(new Error('Request timeout')), ms)
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${ms}ms`)), ms)
     ),
   ]);
 }
@@ -33,143 +33,113 @@ export function useFeedItems(): UseFeedItemsResult {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { mode, activeTripInfo } = useAppMode();
+  const { userId } = useAuth();
 
   useEffect(() => {
     let cancelled = false;
 
     async function loadFeed() {
-      setIsLoading(true);
       try {
-        // Fetch more cities to ensure priority cities (Siargao, Ubud) are included
-        const cities = await withTimeout(
-          getPopularCitiesWithCountry(20),
-          5000
-        );
+        setIsLoading(true);
+        setError(null);
+
+        // Fetch countries and cities in parallel (critical path)
+        const [countriesResult, citiesResult] = await Promise.all([
+          withTimeout(getCountries(), 5000, 'getCountries'),
+          withTimeout(getPopularCitiesWithCountry(20), 5000, 'getCities'),
+        ]);
 
         if (cancelled) return;
 
-        // Collections (optional — failures don't break feed)
+        // Fetch all active collections (optional — failure doesn't break feed)
         let collectionsWithItems: ExploreCollectionWithItems[] = [];
         try {
-          const featuredCollections = await withTimeout(
-            getFeaturedExploreCollections(),
-            5000
+          const collections = await withTimeout(
+            getExploreCollections(),
+            5000,
+            'getCollections'
           );
-          if (!cancelled && featuredCollections.length > 0) {
-            collectionsWithItems = await withTimeout(
-              Promise.all(
-                featuredCollections.map(async (collection) => {
-                  const items = await getExploreCollectionItems(collection);
-                  return { ...collection, items };
-                })
-              ),
-              5000
-            );
-          }
-        } catch (collectionErr) {
-          Sentry.addBreadcrumb({ message: 'Collections unavailable', level: 'info' });
-        }
 
-        // Lenses (optional — returns [] if DB table doesn't exist)
-        let lenses: any[] = [];
-        try {
-          lenses = await withTimeout(getDiscoveryLenses(), 3000);
-        } catch {
-          Sentry.addBreadcrumb({ message: 'Lenses unavailable', level: 'info' });
+          // Resolve items for each collection in parallel
+          const resolved = await Promise.all(
+            collections.map(async (col) => {
+              try {
+                const items = await getExploreCollectionItems(col);
+                if (items.length < col.minItems) return null;
+                return { ...col, items } as ExploreCollectionWithItems;
+              } catch {
+                return null;
+              }
+            })
+          );
+
+          collectionsWithItems = resolved.filter(
+            (c): c is ExploreCollectionWithItems => c !== null
+          );
+        } catch (e) {
+          Sentry.addBreadcrumb({ message: 'Collections fetch failed', data: { error: e } });
         }
 
         if (cancelled) return;
 
-        // Prioritize specific cities for "Popular with Solo Women"
-        // Fallback data for cities that may not be in DB yet
-        const FALLBACK_CITIES: Record<string, CityWithCountry> = {
-          siargao: {
-            id: 'fallback-siargao',
-            countryId: 'country-ph',
-            slug: 'siargao',
-            name: 'Siargao',
-            timezone: 'Asia/Manila',
-            centerLat: 9.8482,
-            centerLng: 126.0458,
-            isActive: true,
-            orderIndex: 1,
-            heroImageUrl: 'https://images.unsplash.com/photo-1573790387438-4da905039392?w=800',
-            shortBlurb: 'Surf capital of the Philippines',
-            badgeLabel: null,
-            isFeatured: true,
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            // Content fields
-            title: 'Siargao',
-            subtitle: 'Philippines\' surf paradise',
-            summary: null,
-            summaryMd: null,
-            contentMd: null,
-            whyWeLoveMd: null,
-            safetyRating: 'generally_safe',
-            soloFriendly: true,
-            soloLevel: 'beginner',
-            bestMonths: null,
-            bestTimeToVisit: null,
-            currency: 'PHP',
-            language: 'Filipino, English',
-            visaNote: null,
-            highlights: null,
-            avgDailyBudgetUsd: null,
-            internetQuality: 'good',
-            englishFriendliness: 'high',
-            goodForInterests: null,
-            bestFor: null,
-            cultureEtiquetteMd: null,
-            safetyWomenMd: null,
-            portraitMd: null,
-            publishedAt: null,
-            transportMd: null,
-            topThingsToDo: null,
-            // CityWithCountry extensions
-            countryName: 'Philippines',
-            countrySlug: 'philippines',
-          },
-        };
+        let feed: FeedItem[];
 
-        const PRIORITY_SLUGS = ['siargao', 'ubud'];
-        const priorityCities: CityWithCountry[] = [];
+        if (mode === 'travelling' && activeTripInfo?.city.id && userId) {
+          // Fetch city-specific data for travelling mode
+          let savedInCity: Place[] = [];
+          let placesInCity: Place[] = [];
 
-        for (const slug of PRIORITY_SLUGS) {
-          const found = cities.find(c => c.slug === slug);
-          if (found) {
-            priorityCities.push(found);
-          } else if (FALLBACK_CITIES[slug]) {
-            priorityCities.push(FALLBACK_CITIES[slug]);
+          try {
+            const [allSaved, allCityPlaces] = await Promise.all([
+              withTimeout(getSavedPlaces(userId), 5000, 'getSavedPlaces'),
+              withTimeout(getPlacesByCity(activeTripInfo.city.id), 5000, 'getPlacesByCity'),
+            ]);
+
+            // Filter saved places to those in the trip city
+            const cityPlaceIds = new Set(allCityPlaces.map((p) => p.id));
+            savedInCity = allSaved
+              .filter((sp) => cityPlaceIds.has(sp.placeId))
+              .map((sp) => allCityPlaces.find((p) => p.id === sp.placeId))
+              .filter((p): p is Place => p !== undefined);
+
+            placesInCity = allCityPlaces;
+          } catch {
+            // Non-critical — continue with empty city data
           }
+
+          feed = buildTravellingFeed(
+            savedInCity,
+            placesInCity,
+            activeTripInfo.city.countryIso2,
+            activeTripInfo.city.name,
+            collectionsWithItems,
+            citiesResult,
+            countriesResult,
+          );
+        } else {
+          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult);
         }
 
-        const otherCities = cities.filter(c => !PRIORITY_SLUGS.includes(c.slug));
-        // Put priority cities first, then others, limit to 12 total for the feed
-        const prioritized = [...priorityCities, ...otherCities].slice(0, 12);
-
-        const feed = buildFeed(collectionsWithItems, prioritized, lenses);
         setFeedItems(feed);
+      } catch (e) {
         if (!cancelled) {
-          setIsLoading(false);
+          setError(e instanceof Error ? e : new Error('Failed to load feed'));
+          Sentry.captureException(e);
         }
-      } catch (err) {
-        Sentry.captureException(err);
-        if (!cancelled) {
-          setError(err instanceof Error ? err : new Error('Failed to load'));
-          setIsLoading(false);
-        }
+      } finally {
+        if (!cancelled) setIsLoading(false);
       }
     }
 
     loadFeed();
     return () => { cancelled = true; };
-  }, [refreshKey]);
+  }, [refreshKey, mode, activeTripInfo?.city?.id, userId]);
 
-  const refresh = () => {
-    setError(null);
-    setRefreshKey((k) => k + 1);
+  return {
+    feedItems,
+    isLoading,
+    error,
+    refresh: () => setRefreshKey(k => k + 1),
   };
-
-  return { feedItems, isLoading, error, refresh };
 }

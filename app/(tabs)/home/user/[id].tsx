@@ -7,26 +7,23 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import {
-  getProfileById,
-  getSavedPlaces,
-  getPlaceById,
-  getPlaceFirstImage,
-  getCityById,
-  getConnectionStatus,
   sendConnectionRequest,
   respondToConnectionRequest,
   getOrCreateConversationGuarded,
   blockUser,
   reportUser,
-  getConnectionRequests,
 } from '@/data/api';
-import { getConnectionContext, getSharedInterests } from '@/data/travelers/connectionContext';
-import { useData } from '@/hooks/useData';
-import { useAuth } from '@/state/AuthContext';
+import { useTravelerProfile } from '@/data/travelers/useTravelerProfile';
+import { getFlag } from '@/data/trips/helpers';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import CredibilityStats from '@/components/travelers/CredibilityStats';
+import ProfileTripCard from '@/components/travelers/ProfileTripCard';
+import VisitedCountries from '@/components/travelers/VisitedCountries';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 import { getImageUrl } from '@/lib/image';
+import { useAuth } from '@/state/AuthContext';
 import type { ConnectionStatus } from '@/data/types';
 
 export default function UserProfileScreen() {
@@ -38,6 +35,7 @@ export default function UserProfileScreen() {
   const queryClient = useQueryClient();
   const [actionLoading, setActionLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<ConnectionStatus | null>(null);
+  const [showPastTrips, setShowPastTrips] = useState(false);
 
   useEffect(() => {
     if (id) {
@@ -45,31 +43,24 @@ export default function UserProfileScreen() {
     }
   }, [id, posthog]);
 
-  const { data: profile, loading, error, refetch } = useData(
-    () => getProfileById(id ?? ''),
-    [id],
-  );
+  const {
+    profile,
+    userProfile,
+    connectionStatus: fetchedStatus,
+    incomingRequest,
+    sharedInterests: shared,
+    contextLabel,
+    trips,
+    tripOverlaps,
+    visitedCountries,
+    userManagedCountries,
+    totalTripCount,
+    isLoading,
+    error,
+    refetch,
+  } = useTravelerProfile(id);
 
-  const { data: fetchedStatus, refetch: refetchStatus } = useData(
-    () => (userId && id ? getConnectionStatus(userId, id) : Promise.resolve('none' as ConnectionStatus)),
-    [userId, id],
-  );
-
-  const { data: userProfile } = useData(
-    () => (userId ? getProfileById(userId) : Promise.resolve(null)),
-    [userId],
-  );
-
-  // Find the pending request ID if we received one from this user
-  const { data: pendingRequests } = useData(
-    () => (userId ? getConnectionRequests(userId, 'received') : Promise.resolve([])),
-    [userId],
-  );
-  const incomingRequest = (pendingRequests ?? []).find((r) => r.senderId === id);
-
-  const status = localStatus ?? fetchedStatus ?? 'none';
-  const shared = profile && userProfile ? getSharedInterests(userProfile, profile) : [];
-  const contextLabel = profile && userProfile ? getConnectionContext(userProfile, profile) : undefined;
+  const status = localStatus ?? fetchedStatus;
 
   const handleConnect = useCallback(async () => {
     if (!userId || !id) return;
@@ -189,7 +180,7 @@ export default function UserProfileScreen() {
     ]);
   }, [userId, id, posthog, queryClient, router]);
 
-  if (loading) return <LoadingScreen />;
+  if (isLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!profile) {
@@ -200,26 +191,20 @@ export default function UserProfileScreen() {
     );
   }
 
-  const { data: currentCity } = useData(
-    () => profile.currentCityId ? getCityById(profile.currentCityId) : Promise.resolve(null),
-    [profile.currentCityId],
-  );
-  const { data: savedPlaces } = useData(() => getSavedPlaces(profile.id), [profile.id]);
+  const hasTrips = trips.current || trips.upcoming.length > 0 || trips.past.length > 0;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Nav */}
-      <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Pressable onPress={handleMoreMenu} hitSlop={12}>
-          <Feather name="more-horizontal" size={24} color={colors.textPrimary} />
-        </Pressable>
-      </View>
+      <ScreenHeader
+        rightComponent={
+          <Pressable onPress={handleMoreMenu} hitSlop={12}>
+            <Feather name="more-horizontal" size={24} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Avatar + name */}
+        {/* Identity Layer */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
             <Image
@@ -234,18 +219,21 @@ export default function UserProfileScreen() {
             </View>
           )}
           <Text style={styles.name}>{profile.firstName}</Text>
+          {profile.username && (
+            <Text style={styles.username}>@{profile.username}</Text>
+          )}
           {(profile.homeCountryName || profile.nationality) && (
             <Text style={styles.origin}>
-              {profile.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}
+              {profile.homeCountryIso2 ? getFlag(profile.homeCountryIso2) + ' ' : ''}
               {profile.homeCountryName}
-              {profile.nationality ? ` · ${profile.nationality}` : ''}
+              {profile.nationality ? ` \u00b7 ${profile.nationality}` : ''}
             </Text>
           )}
-          {(currentCity || profile.currentCityName || profile.locationCityName) && (
+          {profile.locationSharingEnabled && profile.locationCityName && (
             <View style={styles.locationRow}>
               <Feather name="map-pin" size={14} color={colors.orange} />
               <Text style={styles.currentCity}>
-                Currently in {currentCity?.name ?? profile.currentCityName ?? profile.locationCityName}
+                Currently in {profile.locationCityName}
               </Text>
             </View>
           )}
@@ -255,6 +243,13 @@ export default function UserProfileScreen() {
             </View>
           )}
         </View>
+
+        {/* Credibility Stats */}
+        <CredibilityStats
+          countriesCount={visitedCountries.length}
+          tripCount={totalTripCount}
+          memberSince={profile.createdAt}
+        />
 
         {/* Bio */}
         {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
@@ -280,34 +275,79 @@ export default function UserProfileScreen() {
           </>
         )}
 
-        {/* Saved places */}
-        {(savedPlaces ?? []).length > 0 && (
+        {/* Trips Section */}
+        {hasTrips && (
           <>
-            <Text style={styles.sectionTitle}>Saved places</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.placesRow}
-            >
-              {(savedPlaces ?? []).map((sp) => (
-                <SavedPlaceCard key={sp.placeId} placeId={sp.placeId} />
-              ))}
-            </ScrollView>
+            <Text style={styles.sectionTitle}>Trips</Text>
+
+            {trips.current && (
+              <ProfileTripCard trip={trips.current} overlapLabel={tripOverlaps.get(trips.current.id)} />
+            )}
+
+            {trips.upcoming.map((trip) => (
+              <ProfileTripCard key={trip.id} trip={trip} overlapLabel={tripOverlaps.get(trip.id)} />
+            ))}
+
+            {trips.past.length > 0 && (
+              <>
+                <Pressable
+                  style={styles.pastHeader}
+                  onPress={() => setShowPastTrips(!showPastTrips)}
+                  hitSlop={8}
+                >
+                  <Text style={styles.pastHeaderText}>
+                    Past trips ({trips.past.length})
+                  </Text>
+                  <Feather
+                    name={showPastTrips ? 'chevron-up' : 'chevron-down'}
+                    size={16}
+                    color={colors.textMuted}
+                  />
+                </Pressable>
+                {showPastTrips && trips.past.map((trip) => (
+                  <ProfileTripCard key={trip.id} trip={trip} />
+                ))}
+              </>
+            )}
           </>
+        )}
+
+        {/* Visited Countries (from trips) */}
+        <VisitedCountries countries={visitedCountries} />
+
+        {/* User-listed countries (self-reported) */}
+        {userManagedCountries.length > 0 && (
+          <View style={styles.userCountriesSection}>
+            <Text style={styles.sectionTitle}>Countries visited</Text>
+            <View style={styles.tags}>
+              {userManagedCountries.map((vc) => (
+                <View key={vc.countryId} style={styles.tag}>
+                  <Text style={styles.tagText}>
+                    {vc.countryIso2 ? getFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
         )}
       </ScrollView>
 
-      {/* Connection-gated bottom bar */}
+      {/* Connection Bottom Bar */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
         {status === 'none' && (
-          <Pressable
-            style={[styles.connectButton, actionLoading && { opacity: 0.6 }]}
-            onPress={handleConnect}
-            disabled={actionLoading}
-          >
-            <Feather name="user-plus" size={18} color={colors.background} />
-            <Text style={styles.connectButtonText}>Connect</Text>
-          </Pressable>
+          <View>
+            <Pressable
+              style={[styles.connectButton, actionLoading && { opacity: 0.6 }]}
+              onPress={handleConnect}
+              disabled={actionLoading}
+            >
+              <Feather name="user-plus" size={18} color={colors.background} />
+              <Text style={styles.connectButtonText}>Connect</Text>
+            </Pressable>
+            {contextLabel && (
+              <Text style={styles.connectContext}>{contextLabel}</Text>
+            )}
+          </View>
         )}
         {status === 'pending_sent' && (
           <View style={styles.pendingBar}>
@@ -351,37 +391,6 @@ export default function UserProfileScreen() {
   );
 }
 
-function SavedPlaceCard({ placeId }: { placeId: string }) {
-  const { data: place } = useData(() => getPlaceById(placeId), [placeId]);
-  const { data: imageUrl } = useData(
-    () => place ? getPlaceFirstImage(place.id) : Promise.resolve(null),
-    [place?.id],
-  );
-
-  if (!place) return null;
-
-  return (
-    <View style={styles.placeCard}>
-      {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.placeImage} contentFit="cover" transition={200} />
-      ) : (
-        <View style={[styles.placeImage, styles.placeImagePlaceholder]}>
-          <Feather name="image" size={20} color={colors.textMuted} />
-        </View>
-      )}
-      <Text style={styles.placeName} numberOfLines={1}>
-        {place.name}
-      </Text>
-    </View>
-  );
-}
-
-function countryFlag(iso2: string): string {
-  return [...iso2.toUpperCase()]
-    .map((c) => String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)))
-    .join('');
-}
-
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -394,12 +403,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-  },
   scroll: {
     paddingBottom: spacing.xxl,
   },
@@ -410,7 +413,7 @@ const styles = StyleSheet.create({
   avatar: {
     width: 96,
     height: 96,
-    borderRadius: 48,
+    borderRadius: radius.full,
     marginBottom: spacing.md,
   },
   avatarPlaceholder: {
@@ -421,6 +424,12 @@ const styles = StyleSheet.create({
   name: {
     ...typography.h2,
     color: colors.textPrimary,
+  },
+  username: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   origin: {
     ...typography.body,
@@ -471,7 +480,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 14,
+    borderRadius: radius.card,
   },
   tagShared: {
     backgroundColor: colors.orangeFill,
@@ -484,28 +493,20 @@ const styles = StyleSheet.create({
   tagTextShared: {
     color: colors.orange,
   },
-  placesRow: {
-    gap: spacing.md,
-    paddingBottom: spacing.xl,
+  userCountriesSection: {
+    marginBottom: spacing.xl,
   },
-  placeCard: {
-    width: 140,
-  },
-  placeImage: {
-    width: 140,
-    height: 100,
-    borderRadius: radius.sm,
-    marginBottom: spacing.xs,
-  },
-  placeImagePlaceholder: {
-    backgroundColor: colors.borderSubtle,
+  pastHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
   },
-  placeName: {
+  pastHeaderText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textPrimary,
+    fontSize: 14,
+    color: colors.textMuted,
   },
   bottomBar: {
     paddingTop: spacing.md,
@@ -524,6 +525,13 @@ const styles = StyleSheet.create({
   connectButtonText: {
     ...typography.button,
     color: colors.background,
+  },
+  connectContext: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
   pendingBar: {
     flexDirection: 'row',

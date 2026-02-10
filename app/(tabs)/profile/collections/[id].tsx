@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orangeFill,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: radius.pill,
   },
   tagText: {
     fontFamily: fonts.medium,

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,7 +39,7 @@ export default function ExploreCard({
   width = DEFAULT_CARD_WIDTH,
   showFavorite = true,
 }: ExploreCardProps) {
-  const [scale] = useState(new Animated.Value(1));
+  const scale = useRef(new Animated.Value(1)).current;
   const [isFavorited, setIsFavorited] = useState(false);
 
   // Calculate image height based on portrait aspect ratio
@@ -134,7 +134,7 @@ const styles = StyleSheet.create({
   container: {},
   imageContainer: {
     position: 'relative',
-    borderRadius: 12,
+    borderRadius: radius.card,
     overflow: 'hidden',
     marginBottom: spacing.sm,
   },
@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     right: spacing.md,
     width: 34,
     height: 34,
-    borderRadius: 17,
+    borderRadius: radius.full,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     alignItems: 'center',
     justifyContent: 'center',

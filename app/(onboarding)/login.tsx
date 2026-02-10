@@ -8,7 +8,7 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import { supabase } from '@/lib/supabase';
 import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -48,7 +48,7 @@ export default function LoginScreen() {
     }
   };
 
-  const canLogin = email.includes('@') && password.length >= 6 && !loading;
+  const canLogin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
 
   const handleLogin = async () => {
     posthog.capture('email_login_attempted');
@@ -147,7 +147,7 @@ export default function LoginScreen() {
         <Pressable
           style={styles.forgotRow}
           onPress={async () => {
-            if (!email.includes('@')) {
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
               Alert.alert('Enter your email', 'Type your email address above, then tap Forgot password.');
               return;
             }
@@ -191,7 +191,7 @@ const styles = StyleSheet.create({
   backButton: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#F3F3F3',
@@ -225,7 +225,7 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     height: 50,
-    borderRadius: 25,
+    borderRadius: radius.button,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     flexDirection: 'row',
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,

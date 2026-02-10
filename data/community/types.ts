@@ -39,6 +39,7 @@ export interface ThreadWithAuthor extends CommunityThread {
   author: {
     id: string;
     firstName: string;
+    username: string | null;
     avatarUrl: string | null;
   };
   countryName: string | null;
@@ -67,6 +68,7 @@ export interface ReplyWithAuthor extends CommunityReply {
   author: {
     id: string;
     firstName: string;
+    username: string | null;
     avatarUrl: string | null;
   };
   userVote: VoteDirection;

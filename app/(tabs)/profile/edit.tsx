@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Linking,
   Platform,
@@ -19,13 +20,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
-import { getProfileById } from '@/data/api';
+import { getProfileById, checkUsernameAvailability, validateUsernameFormat, getUserVisitedCountries, setVisitedCountries as saveVisitedCountries } from '@/data/api';
+import VisitedCountriesEditor from '@/components/travelers/VisitedCountriesEditor';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import ScreenHeader from '@/components/ui/ScreenHeader';
 
 const BIO_MAX = 140;
 const ALL_INTERESTS = [
@@ -61,6 +64,12 @@ export default function EditProfileScreen() {
   const [selectedCountry, setSelectedCountry] = useState('');
   const [interests, setInterests] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
+  const [username, setUsername] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
+  const [usernameError, setUsernameError] = useState<string | null>(null);
+  const [visitedCountryIds, setVisitedCountryIds] = useState<string[]>([]);
+  const [countrySearch, setCountrySearch] = useState('');
+  const [saving, setSaving] = useState(false);
 
   // Populate form once profile loads
   useEffect(() => {
@@ -70,13 +79,50 @@ export default function EditProfileScreen() {
       setBio(profile.bio ?? '');
       setSelectedCountry(profile.homeCountryIso2 ?? '');
       setInterests([...(profile.interests ?? [])]);
+      setUsername(profile.username ?? '');
       setInitialized(true);
     }
   }, [profile, initialized]);
 
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
-  const [countrySearch, setCountrySearch] = useState('');
+  // Debounced username availability check
+  useEffect(() => {
+    if (!username || username === profile?.username) {
+      setUsernameStatus('idle');
+      setUsernameError(null);
+      return;
+    }
+    const formatCheck = validateUsernameFormat(username);
+    if (!formatCheck.valid) {
+      setUsernameStatus('invalid');
+      setUsernameError(formatCheck.error ?? 'Invalid username');
+      return;
+    }
+    setUsernameStatus('checking');
+    const timer = setTimeout(async () => {
+      try {
+        const result = await checkUsernameAvailability(username, userId ?? undefined);
+        if (result.available) {
+          setUsernameStatus('available');
+          setUsernameError(null);
+        } else {
+          setUsernameStatus('taken');
+          setUsernameError(result.error ?? 'Username taken');
+        }
+      } catch {
+        setUsernameStatus('idle');
+      }
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [username, profile?.username, userId]);
+
+  // Load visited countries
+  useEffect(() => {
+    if (userId) {
+      getUserVisitedCountries(userId).then((countries) => {
+        setVisitedCountryIds(countries.map((c) => c.countryId));
+      }).catch(() => {});
+    }
+  }, [userId]);
 
   const displayedCountries = useMemo(() => {
     if (countrySearch.length < 2) {
@@ -87,6 +133,9 @@ export default function EditProfileScreen() {
     const q = countrySearch.toLowerCase();
     return countries.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
   }, [countrySearch]);
+
+  if (loading) return <LoadingScreen />;
+  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   const remaining = BIO_MAX - bio.length;
   const counterColor =
@@ -148,8 +197,6 @@ export default function EditProfileScreen() {
     );
   };
 
-  const [saving, setSaving] = useState(false);
-
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
@@ -164,12 +211,14 @@ export default function EditProfileScreen() {
         home_country_iso2: selectedCountry || null,
         home_country_name: country?.name ?? null,
         interests,
+        username: username.trim() || null,
       });
       if (upsertError) {
         Alert.alert('Save failed', upsertError.message);
         return;
       }
-      posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length });
+      await saveVisitedCountries(userId, visitedCountryIds);
+      posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length, visited_countries_count: visitedCountryIds.length });
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -184,11 +233,7 @@ export default function EditProfileScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav */}
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.navTitle}>Edit profile</Text>
-        <View style={{ width: 24 }} />
+        <ScreenHeader title="Edit profile" />
       </View>
 
       <ScrollView
@@ -219,6 +264,36 @@ export default function EditProfileScreen() {
           placeholder="First name"
           placeholderTextColor={colors.textMuted}
         />
+
+        {/* Username */}
+        <Text style={styles.fieldLabel}>Username</Text>
+        <View style={[styles.input, { flexDirection: 'row', alignItems: 'center' }]}>
+          <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: colors.textMuted }}>@</Text>
+          <TextInput
+            style={{ flex: 1, fontFamily: fonts.regular, fontSize: 16, color: colors.textPrimary, padding: 0 }}
+            value={username}
+            onChangeText={(text) => setUsername(text.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
+            placeholder="username"
+            placeholderTextColor={colors.textMuted}
+            autoCapitalize="none"
+            autoCorrect={false}
+            maxLength={30}
+          />
+          {usernameStatus === 'checking' && (
+            <ActivityIndicator size="small" color={colors.orange} />
+          )}
+          {usernameStatus === 'available' && (
+            <Ionicons name="checkmark-circle" size={20} color={colors.greenSoft} />
+          )}
+          {(usernameStatus === 'taken' || usernameStatus === 'invalid') && (
+            <Ionicons name="close-circle" size={20} color="#E53E3E" />
+          )}
+        </View>
+        {usernameError && (
+          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: '#E53E3E', marginTop: 4, marginBottom: spacing.md }}>
+            {usernameError}
+          </Text>
+        )}
 
         {/* Bio */}
         <Text style={styles.fieldLabel}>Bio</Text>
@@ -304,6 +379,13 @@ export default function EditProfileScreen() {
           </View>
         )}
 
+        {/* Countries visited */}
+        <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Countries I've visited</Text>
+        <VisitedCountriesEditor
+          selectedIds={visitedCountryIds}
+          onChange={setVisitedCountryIds}
+        />
+
         {/* Save */}
         <Pressable style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
           <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save changes'}</Text>
@@ -329,10 +411,6 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
   },
-  navTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
-  },
   content: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
@@ -349,7 +427,7 @@ const styles = StyleSheet.create({
   photoCircle: {
     width: 80,
     height: 80,
-    borderRadius: 40,
+    borderRadius: radius.full,
     backgroundColor: '#F5F5F5',
     alignItems: 'center',
     justifyContent: 'center',

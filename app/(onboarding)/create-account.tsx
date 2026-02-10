@@ -56,7 +56,7 @@ export default function CreateAccountScreen() {
 
   const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
 
-  const canContinue = email.includes('@') && password.length >= 6 && !loading;
+  const canContinue = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     setLoading(true);
@@ -198,7 +198,7 @@ const styles = StyleSheet.create({
   },
   socialButton: {
     height: 50,
-    borderRadius: 25,
+    borderRadius: radius.button,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     flexDirection: 'row',
@@ -249,7 +249,7 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 50,
-    borderRadius: 14,
+    borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     paddingHorizontal: 16,

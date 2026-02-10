@@ -29,10 +29,10 @@ import {
   toggleSavePlace,
 } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
-import type { Tag } from '@/data/types';
+import type { Place, Tag } from '@/data/types';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-const CAROUSEL_HEIGHT = 260;
+const CAROUSEL_HEIGHT = 300;
 
 // ---------------------------------------------------------------------------
 // Tag colors
@@ -56,41 +56,152 @@ function tagColors(filterGroup: Tag['filterGroup']): { bg: string; fg: string } 
 // ---------------------------------------------------------------------------
 
 const TAG_GROUP_CONFIG: Record<string, string> = {
-  vibe: 'Vibe',
-  safety: 'Safety',
-  good_for: 'Good for',
-  amenity: 'Amenities',
-  cuisine: 'Cuisine',
-  style: 'Style',
+  vibe: 'VIBE',
+  safety: 'SAFETY',
+  good_for: 'GOOD FOR',
+  amenity: 'AMENITIES',
+  cuisine: 'CUISINE',
+  style: 'STYLE',
 };
 
 // ---------------------------------------------------------------------------
-// Price dots
+// PriceLabel ($ repeat — matches city page)
 // ---------------------------------------------------------------------------
 
-function PriceDots({ level }: { level: number | null }) {
-  if (!level) return null;
-  const max = 4;
-  const dots: string[] = [];
-  for (let i = 0; i < max; i++) {
-    dots.push(i < level ? '\u25CF' : '\u25CB');
-  }
-  return <Text style={styles.priceDots}>{dots.join('')}</Text>;
+function PriceLabel({ level }: { level: number | null }) {
+  if (!level || level <= 0) return null;
+  return <Text style={styles.priceLabel}>{'$'.repeat(level)}</Text>;
 }
 
 // ---------------------------------------------------------------------------
-// Rating display
+// Place type icon for no-image placeholder
 // ---------------------------------------------------------------------------
 
-function RatingBadge({ rating, reviewCount }: { rating: number | null; reviewCount: number | null }) {
-  if (!rating) return null;
+function placeTypeIcon(placeType: string): keyof typeof Ionicons.glyphMap {
+  switch (placeType) {
+    case 'hotel':
+    case 'hostel':
+    case 'homestay':
+      return 'bed-outline';
+    case 'restaurant':
+    case 'cafe':
+    case 'bakery':
+      return 'cafe-outline';
+    case 'bar':
+    case 'club':
+    case 'rooftop':
+      return 'wine-outline';
+    case 'activity':
+    case 'tour':
+      return 'compass-outline';
+    case 'coworking':
+      return 'laptop-outline';
+    case 'wellness':
+    case 'spa':
+    case 'salon':
+    case 'gym':
+      return 'leaf-outline';
+    case 'landmark':
+      return 'camera-outline';
+    default:
+      return 'location-outline';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// TrustStrip — enriched places only
+// ---------------------------------------------------------------------------
+
+function TrustStrip({ place }: { place: Place }) {
+  const hasWhySelected = Boolean(place.whySelected);
+  const sourcesCount = place.sourcesChecked?.length ?? 0;
+
+  if (!hasWhySelected && sourcesCount === 0) return null;
+
+  const isSolaChecked = place.verificationStatus === 'sola_checked';
+  const shieldColor = isSolaChecked ? colors.greenSoft : colors.textSecondary;
+
+  let sourceLine: string | null = null;
+  if (sourcesCount > 0) {
+    sourceLine =
+      sourcesCount === 1
+        ? 'Editorially reviewed'
+        : sourcesCount <= 3
+          ? `Checked across ${sourcesCount} sources`
+          : `Cross-referenced with ${sourcesCount} sources`;
+  }
+
+  let dateLine: string | null = null;
+  if (place.solaCheckedAt) {
+    const d = new Date(place.solaCheckedAt);
+    const month = d.toLocaleString('en-US', { month: 'short' });
+    dateLine = `Verified ${month} ${d.getFullYear()}`;
+  }
+
   return (
-    <View style={styles.ratingContainer}>
-      <Ionicons name="star" size={14} color={colors.orange} />
-      <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-      {reviewCount && reviewCount > 0 && (
-        <Text style={styles.reviewCount}>({reviewCount.toLocaleString()} reviews)</Text>
-      )}
+    <View style={styles.trustSection}>
+      <Text style={styles.sectionLabel}>VERIFIED BY SOLA</Text>
+      <View style={styles.trustRow}>
+        <Ionicons name="shield-checkmark" size={16} color={shieldColor} />
+        <View style={styles.trustContent}>
+          {sourceLine && <Text style={styles.trustText}>{sourceLine}</Text>}
+          {dateLine && <Text style={styles.trustDate}>{dateLine}</Text>}
+        </View>
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// AtAGlance — icon + label rows
+// ---------------------------------------------------------------------------
+
+function AtAGlance({ place }: { place: Place }) {
+  const signals: { icon: keyof typeof Ionicons.glyphMap; label: string }[] = [];
+
+  if (place.bestTimeOfDay && place.bestTimeOfDay !== 'any') {
+    const timeLabels: Record<string, string> = {
+      morning: 'Best visited in the morning',
+      afternoon: 'Best visited in the afternoon',
+      evening: 'Best visited in the evening',
+    };
+    const label = timeLabels[place.bestTimeOfDay];
+    if (label) signals.push({ icon: 'sunny-outline', label });
+  }
+
+  if (place.estimatedDuration) {
+    signals.push({ icon: 'time-outline', label: `Allow ~${place.estimatedDuration}` });
+  }
+
+  if (place.physicalLevel) {
+    const levelLabels: Record<string, string> = {
+      easy: 'Easy \u2014 accessible for all',
+      moderate: 'Moderate physical activity',
+      challenging: 'Challenging \u2014 good fitness helpful',
+    };
+    const label = levelLabels[place.physicalLevel];
+    if (label) signals.push({ icon: 'fitness-outline', label });
+  }
+
+  if (place.bookingInfo) {
+    signals.push({ icon: 'calendar-outline', label: place.bookingInfo });
+  }
+
+  if (place.pricePerNight) {
+    signals.push({ icon: 'wallet-outline', label: `~$${place.pricePerNight}/night` });
+  }
+
+  if (signals.length === 0) return null;
+
+  return (
+    <View style={styles.glanceSection}>
+      <Text style={styles.sectionLabel}>AT A GLANCE</Text>
+      {signals.slice(0, 4).map((signal, i) => (
+        <View key={i} style={styles.glanceRow}>
+          <Ionicons name={signal.icon} size={16} color={colors.textSecondary} />
+          <Text style={styles.glanceText}>{signal.label}</Text>
+        </View>
+      ))}
     </View>
   );
 }
@@ -111,26 +222,35 @@ export default function PlaceDetailScreen() {
     }
   }, [id, posthog]);
 
-  const { data: place, loading, error, refetch } = useData(() => getPlaceById(id ?? ''), [id]);
-  const { data: media } = useData(() => getPlaceMedia(id ?? ''), [id]);
-  const { data: tags } = useData(() => getPlaceTags(id ?? ''), [id]);
+  const { data: place, loading, error, refetch } = useData(
+    () => id ? getPlaceById(id) : Promise.resolve(undefined),
+    ['place', id ?? ''],
+  );
+  const { data: media } = useData(
+    () => id ? getPlaceMedia(id) : Promise.resolve([]),
+    ['placeMedia', id ?? ''],
+  );
+  const { data: tags } = useData(
+    () => id ? getPlaceTags(id) : Promise.resolve([]),
+    ['placeTags', id ?? ''],
+  );
   const { data: category } = useData(
-    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(null),
-    [place?.primaryCategoryId],
+    () => place?.primaryCategoryId ? getCategory(place.primaryCategoryId) : Promise.resolve(undefined),
+    ['category', place?.primaryCategoryId ?? ''],
   );
   const { data: city } = useData(
-    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(null),
-    [place?.cityId],
+    () => place?.cityId ? getCityById(place.cityId) : Promise.resolve(undefined),
+    ['city', place?.cityId ?? ''],
   );
 
   const { userId } = useAuth();
   const { data: profile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
-    [userId],
+    ['profile', userId],
   );
   const { data: isSaved } = useData(
     () => (userId && id) ? isPlaceSaved(userId, id) : Promise.resolve(false),
-    [userId, id],
+    ['placeSaved', userId, id],
   );
   const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
@@ -213,12 +333,6 @@ export default function PlaceDetailScreen() {
     return `Based on your preferences, this place matches your interest in ${tagStr}.`;
   }, [tags, profile]);
 
-  const images = (media ?? []).filter((m) => m.mediaType === 'image');
-
-  // Get highlights and considerations arrays
-  const highlights = place?.highlights ?? [];
-  const considerations = place?.considerations ?? [];
-
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
@@ -230,21 +344,26 @@ export default function PlaceDetailScreen() {
     );
   }
 
-  // Determine display type (more specific than placeType)
+  // Now safe to access place properties directly
+  const mediaArr = Array.isArray(media) ? media : [];
+  const images = mediaArr.filter((m) => m.mediaType === 'image');
+  const highlights = place.highlights ?? [];
+  const considerations = place.considerations ?? [];
   const displayType = place.originalType
     ? place.originalType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : category?.name || place.placeType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const useSerifName = place.name.length < 35;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Header with contextual back */}
+      {/* Header */}
       <View style={styles.header}>
         <Pressable
           onPress={() => city ? router.push(`/(tabs)/explore/city/${city.slug}` as any) : router.back()}
           hitSlop={12}
           style={styles.backButton}
         >
-          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
+          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
           {city && (
             <Text style={styles.backLabel}>Back to {city.name}</Text>
           )}
@@ -258,20 +377,9 @@ export default function PlaceDetailScreen() {
         </Pressable>
       </View>
 
-      {/* Breadcrumb */}
-      {city && (
-        <View style={styles.breadcrumb}>
-          <Pressable onPress={() => router.push(`/(tabs)/explore/city/${city.slug}` as any)}>
-            <Text style={styles.breadcrumbLink}>{city.name}</Text>
-          </Pressable>
-          <Text style={styles.breadcrumbSeparator}>→</Text>
-          <Text style={styles.breadcrumbCurrent} numberOfLines={1}>{place.name}</Text>
-        </View>
-      )}
-
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image carousel */}
-        {images.length > 0 && (
+        {images.length > 0 ? (
           <View>
             <ScrollView
               horizontal
@@ -295,73 +403,91 @@ export default function PlaceDetailScreen() {
               ))}
             </ScrollView>
             {images.length > 1 && (
-              <View style={styles.dotsRow}>
-                {images.map((img, i) => (
-                  <View
-                    key={img.id}
-                    style={[
-                      styles.dot,
-                      i === activeImageIndex && styles.dotActive,
-                    ]}
-                  />
-                ))}
+              <View style={styles.counterPill}>
+                <Text style={styles.counterText}>
+                  {activeImageIndex + 1}/{images.length}
+                </Text>
               </View>
             )}
+          </View>
+        ) : (
+          <View style={styles.noImagePlaceholder}>
+            <Ionicons
+              name={placeTypeIcon(place.placeType)}
+              size={40}
+              color={colors.textMuted}
+            />
           </View>
         )}
 
         <View style={styles.content}>
-          {/* Name + price */}
+          {/* Identity block */}
+          <Text style={styles.typeLabel}>{displayType.toUpperCase()}</Text>
           <View style={styles.nameRow}>
-            <Text style={styles.placeName}>{place.name}</Text>
-            <PriceDots level={place.priceLevel} />
+            <Text style={useSerifName ? styles.placeNameSerif : styles.placeNameSans}>
+              {place.name}
+            </Text>
+            <PriceLabel level={place.priceLevel} />
           </View>
+          {city && <Text style={styles.cityLabel}>{city.name}</Text>}
 
-          {/* Type + city */}
-          <View style={styles.metaRow}>
-            <View style={styles.categoryPill}>
-              <Text style={styles.categoryText}>{displayType}</Text>
+          {/* Trust Strip — enriched only */}
+          <TrustStrip place={place} />
+
+          {/* Editorial — OUR TAKE (enriched) or plain description (basic) */}
+          {place.whySelected ? (
+            <View style={styles.editorialSection}>
+              <Text style={styles.sectionLabel}>OUR TAKE</Text>
+              <View style={styles.accentRow}>
+                <View style={styles.accentBar} />
+                <Text style={styles.editorialText}>{place.whySelected}</Text>
+              </View>
             </View>
-            {city && <Text style={styles.cityLabel}>{city.name}</Text>}
-            {place.pricePerNight && (
-              <Text style={styles.pricePerNight}>~${place.pricePerNight}/night</Text>
-            )}
-          </View>
+          ) : place.description ? (
+            <View style={styles.editorialSection}>
+              <Text style={styles.descriptionText}>{place.description}</Text>
+            </View>
+          ) : null}
 
-          {/* Rating */}
-          <RatingBadge rating={place.googleRating} reviewCount={place.googleReviewCount} />
+          {/* Women's voice — enriched only */}
+          {place.soloFemaleReviews && (
+            <View style={styles.womensVoiceSection}>
+              <Text style={styles.sectionLabel}>FROM WOMEN WHO'VE BEEN HERE</Text>
+              <View style={styles.accentRow}>
+                <View style={styles.accentBar} />
+                <Text style={styles.womensVoiceText}>{place.soloFemaleReviews}</Text>
+              </View>
+            </View>
+          )}
 
-          {/* Highlights */}
+          {/* At a Glance */}
+          <AtAGlance place={place} />
+
+          {/* Highlights → WHAT STANDS OUT */}
           {highlights.length > 0 && (
             <View style={styles.highlightsSection}>
-              <Text style={styles.sectionTitle}>Highlights</Text>
+              <Text style={styles.sectionLabel}>WHAT STANDS OUT</Text>
               <View style={styles.highlightsRow}>
                 {highlights.map((highlight, idx) => (
-                  <View key={idx} style={styles.highlightPill}>
-                    <Ionicons name="checkmark-circle" size={14} color={colors.greenSoft} />
-                    <Text style={styles.highlightText}>{highlight}</Text>
+                  <View key={idx} style={styles.signalPill}>
+                    <Text style={styles.signalDiamond}>{'\u25C7'}</Text>
+                    <Text style={styles.signalText}>{highlight}</Text>
                   </View>
                 ))}
               </View>
             </View>
           )}
 
-          {/* Why We Love It */}
-          {place.whySelected && (
-            <View style={styles.whySection}>
-              <Text style={styles.sectionTitle}>Why We Love It</Text>
-              <Text style={styles.whyText}>{place.whySelected}</Text>
-            </View>
-          )}
-
-          {/* Solo Travelers Say */}
-          {place.soloFemaleReviews && (
-            <View style={styles.reviewsSection}>
-              <Text style={styles.sectionTitle}>Solo Travelers Say</Text>
-              <View style={styles.quoteBox}>
-                <Ionicons name="chatbubble-outline" size={16} color={colors.textMuted} style={styles.quoteIcon} />
-                <Text style={styles.quoteText}>{place.soloFemaleReviews}</Text>
-              </View>
+          {/* Good to Know */}
+          {considerations.length > 0 && (
+            <View style={styles.considerationsSection}>
+              <Text style={styles.sectionLabel}>GOOD TO KNOW</Text>
+              {considerations.map((item, idx) => (
+                <View key={idx} style={styles.considerationRow}>
+                  <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
+                  <Text style={styles.considerationText}>{item}</Text>
+                </View>
+              ))}
             </View>
           )}
 
@@ -371,7 +497,7 @@ export default function PlaceDetailScreen() {
               {Object.entries(groupedTags).map(([group, groupTags]) => (
                 <View key={group} style={styles.tagGroup}>
                   <Text style={styles.tagGroupLabel}>
-                    {TAG_GROUP_CONFIG[group] ?? group}
+                    {TAG_GROUP_CONFIG[group] ?? group.toUpperCase()}
                   </Text>
                   <View style={styles.tagRow}>
                     {groupTags.map((tag) => {
@@ -393,28 +519,10 @@ export default function PlaceDetailScreen() {
             </View>
           )}
 
-          {/* Good to Know (Considerations) */}
-          {considerations.length > 0 && (
-            <View style={styles.considerationsSection}>
-              <Text style={styles.sectionTitle}>Good to Know</Text>
-              {considerations.map((item, idx) => (
-                <View key={idx} style={styles.considerationRow}>
-                  <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.considerationText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          )}
-
-          {/* Description (fallback if no whySelected) */}
-          {!place.whySelected && place.description && (
-            <Text style={styles.description}>{place.description}</Text>
-          )}
-
           {/* Details */}
           {(place.address || place.hoursText || place.phone || place.website) && (
             <View style={styles.detailsSection}>
-              <Text style={styles.sectionTitle}>Details</Text>
+              <Text style={styles.sectionLabel}>DETAILS</Text>
               {place.address && (
                 <View style={styles.detailRow}>
                   <Ionicons name="location-outline" size={16} color={colors.textMuted} />
@@ -447,20 +555,19 @@ export default function PlaceDetailScreen() {
             </View>
           )}
 
-          {/* Why this fits you */}
+          {/* Why This Fits You */}
           {fitMessage && (
-            <>
-              <View style={styles.separator} />
-              <View style={styles.fitSection}>
-                <Text style={styles.sectionTitle}>Why this fits you</Text>
+            <View style={styles.fitSection}>
+              <Text style={styles.sectionLabel}>WHY THIS FITS YOU</Text>
+              <View style={styles.fitCard}>
+                <Ionicons name="sparkles" size={16} color={colors.orange} />
                 <Text style={styles.fitBody}>{fitMessage}</Text>
               </View>
-            </>
+            </View>
           )}
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            {/* Save button */}
             <Pressable
               onPress={handleSave}
               disabled={!canSave}
@@ -474,14 +581,13 @@ export default function PlaceDetailScreen() {
               <Ionicons
                 name={saved ? 'heart' : 'heart-outline'}
                 size={20}
-                color={saved ? colors.background : colors.background}
+                color={colors.background}
               />
               <Text style={styles.actionBtnText}>
                 {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
               </Text>
             </Pressable>
 
-            {/* Google Maps button */}
             <Pressable
               onPress={handleOpenMaps}
               style={[styles.actionBtn, styles.mapsBtn]}
@@ -514,11 +620,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
+
+  // Header
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     paddingVertical: spacing.sm,
   },
   backButton: {
@@ -531,220 +639,200 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.textSecondary,
   },
-  breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.sm,
-    gap: spacing.xs,
-  },
-  breadcrumbLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  breadcrumbSeparator: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  breadcrumbCurrent: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-    flex: 1,
-  },
 
   // Carousel
   carouselImage: {
     width: SCREEN_WIDTH,
     height: CAROUSEL_HEIGHT,
   },
-  dotsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
+  counterPill: {
+    position: 'absolute',
+    bottom: spacing.md,
+    right: spacing.lg,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+  },
+  counterText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.background,
+  },
+  noImagePlaceholder: {
+    width: SCREEN_WIDTH,
+    height: CAROUSEL_HEIGHT,
+    backgroundColor: colors.neutralFill,
     alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.borderDefault,
-  },
-  dotActive: {
-    backgroundColor: colors.orange,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    justifyContent: 'center',
   },
 
   // Content
   content: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
+  },
+
+  // Identity block
+  typeLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: colors.orange,
+    marginBottom: spacing.xs,
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  placeName: {
-    ...typography.h2,
+  placeNameSerif: {
+    fontFamily: fonts.serif,
+    fontSize: 28,
     color: colors.textPrimary,
     flex: 1,
     marginRight: spacing.sm,
   },
-  priceDots: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-    letterSpacing: 2,
+  placeNameSans: {
+    fontFamily: fonts.semiBold,
+    fontSize: 24,
+    color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-    flexWrap: 'wrap',
-  },
-  categoryPill: {
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: radius.pill,
-  },
-  categoryText: {
+  priceLabel: {
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.orange,
+    fontSize: 13,
+    color: colors.textMuted,
   },
   cityLabel: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textMuted,
-  },
-  pricePerNight: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
+    marginTop: spacing.xs,
   },
 
-  // Rating
-  ratingContainer: {
+  // Section label (shared)
+  sectionLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textMuted,
+    marginBottom: spacing.lg,
+  },
+
+  // Trust strip
+  trustSection: {
+    marginTop: spacing.xxl,
+  },
+  trustRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginTop: spacing.sm,
+    alignItems: 'flex-start',
+    gap: spacing.sm,
   },
-  ratingText: {
-    fontFamily: fonts.semiBold,
+  trustContent: {
+    flex: 1,
+    gap: spacing.xs,
+  },
+  trustText: {
+    fontFamily: fonts.medium,
     fontSize: 14,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
-  reviewCount: {
+  trustDate: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
   },
 
-  // Section title
-  sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
+  // Editorial (OUR TAKE)
+  editorialSection: {
+    marginTop: spacing.xxl,
+  },
+  accentRow: {
+    flexDirection: 'row',
+  },
+  accentBar: {
+    width: 2,
+    backgroundColor: colors.orange,
+    opacity: 0.3,
+    borderRadius: 1,
+    marginRight: spacing.md,
+    marginTop: 2,
+    marginBottom: 2,
+  },
+  editorialText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    lineHeight: 22,
+    flex: 1,
+  },
+  descriptionText: {
+    ...typography.body,
     color: colors.textPrimary,
-    marginBottom: spacing.sm,
+    lineHeight: 22,
   },
 
-  // Highlights
+  // Women's voice
+  womensVoiceSection: {
+    marginTop: spacing.xxl,
+  },
+  womensVoiceText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    fontStyle: 'italic',
+    flex: 1,
+  },
+
+  // At a Glance
+  glanceSection: {
+    marginTop: spacing.xxl,
+    gap: spacing.sm,
+  },
+  glanceRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  glanceText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+  },
+
+  // Highlights (signal pills)
   highlightsSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.xxl,
   },
   highlightsRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-  },
-  highlightPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: colors.greenFill,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.pill,
-  },
-  highlightText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.greenSoft,
-  },
-
-  // Why We Love It
-  whySection: {
-    marginTop: spacing.xl,
-  },
-  whyText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    lineHeight: 22,
-  },
-
-  // Solo Travelers Say
-  reviewsSection: {
-    marginTop: spacing.xl,
-  },
-  quoteBox: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    padding: spacing.md,
-    flexDirection: 'row',
     gap: spacing.sm,
   },
-  quoteIcon: {
-    marginTop: 2,
-  },
-  quoteText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-    lineHeight: 20,
-  },
-
-  // Tags
-  tagsSection: {
-    marginTop: spacing.xl,
-    gap: spacing.md,
-  },
-  tagGroup: {
+  signalPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
     gap: spacing.xs,
   },
-  tagGroupLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.textSecondary,
+  signalDiamond: {
+    fontSize: 10,
+    color: colors.textMuted,
   },
-  tagRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  tagPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
-  },
-  tagText: {
+  signalText: {
     fontFamily: fonts.medium,
-    fontSize: 12,
+    fontSize: 13,
+    color: colors.textPrimary,
   },
 
   // Good to Know (Considerations)
   considerationsSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.xxl,
     gap: spacing.sm,
   },
   considerationRow: {
@@ -760,16 +848,39 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Description
-  description: {
-    ...typography.body,
-    color: colors.textPrimary,
-    marginTop: spacing.xl,
+  // Tags
+  tagsSection: {
+    marginTop: spacing.xxl,
+    gap: spacing.md,
+  },
+  tagGroup: {
+    gap: spacing.xs,
+  },
+  tagGroupLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textMuted,
+  },
+  tagRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: spacing.xs,
+  },
+  tagPill: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: radius.pill,
+  },
+  tagText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
   },
 
   // Details
   detailsSection: {
-    marginTop: spacing.xl,
+    marginTop: spacing.xxl,
   },
   detailRow: {
     flexDirection: 'row',
@@ -786,21 +897,22 @@ const styles = StyleSheet.create({
     color: colors.blueSoft,
   },
 
-  // Separator
-  separator: {
-    height: 1,
-    backgroundColor: colors.borderDefault,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xl,
-  },
-
   // Fit section
   fitSection: {
+    marginTop: spacing.xxl,
+  },
+  fitCard: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     gap: spacing.sm,
   },
   fitBody: {
     ...typography.body,
     color: colors.textSecondary,
+    flex: 1,
   },
 
   // Action buttons
@@ -816,7 +928,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     paddingVertical: 14,
-    borderRadius: radius.button,
+    borderRadius: radius.full,
   },
   saveBtn: {
     backgroundColor: colors.orange,
