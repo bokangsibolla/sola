@@ -28,13 +28,14 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
 
   // Check for new community activity on mount
   useEffect(() => {
-    if (!userId) return;
+    const uid = userId;
+    if (!uid) return;
 
     async function checkCommunity() {
       try {
         const lastVisit = await getCommunityLastVisit();
         if (!lastVisit) return;
-        const activity = await getNewCommunityActivity(userId!, lastVisit);
+        const activity = await getNewCommunityActivity(uid, lastVisit);
         setCommunityHasNew(activity.newReplyCount > 0);
       } catch {
         // Non-critical
