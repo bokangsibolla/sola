@@ -28,6 +28,8 @@ interface AppModeContextValue {
   activeTripInfo: ActiveTripInfo | null;
   setMode: (mode: AppMode) => void;
   loading: boolean;
+  justActivated: boolean;
+  clearJustActivated: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -45,6 +47,8 @@ const AppModeContext = createContext<AppModeContextValue>({
   activeTripInfo: null,
   setMode: () => {},
   loading: true,
+  justActivated: false,
+  clearJustActivated: () => {},
 });
 
 // ---------------------------------------------------------------------------
@@ -73,6 +77,7 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
   const [mode, setModeState] = useState<AppMode>('discover');
   const [activeTripInfo, setActiveTripInfo] = useState<ActiveTripInfo | null>(null);
   const [loading, setLoading] = useState(true);
+  const [justActivated, setJustActivated] = useState(false);
 
   useEffect(() => {
     if (!userId) {
@@ -125,6 +130,7 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
             setModeState('discover');
           } else {
             setModeState('travelling');
+            setJustActivated(true);
           }
         } else {
           // No active trip — always discover mode
@@ -170,8 +176,10 @@ export function AppModeProvider({ children }: { children: ReactNode }) {
     [activeTripInfo],
   );
 
+  const clearJustActivated = useCallback(() => setJustActivated(false), []);
+
   return (
-    <AppModeContext.Provider value={{ mode, activeTripInfo, setMode, loading }}>
+    <AppModeContext.Provider value={{ mode, activeTripInfo, setMode, loading, justActivated, clearJustActivated }}>
       {children}
     </AppModeContext.Provider>
   );

@@ -1,5 +1,5 @@
 // app/(tabs)/explore/index.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -95,8 +95,16 @@ function CollectionRow({
 export default function ExploreScreen() {
   const { feedItems, isLoading, error, refresh } = useFeedItems();
   const router = useRouter();
-  const { mode, activeTripInfo } = useAppMode();
+  const { mode, activeTripInfo, justActivated, clearJustActivated } = useAppMode();
   const [showModeSheet, setShowModeSheet] = useState(false);
+
+  // Auto-dismiss transition banner after 4 seconds
+  useEffect(() => {
+    if (justActivated) {
+      const timer = setTimeout(clearJustActivated, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [justActivated, clearJustActivated]);
 
   const headerLeft =
     mode === 'travelling' && activeTripInfo ? (
@@ -356,6 +364,23 @@ export default function ExploreScreen() {
         rightComponent={<InboxButton />}
       />
       <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
+      {justActivated && activeTripInfo && (
+        <Pressable
+          style={styles.modeBanner}
+          onPress={() => {
+            clearJustActivated();
+            router.push('/(tabs)/trips');
+          }}
+        >
+          <Feather name="navigation" size={16} color={colors.orange} />
+          <Text style={styles.modeBannerText}>
+            Your trip to {activeTripInfo.city.name} has started
+          </Text>
+          <Pressable onPress={clearJustActivated} hitSlop={8}>
+            <Feather name="x" size={14} color={colors.textMuted} />
+          </Pressable>
+        </Pressable>
+      )}
       <FlatList
         data={feedItems}
         renderItem={renderItem}
@@ -386,6 +411,23 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textMuted,
+  },
+  modeBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.md,
+    marginHorizontal: spacing.screenX,
+    marginBottom: spacing.md,
+  },
+  modeBannerText: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+    lineHeight: 18,
   },
   list: {
     paddingBottom: spacing.xxxxl,
