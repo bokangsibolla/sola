@@ -1127,6 +1127,73 @@ export async function reportUser(
 }
 
 // ---------------------------------------------------------------------------
+// Affiliate Click Tracking (server-side truth)
+// ---------------------------------------------------------------------------
+
+export type AffiliateLinkType = 'booking' | 'maps' | 'website' | 'outbound';
+
+export interface TrackClickInput {
+  url: string;
+  partner: string;
+  linkType: AffiliateLinkType;
+  placeId?: string;
+  cityId?: string;
+  countryId?: string;
+}
+
+/**
+ * Log an outbound/affiliate click to Supabase.
+ * This is the server-side source of truth for monetization tracking.
+ * Fire-and-forget: errors are swallowed to avoid blocking the user.
+ */
+export async function trackAffiliateClick(
+  userId: string | null,
+  input: TrackClickInput,
+): Promise<void> {
+  try {
+    await supabase
+      .from('affiliate_clicks')
+      .insert({
+        user_id: userId,
+        url: input.url,
+        partner: input.partner,
+        link_type: input.linkType,
+        place_id: input.placeId ?? null,
+        city_id: input.cityId ?? null,
+        country_id: input.countryId ?? null,
+      });
+  } catch {
+    // Silent fail — click tracking must never block the user
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Content Reports
+// ---------------------------------------------------------------------------
+
+export type ContentTargetType = 'community_post' | 'community_reply' | 'place_review';
+export type ContentReportReason = 'spam' | 'harassment' | 'misinformation' | 'inappropriate' | 'safety_concern' | 'other';
+
+export async function reportContent(
+  reporterId: string,
+  targetType: ContentTargetType,
+  targetId: string,
+  reason: ContentReportReason,
+  details?: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('content_reports')
+    .insert({
+      reporter_id: reporterId,
+      target_type: targetType,
+      target_id: targetId,
+      reason,
+      details: details ?? null,
+    });
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
 // Search
 // ---------------------------------------------------------------------------
 

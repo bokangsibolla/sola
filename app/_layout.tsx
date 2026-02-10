@@ -36,6 +36,7 @@ import { PreferencesProvider } from '@/state/PreferencesContext';
 import { AppModeProvider } from '@/state/AppModeContext';
 import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
+import { captureAttribution, persistAttribution, getAttributionForPostHog } from '@/lib/attribution';
 import OfflineBanner from '@/components/OfflineBanner';
 
 // Ensure icon fonts are available (Ionicons uses native fonts, no explicit loading needed)
@@ -103,7 +104,14 @@ function AuthGate() {
   const posthog = usePostHog();
 
   useEffect(() => {
-    if (userId) posthog.identify(userId);
+    if (userId) {
+      posthog.identify(userId);
+      // Persist UTM attribution to Supabase and PostHog
+      persistAttribution(userId);
+      getAttributionForPostHog().then((props) => {
+        if (props) posthog.identify(userId, { $set_once: props });
+      });
+    }
   }, [userId, posthog]);
 
   useEffect(() => {
@@ -170,6 +178,7 @@ function RootLayout() {
   useEffect(() => {
     onboardingStore.hydrate().then(() => setStoreReady(true));
     initI18n().then(() => setI18nReady(true)).catch(() => setI18nReady(true));
+    captureAttribution(); // Capture UTM params from deep link on first open
     const timer = setTimeout(() => setInitTimedOut(true), 10_000);
     return () => clearTimeout(timer);
   }, []);

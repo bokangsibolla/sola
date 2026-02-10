@@ -1,6 +1,11 @@
 /**
  * Centralized analytics event constants for Sola
  * Use with usePostHog() hook: posthog.capture(AnalyticsEvents.EVENT_NAME)
+ *
+ * Rules:
+ * - Every event must be in this file (no string literals in components)
+ * - snake_case event names
+ * - Properties: always include relevant IDs, never include PII
  */
 
 // Event names as constants for type safety and consistency
@@ -35,6 +40,8 @@ export const AnalyticsEvents = {
   TRAVELER_CARD_VIEWED: 'traveler_card_viewed',
   TRAVELER_PROFILE_TAPPED: 'traveler_profile_tapped',
   USER_PROFILE_VIEWED: 'user_profile_viewed',
+  CONNECTION_REQUEST_SENT: 'connection_request_sent',
+  LOCATION_ENABLED: 'location_enabled',
 
   // Messaging
   INBOX_OPENED: 'inbox_opened',
@@ -49,10 +56,17 @@ export const AnalyticsEvents = {
   COUNTRY_GUIDE_VIEWED: 'country_guide_viewed',
   COUNTRY_SECTION_EXPANDED: 'country_section_expanded',
   CITY_TAPPED: 'city_tapped',
+  CITY_PLACES_VIEWED: 'city_places_viewed',
   PLACE_LIST_VIEWED: 'place_list_viewed',
   PLACE_DETAIL_VIEWED: 'place_detail_viewed',
   PLACE_SAVED: 'place_saved',
   PLACE_UNSAVED: 'place_unsaved',
+  PLACE_MAPS_OPENED: 'place_maps_opened',
+  SEARCH_RESULT_SELECTED: 'search_result_selected',
+
+  // Discovery Lenses
+  LENS_VIEWED: 'lens_viewed',
+  LENS_RESULT_TAPPED: 'lens_result_tapped',
 
   // Profile
   PROFILE_SCREEN_VIEWED: 'profile_screen_viewed',
@@ -61,12 +75,41 @@ export const AnalyticsEvents = {
   SETTINGS_OPENED: 'settings_opened',
   PRIVACY_SETTING_CHANGED: 'privacy_setting_changed',
   COLLECTION_VIEWED: 'collection_viewed',
+  COLLECTION_TAPPED: 'collection_tapped',
+  EDIT_PROFILE_TAPPED: 'edit_profile_tapped',
 
   // Trips
   TRIPS_SCREEN_VIEWED: 'trips_screen_viewed',
   TRIP_CREATED: 'trip_created',
   TRIP_DETAIL_VIEWED: 'trip_detail_viewed',
   TRIP_PLACE_ADDED: 'trip_place_added',
+  ADD_TRIP_TAPPED: 'add_trip_tapped',
+
+  // Community
+  COMMUNITY_SCREEN_VIEWED: 'community_screen_viewed',
+  COMMUNITY_THREAD_VIEWED: 'community_thread_viewed',
+  COMMUNITY_POST_CREATED: 'community_post_created',
+  COMMUNITY_REPLY_CREATED: 'community_reply_created',
+  COMMUNITY_VOTE_CAST: 'community_vote_cast',
+
+  // Monetization / Outbound Links
+  AFFILIATE_LINK_TAPPED: 'affiliate_link_tapped',
+  BOOKING_LINK_TAPPED: 'booking_link_tapped',
+  WEBSITE_LINK_TAPPED: 'website_link_tapped',
+
+  // Trust & Safety
+  USER_REPORTED: 'user_reported',
+  USER_BLOCKED: 'user_blocked',
+  CONTENT_REPORTED: 'content_reported',
+  VERIFICATION_STARTED: 'verification_started',
+  VERIFICATION_SUBMITTED: 'verification_submitted',
+
+  // SOS
+  SOS_SCREEN_VIEWED: 'sos_screen_viewed',
+
+  // Account
+  ACCOUNT_DELETION_STARTED: 'account_deletion_started',
+  ACCOUNT_DELETION_COMPLETED: 'account_deletion_completed',
 } as const;
 
 export type AnalyticsEvent = (typeof AnalyticsEvents)[keyof typeof AnalyticsEvents];
