@@ -14,21 +14,21 @@ interface CitySpotlightCardProps {
 }
 
 export function CitySpotlightCard({ city, onPress }: CitySpotlightCardProps) {
-  const imageUrl = city.heroImageUrl ?? 'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1b?w=800';
-
   return (
     <View style={styles.container}>
       <Pressable
         onPress={onPress}
         style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       >
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-          pointerEvents="none"
-        />
+        {city.heroImageUrl ? (
+          <Image
+            source={{ uri: city.heroImageUrl }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+            pointerEvents="none"
+          />
+        ) : null}
       </Pressable>
       <View style={styles.info}>
         <Text style={styles.name}>{city.name}</Text>

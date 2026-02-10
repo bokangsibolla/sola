@@ -15,20 +15,20 @@ interface ActivityCardProps {
 }
 
 export function ActivityCard({ activity, onPress }: ActivityCardProps) {
-  const imageUrl = activity.imageUrl ?? 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=300';
-
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.container, pressed && styles.pressed]}
     >
       <View style={styles.imageContainer} pointerEvents="none">
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
+        {activity.imageUrl ? (
+          <Image
+            source={{ uri: activity.imageUrl }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : null}
       </View>
       <Text style={styles.name} numberOfLines={2}>{activity.name}</Text>
     </Pressable>

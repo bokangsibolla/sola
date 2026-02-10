@@ -25,8 +25,8 @@ export default function ActivityDetailScreen() {
   const media = data?.media ?? [];
   const tags = data?.tags ?? [];
 
-  // Get the hero image URL from media or use a placeholder
-  const heroImageUrl = media[0]?.url ?? 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?w=800';
+  // Get the hero image URL from media (null if no media available)
+  const heroImageUrl = media[0]?.url ?? null;
 
   // Format price level as dollar signs (1-4 scale)
   const formatPriceLevel = (level: number | null): string => {
@@ -71,12 +71,16 @@ export default function ActivityDetailScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Hero Image */}
         <View style={styles.heroContainer} pointerEvents="box-none">
-          <Image
-            source={{ uri: heroImageUrl }}
-            style={styles.heroImage}
-            contentFit="cover"
-            pointerEvents="none"
-          />
+          {heroImageUrl ? (
+            <Image
+              source={{ uri: heroImageUrl }}
+              style={styles.heroImage}
+              contentFit="cover"
+              pointerEvents="none"
+            />
+          ) : (
+            <View style={[styles.heroImage, { backgroundColor: colors.neutralFill }]} pointerEvents="none" />
+          )}
           {/* Back Button Overlay */}
           <View style={[styles.backButton, { top: insets.top + spacing.sm }]}>
             <BackButton />

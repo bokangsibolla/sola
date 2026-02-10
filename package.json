@@ -12,6 +12,7 @@
     "lint": "expo lint",
     "seed": "tsx scripts/seed.ts",
     "seed:images": "tsx scripts/seed-images.ts",
+    "enrich:images": "tsx scripts/enrich-images.ts",
     "seed:place": "tsx scripts/seed-place.ts",
     "discover:accommodations": "tsx scripts/discover-accommodations.ts",
     "seed:accommodations": "tsx scripts/seed-accommodations.ts",

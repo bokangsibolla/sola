@@ -29,10 +29,10 @@ import {
   getCityTripCount,
   getCityTravelerCount,
   getDestinationTags,
-  getProfileById,
   type PlacesGroupedByTime,
 } from '@/data/api';
 import { formatDailyBudget } from '@/lib/currency';
+import { useCurrency } from '@/hooks/useCurrency';
 import { getCityThreadPreviews } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
 import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
@@ -811,13 +811,7 @@ export default function PlaceScreen() {
     ['cityDestTags', city?.id],
   );
 
-  // User profile for currency preference
-  const { userId } = useAuth();
-  const { data: userProfile } = useData(
-    () => userId ? getProfileById(userId) : Promise.resolve(null),
-    ['profile', userId],
-  );
-  const preferredCurrency = userProfile?.preferredCurrency || 'USD';
+  const { currency: preferredCurrency } = useCurrency();
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -876,6 +870,9 @@ export default function PlaceScreen() {
             )}
           </View>
         </View>
+        {city.imageAttribution && (
+          <Text style={styles.imageAttribution}>Photo: {city.imageAttribution}</Text>
+        )}
 
         <View style={styles.content}>
           {/* 1. Women-first positioning line */}
@@ -1089,6 +1086,13 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
+  imageAttribution: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: colors.textMuted,
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.xs,
+  },
   // Content
   content: {
     paddingHorizontal: spacing.screenX,
