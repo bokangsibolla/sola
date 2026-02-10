@@ -32,6 +32,7 @@ import { usePushNotifications } from '@/hooks/usePushNotifications';
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { onboardingStore } from '@/state/onboardingStore';
 import { AuthProvider, useAuth } from '@/state/AuthContext';
+import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import OfflineBanner from '@/components/OfflineBanner';
 
@@ -154,6 +155,7 @@ function RootLayout() {
   const { isOffline } = useNetworkStatus();
 
   const [storeReady, setStoreReady] = useState(false);
+  const [i18nReady, setI18nReady] = useState(false);
   const [initTimedOut, setInitTimedOut] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -165,17 +167,18 @@ function RootLayout() {
 
   useEffect(() => {
     onboardingStore.hydrate().then(() => setStoreReady(true));
+    initI18n().then(() => setI18nReady(true)).catch(() => setI18nReady(true));
     const timer = setTimeout(() => setInitTimedOut(true), 10_000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && storeReady) {
+    if (fontsLoaded && storeReady && i18nReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, storeReady]);
+  }, [fontsLoaded, storeReady, i18nReady]);
 
-  if (initTimedOut && (!fontsLoaded || !storeReady)) {
+  if (initTimedOut && (!fontsLoaded || !storeReady || !i18nReady)) {
     SplashScreen.hideAsync();
     return (
       <View style={errorStyles.container}>
@@ -185,7 +188,7 @@ function RootLayout() {
     );
   }
 
-  if (!fontsLoaded || !storeReady) return null;
+  if (!fontsLoaded || !storeReady || !i18nReady) return null;
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
