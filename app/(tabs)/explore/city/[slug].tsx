@@ -30,6 +30,8 @@ import {
   getCityTravelerCount,
   getDestinationTags,
   getSavedPlacesCountForCity,
+  getEventsByCity,
+  getUpcomingTripForCity,
   type PlacesGroupedByTime,
 } from '@/data/api';
 import { formatDailyBudget } from '@/lib/currency';
@@ -39,6 +41,8 @@ import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
+import { EventCard } from '@/components/explore/EventCard';
+import { MonthPicker } from '@/components/explore/MonthPicker';
 
 // ---------------------------------------------------------------------------
 // Time-based section configuration
@@ -750,6 +754,68 @@ function TravelerPresence({
 }
 
 // ---------------------------------------------------------------------------
+// Events Section — "What's Happening"
+// ---------------------------------------------------------------------------
+
+function EventsSection({ cityId, userId }: { cityId: string; userId: string | null }) {
+  const { data: upcomingTrip } = useData(
+    () => (userId && cityId) ? getUpcomingTripForCity(userId, cityId) : Promise.resolve(null),
+    ['upcomingTripForCity', userId, cityId],
+  );
+
+  const defaultMonth = upcomingTrip?.arriving
+    ? new Date(upcomingTrip.arriving).getMonth() + 1
+    : new Date().getMonth() + 1;
+
+  const [selectedMonth, setSelectedMonth] = useState(defaultMonth);
+
+  useEffect(() => {
+    if (upcomingTrip?.arriving) {
+      setSelectedMonth(new Date(upcomingTrip.arriving).getMonth() + 1);
+    }
+  }, [upcomingTrip?.arriving]);
+
+  const { data: events } = useData(
+    () => getEventsByCity(cityId, selectedMonth),
+    ['cityEvents', cityId, selectedMonth],
+  );
+
+  // Don't render section at all if city has zero events in any month
+  const { data: allEvents } = useData(
+    () => getEventsByCity(cityId),
+    ['cityEventsAll', cityId],
+  );
+
+  if (!allEvents || allEvents.length === 0) return null;
+
+  return (
+    <View style={styles.eventsSection}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionIcon}>{'\uD83C\uDF89'}</Text>
+        <View style={styles.sectionTitleGroup}>
+          <Text style={styles.sectionTitle}>What&apos;s Happening</Text>
+          <Text style={styles.sectionSubtitle}>Festivals, holidays & seasonal events</Text>
+        </View>
+      </View>
+
+      <MonthPicker selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
+
+      <View style={styles.eventsListContainer}>
+        {(events ?? []).length > 0 ? (
+          (events ?? []).map((event) => (
+            <EventCard key={event.id} event={event} />
+          ))
+        ) : (
+          <Text style={styles.eventsEmptyText}>
+            No major events this month — a quieter time to explore at your own pace.
+          </Text>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Main Screen
 // ---------------------------------------------------------------------------
 
@@ -1017,6 +1083,11 @@ export default function PlaceScreen() {
                 />
               ))}
             </>
+          )}
+
+          {/* 9b. Events — What's Happening */}
+          {city?.id && (
+            <EventsSection cityId={city.id} userId={userId} />
           )}
 
           {/* 10. Good to know — cultural context */}
@@ -1643,5 +1714,24 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 14,
     color: colors.orange,
+  },
+
+  // Events section
+  eventsSection: {
+    marginTop: spacing.xxl,
+    paddingTop: spacing.xl,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  eventsListContainer: {
+    marginTop: spacing.lg,
+  },
+  eventsEmptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.xl,
   },
 });
