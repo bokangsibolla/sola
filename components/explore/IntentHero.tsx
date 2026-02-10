@@ -75,7 +75,7 @@ export function IntentHero() {
       if (upcomingTrip.citySlug) {
         quickAction = {
           label: `${upcomingTrip.destinationName} guide`,
-          onPress: () => router.push(`/(tabs)/explore/city/${upcomingTrip.citySlug}`),
+          onPress: () => router.push(`/(tabs)/discover/city/${upcomingTrip.citySlug}`),
         };
       }
       break;
@@ -89,7 +89,7 @@ export function IntentHero() {
         subtitle = highlighted.tagline;
         quickAction = {
           label: `Explore ${highlighted.name}`,
-          onPress: () => router.push(`/(tabs)/explore/country/${highlighted.slug}`),
+          onPress: () => router.push(`/(tabs)/discover/country/${highlighted.slug}`),
         };
       } else if (savedSummary) {
         // Fallback if no highlighted destination available
@@ -143,7 +143,7 @@ export function IntentHero() {
       {/* Destination card — for returning users, shows the highlighted destination */}
       {showDestinationCard && highlighted && (
         <Pressable
-          onPress={() => router.push(`/(tabs)/explore/country/${highlighted.slug}`)}
+          onPress={() => router.push(`/(tabs)/discover/country/${highlighted.slug}`)}
           style={({ pressed }) => [styles.destinationCard, pressed && styles.destinationCardPressed]}
         >
           <Image
@@ -168,7 +168,7 @@ export function IntentHero() {
 
       {/* Search trigger — contextual, embedded, premium */}
       <Pressable
-        onPress={() => router.push('/(tabs)/explore/search')}
+        onPress={() => router.push('/(tabs)/discover/search')}
         style={({ pressed }) => [styles.searchTrigger, pressed && styles.searchTriggerPressed]}
         accessibilityRole="button"
         accessibilityLabel={searchPrompt}

@@ -25,7 +25,7 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
         {showSeeAll && (
           <Pressable
             onPress={() => router.push({
-              pathname: '/(tabs)/community',
+              pathname: '/(tabs)/connect',
               params: { countryId, countryName },
             } as any)}
             hitSlop={8}
@@ -44,7 +44,7 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
         return (
           <Pressable
             key={thread.id}
-            onPress={() => router.push(`/(tabs)/community/thread/${thread.id}` as any)}
+            onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
             style={({ pressed }) => [
               styles.row,
               !isLast && styles.rowBorder,

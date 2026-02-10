@@ -8,13 +8,12 @@ import { useAuth } from '@/state/AuthContext';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
 
-// Custom icon assets per route
+// Custom icon assets per route — 4 tabs
 const TAB_ICONS: Record<string, ImageSource> = {
-  explore: require('@/assets/images/icons/icon-explore.png'),
-  community: require('@/assets/images/icons/icon-community.png'),
-  home: require('@/assets/images/icons/icon-travelers.png'),
+  home: require('@/assets/images/icons/icon-profile.png'),
+  discover: require('@/assets/images/icons/icon-explore.png'),
+  connect: require('@/assets/images/icons/icon-community.png'),
   trips: require('@/assets/images/icons/icon-trips.png'),
-  profile: require('@/assets/images/icons/icon-profile.png'),
 };
 
 const TAB_ICON_SIZE = 26;
@@ -24,31 +23,31 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
   const { userId } = useAuth();
-  const [communityHasNew, setCommunityHasNew] = useState(false);
+  const [connectHasNew, setConnectHasNew] = useState(false);
 
-  // Check for new community activity on mount
+  // Check for new community activity on mount (badge shows on Connect tab)
   useEffect(() => {
+    if (!userId) return;
     const uid = userId;
-    if (!uid) return;
 
-    async function checkCommunity() {
+    async function checkActivity() {
       try {
         const lastVisit = await getCommunityLastVisit();
         if (!lastVisit) return;
         const activity = await getNewCommunityActivity(uid, lastVisit);
-        setCommunityHasNew(activity.newReplyCount > 0);
+        setConnectHasNew(activity.newReplyCount > 0);
       } catch {
         // Non-critical
       }
     }
 
-    checkCommunity();
+    checkActivity();
   }, [userId]);
 
-  // Clear badge and update last visit when community tab is focused
+  // Clear badge when Connect tab is focused
   useEffect(() => {
-    if (state.routes[state.index]?.name === 'community') {
-      setCommunityHasNew(false);
+    if (state.routes[state.index]?.name === 'connect') {
+      setConnectHasNew(false);
       setCommunityLastVisit();
     }
   }, [state.index]);
@@ -96,7 +95,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
                   style={[styles.icon, { tintColor }]}
                   contentFit="contain"
                 />
-                {route.name === 'community' && communityHasNew && !isFocused && (
+                {route.name === 'connect' && connectHasNew && !isFocused && (
                   <View style={styles.badge} />
                 )}
               </View>

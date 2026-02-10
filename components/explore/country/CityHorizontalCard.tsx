@@ -21,7 +21,7 @@ export function CityHorizontalCard({ city }: Props) {
     <Pressable
       onPress={() => {
         posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
-        router.push(`/(tabs)/explore/city/${city.slug}` as any);
+        router.push(`/(tabs)/discover/city/${city.slug}` as any);
       }}
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
