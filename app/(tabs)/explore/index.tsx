@@ -309,6 +309,116 @@ export default function ExploreScreen() {
         );
       }
 
+      case 'your-saves':
+        return (
+          <View style={styles.zoneWide}>
+            <View style={styles.zonePaddedHeader}>
+              <SectionHeader
+                title="Places you saved"
+                onSeeAll={() => router.push('/(tabs)/profile')}
+              />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.citiesScroll}
+            >
+              {item.data.places.map((place) => (
+                <Pressable
+                  key={place.placeId}
+                  onPress={() => router.push(`/(tabs)/explore/place-detail/${place.placeId}`)}
+                  style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
+                >
+                  {place.imageUrl ? (
+                    <Image
+                      source={{ uri: place.imageUrl }}
+                      style={StyleSheet.absoluteFillObject}
+                      contentFit="cover"
+                      transition={200}
+                    />
+                  ) : (
+                    <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.neutralFill }]} />
+                  )}
+                  <LinearGradient
+                    colors={['transparent', 'rgba(0,0,0,0.55)']}
+                    style={StyleSheet.absoluteFillObject}
+                  />
+                  <View style={styles.cityCardContent}>
+                    <Text style={styles.cityCardName} numberOfLines={1}>{place.placeName}</Text>
+                    {place.cityName && (
+                      <Text style={styles.cityCardCountry} numberOfLines={1}>{place.cityName}</Text>
+                    )}
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        );
+
+      case 'upcoming-trip': {
+        const daysText = item.data.daysUntil === 1 ? 'tomorrow' : `in ${item.data.daysUntil} days`;
+        return (
+          <View style={styles.zone}>
+            <Pressable
+              onPress={() => router.push(`/(tabs)/trips/${item.data.tripId}`)}
+              style={({ pressed }) => [styles.tripCountdownCard, pressed && styles.pressed]}
+            >
+              <View style={styles.tripCountdownLeft}>
+                <Text style={styles.tripCountdownLabel}>UPCOMING TRIP</Text>
+                <Text style={styles.tripCountdownTitle}>
+                  {item.data.destinationName}
+                </Text>
+                <Text style={styles.tripCountdownDays}>{daysText}</Text>
+              </View>
+              <Feather name="chevron-right" size={20} color={colors.textMuted} />
+            </Pressable>
+          </View>
+        );
+      }
+
+      case 'continue-exploring':
+        return (
+          <View style={styles.zone}>
+            <Pressable
+              onPress={() => router.push(`/(tabs)/explore/city/${item.data.citySlug}`)}
+              style={({ pressed }) => [styles.continueCard, pressed && styles.pressed]}
+            >
+              {item.data.heroImageUrl && (
+                <Image
+                  source={{ uri: item.data.heroImageUrl }}
+                  style={styles.continueCardImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              )}
+              <View style={styles.continueCardText}>
+                <Text style={styles.continueCardLabel}>CONTINUE EXPLORING</Text>
+                <Text style={styles.continueCardCity}>{item.data.cityName}</Text>
+              </View>
+            </Pressable>
+          </View>
+        );
+
+      case 'community-activity':
+        return (
+          <View style={styles.zone}>
+            <Pressable
+              onPress={() => router.push('/(tabs)/community')}
+              style={({ pressed }) => [styles.communityCard, pressed && styles.pressed]}
+            >
+              <Text style={styles.communityLabel}>YOUR DISCUSSIONS</Text>
+              <Text style={styles.communityTitle}>
+                {item.data.newReplyCount} {item.data.newReplyCount === 1 ? 'thread has' : 'threads have'} new replies
+              </Text>
+              {item.data.threads[0] && (
+                <Text style={styles.communityAction} numberOfLines={1}>
+                  {item.data.threads[0].title}
+                </Text>
+              )}
+            </Pressable>
+          </View>
+        );
+
       default:
         return null;
     }
@@ -526,6 +636,69 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.orange,
+  },
+
+  // Trip countdown card — personal zone
+  tripCountdownCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.xl,
+  },
+  tripCountdownLeft: {
+    flex: 1,
+  },
+  tripCountdownLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: colors.orange,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  tripCountdownTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    lineHeight: 26,
+  },
+  tripCountdownDays: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: spacing.xs,
+  },
+
+  // Continue exploring card — personal zone
+  continueCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    height: 80,
+  },
+  continueCardImage: {
+    width: 80,
+    height: 80,
+  },
+  continueCardText: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+  },
+  continueCardLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    letterSpacing: 0.8,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    marginBottom: spacing.xs,
+  },
+  continueCardCity: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+    color: colors.textPrimary,
   },
 
   // Safety card — travelling mode

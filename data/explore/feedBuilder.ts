@@ -1,7 +1,23 @@
 // data/explore/feedBuilder.ts
 import type { ExploreCollectionWithItems, Place } from '../types';
 import type { Country } from '../types';
-import type { FeedItem, CityWithCountry } from './types';
+import type { FeedItem, CityWithCountry, SavedPlaceWithDetails } from './types';
+
+/** Optional personal context injected by useFeedItems */
+export interface PersonalFeedContext {
+  savedPlaces?: { places: SavedPlaceWithDetails[]; totalCount: number };
+  upcomingTrip?: {
+    tripId: string;
+    destinationName: string;
+    citySlug: string | null;
+    countryIso2: string;
+    daysUntil: number;
+  };
+  recentCity?: { cityName: string; citySlug: string; heroImageUrl: string | null };
+  communityActivity?: { newReplyCount: number; threads: { id: string; title: string }[] };
+}
+
+const MAX_PERSONAL_ZONES = 2;
 
 /**
  * Build the explore feed as distinct zones.
@@ -9,36 +25,68 @@ import type { FeedItem, CityWithCountry } from './types';
  * The IntentHero component now handles above-the-fold orientation,
  * so the feed starts with browse content, not a featured collection.
  *
+ * When personal context is provided, up to 2 personal zones are
+ * prepended before the generic browse content.
+ *
  * Order:
- * 1. Countries grid (destination browsing)
- * 2. Popular cities (horizontal scroll)
- * 3. Collections section (all active collections together)
- * 4. Community signal
+ * 1. [Personal zones — max 2, priority-ranked]
+ * 2. Countries grid (destination browsing)
+ * 3. Popular cities (horizontal scroll)
+ * 4. Collections section (all active collections together)
+ * 5. Community signal
  */
 export function buildFeed(
   collections: ExploreCollectionWithItems[],
   cities: CityWithCountry[],
   countries: Country[],
+  personal?: PersonalFeedContext,
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
-  // Zone 1: Countries grid — primary browse entry
+  // Personal "you" layer — priority ranked, max 2
+  if (personal) {
+    const personalZones: FeedItem[] = [];
+
+    // Priority 1: Upcoming trip
+    if (personal.upcomingTrip) {
+      personalZones.push({ type: 'upcoming-trip', data: personal.upcomingTrip });
+    }
+
+    // Priority 2: Community activity
+    if (personal.communityActivity && personal.communityActivity.newReplyCount > 0) {
+      personalZones.push({ type: 'community-activity', data: personal.communityActivity });
+    }
+
+    // Priority 3: Saved places
+    if (personal.savedPlaces && personal.savedPlaces.totalCount > 0) {
+      personalZones.push({ type: 'your-saves', data: personal.savedPlaces });
+    }
+
+    // Priority 4: Continue exploring
+    if (personal.recentCity) {
+      personalZones.push({ type: 'continue-exploring', data: personal.recentCity });
+    }
+
+    feed.push(...personalZones.slice(0, MAX_PERSONAL_ZONES));
+  }
+
+  // Zone: Countries grid — primary browse entry
   if (countries.length > 0) {
     feed.push({ type: 'countries-grid', data: countries });
   }
 
-  // Zone 2: Popular cities — date-seeded shuffle within featured
+  // Zone: Popular cities — date-seeded shuffle within featured
   if (cities.length > 0) {
     const shuffled = shuffleCitiesByDate(cities);
     feed.push({ type: 'popular-cities', data: shuffled });
   }
 
-  // Zone 3: All collections together — shown after intent is established
+  // Zone: All collections together — shown after intent is established
   if (collections.length > 0) {
     feed.push({ type: 'collections-section', data: collections });
   }
 
-  // Zone 4: Community signal
+  // Zone: Community signal
   feed.push({ type: 'community-signal' });
 
   return feed;
