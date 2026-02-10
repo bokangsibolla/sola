@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
 import { Image, ImageSource } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/constants/design';
+import { useAuth } from '@/state/AuthContext';
+import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
+import { getNewCommunityActivity } from '@/data/community/communityApi';
 
 // Custom icon assets per route
 const TAB_ICONS: Record<string, ImageSource> = {
@@ -20,6 +23,34 @@ const TAB_BAR_HEIGHT = 50;
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
+  const { userId } = useAuth();
+  const [communityHasNew, setCommunityHasNew] = useState(false);
+
+  // Check for new community activity on mount
+  useEffect(() => {
+    if (!userId) return;
+
+    async function checkCommunity() {
+      try {
+        const lastVisit = await getCommunityLastVisit();
+        if (!lastVisit) return;
+        const activity = await getNewCommunityActivity(userId!, lastVisit);
+        setCommunityHasNew(activity.newReplyCount > 0);
+      } catch {
+        // Non-critical
+      }
+    }
+
+    checkCommunity();
+  }, [userId]);
+
+  // Clear badge and update last visit when community tab is focused
+  useEffect(() => {
+    if (state.routes[state.index]?.name === 'community') {
+      setCommunityHasNew(false);
+      setCommunityLastVisit();
+    }
+  }, [state.index]);
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
@@ -58,11 +89,16 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
             style={styles.tab}
           >
             {icon && (
-              <Image
-                source={icon}
-                style={[styles.icon, { tintColor }]}
-                contentFit="contain"
-              />
+              <View>
+                <Image
+                  source={icon}
+                  style={[styles.icon, { tintColor }]}
+                  contentFit="contain"
+                />
+                {route.name === 'community' && communityHasNew && !isFocused && (
+                  <View style={styles.badge} />
+                )}
+              </View>
             )}
             <Text
               style={[
@@ -112,5 +148,14 @@ const styles = StyleSheet.create({
   },
   labelActive: {
     fontFamily: fonts.semiBold,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.orange,
   },
 });

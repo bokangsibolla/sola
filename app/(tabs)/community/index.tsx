@@ -25,6 +25,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { searchCommunityCountries, getCitiesForCountry, castVote } from '@/data/community/communityApi';
+import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
@@ -404,6 +405,18 @@ export default function CommunityHome() {
   const { threads: feedThreads, loading, refreshing, error: feedError, hasMore, loadMore, refresh, setFilters, filters } = useCommunityFeed();
   const { showIntroBanner, dismissIntro } = useCommunityOnboarding();
 
+  // Last visit timestamp for "Earlier" divider
+  const [lastVisitTimestamp, setLastVisitTimestamp] = useState<string | null>(null);
+  const dividerShownRef = useRef(false);
+
+  // Load last visit timestamp and update it for next visit
+  useEffect(() => {
+    getCommunityLastVisit().then((ts) => {
+      setLastVisitTimestamp(ts);
+      setCommunityLastVisit();
+    });
+  }, []);
+
   // Local copy of threads for optimistic vote updates
   const [threads, setThreads] = useState<ThreadWithAuthor[]>([]);
   const prevFeedRef = useRef(feedThreads);
@@ -495,14 +508,40 @@ export default function CommunityHome() {
     setPlaceLabel(label);
   }, [setFilters]);
 
-  const renderThread = useCallback(({ item }: { item: ThreadWithAuthor }) => (
-    <ThreadCard
-      thread={item}
-      onPress={() => router.push(`/(tabs)/community/thread/${item.id}`)}
-      onVote={handleVote}
-      router={router}
-    />
-  ), [router, handleVote]);
+  // Reset divider tracking when threads change
+  useEffect(() => {
+    dividerShownRef.current = false;
+  }, [displayThreads]);
+
+  const renderThread = useCallback(({ item, index }: { item: ThreadWithAuthor; index: number }) => {
+    // Show "Earlier" divider before the first old thread
+    let showDivider = false;
+    if (lastVisitTimestamp && !dividerShownRef.current && index > 0) {
+      const isOld = new Date(item.updatedAt) <= new Date(lastVisitTimestamp);
+      if (isOld) {
+        showDivider = true;
+        dividerShownRef.current = true;
+      }
+    }
+
+    return (
+      <View>
+        {showDivider && (
+          <View style={styles.newActivityDivider}>
+            <View style={styles.newActivityLine} />
+            <Text style={styles.newActivityText}>Earlier</Text>
+            <View style={styles.newActivityLine} />
+          </View>
+        )}
+        <ThreadCard
+          thread={item}
+          onPress={() => router.push(`/(tabs)/community/thread/${item.id}`)}
+          onVote={handleVote}
+          router={router}
+        />
+      </View>
+    );
+  }, [router, handleVote, lastVisitTimestamp]);
 
   const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId);
 
@@ -958,4 +997,24 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   backRowText: { fontFamily: fonts.semiBold, fontSize: 16, color: colors.orange },
+
+  // New activity divider
+  newActivityDivider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  newActivityLine: {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderDefault,
+  },
+  newActivityText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+  },
 });

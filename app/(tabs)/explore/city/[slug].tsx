@@ -37,6 +37,7 @@ import { useCurrency } from '@/hooks/useCurrency';
 import { getCityThreadPreviews } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
+import { setRecentCity } from '@/data/explore/recentBrowsing';
 import type { City, Country, Place, Tag, DestinationTag } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
 
@@ -774,6 +775,18 @@ export default function PlaceScreen() {
     () => city ? getAreasByCity(city.id) : Promise.resolve([]),
     ['cityAreas', city?.id],
   );
+
+  // Store as recent city for "Continue Exploring" feed zone
+  useEffect(() => {
+    if (city) {
+      setRecentCity({
+        citySlug: city.slug,
+        cityName: city.name,
+        heroImageUrl: city.heroImageUrl ?? null,
+        viewedAt: Date.now(),
+      });
+    }
+  }, [city?.id]);
 
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
 
