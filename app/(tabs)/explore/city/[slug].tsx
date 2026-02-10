@@ -315,9 +315,12 @@ function TimeBasedSection({
   section: TimeSection;
   places: Place[];
 }) {
+  const [expanded, setExpanded] = useState(false);
+
   if (places.length === 0) return null;
 
   const showDuration = section.key === 'fullDay';
+  const visiblePlaces = expanded ? places : places.slice(0, 6);
 
   return (
     <View style={styles.timeSection}>
@@ -328,17 +331,19 @@ function TimeBasedSection({
           <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
         </View>
       </View>
-      {places.slice(0, 6).map((place) => (
+      {visiblePlaces.map((place) => (
         section.key === 'fullDay' ? (
           <FullDayCard key={place.id} place={place} />
         ) : (
           <PlaceCard key={place.id} place={place} showDuration={showDuration} />
         )
       ))}
-      {places.length > 6 && (
-        <Text style={styles.moreText}>
-          +{places.length - 6} more places
-        </Text>
+      {places.length > 6 && !expanded && (
+        <Pressable onPress={() => setExpanded(true)} hitSlop={8}>
+          <Text style={styles.moreText}>
+            +{places.length - 6} more places
+          </Text>
+        </Pressable>
       )}
     </View>
   );
