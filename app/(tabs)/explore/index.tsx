@@ -1,5 +1,5 @@
 // app/(tabs)/explore/index.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -13,7 +13,9 @@ import SearchBar from '@/components/explore/SearchBar';
 import SectionHeader from '@/components/explore/SectionHeader';
 import { EditorialCollectionCard } from '@/components/explore/cards/EditorialCollectionCard';
 import { CountryCard } from '@/components/explore/cards/CountryCard';
+import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
 import { useFeedItems } from '@/data/explore/useFeedItems';
+import { useAppMode } from '@/state/AppModeContext';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -91,6 +93,26 @@ function CollectionRow({
 export default function ExploreScreen() {
   const { feedItems, isLoading, error, refresh } = useFeedItems();
   const router = useRouter();
+  const { mode, activeTripInfo } = useAppMode();
+  const [showModeSheet, setShowModeSheet] = useState(false);
+
+  const headerLeft =
+    mode === 'travelling' && activeTripInfo ? (
+      <Pressable onPress={() => setShowModeSheet(true)}>
+        <Text style={styles.travellingTitle}>
+          {activeTripInfo.city.name}
+          <Text style={styles.travellingDays}>{' \u00B7 '}{activeTripInfo.daysLeft}d left</Text>
+        </Text>
+      </Pressable>
+    ) : (
+      <Pressable onPress={() => setShowModeSheet(true)}>
+        <Image
+          source={require('@/assets/images/sola-logo.png')}
+          style={styles.headerLogo}
+          contentFit="contain"
+        />
+      </Pressable>
+    );
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
@@ -206,16 +228,11 @@ export default function ExploreScreen() {
       <AppScreen>
         <AppHeader
           title=""
-          leftComponent={
-            <Image
-              source={require('@/assets/images/sola-logo.png')}
-              style={styles.headerLogo}
-              contentFit="contain"
-            />
-          }
+          leftComponent={headerLeft}
           rightComponent={<InboxButton />}
         />
         <LoadingScreen />
+        <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
       </AppScreen>
     );
   }
@@ -225,16 +242,11 @@ export default function ExploreScreen() {
       <AppScreen>
         <AppHeader
           title=""
-          leftComponent={
-            <Image
-              source={require('@/assets/images/sola-logo.png')}
-              style={styles.headerLogo}
-              contentFit="contain"
-            />
-          }
+          leftComponent={headerLeft}
           rightComponent={<InboxButton />}
         />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
+        <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
       </AppScreen>
     );
   }
@@ -243,13 +255,7 @@ export default function ExploreScreen() {
     <AppScreen>
       <AppHeader
         title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
+        leftComponent={headerLeft}
         rightComponent={<InboxButton />}
       />
       <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
@@ -262,6 +268,7 @@ export default function ExploreScreen() {
         onRefresh={refresh}
         refreshing={isLoading}
       />
+      <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
     </AppScreen>
   );
 }
@@ -272,6 +279,16 @@ const styles = StyleSheet.create({
   headerLogo: {
     height: 22,
     width: 76,
+  },
+  travellingTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+  },
+  travellingDays: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
   },
   list: {
     paddingBottom: spacing.xxxxl,
