@@ -262,6 +262,9 @@ export interface Profile {
   locationUpdatedAt: string | null;
   nationality: string | null;
   isDiscoverable: boolean;
+  preferredCurrency: string;
+  preferredLanguage: string;
+  verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
   createdAt: string;
   updatedAt: string;
 }

@@ -1308,6 +1308,8 @@ export interface UpdateProfileInput {
   currentCityName?: string | null;
   interests?: string[];
   travelStyle?: string | null;
+  preferredCurrency?: string;
+  preferredLanguage?: string;
 }
 
 export async function updateProfile(
@@ -1326,6 +1328,8 @@ export async function updateProfile(
   if (updates.currentCityName !== undefined) payload.current_city_name = updates.currentCityName;
   if (updates.interests !== undefined) payload.interests = updates.interests;
   if (updates.travelStyle !== undefined) payload.travel_style = updates.travelStyle;
+  if (updates.preferredCurrency !== undefined) payload.preferred_currency = updates.preferredCurrency;
+  if (updates.preferredLanguage !== undefined) payload.preferred_language = updates.preferredLanguage;
 
   const { data, error } = await supabase
     .from('profiles')
@@ -2263,4 +2267,52 @@ export async function getOrCreateConversationGuarded(
     throw new Error('You must be connected to message this traveler.');
   }
   return getOrCreateConversation(userId, otherUserId);
+}
+
+// ---------------------------------------------------------------------------
+// User Verification (Selfie)
+// ---------------------------------------------------------------------------
+
+export async function submitVerificationSelfie(
+  userId: string,
+  selfieUri: string,
+): Promise<void> {
+  const ext = selfieUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  const filePath = `${userId}/selfie.${ext}`;
+
+  const response = await fetch(selfieUri);
+  const blob = await response.blob();
+
+  const { error: uploadError } = await supabase.storage
+    .from('verification-selfies')
+    .upload(filePath, blob, {
+      contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+      upsert: true,
+    });
+
+  if (uploadError) throw uploadError;
+
+  const { error: updateError } = await supabase
+    .from('profiles')
+    .update({
+      verification_status: 'pending',
+      verification_selfie_url: filePath,
+      verification_submitted_at: new Date().toISOString(),
+    })
+    .eq('id', userId);
+
+  if (updateError) throw updateError;
+}
+
+export async function getVerificationStatus(
+  userId: string,
+): Promise<'unverified' | 'pending' | 'verified' | 'rejected'> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('verification_status')
+    .eq('id', userId)
+    .single();
+
+  if (error) throw error;
+  return data.verification_status;
 }
