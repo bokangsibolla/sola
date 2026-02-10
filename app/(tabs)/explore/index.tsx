@@ -1,5 +1,5 @@
 // app/(tabs)/explore/index.tsx
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { FlatList, ScrollView, StyleSheet, View, Text, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -16,13 +16,17 @@ import { CountryCard } from '@/components/explore/cards/CountryCard';
 import { Feather } from '@expo/vector-icons';
 import { ModeSwitchSheet } from '@/components/ModeSwitchSheet';
 import { ModeIndicatorPill } from '@/components/explore/ModeIndicatorPill';
+import { ExploreModesCard } from '@/components/explore/ExploreModesCard';
+import { TravellingModeWelcomeSheet } from '@/components/explore/TravellingModeWelcomeSheet';
+import { TripPromptCard } from '@/components/explore/TripPromptCard';
 import { useData } from '@/hooks/useData';
 import { getPlaceFirstImage } from '@/data/api';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import { useAppMode } from '@/state/AppModeContext';
+import { useExploreOnboarding } from '@/data/explore/useExploreOnboarding';
 import { getEmergencyNumbers } from '@/data/safety';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
-import type { Country, Place } from '@/data/types';
+import type { Place } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 const MAX_COUNTRIES_SHOWN = 6;
@@ -133,15 +137,8 @@ export default function ExploreScreen() {
   const { feedItems, isLoading, error, refresh } = useFeedItems();
   const router = useRouter();
   const { mode, activeTripInfo, justActivated, clearJustActivated } = useAppMode();
+  const { showModesCard, dismissModesCard, showTripPrompt, dismissTripPrompt } = useExploreOnboarding();
   const [showModeSheet, setShowModeSheet] = useState(false);
-
-  // Auto-dismiss transition banner after 4 seconds
-  useEffect(() => {
-    if (justActivated) {
-      const timer = setTimeout(clearJustActivated, 4000);
-      return () => clearTimeout(timer);
-    }
-  }, [justActivated, clearJustActivated]);
 
   const headerLeft = (
     <Image
@@ -370,23 +367,6 @@ export default function ExploreScreen() {
         rightComponent={headerRight}
       />
       <SearchBar onPress={() => router.push('/(tabs)/explore/search')} />
-      {justActivated && activeTripInfo && (
-        <Pressable
-          style={styles.modeBanner}
-          onPress={() => {
-            clearJustActivated();
-            router.push('/(tabs)/trips');
-          }}
-        >
-          <Feather name="navigation" size={16} color={colors.orange} />
-          <Text style={styles.modeBannerText}>
-            Your trip to {activeTripInfo.city.name} has started
-          </Text>
-          <Pressable onPress={clearJustActivated} hitSlop={8}>
-            <Feather name="x" size={14} color={colors.textMuted} />
-          </Pressable>
-        </Pressable>
-      )}
       <FlatList
         data={feedItems}
         renderItem={renderItem}
@@ -395,8 +375,23 @@ export default function ExploreScreen() {
         showsVerticalScrollIndicator={false}
         onRefresh={refresh}
         refreshing={isLoading}
+        ListHeaderComponent={
+          <>
+            {showModesCard && <ExploreModesCard onDismiss={dismissModesCard} />}
+            {mode === 'discover' && showTripPrompt && !activeTripInfo && (
+              <TripPromptCard onDismiss={dismissTripPrompt} />
+            )}
+          </>
+        }
       />
       <ModeSwitchSheet visible={showModeSheet} onClose={() => setShowModeSheet(false)} />
+      {justActivated && activeTripInfo && (
+        <TravellingModeWelcomeSheet
+          visible
+          onDismiss={clearJustActivated}
+          tripInfo={activeTripInfo}
+        />
+      )}
     </AppScreen>
   );
 }
@@ -412,23 +407,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-  },
-  modeBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.orangeFill,
-    borderRadius: radius.card,
-    padding: spacing.md,
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.md,
-  },
-  modeBannerText: {
-    flex: 1,
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-    lineHeight: 18,
   },
   list: {
     paddingBottom: spacing.xxxxl,
