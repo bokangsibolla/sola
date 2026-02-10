@@ -3,6 +3,9 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import { useData } from '@/hooks/useData';
+import { getPopularCities } from '@/data/api';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 interface TripEmptyStateProps {
@@ -28,6 +31,9 @@ const FEATURES = [
 ];
 
 export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
+  const router = useRouter();
+  const { data: popularCities } = useData(() => getPopularCities(4), ['popularCities']);
+
   return (
     <View style={styles.container}>
       {/* Hero image with overlay */}
@@ -73,6 +79,24 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
           <Text style={styles.ctaText}>Plan your first trip</Text>
         </Pressable>
       </View>
+
+      {/* Destination pills — entry points to discovery */}
+      {(popularCities ?? []).length > 0 && (
+        <>
+          <Text style={styles.orText}>Or explore destinations</Text>
+          <View style={styles.destinationPills}>
+            {(popularCities ?? []).slice(0, 4).map((city) => (
+              <Pressable
+                key={city.id}
+                style={styles.destinationPill}
+                onPress={() => router.push(`/(tabs)/explore/city/${city.slug}`)}
+              >
+                <Text style={styles.destinationPillText}>{city.name}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </>
+      )}
     </View>
   );
 }
@@ -169,5 +193,31 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: '#FFFFFF',
+  },
+  orText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  destinationPills: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.xl,
+  },
+  destinationPill: {
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  destinationPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
   },
 });
