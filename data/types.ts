@@ -13,6 +13,10 @@ export interface Country {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  // Image enrichment metadata
+  imageSource: string | null;
+  imageAttribution: string | null;
+  imageCachedAt: string | null;
   // Content fields (merged from geo_content)
   title: string | null;
   subtitle: string | null;
@@ -60,6 +64,10 @@ export interface City {
   isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
+  // Image enrichment metadata
+  imageSource: string | null;
+  imageAttribution: string | null;
+  imageCachedAt: string | null;
   // Content fields (merged from geo_content)
   title: string | null;
   subtitle: string | null;
@@ -412,6 +420,11 @@ export interface PlaceSolaNote {
   displayContext: string | null;
   orderIndex: number;
   createdAt: string;
+}
+
+export interface PlaceWithCity extends Place {
+  cityName: string;
+  imageUrl: string | null;
 }
 
 // ---------------------------------------------------------------------------

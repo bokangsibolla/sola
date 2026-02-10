@@ -25,6 +25,7 @@ import type {
   PlaceVerificationSignal,
   PlaceSolaNote,
   PlaceVerificationStatus,
+  PlaceWithCity,
   ConnectionRequest,
   ConnectionStatus,
 } from './types';
@@ -85,6 +86,9 @@ export function mapCountry(row: Record<string, any>): Country {
     isFeatured: row.is_featured,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    imageSource: row.image_source,
+    imageAttribution: row.image_attribution,
+    imageCachedAt: row.image_cached_at,
     // Content fields (merged from geo_content)
     title: row.title,
     subtitle: row.subtitle,
@@ -141,6 +145,9 @@ export function mapCity(row: Record<string, any>): City {
     isFeatured: row.is_featured,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    imageSource: row.image_source,
+    imageAttribution: row.image_attribution,
+    imageCachedAt: row.image_cached_at,
     // Content fields (merged from geo_content)
     title: row.title,
     subtitle: row.subtitle,
@@ -600,6 +607,34 @@ export async function getActivitiesByCity(cityId: string): Promise<Place[]> {
     .order('curation_score', { ascending: false, nullsFirst: false });
   if (error) throw error;
   return rowsToCamel<Place>(data ?? []);
+}
+
+/**
+ * Get top places for a country, ordered by featured status and curation score.
+ * Joins through cities to resolve country, and includes first media image.
+ */
+export async function getTopPlacesByCountry(
+  countryId: string,
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select(`
+      *,
+      cities!inner(name, country_id),
+      place_media(url)
+    `)
+    .eq('cities.country_id', countryId)
+    .eq('is_active', true)
+    .order('is_featured', { ascending: false })
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
 }
 
 export async function getAllActivities(limit = 50): Promise<Place[]> {
