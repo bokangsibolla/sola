@@ -9,6 +9,7 @@ export default function HomeLayout() {
       <Stack.Screen name="settings" />
       <Stack.Screen name="verify" />
       <Stack.Screen name="delete-account" />
+      <Stack.Screen name="saved" />
       <Stack.Screen name="sos" />
       <Stack.Screen name="collections/[id]" />
     </Stack>

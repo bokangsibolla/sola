@@ -12,11 +12,16 @@ import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { useData } from '@/hooks/useData';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
-import { getProfileById, getPopularCitiesWithCountry, getConversations, getSavedPlacesWithDetails } from '@/data/api';
+import {
+  getProfileById,
+  getPopularCitiesWithCountry,
+  getConversations,
+  getSavedPlacesWithDetails,
+} from '@/data/api';
 import { getRecentCity } from '@/data/explore/recentBrowsing';
 import { getCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
-import { colors, fonts, radius, spacing, typography, pressedState } from '@/constants/design';
+import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { RecentCity } from '@/data/explore/recentBrowsing';
 import type { Profile, Conversation } from '@/data/types';
@@ -40,7 +45,7 @@ interface CommunityActivity {
 }
 
 // ---------------------------------------------------------------------------
-// Helper
+// Helpers
 // ---------------------------------------------------------------------------
 
 function daysUntil(dateStr: string): number {
@@ -68,14 +73,10 @@ function tripDuration(arrivingStr: string, leavingStr: string): number {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components
+// Zone 2: Trip Status
 // ---------------------------------------------------------------------------
 
-function SectionLabel({ label }: { label: string }) {
-  return <Text style={styles.sectionLabel}>{label}</Text>;
-}
-
-function ActiveTripCard({
+function TripStatusZone({
   tripInfo,
   mode,
 }: {
@@ -86,26 +87,22 @@ function ActiveTripCard({
   const isTravelling = mode === 'travelling';
 
   if (!isTravelling) {
-    // Upcoming trip countdown
     const days = daysUntil(tripInfo.arriving);
     if (days > 30) return null;
 
     return (
-      <Pressable
-        style={({ pressed }) => [styles.card, styles.upcomingTripCard, pressed && { opacity: pressedState.opacity }]}
-        onPress={() => router.push(`/trips/${tripInfo.tripId}`)}
-      >
-        <Feather name="navigation" size={18} color={colors.orange} />
-        <View style={styles.upcomingTripContent}>
-          <Text style={styles.upcomingTripTitle}>
-            {tripInfo.city.name} in {days} {days === 1 ? 'day' : 'days'}
+      <View style={styles.zone}>
+        <Pressable
+          style={({ pressed }) => [styles.alertRow, styles.alertRowOrange, pressed && { opacity: pressedState.opacity }]}
+          onPress={() => router.push(`/trips/${tripInfo.tripId}`)}
+        >
+          <Feather name="navigation" size={16} color={colors.orange} />
+          <Text style={styles.alertRowText}>
+            <Text style={styles.alertRowBold}>{tripInfo.city.name}</Text> in {days} {days === 1 ? 'day' : 'days'}
           </Text>
-          <Text style={styles.upcomingTripSubtitle}>
-            Tap to review your trip details
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textMuted} />
-      </Pressable>
+          <Feather name="chevron-right" size={16} color={colors.textMuted} />
+        </Pressable>
+      </View>
     );
   }
 
@@ -114,120 +111,244 @@ function ActiveTripCard({
   const total = tripDuration(tripInfo.arriving, tripInfo.leaving);
 
   return (
-    <Pressable
-      style={({ pressed }) => [styles.activeTripCard, pressed && { opacity: pressedState.opacity }]}
-      onPress={() => router.push(`/trips/${tripInfo.tripId}`)}
-    >
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.65)']}
-        style={styles.activeTripGradient}
-      />
-      <View style={styles.activeTripOverlay}>
-        <View style={styles.activeTripBadge}>
-          <View style={styles.activeTripDot} />
-          <Text style={styles.activeTripBadgeText}>TRAVELLING</Text>
-        </View>
-        <Text style={styles.activeTripCity}>{tripInfo.city.name}</Text>
-        <Text style={styles.activeTripDay}>
-          Day {day} of {total}  ·  {tripInfo.daysLeft} {tripInfo.daysLeft === 1 ? 'day' : 'days'} left
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function YourDiscussionsCard({ activity }: { activity: CommunityActivity }) {
-  const router = useRouter();
-  if (activity.newReplyCount <= 0) return null;
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.card, styles.discussionsCard, pressed && { opacity: pressedState.opacity }]}
-      onPress={() => router.push('/(tabs)/connect')}
-    >
-      <View style={styles.discussionsIcon}>
-        <Feather name="message-square" size={18} color={colors.orange} />
-      </View>
-      <View style={styles.discussionsContent}>
-        <Text style={styles.discussionsTitle}>
-          {activity.newReplyCount} {activity.newReplyCount === 1 ? 'thread has' : 'threads have'} new replies
-        </Text>
-        <Text style={styles.discussionsSubtitle}>Tap to see what's new</Text>
-      </View>
-      <Feather name="chevron-right" size={18} color={colors.textMuted} />
-    </Pressable>
-  );
-}
-
-function UnreadMessagesCard({ count }: { count: number }) {
-  const router = useRouter();
-  if (count <= 0) return null;
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.card, styles.unreadCard, pressed && { opacity: pressedState.opacity }]}
-      onPress={() => router.push('/connect/dm')}
-    >
-      <View style={styles.unreadIcon}>
-        <Feather name="message-circle" size={18} color={colors.orange} />
-      </View>
-      <View style={styles.unreadContent}>
-        <Text style={styles.unreadTitle}>
-          {count} new {count === 1 ? 'message' : 'messages'}
-        </Text>
-        <Text style={styles.unreadSubtitle}>Tap to read your conversations</Text>
-      </View>
-      <Feather name="chevron-right" size={18} color={colors.textMuted} />
-    </Pressable>
-  );
-}
-
-function SavedPlacesScroll({ places }: { places: SavedPlaceItem[] }) {
-  const router = useRouter();
-  if (places.length === 0) return null;
-
-  return (
-    <View style={styles.section}>
-      <SectionLabel label="PLACES YOU SAVED" />
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.savedPlacesScroll}
+    <View style={styles.zone}>
+      <Pressable
+        style={({ pressed }) => [styles.activeTripCard, pressed && { opacity: pressedState.opacity }]}
+        onPress={() => router.push(`/trips/${tripInfo.tripId}`)}
       >
-        {places.map((place) => (
-          <Pressable
-            key={place.placeId}
-            style={({ pressed }) => [styles.savedPlaceCard, pressed && { opacity: pressedState.opacity }]}
-            onPress={() => router.push(`/discover/place-detail/${place.placeId}`)}
-          >
-            {place.imageUrl ? (
-              <Image
-                source={{ uri: place.imageUrl }}
-                style={styles.savedPlaceImage}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View style={[styles.savedPlaceImage, styles.savedPlaceImagePlaceholder]}>
-                <Feather name="bookmark" size={20} color={colors.textMuted} />
-              </View>
-            )}
-            <Text style={styles.savedPlaceName} numberOfLines={1}>{place.placeName}</Text>
-            {place.cityName && (
-              <Text style={styles.savedPlaceCity} numberOfLines={1}>{place.cityName}</Text>
-            )}
-          </Pressable>
-        ))}
-      </ScrollView>
+        <LinearGradient
+          colors={['transparent', 'rgba(0,0,0,0.65)']}
+          style={styles.activeTripGradient}
+        />
+        <View style={styles.activeTripOverlay}>
+          <View style={styles.activeTripBadge}>
+            <View style={styles.activeTripDot} />
+            <Text style={styles.activeTripBadgeText}>TRAVELLING</Text>
+          </View>
+          <Text style={styles.activeTripCity}>{tripInfo.city.name}</Text>
+          <Text style={styles.activeTripDay}>
+            Day {day} of {total}  ·  {tripInfo.daysLeft} {tripInfo.daysLeft === 1 ? 'day' : 'days'} left
+          </Text>
+        </View>
+      </Pressable>
     </View>
   );
 }
 
-function ContinueExploringCard({ recentCity }: { recentCity: RecentCity }) {
+// ---------------------------------------------------------------------------
+// Zone 3: Alerts Strip
+// ---------------------------------------------------------------------------
+
+function AlertsZone({
+  unreadCount,
+  communityActivity,
+}: {
+  unreadCount: number;
+  communityActivity: CommunityActivity | null;
+}) {
+  const router = useRouter();
+  const hasMessages = unreadCount > 0;
+  const hasReplies = communityActivity !== null && communityActivity.newReplyCount > 0;
+
+  if (!hasMessages && !hasReplies) return null;
+
+  return (
+    <View style={styles.zone}>
+      <View style={styles.alertsContainer}>
+        {hasMessages && (
+          <Pressable
+            style={({ pressed }) => [styles.alertRow, pressed && { opacity: pressedState.opacity }]}
+            onPress={() => router.push('/connect/dm')}
+          >
+            <Feather name="message-circle" size={16} color={colors.orange} />
+            <Text style={styles.alertRowText}>
+              <Text style={styles.alertRowBold}>{unreadCount}</Text> unread {unreadCount === 1 ? 'message' : 'messages'}
+            </Text>
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
+          </Pressable>
+        )}
+        {hasMessages && hasReplies && <View style={styles.alertDivider} />}
+        {hasReplies && (
+          <Pressable
+            style={({ pressed }) => [styles.alertRow, pressed && { opacity: pressedState.opacity }]}
+            onPress={() => router.push('/(tabs)/connect')}
+          >
+            <Feather name="message-square" size={16} color={colors.orange} />
+            <Text style={styles.alertRowText}>
+              <Text style={styles.alertRowBold}>{communityActivity!.newReplyCount}</Text> new {communityActivity!.newReplyCount === 1 ? 'reply' : 'replies'} on your threads
+            </Text>
+            <Feather name="chevron-right" size={16} color={colors.textMuted} />
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Zone 4: Quick Actions
+// ---------------------------------------------------------------------------
+
+interface QuickAction {
+  icon: keyof typeof Feather.glyphMap;
+  label: string;
+  onPress: () => void;
+}
+
+function QuickActionsZone({
+  mode,
+  tripInfo,
+}: {
+  mode: 'discover' | 'travelling';
+  tripInfo: ActiveTripInfo | null;
+}) {
+  const router = useRouter();
+
+  const actions: QuickAction[] = useMemo(() => {
+    if (mode === 'travelling' && tripInfo) {
+      return [
+        {
+          icon: 'compass' as const,
+          label: `Explore ${tripInfo.city.name}`,
+          onPress: () => router.push(`/discover/city/${tripInfo.city.name.toLowerCase().replace(/\s+/g, '-')}`),
+        },
+        {
+          icon: 'shield' as const,
+          label: 'Safety info',
+          onPress: () => router.push('/home/sos'),
+        },
+        {
+          icon: 'book-open' as const,
+          label: 'Trip journal',
+          onPress: () => router.push(`/trips/${tripInfo.tripId}`),
+        },
+      ];
+    }
+
+    return [
+      {
+        icon: 'compass' as const,
+        label: 'Explore',
+        onPress: () => router.push('/(tabs)/discover'),
+      },
+      {
+        icon: 'edit-3' as const,
+        label: 'Ask community',
+        onPress: () => router.push('/(tabs)/connect/new'),
+      },
+      {
+        icon: 'map' as const,
+        label: 'Plan a trip',
+        onPress: () => router.push('/(tabs)/trips'),
+      },
+    ];
+  }, [mode, tripInfo, router]);
+
+  return (
+    <View style={styles.zone}>
+      <View style={styles.quickActionsRow}>
+        {actions.map((action) => (
+          <Pressable
+            key={action.label}
+            style={({ pressed }) => [styles.quickActionCard, pressed && { opacity: pressedState.opacity, transform: pressedState.transform }]}
+            onPress={action.onPress}
+          >
+            <View style={styles.quickActionIcon}>
+              <Feather name={action.icon} size={20} color={colors.orange} />
+            </View>
+            <Text style={styles.quickActionLabel} numberOfLines={2}>
+              {action.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Zone 5: Your Shortlist
+// ---------------------------------------------------------------------------
+
+function ShortlistZone({ places }: { places: SavedPlaceItem[] }) {
+  const router = useRouter();
+  const isEmpty = places.length === 0;
+
+  return (
+    <View style={styles.zone}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Your Shortlist</Text>
+        {!isEmpty && (
+          <Pressable onPress={() => router.push('/home/saved')} hitSlop={8}>
+            <Text style={styles.seeAll}>See all</Text>
+          </Pressable>
+        )}
+      </View>
+
+      {isEmpty ? (
+        <Pressable
+          style={({ pressed }) => [styles.emptyShortlist, pressed && { opacity: pressedState.opacity }]}
+          onPress={() => router.push('/(tabs)/discover')}
+        >
+          <Feather name="bookmark" size={20} color={colors.textMuted} />
+          <View style={styles.emptyShortlistContent}>
+            <Text style={styles.emptyShortlistText}>
+              Save places as you explore
+            </Text>
+            <Text style={styles.emptyShortlistHint}>
+              They'll appear here as your shortlist
+            </Text>
+          </View>
+        </Pressable>
+      ) : (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.shortlistScroll}
+        >
+          {places.map((place) => (
+            <Pressable
+              key={place.placeId}
+              style={({ pressed }) => [styles.shortlistCard, pressed && { opacity: pressedState.opacity, transform: pressedState.transform }]}
+              onPress={() => router.push(`/discover/place-detail/${place.placeId}`)}
+            >
+              {place.imageUrl ? (
+                <Image
+                  source={{ uri: place.imageUrl }}
+                  style={styles.shortlistImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={[styles.shortlistImage, styles.shortlistImagePlaceholder]}>
+                  <Feather name="bookmark" size={18} color={colors.textMuted} />
+                </View>
+              )}
+              <Text style={styles.shortlistName} numberOfLines={1}>
+                {place.placeName}
+              </Text>
+              {place.cityName && (
+                <Text style={styles.shortlistCity} numberOfLines={1}>
+                  {place.cityName}
+                </Text>
+              )}
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Zone 6: Continue
+// ---------------------------------------------------------------------------
+
+function ContinueZone({ recentCity }: { recentCity: RecentCity }) {
   const router = useRouter();
 
   return (
-    <View style={styles.section}>
+    <View style={styles.zone}>
       <Pressable
         style={({ pressed }) => [styles.continueCard, pressed && { opacity: pressedState.opacity }]}
         onPress={() => router.push(`/discover/city/${recentCity.citySlug}`)}
@@ -241,72 +362,61 @@ function ContinueExploringCard({ recentCity }: { recentCity: RecentCity }) {
           />
         ) : (
           <View style={[styles.continueImage, styles.continueImagePlaceholder]}>
-            <Feather name="compass" size={20} color={colors.textMuted} />
+            <Feather name="compass" size={18} color={colors.textMuted} />
           </View>
         )}
         <View style={styles.continueContent}>
           <Text style={styles.continueLabel}>CONTINUE EXPLORING</Text>
           <Text style={styles.continueName}>{recentCity.cityName}</Text>
         </View>
-        <Feather name="chevron-right" size={18} color={colors.textMuted} />
+        <Feather name="chevron-right" size={16} color={colors.textMuted} />
       </Pressable>
     </View>
   );
 }
 
-function CommunityHighlightCard({ threads }: { threads: ThreadWithAuthor[] }) {
-  const router = useRouter();
-  if (threads.length === 0) return null;
+// ---------------------------------------------------------------------------
+// Zone 7: Discover
+// ---------------------------------------------------------------------------
 
-  return (
-    <View style={styles.section}>
-      <SectionLabel label="FROM THE COMMUNITY" />
-      {threads.map((thread, index) => (
-        <Pressable
-          key={thread.id}
-          style={({ pressed }) => [
-            styles.communityRow,
-            index < threads.length - 1 && styles.communityRowBorder,
-            pressed && { opacity: pressedState.opacity },
-          ]}
-          onPress={() => router.push(`/connect/thread/${thread.id}`)}
-        >
-          <View style={styles.communityRowContent}>
-            <Text style={styles.communityTitle} numberOfLines={2}>
-              {thread.title}
-            </Text>
-            <Text style={styles.communityMeta}>
-              {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
-              {thread.cityName ? `  ·  ${thread.cityName}` : ''}
-            </Text>
-          </View>
-          <Feather name="chevron-right" size={16} color={colors.textMuted} />
-        </Pressable>
-      ))}
-    </View>
-  );
-}
-
-function DestinationSuggestionCard({ cities }: { cities: CityWithCountry[] }) {
+function DiscoverZone({
+  cities,
+  hasPersonalContent,
+}: {
+  cities: CityWithCountry[];
+  hasPersonalContent: boolean;
+}) {
   const router = useRouter();
   if (cities.length === 0) return null;
 
-  // Render as 2x2 grid when 4 cities, otherwise single row
+  // Active users see fewer suggestions
+  const displayCities = hasPersonalContent ? cities.slice(0, 2) : cities.slice(0, 4);
+  const isSingleRow = displayCities.length <= 2;
+
   const rows: CityWithCountry[][] = [];
-  for (let i = 0; i < cities.length; i += 2) {
-    rows.push(cities.slice(i, i + 2));
+  for (let i = 0; i < displayCities.length; i += 2) {
+    rows.push(displayCities.slice(i, i + 2));
   }
 
   return (
-    <View style={styles.section}>
-      <SectionLabel label="DISCOVER" />
+    <View style={styles.zone}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>Popular with solo travelers</Text>
+        <Pressable onPress={() => router.push('/(tabs)/discover')} hitSlop={8}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
       <View style={styles.destinationGridWrap}>
         {rows.map((row, rowIndex) => (
           <View key={rowIndex} style={styles.destinationGrid}>
             {row.map((city) => (
               <Pressable
                 key={city.id}
-                style={({ pressed }) => [styles.destinationCard, pressed && { opacity: pressedState.opacity }]}
+                style={({ pressed }) => [
+                  styles.destinationCard,
+                  isSingleRow && styles.destinationCardTall,
+                  pressed && { opacity: pressedState.opacity },
+                ]}
                 onPress={() => router.push(`/discover/city/${city.slug}`)}
               >
                 {city.heroImageUrl ? (
@@ -335,26 +445,44 @@ function DestinationSuggestionCard({ cities }: { cities: CityWithCountry[] }) {
   );
 }
 
-function CommunityInvitePrompt() {
+// ---------------------------------------------------------------------------
+// Zone 8: Community
+// ---------------------------------------------------------------------------
+
+function CommunityZone({ threads }: { threads: ThreadWithAuthor[] }) {
   const router = useRouter();
+  if (threads.length === 0) return null;
 
   return (
-    <View style={styles.section}>
-      <Pressable
-        style={({ pressed }) => [styles.card, styles.inviteCard, pressed && { opacity: pressedState.opacity }]}
-        onPress={() => router.push('/(tabs)/connect/new')}
-      >
-        <View style={styles.inviteIcon}>
-          <Feather name="edit-3" size={18} color={colors.orange} />
-        </View>
-        <View style={styles.inviteContent}>
-          <Text style={styles.inviteTitle}>Ask a question</Text>
-          <Text style={styles.inviteSubtitle}>
-            Get advice from women who've been there
-          </Text>
-        </View>
-        <Feather name="chevron-right" size={18} color={colors.textMuted} />
-      </Pressable>
+    <View style={styles.zone}>
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>From the community</Text>
+        <Pressable onPress={() => router.push('/(tabs)/connect')} hitSlop={8}>
+          <Text style={styles.seeAll}>See all</Text>
+        </Pressable>
+      </View>
+      {threads.map((thread, index) => (
+        <Pressable
+          key={thread.id}
+          style={({ pressed }) => [
+            styles.communityRow,
+            index < threads.length - 1 && styles.communityRowBorder,
+            pressed && { opacity: pressedState.opacity },
+          ]}
+          onPress={() => router.push(`/connect/thread/${thread.id}`)}
+        >
+          <View style={styles.communityRowContent}>
+            <Text style={styles.communityTitle} numberOfLines={2}>
+              {thread.title}
+            </Text>
+            <Text style={styles.communityMeta}>
+              {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
+              {thread.cityName ? `  ·  ${thread.cityName}` : ''}
+            </Text>
+          </View>
+          <Feather name="chevron-right" size={14} color={colors.textMuted} />
+        </Pressable>
+      ))}
     </View>
   );
 }
@@ -373,7 +501,7 @@ export default function HomeScreen() {
     posthog.capture('home_dashboard_viewed');
   }, [posthog]);
 
-  // User profile for avatar
+  // User profile
   const { data: profile } = useData<Profile | undefined>(
     () => (userId ? getProfileById(userId) : Promise.resolve(undefined)),
     ['profile', userId ?? ''],
@@ -397,21 +525,19 @@ export default function HomeScreen() {
     [communityThreads],
   );
 
-  // Popular destinations — 4 for richer grid
+  // Popular destinations
   const { data: popularCities } = useData<CityWithCountry[]>(
     () => getPopularCitiesWithCountry(4),
     ['popular-cities-home'],
   );
 
-  // --- Personal context data ---
-
-  // Saved places
+  // Saved places (increased limit for shortlist)
   const { data: savedPlaces } = useData<SavedPlaceItem[]>(
-    () => (userId ? getSavedPlacesWithDetails(userId, 5) : Promise.resolve([])),
+    () => (userId ? getSavedPlacesWithDetails(userId, 8) : Promise.resolve([])),
     ['saved-places-home', userId ?? ''],
   );
 
-  // Recent city browsing (AsyncStorage)
+  // Recent city browsing
   const [recentCity, setRecentCity] = useState<RecentCity | null>(null);
   useEffect(() => {
     getRecentCity().then(setRecentCity);
@@ -431,25 +557,12 @@ export default function HomeScreen() {
     })();
   }, [userId]);
 
-  // Determine content availability
+  // Content flags
   const hasTrip = activeTripInfo !== null;
-  const hasMessages = unreadCount > 0;
   const hasSavedPlaces = (savedPlaces ?? []).length > 0;
   const hasRecentCity = recentCity !== null;
   const hasCommunityActivity = communityActivity !== null && communityActivity.newReplyCount > 0;
-  const hasCommunity = highlightThreads.length > 0;
-  const hasDestinations = (popularCities ?? []).length > 0;
-  const hasAnyPersonal = hasTrip || hasMessages || hasSavedPlaces || hasRecentCity || hasCommunityActivity;
-
-  // Greeting based on time of day
-  const greeting = useMemo(() => {
-    const hour = new Date().getHours();
-    if (hour < 12) return 'Good morning';
-    if (hour < 17) return 'Good afternoon';
-    return 'Good evening';
-  }, []);
-
-  const firstName = profile?.firstName ?? '';
+  const hasPersonalContent = hasTrip || hasSavedPlaces || hasRecentCity;
 
   return (
     <AppScreen>
@@ -469,57 +582,37 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {/* Greeting */}
-        <View style={styles.greetingContainer}>
-          <Text style={styles.greeting}>
-            {greeting}{firstName ? `, ${firstName}` : ''}
-          </Text>
-        </View>
-
-        {/* Active / Upcoming Trip */}
+        {/* Zone 2: Trip Status */}
         {hasTrip && (
-          <View style={styles.section}>
-            <ActiveTripCard tripInfo={activeTripInfo!} mode={mode} />
-          </View>
+          <TripStatusZone tripInfo={activeTripInfo!} mode={mode} />
         )}
 
-        {/* Your Discussions — new replies since last community visit */}
-        {hasCommunityActivity && (
-          <View style={styles.section}>
-            <YourDiscussionsCard activity={communityActivity!} />
-          </View>
-        )}
+        {/* Zone 3: Alerts */}
+        <AlertsZone
+          unreadCount={unreadCount}
+          communityActivity={communityActivity}
+        />
 
-        {/* Unread Messages */}
-        {hasMessages && (
-          <View style={styles.section}>
-            <UnreadMessagesCard count={unreadCount} />
-          </View>
-        )}
+        {/* Zone 4: Quick Actions */}
+        <QuickActionsZone mode={mode} tripInfo={activeTripInfo} />
 
-        {/* Saved Places horizontal scroll */}
-        {hasSavedPlaces && (
-          <SavedPlacesScroll places={savedPlaces!} />
-        )}
+        {/* Zone 5: Your Shortlist */}
+        <ShortlistZone places={savedPlaces ?? []} />
 
-        {/* Continue Exploring — recent city */}
+        {/* Zone 6: Continue */}
         {hasRecentCity && (
-          <ContinueExploringCard recentCity={recentCity!} />
+          <ContinueZone recentCity={recentCity!} />
         )}
 
-        {/* Community Highlights — generic threads for users without personal activity */}
-        {hasCommunity && !hasCommunityActivity && (
-          <CommunityHighlightCard threads={highlightThreads} />
-        )}
+        {/* Zone 7: Discover */}
+        <DiscoverZone
+          cities={popularCities ?? []}
+          hasPersonalContent={hasPersonalContent}
+        />
 
-        {/* Destination Suggestions */}
-        {hasDestinations && (
-          <DestinationSuggestionCard cities={popularCities ?? []} />
-        )}
-
-        {/* Community invite for users without personal activity */}
-        {!hasAnyPersonal && (
-          <CommunityInvitePrompt />
+        {/* Zone 8: Community (only if no personal activity) */}
+        {!hasCommunityActivity && (
+          <CommunityZone threads={highlightThreads} />
         )}
 
         <View style={styles.bottomSpacer} />
@@ -543,43 +636,32 @@ const styles = StyleSheet.create({
     width: 76,
   },
 
-  // Greeting
-  greetingContainer: {
-    paddingBottom: spacing.xl,
-  },
-  greeting: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    lineHeight: 36,
-    color: colors.textPrimary,
-  },
-
-  // Generic section
-  section: {
+  // Zones
+  zone: {
     marginBottom: spacing.xl,
   },
-  sectionLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    lineHeight: 14,
-    letterSpacing: 1,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
+
+  // Section headers (Shortlist, Discover, Community)
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: spacing.md,
   },
-
-  // Cards (shared base)
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    padding: spacing.lg,
-    gap: spacing.md,
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.textPrimary,
+  },
+  seeAll: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.orange,
   },
 
-  // Active trip (travelling) — hero card
+  // Active trip — hero card
   activeTripCard: {
     height: 180,
     borderRadius: radius.card,
@@ -631,113 +713,125 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Upcoming trip — subtle card
-  upcomingTripCard: {
-    backgroundColor: colors.orangeFill,
-    borderColor: colors.orangeFill,
+  // Alerts strip
+  alertsContainer: {
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    overflow: 'hidden',
   },
-  upcomingTripContent: {
-    flex: 1,
-  },
-  upcomingTripTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textPrimary,
-  },
-  upcomingTripSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
-  // Your Discussions card
-  discussionsCard: {
-    backgroundColor: colors.orangeFill,
-    borderColor: colors.orangeFill,
-  },
-  discussionsIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.background,
+  alertRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-  },
-  discussionsContent: {
-    flex: 1,
-  },
-  discussionsTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textPrimary,
-  },
-  discussionsSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
-  // Unread messages
-  unreadCard: {
-    backgroundColor: colors.orangeFill,
-    borderColor: colors.orangeFill,
-  },
-  unreadIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  unreadContent: {
-    flex: 1,
-  },
-  unreadTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textPrimary,
-  },
-  unreadSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: 2,
-  },
-
-  // Saved places horizontal scroll
-  savedPlacesScroll: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     gap: spacing.md,
   },
-  savedPlaceCard: {
-    width: 120,
-  },
-  savedPlaceImage: {
-    width: 120,
-    height: 90,
+  alertRowOrange: {
+    backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
-    backgroundColor: colors.neutralFill,
+    borderWidth: 1,
+    borderColor: colors.orangeFill,
   },
-  savedPlaceImagePlaceholder: {
+  alertRowText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  alertRowBold: {
+    fontFamily: fonts.semiBold,
+  },
+  alertDivider: {
+    height: 1,
+    backgroundColor: colors.borderSubtle,
+    marginHorizontal: spacing.lg,
+  },
+
+  // Quick actions
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+  },
+  quickActionCard: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    gap: spacing.sm,
+  },
+  quickActionIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    backgroundColor: colors.orangeFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  savedPlaceName: {
+  quickActionLabel: {
     fontFamily: fonts.medium,
     fontSize: 13,
     lineHeight: 18,
     color: colors.textPrimary,
+    textAlign: 'center',
+  },
+
+  // Shortlist — empty state
+  emptyShortlist: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.xl,
+    gap: spacing.md,
+  },
+  emptyShortlistContent: {
+    flex: 1,
+  },
+  emptyShortlistText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textPrimary,
+  },
+  emptyShortlistHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+
+  // Shortlist — active state scroll
+  shortlistScroll: {
+    gap: spacing.md,
+  },
+  shortlistCard: {
+    width: 140,
+  },
+  shortlistImage: {
+    width: 140,
+    height: 100,
+    borderRadius: radius.card,
+    backgroundColor: colors.neutralFill,
+  },
+  shortlistImagePlaceholder: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shortlistName: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textPrimary,
     marginTop: spacing.xs,
   },
-  savedPlaceCity: {
+  shortlistCity: {
     fontFamily: fonts.regular,
     fontSize: 12,
     lineHeight: 16,
@@ -745,7 +839,7 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // Continue exploring card
+  // Continue card
   continueCard: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -756,8 +850,8 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   continueImage: {
-    width: 56,
-    height: 56,
+    width: 48,
+    height: 48,
     borderRadius: radius.card,
     backgroundColor: colors.neutralFill,
   },
@@ -783,35 +877,7 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
 
-  // Community
-  communityRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    gap: spacing.md,
-  },
-  communityRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  communityRowContent: {
-    flex: 1,
-  },
-  communityTitle: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textPrimary,
-  },
-  communityMeta: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-
-  // Destinations — 2x2 grid
+  // Destinations
   destinationGridWrap: {
     gap: spacing.md,
   },
@@ -821,9 +887,12 @@ const styles = StyleSheet.create({
   },
   destinationCard: {
     flex: 1,
-    height: 140,
+    height: 120,
     borderRadius: radius.card,
     overflow: 'hidden',
+  },
+  destinationCardTall: {
+    height: 140,
   },
   destinationImage: {
     ...StyleSheet.absoluteFillObject,
@@ -855,33 +924,31 @@ const styles = StyleSheet.create({
     marginTop: 1,
   },
 
-  // Community invite prompt
-  inviteCard: {
-    backgroundColor: colors.orangeFill,
-    borderColor: colors.orangeFill,
-  },
-  inviteIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.background,
+  // Community
+  communityRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    gap: spacing.md,
   },
-  inviteContent: {
+  communityRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  communityRowContent: {
     flex: 1,
   },
-  inviteTitle: {
-    fontFamily: fonts.semiBold,
+  communityTitle: {
+    fontFamily: fonts.medium,
     fontSize: 15,
     lineHeight: 20,
     color: colors.textPrimary,
   },
-  inviteSubtitle: {
+  communityMeta: {
     fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
-    color: colors.textSecondary,
+    color: colors.textMuted,
     marginTop: 2,
   },
 
