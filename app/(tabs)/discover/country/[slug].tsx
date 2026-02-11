@@ -3,23 +3,67 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import { getCountryBySlug, getCitiesByCountry, getTopPlacesByCountry } from '@/data/api';
+import AppScreen from '@/components/AppScreen';
+import AppHeader from '@/components/AppHeader';
+import MenuButton from '@/components/MenuButton';
+import { getCountryBySlug, getCitiesByCountry, getTopPlacesByCountry, getPlacesByCountryAndType } from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
 import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { getEmergencyNumbers } from '@/data/safety';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { KnowBeforeYouGo } from '@/components/explore/country/KnowBeforeYouGo';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
-import { TravelingAsAWoman } from '@/components/explore/country/TravelingAsAWoman';
-import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
-import { PracticalGuide } from '@/components/explore/country/PracticalGuide';
 import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
+import { SovereigntySection } from '@/components/explore/country/SovereigntySection';
+import { InfrastructureSection } from '@/components/explore/country/InfrastructureSection';
+import { HealthAccessSection } from '@/components/explore/country/HealthAccessSection';
+import { ExperienceSection } from '@/components/explore/country/ExperienceSection';
+import { CommunitySection } from '@/components/explore/country/CommunitySection';
+import { CostRealitySection } from '@/components/explore/country/CostRealitySection';
+import { QuickReference } from '@/components/explore/country/QuickReference';
 import { colors, fonts, spacing } from '@/constants/design';
+
+// ---------------------------------------------------------------------------
+// Breadcrumb
+// ---------------------------------------------------------------------------
+
+function Breadcrumb({
+  countryName,
+  fromCollection,
+  fromCollectionSlug,
+  onDiscover,
+  onCollection,
+}: {
+  countryName: string;
+  fromCollection?: string;
+  fromCollectionSlug?: string;
+  onDiscover: () => void;
+  onCollection?: () => void;
+}) {
+  return (
+    <View style={styles.breadcrumb}>
+      <Pressable onPress={onDiscover} hitSlop={8}>
+        <Text style={styles.breadcrumbLink}>Discover</Text>
+      </Pressable>
+      {fromCollection && onCollection ? (
+        <>
+          <Text style={styles.breadcrumbSep}>/</Text>
+          <Pressable onPress={onCollection} hitSlop={8}>
+            <Text style={styles.breadcrumbLink} numberOfLines={1}>
+              {fromCollection}
+            </Text>
+          </Pressable>
+        </>
+      ) : null}
+      <Text style={styles.breadcrumbSep}>/</Text>
+      <Text style={styles.breadcrumbCurrent} numberOfLines={1}>
+        {countryName}
+      </Text>
+    </View>
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Section Header with optional "See all" action
@@ -51,9 +95,12 @@ function SectionHeader({
 // ---------------------------------------------------------------------------
 
 export default function CountryGuideScreen() {
-  const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { slug, fromCollection, fromCollectionSlug } = useLocalSearchParams<{
+    slug: string;
+    fromCollection?: string;
+    fromCollectionSlug?: string;
+  }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const posthog = usePostHog();
 
   useEffect(() => {
@@ -80,19 +127,54 @@ export default function CountryGuideScreen() {
     ['topPlacesByCountry', country?.id],
   );
 
+  // Fetch health facilities
+  const { data: healthPlaces } = useData(
+    () => country?.id ? getPlacesByCountryAndType(country.id, ['hospital', 'clinic', 'pharmacy']) : Promise.resolve([]),
+    ['healthPlaces', country?.id],
+  );
+
+  // Fetch social places
+  const { data: socialPlaces } = useData(
+    () => country?.id ? getPlacesByCountryAndType(country.id, ['hostel', 'coworking', 'cafe']) : Promise.resolve([]),
+    ['socialPlaces', country?.id],
+  );
+
   // Fetch community threads
   const { data: threadData } = useData(
     () => country?.id ? getCountryThreadPreviews(country.id, 3) : Promise.resolve(null),
     ['countryThreadPreviews', country?.id],
   );
 
-  if (countryLoading || (country && citiesLoading)) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
+  const headerLeft = (
+    <Image
+      source={require('@/assets/images/sola-logo.png')}
+      style={styles.headerLogo}
+      contentFit="contain"
+    />
+  );
+
+  if (countryLoading || (country && citiesLoading)) {
+    return (
+      <AppScreen>
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <LoadingScreen />
+      </AppScreen>
+    );
+  }
+  if (error) {
+    return (
+      <AppScreen>
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <ErrorScreen message={error.message} onRetry={refetch} />
+      </AppScreen>
+    );
+  }
   if (!country) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
+      <AppScreen>
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
         <Text style={styles.notFound}>Guide not found</Text>
-      </View>
+      </AppScreen>
     );
   }
 
@@ -102,20 +184,21 @@ export default function CountryGuideScreen() {
   const placeList = (topPlaces ?? []) as PlaceWithCity[];
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Navigation bar */}
-      <View style={styles.nav}>
-        <Pressable
-          onPress={() => router.push('/(tabs)/explore' as any)}
-          hitSlop={12}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backLabel}>Explore</Text>
-        </Pressable>
-      </View>
+    <AppScreen>
+      <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        <Breadcrumb
+          countryName={country.name}
+          fromCollection={fromCollection}
+          fromCollectionSlug={fromCollectionSlug}
+          onDiscover={() => router.push('/(tabs)/discover')}
+          onCollection={
+            fromCollectionSlug
+              ? () => router.push(`/(tabs)/discover/collection/${fromCollectionSlug}`)
+              : undefined
+          }
+        />
         {/* ── Section 1: Hero + Editorial Overview ── */}
         <View style={styles.heroContainer}>
           {country.heroImageUrl ? (
@@ -140,7 +223,7 @@ export default function CountryGuideScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* Editorial paragraph */}
+          {/* Opening editorial line */}
           {editorialText && (
             <Text style={styles.editorialText}>
               {editorialText
@@ -152,10 +235,19 @@ export default function CountryGuideScreen() {
             </Text>
           )}
 
-          {/* ── Section 2: Know Before You Go ── */}
-          <KnowBeforeYouGo country={country} />
+          {/* Dimension 1: How it feels to be here */}
+          <SovereigntySection country={country} />
 
-          {/* ── Section 3: Where to Go (Cities) ── */}
+          {/* Dimension 2: Getting around on your own */}
+          <InfrastructureSection country={country} />
+
+          {/* Dimension 3: Your health here */}
+          <HealthAccessSection country={country} places={(healthPlaces ?? []) as PlaceWithCity[]} />
+
+          {/* Dimension 4: What you'll do here */}
+          <ExperienceSection country={country} places={placeList} />
+
+          {/* Where to Go (Cities) - kept from original */}
           {cityList.length > 0 && (
             <View style={styles.section}>
               <SectionHeader
@@ -180,35 +272,16 @@ export default function CountryGuideScreen() {
             </View>
           )}
 
-          {/* ── Section 4: Traveling Here as a Woman ── */}
-          <TravelingAsAWoman country={country} />
+          {/* Dimension 5: Meeting people */}
+          <CommunitySection country={country} places={(socialPlaces ?? []) as PlaceWithCity[]} />
 
-          {/* ── Section 5: Things to Do (Top Places) ── */}
-          {placeList.length > 0 && (
-            <View style={styles.section}>
-              <SectionHeader
-                title="Things to Do"
-                actionLabel="See all"
-                onAction={() => {
-                  router.push({
-                    pathname: '/(tabs)/discover/country/places' as any,
-                    params: { countryId: country.id, countryName: country.name, countrySlug: country.slug },
-                  });
-                }}
-              />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScroll}
-              >
-                {placeList.map((place) => (
-                  <PlaceHorizontalCard key={place.id} place={place} />
-                ))}
-              </ScrollView>
-            </View>
-          )}
+          {/* Dimension 6: What it costs (really) */}
+          <CostRealitySection country={country} />
 
-          {/* ── Section 6: Community Threads ── */}
+          {/* Quick Reference */}
+          <QuickReference country={country} emergency={emergency} />
+
+          {/* Community Threads - kept from original */}
           {threadData && threadData.threads.length > 0 && (
             <CommunityThreadRows
               threads={threadData.threads}
@@ -217,12 +290,9 @@ export default function CountryGuideScreen() {
               countryName={country.name}
             />
           )}
-
-          {/* ── Section 7: Practical Guide ── */}
-          <PracticalGuide country={country} emergency={emergency} />
         </View>
       </ScrollView>
-    </View>
+    </AppScreen>
   );
 }
 
@@ -231,9 +301,9 @@ export default function CountryGuideScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  headerLogo: {
+    height: 22,
+    width: 76,
   },
   notFound: {
     fontFamily: fonts.regular,
@@ -242,19 +312,31 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
-  nav: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
+
+  // Breadcrumb
+  breadcrumb: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
   },
-  backLabel: {
+  breadcrumbLink: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 13,
+    color: colors.orange,
+    flexShrink: 1,
+  },
+  breadcrumbSep: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
     color: colors.textSecondary,
+    flexShrink: 1,
   },
 
   // Hero
