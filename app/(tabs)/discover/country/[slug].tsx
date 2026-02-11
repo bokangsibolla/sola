@@ -14,14 +14,10 @@ import { getEmergencyNumbers } from '@/data/safety';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import { KnowBeforeYouGo } from '@/components/explore/country/KnowBeforeYouGo';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
 import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
-import { SovereigntySection } from '@/components/explore/country/SovereigntySection';
-import { InfrastructureSection } from '@/components/explore/country/InfrastructureSection';
-import { HealthAccessSection } from '@/components/explore/country/HealthAccessSection';
-import { ExperienceSection } from '@/components/explore/country/ExperienceSection';
-import { CommunitySection } from '@/components/explore/country/CommunitySection';
-import { CostRealitySection } from '@/components/explore/country/CostRealitySection';
+import { DimensionSection } from '@/components/explore/country/DimensionSection';
 import { QuickReference } from '@/components/explore/country/QuickReference';
 import { colors, fonts, spacing } from '@/constants/design';
 
@@ -199,7 +195,8 @@ export default function CountryGuideScreen() {
               : undefined
           }
         />
-        {/* ── Section 1: Hero + Editorial Overview ── */}
+
+        {/* Hero */}
         <View style={styles.heroContainer}>
           {country.heroImageUrl ? (
             <Image
@@ -223,7 +220,7 @@ export default function CountryGuideScreen() {
         </View>
 
         <View style={styles.content}>
-          {/* Opening editorial line */}
+          {/* Editorial intro (short) */}
           {editorialText && (
             <Text style={styles.editorialText}>
               {editorialText
@@ -231,23 +228,47 @@ export default function CountryGuideScreen() {
                 .replace(/\*\*/g, '')
                 .replace(/^[-*]\s+/gm, '')
                 .replace(/\n{2,}/g, ' ')
-                .trim()}
+                .trim()
+                .split(/[.!?]\s/)
+                .slice(0, 2)
+                .join('. ')
+                .replace(/\s*$/, '.')}
             </Text>
           )}
 
-          {/* Dimension 1: How it feels to be here */}
-          <SovereigntySection country={country} />
+          {/* At a glance (scannable signals) */}
+          <KnowBeforeYouGo country={country} />
 
-          {/* Dimension 2: Getting around on your own */}
-          <InfrastructureSection country={country} />
+          {/* Dimensions */}
+          <DimensionSection
+            icon="heart-outline"
+            title="How it feels to be here"
+            markdown={country.sovereigntyMd}
+          />
 
-          {/* Dimension 3: Your health here */}
-          <HealthAccessSection country={country} places={(healthPlaces ?? []) as PlaceWithCity[]} />
+          <DimensionSection
+            icon="compass-outline"
+            title="Getting around on your own"
+            markdown={country.soloInfrastructureMd}
+          />
 
-          {/* Dimension 4: What you'll do here */}
-          <ExperienceSection country={country} places={placeList} />
+          <DimensionSection
+            icon="medkit-outline"
+            title="Your health here"
+            markdown={country.healthAccessMd}
+            places={(healthPlaces ?? []) as PlaceWithCity[]}
+            placesLabel="Nearby facilities"
+          />
 
-          {/* Where to Go (Cities) - kept from original */}
+          <DimensionSection
+            icon="sparkles-outline"
+            title="What you'll do here"
+            markdown={country.experienceDensityMd}
+            places={placeList}
+            placesLabel="Top experiences"
+          />
+
+          {/* Where to Go (Cities) */}
           {cityList.length > 0 && (
             <View style={styles.section}>
               <SectionHeader
@@ -264,6 +285,7 @@ export default function CountryGuideScreen() {
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.horizontalScroll}
+                style={styles.citiesScroll}
               >
                 {cityList.map((city) => (
                   <CityHorizontalCard key={city.slug} city={city} />
@@ -272,16 +294,24 @@ export default function CountryGuideScreen() {
             </View>
           )}
 
-          {/* Dimension 5: Meeting people */}
-          <CommunitySection country={country} places={(socialPlaces ?? []) as PlaceWithCity[]} />
+          <DimensionSection
+            icon="people-outline"
+            title="Meeting people"
+            markdown={country.communityConnectionMd}
+            places={(socialPlaces ?? []) as PlaceWithCity[]}
+            placesLabel="Social spots"
+          />
 
-          {/* Dimension 6: What it costs (really) */}
-          <CostRealitySection country={country} />
+          <DimensionSection
+            icon="wallet-outline"
+            title="What it costs (really)"
+            markdown={country.costRealityMd}
+          />
 
           {/* Quick Reference */}
           <QuickReference country={country} emergency={emergency} />
 
-          {/* Community Threads - kept from original */}
+          {/* Community Threads */}
           {threadData && threadData.threads.length > 0 && (
             <CommunityThreadRows
               threads={threadData.threads}
@@ -358,8 +388,8 @@ const styles = StyleSheet.create({
   heroOverlay: {
     position: 'absolute',
     bottom: spacing.xl,
-    left: spacing.lg,
-    right: spacing.lg,
+    left: spacing.screenX,
+    right: spacing.screenX,
   },
   heroName: {
     fontFamily: fonts.semiBold,
@@ -392,7 +422,7 @@ const styles = StyleSheet.create({
 
   // Sections
   section: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -412,7 +442,11 @@ const styles = StyleSheet.create({
   },
 
   // Horizontal scroll containers
+  citiesScroll: {
+    marginHorizontal: -spacing.screenX,
+    paddingLeft: spacing.screenX,
+  },
   horizontalScroll: {
-    paddingRight: spacing.lg,
+    paddingRight: spacing.screenX,
   },
 });
