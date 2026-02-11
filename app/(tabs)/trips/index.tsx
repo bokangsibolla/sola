@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import InboxButton from '@/components/InboxButton';
+import MenuButton from '@/components/MenuButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -48,7 +48,7 @@ export default function TripsScreen() {
           title={trips.current.destinationName || 'Your Trip'}
           rightComponent={
             <View style={styles.headerRight}>
-              <InboxButton />
+              <MenuButton />
               <Pressable
                 style={styles.addButton}
                 onPress={() => router.push(`/trips/${trips.current!.id}`)}
@@ -79,7 +79,7 @@ export default function TripsScreen() {
         title="Trips"
         rightComponent={
           <View style={styles.headerRight}>
-            <InboxButton />
+            <MenuButton />
             <Pressable
               style={styles.addButton}
               onPress={() => {

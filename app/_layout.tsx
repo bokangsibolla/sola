@@ -122,7 +122,7 @@ function AuthGate() {
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
-      router.replace('/(tabs)/explore');
+      router.replace('/(tabs)/home');
     } else if (currentGroup === '(onboarding)' && userId && !isOnboardingCompleted) {
       // Check DB in case onboarding was completed on another device
       supabase
@@ -133,7 +133,7 @@ function AuthGate() {
         .then(({ data }) => {
           if (data?.onboarding_completed_at) {
             onboardingStore.set('onboardingCompleted', true);
-            router.replace('/(tabs)/explore');
+            router.replace('/(tabs)/home');
           }
         });
     } else if (currentGroup === '(tabs)' && !userId) {

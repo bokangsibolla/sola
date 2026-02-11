@@ -6,7 +6,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import InboxButton from '@/components/InboxButton';
+import MenuButton from '@/components/MenuButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
@@ -185,7 +185,7 @@ export default function DiscoverScreen() {
   if (isLoading && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
+        <AppHeader title={headerTitle} rightComponent={<MenuButton />} />
         <LoadingScreen />
       </AppScreen>
     );
@@ -194,7 +194,7 @@ export default function DiscoverScreen() {
   if (error && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
+        <AppHeader title={headerTitle} rightComponent={<MenuButton />} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
@@ -202,7 +202,7 @@ export default function DiscoverScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
+      <AppHeader title={headerTitle} rightComponent={<MenuButton />} />
       <FlatList
         data={discoverItems}
         renderItem={renderItem}

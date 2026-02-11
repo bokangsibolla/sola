@@ -7,7 +7,7 @@ import { Feather } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import InboxButton from '@/components/InboxButton';
+import MenuButton from '@/components/MenuButton';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { useData } from '@/hooks/useData';
@@ -16,7 +16,6 @@ import { getProfileById, getPopularCitiesWithCountry, getConversations, getSaved
 import { getRecentCity } from '@/data/explore/recentBrowsing';
 import { getCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
-import { getImageUrl } from '@/lib/image';
 import { colors, fonts, radius, spacing, typography, pressedState } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { RecentCity } from '@/data/explore/recentBrowsing';
@@ -71,39 +70,6 @@ function tripDuration(arrivingStr: string, leavingStr: string): number {
 // ---------------------------------------------------------------------------
 // Sub-components
 // ---------------------------------------------------------------------------
-
-function HeaderLeft({ profile, onAvatarPress }: { profile: Profile | null; onAvatarPress: () => void }) {
-  const avatarUri = profile?.avatarUrl
-    ? getImageUrl(profile.avatarUrl, { width: 64, height: 64 })
-    : null;
-
-  return (
-    <View style={styles.headerLeft}>
-      <Image
-        source={require('@/assets/images/sola-logo.png')}
-        style={styles.headerLogo}
-        contentFit="contain"
-      />
-      <Pressable
-        onPress={onAvatarPress}
-        hitSlop={8}
-        style={({ pressed }) => pressed ? { opacity: pressedState.opacity } : undefined}
-      >
-        {avatarUri ? (
-          <Image
-            source={{ uri: avatarUri ?? undefined }}
-            style={styles.avatar}
-            contentFit="cover"
-          />
-        ) : (
-          <View style={[styles.avatar, styles.avatarPlaceholder]}>
-            <Feather name="user" size={14} color={colors.textMuted} />
-          </View>
-        )}
-      </Pressable>
-    </View>
-  );
-}
 
 function SectionLabel({ label }: { label: string }) {
   return <Text style={styles.sectionLabel}>{label}</Text>;
@@ -490,12 +456,13 @@ export default function HomeScreen() {
       <AppHeader
         title=""
         leftComponent={
-          <HeaderLeft
-            profile={(profile as Profile) ?? null}
-            onAvatarPress={() => router.push('/home/profile')}
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
           />
         }
-        rightComponent={<InboxButton />}
+        rightComponent={<MenuButton unreadCount={unreadCount} />}
       />
 
       <ScrollView
@@ -571,24 +538,9 @@ const styles = StyleSheet.create({
   },
 
   // Header
-  headerLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
   headerLogo: {
     height: 22,
     width: 76,
-  },
-  avatar: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.full,
-  },
-  avatarPlaceholder: {
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
 
   // Greeting

@@ -21,7 +21,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import InboxButton from '@/components/InboxButton';
+import MenuButton from '@/components/MenuButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import LocationConsentBanner from '@/components/travelers/LocationConsentBanner';
@@ -868,7 +868,7 @@ export default function ConnectScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Connect" rightComponent={<InboxButton />} />
+      <AppHeader title="Connect" rightComponent={<MenuButton />} />
 
       <SegmentControl
         activeSegment={activeSegment}
