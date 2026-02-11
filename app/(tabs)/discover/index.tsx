@@ -6,11 +6,12 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
+import InboxButton from '@/components/InboxButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
+import SearchBar from '@/components/explore/SearchBar';
 import { CountryCard } from '@/components/explore/cards/CountryCard';
-import { IntentHero } from '@/components/explore/IntentHero';
 import { useFeedItems } from '@/data/explore/useFeedItems';
 import type { FeedItem, CityWithCountry } from '@/data/explore/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -96,13 +97,7 @@ export default function DiscoverScreen() {
     item.type === 'collections-section'
   );
 
-  const headerLeft = (
-    <Image
-      source={require('@/assets/images/sola-logo.png')}
-      style={styles.headerLogo}
-      contentFit="contain"
-    />
-  );
+  const headerTitle = 'Discover';
 
   const renderItem = ({ item }: { item: FeedItem }) => {
     switch (item.type) {
@@ -190,7 +185,7 @@ export default function DiscoverScreen() {
   if (isLoading && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} />
+        <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
         <LoadingScreen />
       </AppScreen>
     );
@@ -199,7 +194,7 @@ export default function DiscoverScreen() {
   if (error && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} />
+        <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
@@ -207,7 +202,7 @@ export default function DiscoverScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} />
+      <AppHeader title={headerTitle} rightComponent={<InboxButton />} />
       <FlatList
         data={discoverItems}
         renderItem={renderItem}
@@ -216,7 +211,11 @@ export default function DiscoverScreen() {
         showsVerticalScrollIndicator={false}
         onRefresh={refresh}
         refreshing={isLoading}
-        ListHeaderComponent={<IntentHero />}
+        ListHeaderComponent={
+          <View style={styles.searchBarWrap}>
+            <SearchBar onPress={() => router.push('/(tabs)/discover/search')} />
+          </View>
+        }
       />
     </AppScreen>
   );
@@ -225,12 +224,11 @@ export default function DiscoverScreen() {
 // ── Styles ───────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
   list: {
     paddingBottom: spacing.xxxxl,
+  },
+  searchBarWrap: {
+    marginTop: spacing.sm,
   },
 
   // Zone spacing

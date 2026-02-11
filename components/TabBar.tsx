@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
-import { Image, ImageSource } from 'expo-image';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/constants/design';
@@ -8,15 +8,15 @@ import { useAuth } from '@/state/AuthContext';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
 
-// Custom icon assets per route — 4 tabs
-const TAB_ICONS: Record<string, ImageSource> = {
-  home: require('@/assets/images/icons/icon-profile.png'),
-  discover: require('@/assets/images/icons/icon-explore.png'),
-  connect: require('@/assets/images/icons/icon-community.png'),
-  trips: require('@/assets/images/icons/icon-trips.png'),
+// Feather icon names per route — 4 tabs
+const TAB_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  home: 'home',
+  discover: 'compass',
+  connect: 'users',
+  trips: 'map',
 };
 
-const TAB_ICON_SIZE = 26;
+const TAB_ICON_SIZE = 24;
 const TAB_BAR_HEIGHT = 50;
 
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
@@ -90,11 +90,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
           >
             {icon && (
               <View>
-                <Image
-                  source={icon}
-                  style={[styles.icon, { tintColor }]}
-                  contentFit="contain"
-                />
+                <Feather name={icon} size={TAB_ICON_SIZE} color={tintColor} />
                 {route.name === 'connect' && connectHasNew && !isFocused && (
                   <View style={styles.badge} />
                 )}
@@ -137,10 +133,7 @@ const styles = StyleSheet.create({
     gap: 3,
     minHeight: TAB_BAR_HEIGHT,
   },
-  icon: {
-    width: TAB_ICON_SIZE,
-    height: TAB_ICON_SIZE,
-  },
+  // icon size is handled by Feather's size prop
   label: {
     fontFamily: fonts.medium,
     fontSize: 10,
