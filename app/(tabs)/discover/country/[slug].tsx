@@ -376,7 +376,7 @@ const styles = StyleSheet.create({
 
   // Content area
   content: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },
