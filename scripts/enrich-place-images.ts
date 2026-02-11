@@ -229,13 +229,20 @@ async function main() {
   }
 
   // Get existing media to know which places already have images
+  // Batch the .in() query to avoid URL length limits with large ID lists
   const placeIds = rawPlaces.map((p: any) => p.id);
-  const { data: existingMedia } = await supabase
-    .from('place_media')
-    .select('place_id')
-    .in('place_id', placeIds);
+  const BATCH_SIZE = 100;
+  const allExistingMedia: { place_id: string }[] = [];
+  for (let i = 0; i < placeIds.length; i += BATCH_SIZE) {
+    const batch = placeIds.slice(i, i + BATCH_SIZE);
+    const { data: batchMedia } = await supabase
+      .from('place_media')
+      .select('place_id')
+      .in('place_id', batch);
+    if (batchMedia) allExistingMedia.push(...batchMedia);
+  }
 
-  const placesWithMedia = new Set((existingMedia ?? []).map((m: any) => m.place_id));
+  const placesWithMedia = new Set(allExistingMedia.map((m) => m.place_id));
 
   const places: PlaceRow[] = rawPlaces.map((p: any) => ({
     id: p.id,
