@@ -720,29 +720,29 @@ export async function getPlacesByCountryAndType(
 ): Promise<PlaceWithCity[]> {
   const { data, error } = await supabase
     .from('places')
-    .select('*, cities!inner(name, country_id)')
+    .select('*, cities!inner(name, country_id), place_media(url)')
     .eq('cities.country_id', countryId)
     .in('place_type', placeTypes)
     .eq('is_active', true)
     .order('curation_score', { ascending: false, nullsFirst: false })
     .limit(limit);
   if (error) throw error;
-  return (data ?? []).map((p: any) => ({
-    ...toCamel<Place>(p),
-    cityName: p.cities?.name ?? '',
-    imageUrl: null,
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
   }));
 }
 
 /**
- * Get experiences (tours, activities, landmarks, wellness) for a country.
- * Explicitly excludes accommodations, restaurants, and services.
+ * Get experiences (tours, activities, landmarks) for a country.
+ * Only things you actually DO — never accommodations, spas, or services.
  */
 export async function getExperiencesByCountry(
   countryId: string,
   limit = 10,
 ): Promise<PlaceWithCity[]> {
-  const experienceTypes = ['tour', 'activity', 'landmark', 'wellness', 'spa'];
+  const experienceTypes = ['tour', 'activity', 'landmark'];
   return getPlacesByCountryAndType(countryId, experienceTypes, limit);
 }
 
