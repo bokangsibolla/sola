@@ -45,6 +45,18 @@ export interface Country {
   cultureEtiquetteMd: string | null;
   safetyWomenMd: string | null;
   portraitMd: string | null;
+  // Dimension content (markdown)
+  sovereigntyMd: string | null;
+  soloInfrastructureMd: string | null;
+  healthAccessMd: string | null;
+  experienceDensityMd: string | null;
+  communityConnectionMd: string | null;
+  costRealityMd: string | null;
+  // Practical links
+  immigrationUrl: string | null;
+  arrivalCardUrl: string | null;
+  simProviders: Array<{ name: string; url: string; note?: string }> | null;
+  healthSearchTerms: string[] | null;
   publishedAt: string | null;
 }
 
@@ -141,7 +153,7 @@ export interface Place {
     | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'club' | 'rooftop'
     | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop'
     | 'wellness' | 'spa' | 'salon' | 'gym'
-    | 'laundry' | 'pharmacy' | 'clinic' | 'atm' | 'police' | 'tour';
+    | 'laundry' | 'pharmacy' | 'clinic' | 'hospital' | 'atm' | 'police' | 'tour';
   primaryCategoryId: string | null;
   lat: number | null;
   lng: number | null;

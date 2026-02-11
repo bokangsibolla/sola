@@ -117,6 +117,18 @@ export function mapCountry(row: Record<string, any>): Country {
     cultureEtiquetteMd: row.culture_etiquette_md,
     safetyWomenMd: row.safety_women_md,
     portraitMd: row.portrait_md,
+    // Dimension content (markdown)
+    sovereigntyMd: row.sovereignty_md ?? null,
+    soloInfrastructureMd: row.solo_infrastructure_md ?? null,
+    healthAccessMd: row.health_access_md ?? null,
+    experienceDensityMd: row.experience_density_md ?? null,
+    communityConnectionMd: row.community_connection_md ?? null,
+    costRealityMd: row.cost_reality_md ?? null,
+    // Practical links
+    immigrationUrl: row.immigration_url ?? null,
+    arrivalCardUrl: row.arrival_card_url ?? null,
+    simProviders: row.sim_providers ?? null,
+    healthSearchTerms: row.health_search_terms ?? null,
     publishedAt: row.published_at,
   };
 }
@@ -687,6 +699,31 @@ export async function getTopPlacesByCountry(
     ...toCamel<Place>(row),
     cityName: row.cities?.name ?? '',
     imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
+}
+
+/**
+ * Get places for a country filtered by place type(s).
+ * Joins through cities to resolve country, includes city name.
+ */
+export async function getPlacesByCountryAndType(
+  countryId: string,
+  placeTypes: string[],
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, cities!inner(name, country_id)')
+    .eq('cities.country_id', countryId)
+    .in('place_type', placeTypes)
+    .eq('is_active', true)
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((p: any) => ({
+    ...toCamel<Place>(p),
+    cityName: p.cities?.name ?? '',
+    imageUrl: null,
   }));
 }
 
