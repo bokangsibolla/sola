@@ -129,6 +129,13 @@ export function mapCountry(row: Record<string, any>): Country {
     arrivalCardUrl: row.arrival_card_url ?? null,
     simProviders: row.sim_providers ?? null,
     healthSearchTerms: row.health_search_terms ?? null,
+    // Structured fields (country page redesign)
+    budgetBreakdown: row.budget_breakdown ?? null,
+    vibeSummary: row.vibe_summary ?? null,
+    socialVibe: row.social_vibe ?? null,
+    culturalNote: row.cultural_note ?? null,
+    transportSummary: row.transport_summary ?? null,
+    introMd: row.intro_md ?? null,
     publishedAt: row.published_at,
   };
 }
@@ -725,6 +732,30 @@ export async function getPlacesByCountryAndType(
     cityName: p.cities?.name ?? '',
     imageUrl: null,
   }));
+}
+
+/**
+ * Get experiences (tours, activities, landmarks, wellness) for a country.
+ * Explicitly excludes accommodations, restaurants, and services.
+ */
+export async function getExperiencesByCountry(
+  countryId: string,
+  limit = 10,
+): Promise<PlaceWithCity[]> {
+  const experienceTypes = ['tour', 'activity', 'landmark', 'wellness', 'spa'];
+  return getPlacesByCountryAndType(countryId, experienceTypes, limit);
+}
+
+/**
+ * Get social spots (bars, cafes, clubs, rooftops, restaurants) for a country.
+ * Meeting-people places only.
+ */
+export async function getSocialSpotsByCountry(
+  countryId: string,
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const socialTypes = ['bar', 'club', 'rooftop', 'cafe', 'restaurant'];
+  return getPlacesByCountryAndType(countryId, socialTypes, limit);
 }
 
 export async function getAllActivities(limit = 50): Promise<Place[]> {

@@ -57,7 +57,28 @@ export interface Country {
   arrivalCardUrl: string | null;
   simProviders: Array<{ name: string; url: string; note?: string }> | null;
   healthSearchTerms: string[] | null;
+  // Structured fields (country page redesign)
+  budgetBreakdown: BudgetBreakdown | null;
+  vibeSummary: string | null;
+  socialVibe: string | null;
+  culturalNote: string | null;
+  transportSummary: string | null;
+  introMd: string | null;
   publishedAt: string | null;
+}
+
+export interface BudgetRange {
+  low: number;
+  high: number;
+  currency: string;
+  note: string;
+}
+
+export interface BudgetBreakdown {
+  accommodation: BudgetRange;
+  food: BudgetRange;
+  transport: BudgetRange;
+  activities: BudgetRange;
 }
 
 export interface City {

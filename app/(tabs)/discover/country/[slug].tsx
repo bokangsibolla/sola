@@ -7,18 +7,26 @@ import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
-import { getCountryBySlug, getCitiesByCountry, getTopPlacesByCountry, getPlacesByCountryAndType } from '@/data/api';
+import {
+  getCountryBySlug,
+  getCitiesByCountry,
+  getExperiencesByCountry,
+  getSocialSpotsByCountry,
+  getPlacesByCountryAndType,
+} from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
 import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { getEmergencyNumbers } from '@/data/safety';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { KnowBeforeYouGo } from '@/components/explore/country/KnowBeforeYouGo';
-import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
-import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
-import { DimensionSection } from '@/components/explore/country/DimensionSection';
+import { SignalsRow } from '@/components/explore/country/SignalsRow';
+import { BudgetBreakdown } from '@/components/explore/country/BudgetBreakdown';
+import { KnowBeforeYouGoAccordion } from '@/components/explore/country/KnowBeforeYouGoAccordion';
 import { QuickReference } from '@/components/explore/country/QuickReference';
+import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
+import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
+import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
 import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -62,7 +70,7 @@ function Breadcrumb({
 }
 
 // ---------------------------------------------------------------------------
-// Section Header with optional "See all" action
+// Section Header
 // ---------------------------------------------------------------------------
 
 function SectionHeader({
@@ -84,6 +92,14 @@ function SectionHeader({
       )}
     </View>
   );
+}
+
+// ---------------------------------------------------------------------------
+// Section Divider
+// ---------------------------------------------------------------------------
+
+function Divider() {
+  return <View style={styles.divider} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -117,22 +133,22 @@ export default function CountryGuideScreen() {
     ['citiesByCountry', country?.id],
   );
 
-  // Fetch top places across all cities
-  const { data: topPlaces } = useData(
-    () => country?.id ? getTopPlacesByCountry(country.id, 8) : Promise.resolve([]),
-    ['topPlacesByCountry', country?.id],
+  // Fetch experiences (tours, activities, landmarks — NEVER accommodations)
+  const { data: experiences } = useData(
+    () => country?.id ? getExperiencesByCountry(country.id, 10) : Promise.resolve([]),
+    ['experiencesByCountry', country?.id],
+  );
+
+  // Fetch social spots (bars, cafes, restaurants, clubs, rooftops)
+  const { data: socialSpots } = useData(
+    () => country?.id ? getSocialSpotsByCountry(country.id, 8) : Promise.resolve([]),
+    ['socialSpotsByCountry', country?.id],
   );
 
   // Fetch health facilities
   const { data: healthPlaces } = useData(
     () => country?.id ? getPlacesByCountryAndType(country.id, ['hospital', 'clinic', 'pharmacy']) : Promise.resolve([]),
     ['healthPlaces', country?.id],
-  );
-
-  // Fetch social places
-  const { data: socialPlaces } = useData(
-    () => country?.id ? getPlacesByCountryAndType(country.id, ['hostel', 'coworking', 'cafe']) : Promise.resolve([]),
-    ['socialPlaces', country?.id],
   );
 
   // Fetch community threads
@@ -175,9 +191,30 @@ export default function CountryGuideScreen() {
   }
 
   const emergency = getEmergencyNumbers(country.iso2);
-  const editorialText = country.whyWeLoveMd || country.summaryMd || country.portraitMd;
   const cityList = cities ?? [];
-  const placeList = (topPlaces ?? []) as PlaceWithCity[];
+  const experienceList = (experiences ?? []) as PlaceWithCity[];
+  const socialList = (socialSpots ?? []) as PlaceWithCity[];
+  const healthList = (healthPlaces ?? []) as PlaceWithCity[];
+
+  // Build introduction text: prefer intro_md, fall back to editorial fields
+  const introText = country.introMd
+    || country.summaryMd
+    || country.whyWeLoveMd
+    || country.portraitMd;
+
+  // Split intro into paragraphs (max 2)
+  const introParagraphs = introText
+    ? introText
+        .replace(/^#+\s.*/gm, '')
+        .replace(/\*\*/g, '')
+        .replace(/^[-*]\s+/gm, '')
+        .replace(/\n{3,}/g, '\n\n')
+        .trim()
+        .split(/\n\n+/)
+        .map((p: string) => p.replace(/\n/g, ' ').trim())
+        .filter((p: string) => p.length > 0)
+        .slice(0, 2)
+    : [];
 
   return (
     <AppScreen>
@@ -196,7 +233,7 @@ export default function CountryGuideScreen() {
           }
         />
 
-        {/* Hero */}
+        {/* A. Hero */}
         <View style={styles.heroContainer}>
           {country.heroImageUrl ? (
             <Image
@@ -219,108 +256,154 @@ export default function CountryGuideScreen() {
           </View>
         </View>
 
-        <View style={styles.content}>
-          {/* Editorial intro (short) */}
-          {editorialText && (
-            <Text style={styles.editorialText}>
-              {editorialText
-                .replace(/^#+\s.*/gm, '')
-                .replace(/\*\*/g, '')
-                .replace(/^[-*]\s+/gm, '')
-                .replace(/\n{2,}/g, ' ')
-                .trim()
-                .split(/[.!?]\s/)
-                .slice(0, 2)
-                .join('. ')
-                .replace(/\s*$/, '.')}
-            </Text>
-          )}
+        {/* B. Signals Row */}
+        <View style={styles.signalsSpacing}>
+          <SignalsRow country={country} />
+        </View>
 
-          {/* At a glance (scannable signals) */}
-          <KnowBeforeYouGo country={country} />
+        {/* C. Introduction */}
+        {introParagraphs.length > 0 && (
+          <View style={styles.content}>
+            {introParagraphs.map((paragraph, index) => (
+              <Text key={index} style={styles.introText}>{paragraph}</Text>
+            ))}
+          </View>
+        )}
 
-          {/* Dimensions */}
-          <DimensionSection
-            icon="heart-outline"
-            title="How it feels to be here"
-            markdown={country.sovereigntyMd}
-          />
+        <Divider />
 
-          <DimensionSection
-            icon="compass-outline"
-            title="Getting around on your own"
-            markdown={country.soloInfrastructureMd}
-          />
+        {/* D. Top Experiences (activities only, NEVER accommodations) */}
+        {experienceList.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.content}>
+              {country.experienceDensityMd && (
+                <Text style={styles.sectionIntro} numberOfLines={2}>
+                  {country.experienceDensityMd
+                    .replace(/^#+\s.*/gm, '')
+                    .replace(/\*\*/g, '')
+                    .replace(/^[-*]\s+/gm, '')
+                    .trim()
+                    .split(/[.!?]\s/)
+                    .slice(0, 1)
+                    .join('. ')
+                    .replace(/\s*$/, '.')}
+                </Text>
+              )}
+              <SectionHeader title="Top experiences" />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+              style={styles.horizontalScrollContainer}
+            >
+              {experienceList.map((place) => (
+                <PlaceHorizontalCard key={place.id} place={place} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-          <DimensionSection
-            icon="medkit-outline"
-            title="Your health here"
-            markdown={country.healthAccessMd}
-            places={(healthPlaces ?? []) as PlaceWithCity[]}
-            placesLabel="Nearby facilities"
-          />
+        <Divider />
 
-          <DimensionSection
-            icon="sparkles-outline"
-            title="What you'll do here"
-            markdown={country.experienceDensityMd}
-            places={placeList}
-            placesLabel="Top experiences"
-          />
-
-          {/* Where to Go (Cities) */}
-          {cityList.length > 0 && (
-            <View style={styles.section}>
+        {/* E. Where to Go (Cities) */}
+        {cityList.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.content}>
               <SectionHeader
-                title="Where to Go"
-                actionLabel={cityList.length > 2 ? `All ${cityList.length} cities` : undefined}
-                onAction={cityList.length > 2 ? () => {
+                title="Where to go"
+                actionLabel={cityList.length > 3 ? `All ${cityList.length} cities` : undefined}
+                onAction={cityList.length > 3 ? () => {
                   router.push({
                     pathname: '/(tabs)/discover/country/cities' as any,
                     params: { countryId: country.id, countryName: country.name, countrySlug: country.slug },
                   });
                 } : undefined}
               />
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.horizontalScroll}
-                style={styles.citiesScroll}
-              >
-                {cityList.map((city) => (
-                  <CityHorizontalCard key={city.slug} city={city} />
-                ))}
-              </ScrollView>
             </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+              style={styles.horizontalScrollContainer}
+            >
+              {cityList.map((city) => (
+                <CityHorizontalCard key={city.slug} city={city} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
+        <Divider />
+
+        {/* F. Budget Breakdown */}
+        <View style={styles.content}>
+          {country.budgetBreakdown && (
+            <BudgetBreakdown budget={country.budgetBreakdown} />
           )}
+        </View>
 
-          <DimensionSection
-            icon="people-outline"
-            title="Meeting people"
-            markdown={country.communityConnectionMd}
-            places={(socialPlaces ?? []) as PlaceWithCity[]}
-            placesLabel="Social spots"
+        {/* G. Know Before You Go (accordion) */}
+        <View style={styles.content}>
+          <KnowBeforeYouGoAccordion
+            country={country}
+            healthPlaces={healthList}
           />
+        </View>
 
-          <DimensionSection
-            icon="wallet-outline"
-            title="What it costs (really)"
-            markdown={country.costRealityMd}
-          />
+        {/* H. Social Scene */}
+        {socialList.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.content}>
+              {country.communityConnectionMd && (
+                <Text style={styles.sectionIntro} numberOfLines={2}>
+                  {country.communityConnectionMd
+                    .replace(/^#+\s.*/gm, '')
+                    .replace(/\*\*/g, '')
+                    .replace(/^[-*]\s+/gm, '')
+                    .trim()
+                    .split(/[.!?]\s/)
+                    .slice(0, 1)
+                    .join('. ')
+                    .replace(/\s*$/, '.')}
+                </Text>
+              )}
+              <SectionHeader title="Social scene" />
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.horizontalScroll}
+              style={styles.horizontalScrollContainer}
+            >
+              {socialList.map((place) => (
+                <PlaceHorizontalCard key={place.id} place={place} />
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-          {/* Quick Reference */}
+        <Divider />
+
+        {/* I. Quick Reference */}
+        <View style={styles.content}>
           <QuickReference country={country} emergency={emergency} />
+        </View>
 
-          {/* Community Threads */}
-          {threadData && threadData.threads.length > 0 && (
+        {/* J. Community */}
+        {threadData && threadData.threads.length > 0 && (
+          <View style={styles.content}>
             <CommunityThreadRows
               threads={threadData.threads}
               totalCount={threadData.totalCount}
               countryId={country.id}
               countryName={country.name}
             />
-          )}
-        </View>
+          </View>
+        )}
+
+        {/* Bottom spacing */}
+        <View style={styles.bottomSpacer} />
       </ScrollView>
     </AppScreen>
   );
@@ -404,25 +487,36 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Content area
-  content: {
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.xxl,
+  // Signals spacing
+  signalsSpacing: {
+    marginTop: spacing.xl,
   },
 
-  // Editorial text below hero
-  editorialText: {
+  // Content area (padded sections)
+  content: {
+    paddingHorizontal: spacing.screenX,
+  },
+
+  // Introduction
+  introText: {
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.textPrimary,
     lineHeight: 26,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
 
-  // Sections
+  // Section divider
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderSubtle,
+    marginHorizontal: spacing.screenX,
+    marginVertical: spacing.xl,
+  },
+
+  // Section containers
   section: {
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.sm,
   },
   sectionHeader: {
     flexDirection: 'row',
@@ -432,7 +526,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 18,
+    fontSize: 20,
     color: colors.textPrimary,
   },
   seeAll: {
@@ -440,13 +534,26 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.orange,
   },
+  sectionIntro: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+    marginBottom: spacing.md,
+  },
 
   // Horizontal scroll containers
-  citiesScroll: {
+  horizontalScrollContainer: {
     marginHorizontal: -spacing.screenX,
     paddingLeft: spacing.screenX,
   },
   horizontalScroll: {
     paddingRight: spacing.screenX,
+    paddingLeft: spacing.screenX,
+  },
+
+  // Bottom spacing
+  bottomSpacer: {
+    height: spacing.xxxxl,
   },
 });
