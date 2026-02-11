@@ -229,4 +229,5 @@ function RootLayout() {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+// Sentry.wrap can hang in Expo Go — use directly in dev
+export default __DEV__ ? RootLayout : Sentry.wrap(RootLayout);

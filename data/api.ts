@@ -394,6 +394,59 @@ export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]>
   return mapCountries(countries ?? []);
 }
 
+/**
+ * Get cities matching a set of tag slugs.
+ * @param tagSlugs - Tag slugs to match
+ * @param mode - 'all' requires every tag, 'any' requires at least one
+ */
+export async function getCitiesByTags(
+  tagSlugs: string[],
+  mode: 'all' | 'any' = 'all',
+): Promise<CityWithCountry[]> {
+  if (tagSlugs.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('destination_tags')
+    .select('entity_id')
+    .eq('entity_type', 'city')
+    .in('tag_slug', tagSlugs);
+  if (error) throw error;
+
+  let ids: string[];
+  if (mode === 'any') {
+    // Union — any matching tag
+    ids = (data ?? []).map((r) => r.entity_id).filter((v, i, arr) => arr.indexOf(v) === i);
+  } else {
+    // Intersection — must have ALL tags
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+      counts.set(row.entity_id, (counts.get(row.entity_id) ?? 0) + 1);
+    }
+    ids = Array.from(counts.entries())
+      .filter(([, count]) => count >= tagSlugs.length)
+      .map(([id]) => id);
+  }
+
+  if (ids.length === 0) return [];
+
+  const { data: cities, error: cError } = await supabase
+    .from('cities')
+    .select('*, countries(name, slug)')
+    .in('id', ids)
+    .eq('is_active', true)
+    .order('order_index');
+  if (cError) throw cError;
+
+  return (cities ?? []).map((row: any) => {
+    const city = mapCity(row);
+    return {
+      ...city,
+      countryName: row.countries?.name ?? '',
+      countrySlug: row.countries?.slug ?? '',
+    };
+  });
+}
+
 export async function getUniqueDestinationTagSlugs(
   entityType: 'country' | 'city' | 'neighborhood',
   tagCategory?: string,
