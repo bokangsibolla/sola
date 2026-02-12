@@ -1,37 +1,60 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { Country } from '@/data/types';
-import { colors, fonts, spacing } from '@/constants/design';
-import { mapSoloLevel } from './mappings';
+import { colors, fonts, spacing, radius } from '@/constants/design';
+import { mapSoloLevel, mapComfortLevel } from './mappings';
 
 interface Props {
   country: Country;
 }
 
-/** Build compact text signals from structured country data. */
-function buildSignals(country: Country): string[] {
-  const signals: string[] = [];
+interface Signal {
+  label: string;
+  /** Semantic color category for the pill */
+  tone: 'green' | 'orange' | 'blue' | 'neutral' | 'warm';
+}
 
+const PILL_COLORS: Record<Signal['tone'], { bg: string; text: string }> = {
+  green: { bg: colors.greenFill, text: colors.greenSoft },
+  orange: { bg: colors.orangeFill, text: colors.orange },
+  blue: { bg: colors.blueFill, text: colors.blueSoft },
+  neutral: { bg: colors.neutralFill, text: colors.textSecondary },
+  warm: { bg: colors.warningFill, text: colors.warning },
+};
+
+/** Build semantic signal pills from structured country data. */
+function buildSignals(country: Country): Signal[] {
+  const signals: Signal[] = [];
+
+  // Solo level → green (comfort / safety)
   if (country.soloLevel) {
-    signals.push(mapSoloLevel(country.soloLevel));
+    signals.push({ label: mapSoloLevel(country.soloLevel), tone: 'green' });
   }
 
+  // Safety rating → green
+  if (country.safetyRating) {
+    signals.push({ label: mapComfortLevel(country.safetyRating), tone: 'green' });
+  }
+
+  // Budget → blue (practical info)
   if (country.avgDailyBudgetUsd != null) {
-    signals.push(`~$${country.avgDailyBudgetUsd}/day`);
+    signals.push({ label: `~$${country.avgDailyBudgetUsd}/day`, tone: 'blue' });
   }
 
+  // Best months → warm (timing)
   if (country.bestMonths) {
-    signals.push(country.bestMonths);
+    signals.push({ label: country.bestMonths, tone: 'warm' });
   }
 
+  // Vibe → orange (character)
   if (country.vibeSummary) {
-    signals.push(country.vibeSummary);
+    signals.push({ label: country.vibeSummary, tone: 'orange' });
   }
 
+  // Transport → neutral (logistics)
   if (country.transportSummary) {
-    // Take just the first phrase before the comma for the compact view
     const short = country.transportSummary.split(',')[0].split(':')[0].trim();
     if (short.length <= 30) {
-      signals.push(short);
+      signals.push({ label: short, tone: 'neutral' });
     }
   }
 
@@ -44,47 +67,40 @@ export function SignalsRow({ country }: Props) {
   if (signals.length === 0) return null;
 
   return (
-    <ScrollView
-      horizontal
-      showsHorizontalScrollIndicator={false}
-      contentContainerStyle={styles.container}
-      style={styles.scroll}
-    >
-      {signals.map((signal, index) => (
-        <View key={signal} style={styles.item}>
-          <Text style={styles.text}>{signal}</Text>
-          {index < signals.length - 1 && (
-            <Text style={styles.separator}>{'\u00B7'}</Text>
-          )}
-        </View>
-      ))}
-    </ScrollView>
+    <View style={styles.container}>
+      {signals.map((signal) => {
+        const pillColor = PILL_COLORS[signal.tone];
+        return (
+          <View
+            key={signal.label}
+            style={[styles.pill, { backgroundColor: pillColor.bg }]}
+          >
+            <Text style={[styles.pillText, { color: pillColor.text }]}>
+              {signal.label}
+            </Text>
+          </View>
+        );
+      })}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  container: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
     marginBottom: spacing.xl,
   },
-  container: {
-    paddingHorizontal: spacing.screenX,
-    flexDirection: 'row',
-    alignItems: 'center',
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
   },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  text: {
+  pillText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-  },
-  separator: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
-    marginHorizontal: spacing.sm,
+    fontSize: 13,
+    lineHeight: 18,
   },
 });

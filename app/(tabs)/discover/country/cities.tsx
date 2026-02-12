@@ -9,6 +9,34 @@ import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 
+function Breadcrumb({
+  countryName,
+  countrySlug,
+  onDiscover,
+  onCountry,
+}: {
+  countryName: string;
+  countrySlug?: string;
+  onDiscover: () => void;
+  onCountry: () => void;
+}) {
+  return (
+    <View style={styles.breadcrumb}>
+      <Pressable onPress={onDiscover} hitSlop={8}>
+        <Text style={styles.breadcrumbLink}>Discover</Text>
+      </Pressable>
+      <Text style={styles.breadcrumbSep}>/</Text>
+      <Pressable onPress={onCountry} hitSlop={8}>
+        <Text style={styles.breadcrumbLink} numberOfLines={1}>
+          {countryName}
+        </Text>
+      </Pressable>
+      <Text style={styles.breadcrumbSep}>/</Text>
+      <Text style={styles.breadcrumbCurrent}>Cities</Text>
+    </View>
+  );
+}
+
 function CityListCard({ city }: { city: City }) {
   const router = useRouter();
 
@@ -34,7 +62,7 @@ function CityListCard({ city }: { city: City }) {
 }
 
 export default function CountryCitiesScreen() {
-  const { countryId, countryName } = useLocalSearchParams<{
+  const { countryId, countryName, countrySlug } = useLocalSearchParams<{
     countryId: string;
     countryName: string;
     countrySlug: string;
@@ -51,12 +79,18 @@ export default function CountryCitiesScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backLabel}>{countryName || 'Back'}</Text>
-        </Pressable>
-      </View>
+      <Breadcrumb
+        countryName={countryName || 'Country'}
+        countrySlug={countrySlug}
+        onDiscover={() => router.push('/(tabs)/discover')}
+        onCountry={() => {
+          if (countrySlug) {
+            router.push(`/(tabs)/discover/country/${countrySlug}` as any);
+          } else {
+            router.back();
+          }
+        }}
+      />
       <Text style={styles.screenTitle}>Cities in {countryName}</Text>
       <FlatList
         data={cities ?? []}
@@ -74,29 +108,39 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  nav: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
+  // Breadcrumb
+  breadcrumb: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
-  backLabel: {
+  breadcrumbLink: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 13,
+    color: colors.orange,
+    flexShrink: 1,
+  },
+  breadcrumbSep: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
     color: colors.textSecondary,
   },
   screenTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 22,
     color: colors.textPrimary,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     marginBottom: spacing.lg,
   },
   list: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xxl,
   },
   card: {
