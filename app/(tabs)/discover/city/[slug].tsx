@@ -927,18 +927,24 @@ export default function PlaceScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Simplified navigation */}
-      <View style={styles.nav}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backText}>
-            {country?.name ?? 'Explore'}
-          </Text>
+      {/* Breadcrumb navigation */}
+      <View style={styles.breadcrumb}>
+        <Pressable onPress={() => router.push('/(tabs)/discover' as any)} hitSlop={8}>
+          <Text style={styles.breadcrumbLink}>Discover</Text>
         </Pressable>
+        {country && (
+          <>
+            <Text style={styles.breadcrumbSep}>/</Text>
+            <Pressable
+              onPress={() => router.push(`/(tabs)/discover/country/${country.slug}` as any)}
+              hitSlop={8}
+            >
+              <Text style={styles.breadcrumbLink} numberOfLines={1}>{country.name}</Text>
+            </Pressable>
+          </>
+        )}
+        <Text style={styles.breadcrumbSep}>/</Text>
+        <Text style={styles.breadcrumbCurrent} numberOfLines={1}>{city.name}</Text>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -1153,20 +1159,30 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
 
-  // Navigation
-  nav: {
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
-  },
-  backButton: {
+  // Breadcrumb navigation
+  breadcrumb: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
   },
-  backText: {
+  breadcrumbLink: {
     fontFamily: fonts.medium,
-    fontSize: 15,
-    color: colors.textPrimary,
+    fontSize: 13,
+    color: colors.orange,
+    flexShrink: 1,
+  },
+  breadcrumbSep: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+    flexShrink: 1,
   },
 
   // Hero
@@ -1192,10 +1208,10 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
   },
   heroCity: {
-    fontFamily: fonts.serif,
-    fontSize: 32,
+    fontFamily: fonts.semiBold,
+    fontSize: 28,
     color: '#FFFFFF',
-    lineHeight: 36,
+    lineHeight: 34,
   },
   heroCountry: {
     fontFamily: fonts.regular,

@@ -1126,6 +1126,44 @@ export async function getCollectionPlaces(
     .map((p: any) => toCamel<Place>(p));
 }
 
+export async function addPlaceToCollection(
+  userId: string,
+  placeId: string,
+  collectionId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('saved_places')
+    .update({ collection_id: collectionId })
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+export async function removePlaceFromCollection(
+  userId: string,
+  placeId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('saved_places')
+    .update({ collection_id: null })
+    .eq('user_id', userId)
+    .eq('place_id', placeId);
+  if (error) throw error;
+}
+
+export async function getCollectionPlaceCount(
+  userId: string,
+  collectionId: string,
+): Promise<number> {
+  const { count, error } = await supabase
+    .from('saved_places')
+    .select('id', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('collection_id', collectionId);
+  if (error) throw error;
+  return count ?? 0;
+}
+
 // ---------------------------------------------------------------------------
 // Trips
 // ---------------------------------------------------------------------------
