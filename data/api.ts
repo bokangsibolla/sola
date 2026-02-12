@@ -118,6 +118,25 @@ export function mapCountry(row: Record<string, any>): Country {
     cultureEtiquetteMd: row.culture_etiquette_md,
     safetyWomenMd: row.safety_women_md,
     portraitMd: row.portrait_md,
+    // Dimension content (markdown)
+    sovereigntyMd: row.sovereignty_md ?? null,
+    soloInfrastructureMd: row.solo_infrastructure_md ?? null,
+    healthAccessMd: row.health_access_md ?? null,
+    experienceDensityMd: row.experience_density_md ?? null,
+    communityConnectionMd: row.community_connection_md ?? null,
+    costRealityMd: row.cost_reality_md ?? null,
+    // Practical links
+    immigrationUrl: row.immigration_url ?? null,
+    arrivalCardUrl: row.arrival_card_url ?? null,
+    simProviders: row.sim_providers ?? null,
+    healthSearchTerms: row.health_search_terms ?? null,
+    // Structured fields (country page redesign)
+    budgetBreakdown: row.budget_breakdown ?? null,
+    vibeSummary: row.vibe_summary ?? null,
+    socialVibe: row.social_vibe ?? null,
+    culturalNote: row.cultural_note ?? null,
+    transportSummary: row.transport_summary ?? null,
+    introMd: row.intro_md ?? null,
     publishedAt: row.published_at,
   };
 }
@@ -395,6 +414,59 @@ export async function getCountriesByTags(tagSlugs: string[]): Promise<Country[]>
   return mapCountries(countries ?? []);
 }
 
+/**
+ * Get cities matching a set of tag slugs.
+ * @param tagSlugs - Tag slugs to match
+ * @param mode - 'all' requires every tag, 'any' requires at least one
+ */
+export async function getCitiesByTags(
+  tagSlugs: string[],
+  mode: 'all' | 'any' = 'all',
+): Promise<CityWithCountry[]> {
+  if (tagSlugs.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('destination_tags')
+    .select('entity_id')
+    .eq('entity_type', 'city')
+    .in('tag_slug', tagSlugs);
+  if (error) throw error;
+
+  let ids: string[];
+  if (mode === 'any') {
+    // Union — any matching tag
+    ids = (data ?? []).map((r) => r.entity_id).filter((v, i, arr) => arr.indexOf(v) === i);
+  } else {
+    // Intersection — must have ALL tags
+    const counts = new Map<string, number>();
+    for (const row of data ?? []) {
+      counts.set(row.entity_id, (counts.get(row.entity_id) ?? 0) + 1);
+    }
+    ids = Array.from(counts.entries())
+      .filter(([, count]) => count >= tagSlugs.length)
+      .map(([id]) => id);
+  }
+
+  if (ids.length === 0) return [];
+
+  const { data: cities, error: cError } = await supabase
+    .from('cities')
+    .select('*, countries(name, slug)')
+    .in('id', ids)
+    .eq('is_active', true)
+    .order('order_index');
+  if (cError) throw cError;
+
+  return (cities ?? []).map((row: any) => {
+    const city = mapCity(row);
+    return {
+      ...city,
+      countryName: row.countries?.name ?? '',
+      countrySlug: row.countries?.slug ?? '',
+    };
+  });
+}
+
 export async function getUniqueDestinationTagSlugs(
   entityType: 'country' | 'city' | 'neighborhood',
   tagCategory?: string,
@@ -638,6 +710,55 @@ export async function getTopPlacesByCountry(
   }));
 }
 
+/**
+ * Get places for a country filtered by place type(s).
+ * Joins through cities to resolve country, includes city name.
+ */
+export async function getPlacesByCountryAndType(
+  countryId: string,
+  placeTypes: string[],
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, cities!inner(name, country_id), place_media(url)')
+    .eq('cities.country_id', countryId)
+    .in('place_type', placeTypes)
+    .eq('is_active', true)
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
+}
+
+/**
+ * Get experiences (tours, activities, landmarks) for a country.
+ * Only things you actually DO — never accommodations, spas, or services.
+ */
+export async function getExperiencesByCountry(
+  countryId: string,
+  limit = 10,
+): Promise<PlaceWithCity[]> {
+  const experienceTypes = ['tour', 'activity', 'landmark'];
+  return getPlacesByCountryAndType(countryId, experienceTypes, limit);
+}
+
+/**
+ * Get social spots (bars, cafes, clubs, rooftops, restaurants) for a country.
+ * Meeting-people places only.
+ */
+export async function getSocialSpotsByCountry(
+  countryId: string,
+  limit = 8,
+): Promise<PlaceWithCity[]> {
+  const socialTypes = ['bar', 'club', 'rooftop', 'cafe', 'restaurant'];
+  return getPlacesByCountryAndType(countryId, socialTypes, limit);
+}
+
 export async function getAllActivities(limit = 50): Promise<Place[]> {
   const { data, error } = await supabase
     .from('places')
@@ -879,6 +1000,59 @@ export async function getSavedPlacesCountForCity(userId: string, cityId: string)
     .eq('places.city_id', cityId);
   if (error) throw error;
   return count ?? 0;
+}
+
+/**
+ * Get saved places with name, image, and city for feed display.
+ * Returns most recent saves first, limited to 10.
+ */
+export async function getSavedPlacesWithDetails(
+  userId: string,
+  limit = 10,
+): Promise<{ placeId: string; placeName: string; imageUrl: string | null; cityName: string | null }[]> {
+  const { data, error } = await supabase
+    .from('saved_places')
+    .select(`
+      place_id,
+      places!inner(name, city_id, cities(name)),
+      created_at
+    `)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  if (error) throw error;
+
+  const results: { placeId: string; placeName: string; imageUrl: string | null; cityName: string | null }[] = [];
+
+  for (const row of data ?? []) {
+    const place = (row as any).places;
+    if (!place) continue;
+
+    // Get first image for the place
+    let imageUrl: string | null = null;
+    try {
+      const { data: media } = await supabase
+        .from('place_media')
+        .select('url')
+        .eq('place_id', row.place_id)
+        .order('order_index')
+        .limit(1)
+        .maybeSingle();
+      imageUrl = media?.url ?? null;
+    } catch {
+      // Non-critical
+    }
+
+    results.push({
+      placeId: row.place_id,
+      placeName: place.name,
+      imageUrl,
+      cityName: place.cities?.name ?? null,
+    });
+  }
+
+  return results;
 }
 
 export async function isPlaceSaved(userId: string, placeId: string): Promise<boolean> {

@@ -89,7 +89,7 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
               <Pressable
                 key={city.id}
                 style={styles.destinationPill}
-                onPress={() => router.push(`/(tabs)/explore/city/${city.slug}`)}
+                onPress={() => router.push(`/(tabs)/discover/city/${city.slug}`)}
               >
                 <Text style={styles.destinationPillText}>{city.name}</Text>
               </Pressable>

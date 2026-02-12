@@ -1,51 +1,98 @@
 // data/explore/feedBuilder.ts
 import type { ExploreCollectionWithItems, Place } from '../types';
 import type { Country } from '../types';
-import type { FeedItem, CityWithCountry } from './types';
+import type { FeedItem, CityWithCountry, SavedPlaceWithDetails } from './types';
+
+/** Optional personal context injected by useFeedItems */
+export interface PersonalFeedContext {
+  savedPlaces?: { places: SavedPlaceWithDetails[]; totalCount: number };
+  upcomingTrip?: {
+    tripId: string;
+    destinationName: string;
+    citySlug: string | null;
+    countryIso2: string;
+    daysUntil: number;
+  };
+  recentCity?: { cityName: string; citySlug: string; heroImageUrl: string | null };
+  communityActivity?: { newReplyCount: number; threads: { id: string; title: string }[] };
+}
+
+const MAX_PERSONAL_ZONES = 2;
 
 /**
- * Build the explore feed as distinct zones:
- * 1. Featured editorial (one rotating collection)
- * 2. Countries grid (all countries)
+ * Build the explore feed as distinct zones.
+ *
+ * The IntentHero component now handles above-the-fold orientation,
+ * so the feed starts with browse content, not a featured collection.
+ *
+ * When personal context is provided, up to 2 personal zones are
+ * prepended before the generic browse content.
+ *
+ * Order:
+ * 1. [Personal zones — max 2, priority-ranked]
+ * 2. Countries grid (destination browsing)
  * 3. Popular cities (horizontal scroll)
- * 4. Collections section (all active collections)
+ * 4. Collections section (all active collections together)
  * 5. Community signal
  */
 export function buildFeed(
   collections: ExploreCollectionWithItems[],
   cities: CityWithCountry[],
   countries: Country[],
+  personal?: PersonalFeedContext,
+  islands?: CityWithCountry[],
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
-  // Zone 2: Featured editorial — rotate by day of week
-  if (collections.length > 0) {
-    const dayIndex = new Date().getDay(); // 0-6
-    const featured = collections[dayIndex % collections.length];
-    feed.push({ type: 'featured-collection', data: featured });
+  // Personal "you" layer — priority ranked, max 2
+  if (personal) {
+    const personalZones: FeedItem[] = [];
+
+    // Priority 1: Upcoming trip
+    if (personal.upcomingTrip) {
+      personalZones.push({ type: 'upcoming-trip', data: personal.upcomingTrip });
+    }
+
+    // Priority 2: Community activity
+    if (personal.communityActivity && personal.communityActivity.newReplyCount > 0) {
+      personalZones.push({ type: 'community-activity', data: personal.communityActivity });
+    }
+
+    // Priority 3: Saved places
+    if (personal.savedPlaces && personal.savedPlaces.totalCount > 0) {
+      personalZones.push({ type: 'your-saves', data: personal.savedPlaces });
+    }
+
+    // Priority 4: Continue exploring
+    if (personal.recentCity) {
+      personalZones.push({ type: 'continue-exploring', data: personal.recentCity });
+    }
+
+    feed.push(...personalZones.slice(0, MAX_PERSONAL_ZONES));
   }
 
-  // Zone 3: Countries grid
+  // Zone: Countries grid — primary browse entry
   if (countries.length > 0) {
     feed.push({ type: 'countries-grid', data: countries });
   }
 
-  // Zone 4: Popular cities — date-seeded shuffle within featured
+  // Zone: Featured islands — shown after countries
+  if (islands && islands.length > 0) {
+    feed.push({ type: 'featured-islands', data: islands });
+  }
+
+  // Zone: Popular cities — date-seeded shuffle within featured
   if (cities.length > 0) {
     const shuffled = shuffleCitiesByDate(cities);
     feed.push({ type: 'popular-cities', data: shuffled });
   }
 
-  // Zone 5: Collections section (all collections, not just the featured one)
-  if (collections.length > 1) {
-    // Exclude the one already shown as featured
-    const dayIndex = new Date().getDay();
-    const featuredIndex = dayIndex % collections.length;
-    const remaining = collections.filter((_, i) => i !== featuredIndex);
-    feed.push({ type: 'collections-section', data: remaining });
+  // Zone: All collections together — shown after intent is established
+  if (collections.length > 0) {
+    feed.push({ type: 'collections-section', data: collections });
   }
 
-  // Zone 6: Community signal
+  // Zone: Community signal
   feed.push({ type: 'community-signal' });
 
   return feed;
@@ -64,6 +111,7 @@ export function buildTravellingFeed(
   collections: ExploreCollectionWithItems[],
   cities: CityWithCountry[],
   countries: Country[],
+  islands?: CityWithCountry[],
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
@@ -84,7 +132,7 @@ export function buildTravellingFeed(
   }
 
   // Append the normal discover feed below
-  const normalFeed = buildFeed(collections, cities, countries);
+  const normalFeed = buildFeed(collections, cities, countries, undefined, islands);
   feed.push(...normalFeed);
 
   return feed;

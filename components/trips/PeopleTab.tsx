@@ -102,8 +102,8 @@ export default function PeopleTab({ tripId, matchingOptIn, onToggleMatching }: P
                 ? `Similar: ${match.theirStyleTags[0]}`
                 : undefined
             }
-            onPress={() => router.push(`/home/user/${match.theirUserId}`)}
-            onConnect={() => router.push(`/home/user/${match.theirUserId}`)}
+            onPress={() => router.push(`/connect/user/${match.theirUserId}`)}
+            onConnect={() => router.push(`/connect/user/${match.theirUserId}`)}
           />
           <MatchContext match={match} />
         </View>

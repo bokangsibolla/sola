@@ -489,3 +489,72 @@ export async function getCitiesForCountry(
   if (error) throw error;
   return (data ?? []).map((r) => ({ id: r.id, name: r.name }));
 }
+
+// ---------------------------------------------------------------------------
+// New Reply Activity — for tab badge + feed zone
+// ---------------------------------------------------------------------------
+
+/**
+ * Count threads the user participated in that have new replies since a timestamp.
+ * "Participated" = authored OR replied to.
+ * Returns thread IDs + titles for display, plus total new reply count.
+ */
+export async function getNewCommunityActivity(
+  userId: string,
+  sinceTimestamp: string,
+): Promise<{ newReplyCount: number; threads: { id: string; title: string }[] }> {
+  // 1. Get thread IDs where user is author and have been updated
+  const { data: authoredThreads } = await supabase
+    .from('community_threads')
+    .select('id, title, updated_at')
+    .eq('author_id', userId)
+    .eq('status', 'active')
+    .gt('updated_at', sinceTimestamp)
+    .order('updated_at', { ascending: false })
+    .limit(10);
+
+  // 2. Get thread IDs where user has replied
+  const { data: repliedThreadIds } = await supabase
+    .from('community_replies')
+    .select('thread_id')
+    .eq('author_id', userId)
+    .eq('status', 'active');
+
+  const repliedIds = Array.from(
+    new Set((repliedThreadIds ?? []).map((r: { thread_id: string }) => r.thread_id))
+  );
+
+  // 3. Get threads user replied to that have new activity
+  let repliedThreadsWithActivity: { id: string; title: string }[] = [];
+  if (repliedIds.length > 0) {
+    const { data } = await supabase
+      .from('community_threads')
+      .select('id, title, updated_at')
+      .in('id', repliedIds)
+      .eq('status', 'active')
+      .gt('updated_at', sinceTimestamp)
+      .order('updated_at', { ascending: false })
+      .limit(10);
+    repliedThreadsWithActivity = (data ?? []).map((t: { id: string; title: string }) => ({
+      id: t.id,
+      title: t.title,
+    }));
+  }
+
+  // 4. Merge and deduplicate
+  const threadMap = new Map<string, { id: string; title: string }>();
+  for (const t of (authoredThreads ?? [])) {
+    threadMap.set(t.id, { id: t.id, title: t.title });
+  }
+  for (const t of repliedThreadsWithActivity) {
+    if (!threadMap.has(t.id)) {
+      threadMap.set(t.id, t);
+    }
+  }
+
+  const threads = Array.from(threadMap.values());
+  return {
+    newReplyCount: threads.length,
+    threads: threads.slice(0, 3),
+  };
+}

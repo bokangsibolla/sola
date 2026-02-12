@@ -45,7 +45,40 @@ export interface Country {
   cultureEtiquetteMd: string | null;
   safetyWomenMd: string | null;
   portraitMd: string | null;
+  // Dimension content (markdown)
+  sovereigntyMd: string | null;
+  soloInfrastructureMd: string | null;
+  healthAccessMd: string | null;
+  experienceDensityMd: string | null;
+  communityConnectionMd: string | null;
+  costRealityMd: string | null;
+  // Practical links
+  immigrationUrl: string | null;
+  arrivalCardUrl: string | null;
+  simProviders: Array<{ name: string; url: string; note?: string }> | null;
+  healthSearchTerms: string[] | null;
+  // Structured fields (country page redesign)
+  budgetBreakdown: BudgetBreakdown | null;
+  vibeSummary: string | null;
+  socialVibe: string | null;
+  culturalNote: string | null;
+  transportSummary: string | null;
+  introMd: string | null;
   publishedAt: string | null;
+}
+
+export interface BudgetRange {
+  low: number;
+  high: number;
+  currency: string;
+  note: string;
+}
+
+export interface BudgetBreakdown {
+  accommodation: BudgetRange;
+  food: BudgetRange;
+  transport: BudgetRange;
+  activities: BudgetRange;
 }
 
 export interface City {
@@ -141,7 +174,7 @@ export interface Place {
     | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'club' | 'rooftop'
     | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop'
     | 'wellness' | 'spa' | 'salon' | 'gym'
-    | 'laundry' | 'pharmacy' | 'clinic' | 'atm' | 'police' | 'tour';
+    | 'laundry' | 'pharmacy' | 'clinic' | 'hospital' | 'atm' | 'police' | 'tour';
   primaryCategoryId: string | null;
   lat: number | null;
   lng: number | null;

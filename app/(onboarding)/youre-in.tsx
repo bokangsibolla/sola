@@ -47,7 +47,7 @@ export default function YoureInScreen() {
     if (userId) {
       const data = onboardingStore.getData();
       const avatarUrl = await uploadAvatar(userId, data.photoUri).catch(() => null);
-      const { error: profileError } = await supabase.from('profiles').upsert({
+      const profileData: Record<string, unknown> = {
         id: userId,
         first_name: data.firstName,
         bio: data.bio || null,
@@ -56,12 +56,25 @@ export default function YoureInScreen() {
         home_country_name: data.countryName || null,
         travel_style: data.spendingStyle || null,
         interests: data.dayStyle,
+      };
+
+      // Try with onboarding_completed_at first, fall back without it if column is missing
+      let profileError;
+      const { error: err1 } = await supabase.from('profiles').upsert({
+        ...profileData,
         onboarding_completed_at: new Date().toISOString(),
       });
 
+      if (err1?.message?.includes('onboarding_completed_at')) {
+        const { error: err2 } = await supabase.from('profiles').upsert(profileData);
+        profileError = err2;
+      } else {
+        profileError = err1;
+      }
+
       if (profileError) {
         setSaving(false);
-        Alert.alert('Could not save profile', 'Please try again.');
+        Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
         return;
       }
 
@@ -109,7 +122,7 @@ export default function YoureInScreen() {
     });
 
     setSaving(false);
-    router.replace('/(tabs)/explore');
+    router.replace('/(tabs)/home');
   };
 
   return (

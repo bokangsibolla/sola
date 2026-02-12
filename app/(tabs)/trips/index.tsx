@@ -4,9 +4,10 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
+import { Image } from 'expo-image';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import InboxButton from '@/components/InboxButton';
+import MenuButton from '@/components/MenuButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -45,10 +46,17 @@ export default function TripsScreen() {
     return (
       <AppScreen>
         <AppHeader
-          title={trips.current.destinationName || 'Your Trip'}
+          title=""
+          leftComponent={
+            <Image
+              source={require('@/assets/images/sola-logo.png')}
+              style={styles.headerLogo}
+              contentFit="contain"
+            />
+          }
           rightComponent={
             <View style={styles.headerRight}>
-              <InboxButton />
+              <MenuButton />
               <Pressable
                 style={styles.addButton}
                 onPress={() => router.push(`/trips/${trips.current!.id}`)}
@@ -76,10 +84,17 @@ export default function TripsScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Trips"
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
         rightComponent={
           <View style={styles.headerRight}>
-            <InboxButton />
+            <MenuButton />
             <Pressable
               style={styles.addButton}
               onPress={() => {
@@ -138,6 +153,10 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerLogo: {
+    height: 22,
+    width: 76,
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',

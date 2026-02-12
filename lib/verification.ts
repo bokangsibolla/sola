@@ -25,7 +25,7 @@ export function requireVerification(
           { text: 'Not Now', style: 'cancel' },
           {
             text: 'Verify',
-            onPress: () => router.push('/(tabs)/profile/verify' as any),
+            onPress: () => router.push('/(tabs)/home/verify' as any),
           },
         ],
   );

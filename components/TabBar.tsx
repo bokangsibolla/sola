@@ -1,25 +1,56 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Pressable, Text, StyleSheet } from 'react-native';
-import { Image, ImageSource } from 'expo-image';
+import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { colors, fonts } from '@/constants/design';
+import { useAuth } from '@/state/AuthContext';
+import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
+import { getNewCommunityActivity } from '@/data/community/communityApi';
 
-// Custom icon assets per route
-const TAB_ICONS: Record<string, ImageSource> = {
-  explore: require('@/assets/images/icons/icon-explore.png'),
-  community: require('@/assets/images/icons/icon-community.png'),
-  home: require('@/assets/images/icons/icon-travelers.png'),
-  trips: require('@/assets/images/icons/icon-trips.png'),
-  profile: require('@/assets/images/icons/icon-profile.png'),
+// Feather icon names per route — 4 tabs
+const TAB_ICONS: Record<string, keyof typeof Feather.glyphMap> = {
+  home: 'home',
+  discover: 'compass',
+  connect: 'users',
+  trips: 'map',
 };
 
-const TAB_ICON_SIZE = 26;
+const TAB_ICON_SIZE = 24;
 const TAB_BAR_HEIGHT = 50;
 
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const bottomPadding = Math.max(insets.bottom, 8);
+  const { userId } = useAuth();
+  const [connectHasNew, setConnectHasNew] = useState(false);
+
+  // Check for new community activity on mount (badge shows on Connect tab)
+  useEffect(() => {
+    if (!userId) return;
+    const uid = userId;
+
+    async function checkActivity() {
+      try {
+        const lastVisit = await getCommunityLastVisit();
+        if (!lastVisit) return;
+        const activity = await getNewCommunityActivity(uid, lastVisit);
+        setConnectHasNew(activity.newReplyCount > 0);
+      } catch {
+        // Non-critical
+      }
+    }
+
+    checkActivity();
+  }, [userId]);
+
+  // Clear badge when Connect tab is focused
+  useEffect(() => {
+    if (state.routes[state.index]?.name === 'connect') {
+      setConnectHasNew(false);
+      setCommunityLastVisit();
+    }
+  }, [state.index]);
 
   return (
     <View style={[styles.container, { paddingBottom: bottomPadding }]}>
@@ -58,11 +89,12 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
             style={styles.tab}
           >
             {icon && (
-              <Image
-                source={icon}
-                style={[styles.icon, { tintColor }]}
-                contentFit="contain"
-              />
+              <View>
+                <Feather name={icon} size={TAB_ICON_SIZE} color={tintColor} />
+                {route.name === 'connect' && connectHasNew && !isFocused && (
+                  <View style={styles.badge} />
+                )}
+              </View>
             )}
             <Text
               style={[
@@ -101,10 +133,7 @@ const styles = StyleSheet.create({
     gap: 3,
     minHeight: TAB_BAR_HEIGHT,
   },
-  icon: {
-    width: TAB_ICON_SIZE,
-    height: TAB_ICON_SIZE,
-  },
+  // icon size is handled by Feather's size prop
   label: {
     fontFamily: fonts.medium,
     fontSize: 10,
@@ -112,5 +141,14 @@ const styles = StyleSheet.create({
   },
   labelActive: {
     fontFamily: fonts.semiBold,
+  },
+  badge: {
+    position: 'absolute',
+    top: -2,
+    right: -4,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.orange,
   },
 });
