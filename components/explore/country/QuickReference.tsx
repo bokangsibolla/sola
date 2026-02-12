@@ -9,11 +9,15 @@ interface Props {
   emergency: EmergencyNumbers;
 }
 
-type RowData =
-  | { kind: 'phone'; key: string; label: string; numbers: Array<{ label: string; number: string }> }
-  | { kind: 'link'; key: string; label: string; linkLabel: string; url: string }
-  | { kind: 'value'; key: string; label: string; value: string }
-  | { kind: 'sim'; key: string; label: string; providers: Array<{ name: string; url: string; note?: string }> };
+interface RefCell {
+  key: string;
+  label: string;
+  kind: 'value' | 'link' | 'providers';
+  value?: string;
+  linkLabel?: string;
+  url?: string;
+  providers?: Array<{ name: string; url: string; note?: string }>;
+}
 
 function openUrl(url: string) {
   Linking.openURL(url);
@@ -23,131 +27,163 @@ function callNumber(number: string) {
   Linking.openURL(`tel:${number}`);
 }
 
-function buildRows(country: Country, emergency: EmergencyNumbers): RowData[] {
-  const rows: RowData[] = [];
-
-  // Emergency numbers with tappable tel: links
-  rows.push({
-    kind: 'phone',
-    key: 'emergency',
-    label: 'Emergency',
-    numbers: [
-      { label: 'Police', number: emergency.police },
-      { label: 'Ambulance', number: emergency.ambulance },
-      ...(emergency.general ? [{ label: 'General', number: emergency.general }] : []),
-    ],
-  });
+function buildCells(country: Country): RefCell[] {
+  const cells: RefCell[] = [];
 
   if (country.currency) {
-    rows.push({
-      kind: 'value',
-      key: 'currency',
-      label: 'Currency',
-      value: country.currency,
-    });
+    cells.push({ key: 'currency', label: 'Currency', kind: 'value', value: country.currency });
   }
-
+  if (country.language) {
+    cells.push({ key: 'language', label: 'Language', kind: 'value', value: country.language });
+  }
   if (country.immigrationUrl) {
-    rows.push({
-      kind: 'link',
+    cells.push({
       key: 'visa',
-      label: 'Visa info',
+      label: 'Visa',
+      kind: 'link',
       linkLabel: 'Official site',
       url: country.immigrationUrl,
     });
   }
-
   if (country.arrivalCardUrl) {
-    rows.push({
-      kind: 'link',
+    cells.push({
       key: 'arrival',
       label: 'Arrival card',
+      kind: 'link',
       linkLabel: 'Fill online',
       url: country.arrivalCardUrl,
     });
   }
-
   if (country.simProviders && country.simProviders.length > 0) {
-    rows.push({
-      kind: 'sim',
+    cells.push({
       key: 'sim',
       label: 'SIM / eSIM',
+      kind: 'providers',
       providers: country.simProviders,
     });
   }
 
-  if (country.language) {
-    rows.push({
-      kind: 'value',
-      key: 'language',
-      label: 'Language',
-      value: country.language,
-    });
-  }
+  return cells;
+}
 
-  return rows;
+function buildEmergencyNumbers(emergency: EmergencyNumbers) {
+  const nums: Array<{ label: string; number: string }> = [
+    { label: 'Police', number: emergency.police },
+    { label: 'Ambulance', number: emergency.ambulance },
+    { label: 'Fire', number: emergency.fire },
+  ];
+  if (emergency.general && emergency.general !== emergency.police) {
+    nums.push({ label: 'General', number: emergency.general });
+  }
+  return nums;
+}
+
+function GridCell({
+  cell,
+  isRight,
+  isBottom,
+}: {
+  cell: RefCell;
+  isRight: boolean;
+  isBottom: boolean;
+}) {
+  return (
+    <View
+      style={[
+        styles.cell,
+        !isRight && styles.cellBorderRight,
+        !isBottom && styles.cellBorderBottom,
+      ]}
+    >
+      <Text style={styles.cellLabel}>{cell.label}</Text>
+
+      {cell.kind === 'value' && (
+        <Text style={styles.cellValue} numberOfLines={2}>
+          {cell.value}
+        </Text>
+      )}
+
+      {cell.kind === 'link' && cell.url && (
+        <Pressable onPress={() => openUrl(cell.url!)} hitSlop={8}>
+          <View style={styles.cellLinkRow}>
+            <Text style={styles.cellLink}>{cell.linkLabel}</Text>
+            <Ionicons
+              name="open-outline"
+              size={11}
+              color={colors.orange}
+              style={styles.cellLinkIcon}
+            />
+          </View>
+        </Pressable>
+      )}
+
+      {cell.kind === 'providers' && cell.providers && (
+        <View style={styles.providerList}>
+          {cell.providers.map((p, i) => (
+            <Pressable key={i} onPress={() => openUrl(p.url)} hitSlop={4}>
+              <Text style={styles.cellLink}>{p.name}</Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+    </View>
+  );
 }
 
 export function QuickReference({ country, emergency }: Props) {
-  const rows = buildRows(country, emergency);
+  const cells = buildCells(country);
+  const emergencyNums = buildEmergencyNumbers(emergency);
 
-  if (rows.length === 0) return null;
+  if (cells.length === 0 && emergencyNums.length === 0) return null;
+
+  // Build grid rows of 2
+  const gridRows: Array<[RefCell, RefCell | null]> = [];
+  for (let i = 0; i < cells.length; i += 2) {
+    gridRows.push([cells[i], cells[i + 1] ?? null]);
+  }
 
   return (
     <View style={styles.section}>
       <Text style={styles.heading}>Quick reference</Text>
-      <View style={styles.card}>
-        {rows.map((row, index) => {
-          const isLast = index === rows.length - 1;
 
-          return (
-            <View key={row.key} style={[styles.row, !isLast && styles.rowBorder]}>
-              <Text style={styles.rowLabel}>{row.label}</Text>
+      {/* Reference grid */}
+      {gridRows.length > 0 && (
+        <View style={styles.grid}>
+          {gridRows.map(([left, right], rowIdx) => {
+            const isBottom = rowIdx === gridRows.length - 1;
+            return (
+              <View key={left.key} style={styles.gridRow}>
+                <GridCell cell={left} isRight={!right} isBottom={isBottom} />
+                {right ? (
+                  <GridCell cell={right} isRight={true} isBottom={isBottom} />
+                ) : (
+                  <View style={[styles.cell, styles.cellBorderBottom_none]} />
+                )}
+              </View>
+            );
+          })}
+        </View>
+      )}
 
-              {row.kind === 'value' && (
-                <Text style={styles.rowValue}>{row.value}</Text>
-              )}
-
-              {row.kind === 'link' && (
-                <Pressable onPress={() => openUrl(row.url)} hitSlop={8}>
-                  <View style={styles.linkRow}>
-                    <Text style={styles.linkText}>{row.linkLabel}</Text>
-                    <Ionicons name="open-outline" size={12} color={colors.orange} style={styles.linkIcon} />
-                  </View>
-                </Pressable>
-              )}
-
-              {row.kind === 'phone' && (
-                <View style={styles.phoneGroup}>
-                  {row.numbers.map((num, i) => (
-                    <Pressable key={i} onPress={() => callNumber(num.number)} hitSlop={8}>
-                      <Text style={styles.phoneItem}>
-                        <Text style={styles.phoneLabel}>{num.label} </Text>
-                        <Text style={styles.phoneNumber}>{num.number}</Text>
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-
-              {row.kind === 'sim' && (
-                <View style={styles.simGroup}>
-                  {row.providers.map((provider, i) => (
-                    <Pressable key={i} onPress={() => openUrl(provider.url)} hitSlop={4}>
-                      <View style={styles.simRow}>
-                        <Text style={styles.linkText}>{provider.name}</Text>
-                        {provider.note && (
-                          <Text style={styles.simNote}> {provider.note}</Text>
-                        )}
-                      </View>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-          );
-        })}
-      </View>
+      {/* Emergency numbers */}
+      {emergencyNums.length > 0 && (
+        <View style={styles.emergencyCard}>
+          <Text style={styles.emergencyLabel}>Emergency</Text>
+          <View style={styles.emergencyRow}>
+            {emergencyNums.map((num, i) => (
+              <Pressable
+                key={i}
+                onPress={() => callNumber(num.number)}
+                hitSlop={6}
+                style={styles.emergencyItem}
+              >
+                <Text style={styles.emergencyType}>{num.label}</Text>
+                <Text style={styles.emergencyNumber}>{num.number}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      )}
     </View>
   );
 }
@@ -155,80 +191,97 @@ export function QuickReference({ country, emergency }: Props) {
 const styles = StyleSheet.create({
   section: {
     marginBottom: spacing.xxl,
+    gap: spacing.sm,
   },
   heading: {
     fontFamily: fonts.semiBold,
     fontSize: 20,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.sm,
   },
-  card: {
+
+  // --- Reference grid ---
+  grid: {
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     overflow: 'hidden',
   },
-  row: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+  gridRow: {
+    flexDirection: 'row',
   },
-  rowBorder: {
+  cell: {
+    flex: 1,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  cellBorderRight: {
+    borderRightWidth: 1,
+    borderRightColor: colors.borderSubtle,
+  },
+  cellBorderBottom: {
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
-  rowLabel: {
+  cellBorderBottom_none: {},
+  cellLabel: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.textSecondary,
     marginBottom: spacing.xs,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
   },
-  rowValue: {
-    fontFamily: fonts.regular,
+  cellValue: {
+    fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.textPrimary,
     lineHeight: 22,
   },
-  linkRow: {
+  cellLinkRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
-  linkText: {
+  cellLink: {
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.orange,
+    lineHeight: 22,
   },
-  linkIcon: {
+  cellLinkIcon: {
     marginLeft: spacing.xs,
   },
-  phoneGroup: {
+  providerList: {
+    gap: spacing.xs,
+  },
+
+  // --- Emergency ---
+  emergencyCard: {
+    backgroundColor: colors.emergencyFill,
+    borderRadius: radius.card,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+  },
+  emergencyLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.emergency,
+    marginBottom: spacing.sm,
+  },
+  emergencyRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.lg,
   },
-  phoneItem: {
-    lineHeight: 22,
+  emergencyItem: {
+    minWidth: 64,
   },
-  phoneLabel: {
+  emergencyType: {
     fontFamily: fonts.regular,
-    fontSize: 14,
+    fontSize: 12,
     color: colors.textSecondary,
+    marginBottom: 2,
   },
-  phoneNumber: {
+  emergencyNumber: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.orange,
-  },
-  simGroup: {
-    gap: spacing.xs,
-  },
-  simRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  simNote: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 16,
+    color: colors.emergency,
   },
 });
