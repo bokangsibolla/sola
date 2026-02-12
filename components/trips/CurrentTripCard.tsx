@@ -2,7 +2,6 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useData } from '@/hooks/useData';
@@ -15,9 +14,9 @@ interface CurrentTripCardProps {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Journal', icon: 'book-outline' as const, tab: 0 },
-  { label: 'Plan', icon: 'map-outline' as const, tab: 1 },
-  { label: 'People', icon: 'people-outline' as const, tab: 2 },
+  { label: 'Journal', tab: 0 },
+  { label: 'Plan', tab: 1 },
+  { label: 'People', tab: 2 },
 ];
 
 export default function CurrentTripCard({ trip }: CurrentTripCardProps) {
@@ -79,7 +78,6 @@ export default function CurrentTripCard({ trip }: CurrentTripCardProps) {
             style={styles.actionPill}
             onPress={() => router.push(`/trips/${trip.id}?tab=${action.tab}`)}
           >
-            <Ionicons name={action.icon} size={16} color={colors.orange} />
             <Text style={styles.actionText}>{action.label}</Text>
           </Pressable>
         ))}

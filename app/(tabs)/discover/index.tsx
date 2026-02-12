@@ -51,7 +51,7 @@ function CompactSearchBar({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Search destinations"
     >
       <Feather name="search" size={16} color={colors.textMuted} />
-      <Text style={styles.searchText}>Find a destination</Text>
+      <Text style={styles.searchText}>You can go anywhere</Text>
     </Pressable>
   );
 }

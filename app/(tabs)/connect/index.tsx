@@ -30,6 +30,7 @@ import SectionHeader from '@/components/travelers/SectionHeader';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { castVote } from '@/data/community/communityApi';
+import PlaceFilterChips from '@/components/community/PlaceFilterChips';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { useTravelersFeed } from '@/data/travelers/useTravelersFeed';
 import { useTravelerSearch } from '@/data/travelers/useTravelerSearch';
@@ -488,6 +489,13 @@ function DiscussionsView() {
     setIsSearching(false);
   }, [searchText, setFilters]);
 
+  const handlePlaceFilter = useCallback(
+    (countryId: string | undefined, cityId: string | undefined) => {
+      setFilters({ countryId, cityId });
+    },
+    [setFilters],
+  );
+
   // Reset divider tracking when threads change
   useEffect(() => {
     dividerShownRef.current = false;
@@ -525,7 +533,7 @@ function DiscussionsView() {
     [router, handleVote, lastVisitTimestamp],
   );
 
-  const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId);
+  const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId || filters.cityId);
 
   const ListHeader = (
     <View>
@@ -570,6 +578,13 @@ function DiscussionsView() {
           <Text style={styles.searchPillText}>Search discussions...</Text>
         </Pressable>
       )}
+
+      {/* Place filter chips */}
+      <PlaceFilterChips
+        selectedCountryId={filters.countryId}
+        selectedCityId={filters.cityId}
+        onFilterChange={handlePlaceFilter}
+      />
 
       {/* Section label */}
       <Text style={styles.sectionLabel}>
@@ -1052,7 +1067,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     height: 44,
     gap: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   searchPillText: {
     fontFamily: fonts.regular,
@@ -1067,7 +1082,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     height: 44,
     gap: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   searchInput: {
     flex: 1,

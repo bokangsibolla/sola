@@ -15,7 +15,7 @@ import TripListCard from '@/components/trips/TripListCard';
 import TripEmptyState from '@/components/trips/TripEmptyState';
 import { useTrips } from '@/data/trips/useTrips';
 import { useAppMode } from '@/state/AppModeContext';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 
 export default function TripsScreen() {
   const router = useRouter();
@@ -54,17 +54,7 @@ export default function TripsScreen() {
               contentFit="contain"
             />
           }
-          rightComponent={
-            <View style={styles.headerRight}>
-              <MenuButton />
-              <Pressable
-                style={styles.addButton}
-                onPress={() => router.push(`/trips/${trips.current!.id}`)}
-              >
-                <Ionicons name="expand-outline" size={18} color={colors.orange} />
-              </Pressable>
-            </View>
-          }
+          rightComponent={<MenuButton />}
         />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           <CurrentTripCard trip={trips.current} />
@@ -92,20 +82,7 @@ export default function TripsScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={
-          <View style={styles.headerRight}>
-            <MenuButton />
-            <Pressable
-              style={styles.addButton}
-              onPress={() => {
-                posthog.capture('add_trip_tapped');
-                router.push('/trips/new');
-              }}
-            >
-              <Ionicons name="add" size={22} color={colors.orange} />
-            </Pressable>
-          </View>
-        }
+        rightComponent={<MenuButton />}
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isEmpty ? (
@@ -156,20 +133,6 @@ const styles = StyleSheet.create({
   headerLogo: {
     height: 22,
     width: 76,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   scroll: {
     paddingBottom: spacing.xxl,

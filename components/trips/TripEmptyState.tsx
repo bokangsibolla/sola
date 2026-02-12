@@ -2,45 +2,39 @@ import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import { useData } from '@/hooks/useData';
-import { getPopularCities } from '@/data/api';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { Feather } from '@expo/vector-icons';
+import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 interface TripEmptyStateProps {
   onPress: () => void;
 }
 
-const FEATURES = [
+const DASHBOARD_SECTIONS = [
   {
-    icon: 'book-outline' as const,
-    title: 'Private journal',
-    body: 'Log moments, moods, and tips only you can see',
+    label: 'ACTIVE TRIP',
+    hint: 'Your current trip appears here while you travel',
   },
   {
-    icon: 'map-outline' as const,
-    title: 'Light planning',
-    body: 'Save places, notes, and emergency numbers',
+    label: 'JOURNAL',
+    hint: 'A private log of moments, moods, and tips from the road',
   },
   {
-    icon: 'people-outline' as const,
-    title: 'Meet travelers',
-    body: 'Find women on your route — safely, on your terms',
+    label: 'PAST TRIPS',
+    hint: 'Every trip you\'ve taken, kept in one place',
   },
 ];
 
 export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
-  const router = useRouter();
-  const { data: popularCities } = useData(() => getPopularCities(4), ['popularCities']);
-
   return (
     <View style={styles.container}>
-      {/* Hero image with overlay */}
-      <View style={styles.heroWrapper}>
+      {/* Hero card */}
+      <Pressable
+        style={({ pressed }) => [styles.card, pressed && { opacity: pressedState.opacity }]}
+        onPress={onPress}
+      >
         <Image
-          source={require('@/assets/images/pexels-sailing.png')}
-          style={styles.heroImage}
+          source={require('@/assets/images/pexels-driving.png')}
+          style={styles.image}
           contentFit="cover"
           transition={300}
         />
@@ -48,55 +42,26 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
           colors={['transparent', 'rgba(0,0,0,0.55)']}
           style={styles.gradient}
         />
-        <View style={styles.heroContent}>
-          <Text style={styles.heroHeading}>Your next journey{'\n'}starts here</Text>
-          <Text style={styles.heroSub}>Plan trips, journal along the way, and connect with solo travelers worldwide.</Text>
-        </View>
-      </View>
-
-      {/* Feature highlights */}
-      <View style={styles.features}>
-        {FEATURES.map((f) => (
-          <View key={f.title} style={styles.featureRow}>
-            <View style={styles.featureIcon}>
-              <Ionicons name={f.icon} size={18} color={colors.orange} />
-            </View>
-            <View style={styles.featureText}>
-              <Text style={styles.featureTitle}>{f.title}</Text>
-              <Text style={styles.featureBody}>{f.body}</Text>
-            </View>
+        <View style={styles.content}>
+          <Text style={styles.heading}>Plan your first trip</Text>
+          <View style={styles.action}>
+            <Text style={styles.actionText}>Start planning</Text>
+            <Feather name="arrow-right" size={14} color={colors.orange} />
           </View>
-        ))}
-      </View>
+        </View>
+      </Pressable>
 
-      {/* CTA */}
-      <View style={styles.ctaContainer}>
+      {/* Dashboard preview — shows the structure of what this page becomes */}
+      {DASHBOARD_SECTIONS.map((section) => (
         <Pressable
-          style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}
+          key={section.label}
+          style={({ pressed }) => [styles.section, pressed && { opacity: pressedState.opacity }]}
           onPress={onPress}
         >
-          <Ionicons name="add" size={20} color="#FFFFFF" />
-          <Text style={styles.ctaText}>Plan your first trip</Text>
+          <Text style={styles.sectionLabel}>{section.label}</Text>
+          <Text style={styles.sectionHint}>{section.hint}</Text>
         </Pressable>
-      </View>
-
-      {/* Destination pills — entry points to discovery */}
-      {(popularCities ?? []).length > 0 && (
-        <>
-          <Text style={styles.orText}>Or explore destinations</Text>
-          <View style={styles.destinationPills}>
-            {(popularCities ?? []).slice(0, 4).map((city) => (
-              <Pressable
-                key={city.id}
-                style={styles.destinationPill}
-                onPress={() => router.push(`/(tabs)/discover/city/${city.slug}`)}
-              >
-                <Text style={styles.destinationPillText}>{city.name}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      )}
+      ))}
     </View>
   );
 }
@@ -105,119 +70,62 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  // ── Hero ──
-  heroWrapper: {
-    height: 260,
+
+  // ── Hero card ──
+  card: {
+    height: 220,
     borderRadius: radius.card,
     overflow: 'hidden',
     marginBottom: spacing.xl,
   },
-  heroImage: {
+  image: {
     ...StyleSheet.absoluteFillObject,
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
   },
-  heroContent: {
+  content: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.xl,
+    padding: spacing.lg,
   },
-  heroHeading: {
+  heading: {
+    fontSize: 20,
     fontFamily: fonts.semiBold,
-    fontSize: 26,
     color: '#FFFFFF',
-    lineHeight: 32,
+    marginBottom: spacing.sm,
   },
-  heroSub: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: 'rgba(255,255,255,0.85)',
-    lineHeight: 20,
-    marginTop: spacing.sm,
-  },
-  // ── Features ──
-  features: {
-    gap: spacing.lg,
-    marginBottom: spacing.xxl,
-  },
-  featureRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.md,
-  },
-  featureIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 2,
-  },
-  featureText: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  featureBody: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    lineHeight: 18,
-    marginTop: 2,
-  },
-  // ── CTA ──
-  ctaContainer: {
-    paddingBottom: spacing.xxl,
-  },
-  ctaButton: {
+  action: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.orange,
-    paddingVertical: spacing.lg,
-    borderRadius: radius.button,
+    gap: spacing.xs,
   },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
-  },
-  ctaText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
-  orText: {
-    fontFamily: fonts.regular,
+  actionText: {
     fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
-    marginTop: spacing.lg,
+    fontFamily: fonts.semiBold,
+    color: colors.orange,
+  },
+
+  // ── Dashboard section previews ──
+  section: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
     marginBottom: spacing.md,
   },
-  destinationPills: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.xl,
+  sectionLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 0.5,
+    color: colors.textMuted,
+    marginBottom: spacing.xs,
   },
-  destinationPill: {
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-  },
-  destinationPillText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
+  sectionHint: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
   },
 });

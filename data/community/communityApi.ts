@@ -459,6 +459,71 @@ export async function getCountryThreadPreviews(
 }
 
 // ---------------------------------------------------------------------------
+// Place Filter — countries & cities that have active threads
+// ---------------------------------------------------------------------------
+
+/**
+ * Fetch countries that have at least one active public thread.
+ * Returns them ordered by the platform's country order_index.
+ */
+export async function getCountriesWithThreads(): Promise<
+  { id: string; name: string }[]
+> {
+  // Get distinct country_ids from active threads
+  const { data: threadRows, error: threadErr } = await supabase
+    .from('community_threads')
+    .select('country_id')
+    .eq('status', 'active')
+    .eq('visibility', 'public')
+    .not('country_id', 'is', null);
+  if (threadErr) throw threadErr;
+
+  const countryIds = Array.from(
+    new Set((threadRows ?? []).map((r: { country_id: string }) => r.country_id)),
+  );
+  if (countryIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('countries')
+    .select('id, name')
+    .in('id', countryIds)
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ id: r.id, name: r.name }));
+}
+
+/**
+ * Fetch cities within a country that have at least one active public thread.
+ */
+export async function getCitiesWithThreadsInCountry(
+  countryId: string,
+): Promise<{ id: string; name: string }[]> {
+  const { data: threadRows, error: threadErr } = await supabase
+    .from('community_threads')
+    .select('city_id')
+    .eq('status', 'active')
+    .eq('visibility', 'public')
+    .eq('country_id', countryId)
+    .not('city_id', 'is', null);
+  if (threadErr) throw threadErr;
+
+  const cityIds = Array.from(
+    new Set((threadRows ?? []).map((r: { city_id: string }) => r.city_id)),
+  );
+  if (cityIds.length === 0) return [];
+
+  const { data, error } = await supabase
+    .from('cities')
+    .select('id, name')
+    .in('id', cityIds)
+    .eq('is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return (data ?? []).map((r) => ({ id: r.id, name: r.name }));
+}
+
+// ---------------------------------------------------------------------------
 // Place Lookups (for thread creation place selector)
 // ---------------------------------------------------------------------------
 
