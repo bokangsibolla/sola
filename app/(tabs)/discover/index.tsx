@@ -26,8 +26,6 @@ import { colors, fonts, spacing, radius, pressedState } from '@/constants/design
 const MAX_COUNTRIES_SHOWN = 9;
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const GRID_GAP = spacing.sm;
-const COUNTRY_CARD_SIZE =
-  (SCREEN_WIDTH - spacing.screenX * 2 - GRID_GAP * 2) / 3;
 
 /** Chunk array into groups of n */
 function chunk<T>(arr: T[], n: number): T[][] {
@@ -203,6 +201,10 @@ export default function DiscoverScreen() {
                       onPress={() => router.push(`/(tabs)/discover/country/${country.slug}`)}
                     />
                   ))}
+                  {row.length < 3 &&
+                    Array.from({ length: 3 - row.length }).map((_, i) => (
+                      <View key={`spacer-${i}`} style={styles.countryCardSpacer} />
+                    ))}
                 </View>
               ))}
             </View>
@@ -369,8 +371,8 @@ const styles = StyleSheet.create({
     gap: GRID_GAP,
   },
   countryCard: {
-    width: COUNTRY_CARD_SIZE,
-    height: COUNTRY_CARD_SIZE * 1.2,
+    flex: 1,
+    aspectRatio: 1 / 1.2,
     borderRadius: radius.card,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
@@ -387,6 +389,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 13,
     color: '#FFFFFF',
+  },
+  countryCardSpacer: {
+    flex: 1,
   },
 
   // See all button — below the grid
