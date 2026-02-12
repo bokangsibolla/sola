@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
+import { Image } from 'expo-image';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
@@ -45,7 +46,14 @@ export default function TripsScreen() {
     return (
       <AppScreen>
         <AppHeader
-          title={trips.current.destinationName || 'Your Trip'}
+          title=""
+          leftComponent={
+            <Image
+              source={require('@/assets/images/sola-logo.png')}
+              style={styles.headerLogo}
+              contentFit="contain"
+            />
+          }
           rightComponent={
             <View style={styles.headerRight}>
               <MenuButton />
@@ -76,7 +84,14 @@ export default function TripsScreen() {
   return (
     <AppScreen>
       <AppHeader
-        title="Trips"
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
         rightComponent={
           <View style={styles.headerRight}>
             <MenuButton />
@@ -138,6 +153,10 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
+  headerLogo: {
+    height: 22,
+    width: 76,
+  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',

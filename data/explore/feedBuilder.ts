@@ -40,6 +40,7 @@ export function buildFeed(
   cities: CityWithCountry[],
   countries: Country[],
   personal?: PersonalFeedContext,
+  islands?: CityWithCountry[],
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
@@ -75,6 +76,11 @@ export function buildFeed(
     feed.push({ type: 'countries-grid', data: countries });
   }
 
+  // Zone: Featured islands — shown after countries
+  if (islands && islands.length > 0) {
+    feed.push({ type: 'featured-islands', data: islands });
+  }
+
   // Zone: Popular cities — date-seeded shuffle within featured
   if (cities.length > 0) {
     const shuffled = shuffleCitiesByDate(cities);
@@ -105,6 +111,7 @@ export function buildTravellingFeed(
   collections: ExploreCollectionWithItems[],
   cities: CityWithCountry[],
   countries: Country[],
+  islands?: CityWithCountry[],
 ): FeedItem[] {
   const feed: FeedItem[] = [];
 
@@ -125,7 +132,7 @@ export function buildTravellingFeed(
   }
 
   // Append the normal discover feed below
-  const normalFeed = buildFeed(collections, cities, countries);
+  const normalFeed = buildFeed(collections, cities, countries, undefined, islands);
   feed.push(...normalFeed);
 
   return feed;

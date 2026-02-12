@@ -1,7 +1,7 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity, getSavedPlacesWithDetails } from '../api';
+import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity, getSavedPlacesWithDetails, getCitiesByTags } from '../api';
 import type { Place } from '../types';
 import { getExploreCollections, getExploreCollectionItems } from '../collections';
 import { buildFeed, buildTravellingFeed } from './feedBuilder';
@@ -13,7 +13,7 @@ import { getCommunityLastVisit } from '../community/lastVisit';
 import { getNewCommunityActivity } from '../community/communityApi';
 import { getTripsGrouped } from '../trips/tripApi';
 import type { ExploreCollectionWithItems } from '../types';
-import type { FeedItem } from './types';
+import type { FeedItem, CityWithCountry } from './types';
 
 const INITIAL_FEED: FeedItem[] = [];
 
@@ -49,10 +49,11 @@ export function useFeedItems(): UseFeedItemsResult {
         setIsLoading(true);
         setError(null);
 
-        // Fetch countries and cities in parallel (critical path)
-        const [countriesResult, citiesResult] = await Promise.all([
+        // Fetch countries, cities, and islands in parallel (critical path)
+        const [countriesResult, citiesResult, islandsResult] = await Promise.all([
           withTimeout(getCountries(), 5000, 'getCountries'),
           withTimeout(getPopularCitiesWithCountry(20), 5000, 'getCities'),
+          withTimeout(getCitiesByTags(['island']), 5000, 'getIslands').catch(() => [] as CityWithCountry[]),
         ]);
 
         if (cancelled) return;
@@ -121,6 +122,7 @@ export function useFeedItems(): UseFeedItemsResult {
             collectionsWithItems,
             citiesResult,
             countriesResult,
+            islandsResult,
           );
         } else {
           // Fetch personal context in parallel (all non-critical)
@@ -189,7 +191,7 @@ export function useFeedItems(): UseFeedItemsResult {
             if (!hasPersonal) personal = undefined;
           }
 
-          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult, personal);
+          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult, personal, islandsResult);
         }
 
         setFeedItems(feed);

@@ -868,7 +868,17 @@ export default function ConnectScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="Connect" rightComponent={<MenuButton />} />
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={{ height: 22, width: 76 }}
+            contentFit="contain"
+          />
+        }
+        rightComponent={<MenuButton />}
+      />
 
       <SegmentControl
         activeSegment={activeSegment}

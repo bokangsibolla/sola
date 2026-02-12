@@ -1,375 +1,207 @@
 // app/(tabs)/discover/all-destinations.tsx
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Pressable,
-  SectionList,
-  StyleSheet,
-  Text,
-  TextInput,
-  View,
-} from 'react-native';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+// Continent picker — 3 full-width image cards linking to continent detail
+import React from 'react';
+import { Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import { CountryCard } from '@/components/explore/cards/CountryCard';
-import * as Sentry from '@sentry/react-native';
+import MenuButton from '@/components/MenuButton';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
-import { getCountries, getAllCities } from '@/data/api';
-import type { Country, City } from '@/data/types';
 
-/** Split array into two columns for masonry layout */
-function toColumns<T>(arr: T[]): [T[], T[]] {
-  const left: T[] = [];
-  const right: T[] = [];
-  arr.forEach((item, i) => (i % 2 === 0 ? left : right).push(item));
-  return [left, right];
+// ── Continent data ──────────────────────────────────────────
+
+interface Continent {
+  key: string;
+  label: string;
+  tagline: string;
+  imageUrl: string;
 }
 
-interface CityRow extends City {
-  countryName: string;
-  countrySlug: string;
+const CONTINENTS: Continent[] = [
+  {
+    key: 'asia',
+    label: 'Asia',
+    tagline: 'Temples, islands, street food',
+    imageUrl: 'https://images.unsplash.com/photo-1528181304800-259b08848526?w=800&q=80',
+  },
+  {
+    key: 'europe',
+    label: 'Europe',
+    tagline: 'History, coasts, café culture',
+    imageUrl: 'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?w=800&q=80',
+  },
+  {
+    key: 'africa',
+    label: 'Africa',
+    tagline: 'Wildlife, mountains, warm hospitality',
+    imageUrl: 'https://images.unsplash.com/photo-1523805009345-7448845a9e53?w=800&q=80',
+  },
+];
+
+// ── Breadcrumb ──────────────────────────────────────────────
+
+function Breadcrumb({ onBack }: { onBack: () => void }) {
+  return (
+    <View style={styles.breadcrumb}>
+      <Pressable onPress={onBack} hitSlop={8}>
+        <Text style={styles.breadcrumbLink}>Discover</Text>
+      </Pressable>
+      <Text style={styles.breadcrumbSep}>/</Text>
+      <Text style={styles.breadcrumbCurrent}>Continents</Text>
+    </View>
+  );
 }
 
-interface Section {
-  title: string;
-  data: CityRow[];
+// ── Continent card ──────────────────────────────────────────
+
+function ContinentCard({
+  continent,
+  onPress,
+}: {
+  continent: Continent;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+    >
+      <Image
+        source={{ uri: continent.imageUrl }}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        transition={200}
+      />
+      <LinearGradient
+        colors={['transparent', 'transparent', 'rgba(0,0,0,0.65)']}
+        locations={[0, 0.3, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.cardContent}>
+        <Text style={styles.cardLabel}>{continent.label}</Text>
+        <Text style={styles.cardTagline}>{continent.tagline}</Text>
+      </View>
+    </Pressable>
+  );
 }
+
+// ── Screen ──────────────────────────────────────────────────
 
 export default function AllDestinationsScreen() {
   const router = useRouter();
-  const [countries, setCountries] = useState<Country[]>([]);
-  const [sections, setSections] = useState<Section[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-
-  useEffect(() => {
-    async function load() {
-      setLoading(true);
-      try {
-        const [allCountries, allCities] = await Promise.all([
-          getCountries(),
-          getAllCities(),
-        ]);
-
-        setCountries(allCountries);
-
-        // Build country lookup
-        const countryMap = new Map<string, Country>();
-        for (const c of allCountries) {
-          countryMap.set(c.id, c);
-        }
-
-        // Group cities by country
-        const grouped = new Map<string, CityRow[]>();
-        for (const city of allCities) {
-          const country = countryMap.get(city.countryId);
-          if (!country) continue;
-          const row: CityRow = {
-            ...city,
-            countryName: country.name,
-            countrySlug: country.slug,
-          };
-          const existing = grouped.get(country.name);
-          if (existing) {
-            existing.push(row);
-          } else {
-            grouped.set(country.name, [row]);
-          }
-        }
-
-        // Sort by country order then build sections
-        const sortedCountryNames = allCountries.map((c) => c.name);
-        const sectionList: Section[] = [];
-        for (const name of sortedCountryNames) {
-          const cities = grouped.get(name);
-          if (cities && cities.length > 0) {
-            sectionList.push({ title: name, data: cities });
-          }
-        }
-        setSections(sectionList);
-      } catch (err) {
-        Sentry.captureException(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    load();
-  }, []);
-
-  const filteredSections = useMemo(() => {
-    if (!search.trim()) return sections;
-    const q = search.toLowerCase();
-    return sections
-      .map((section) => ({
-        ...section,
-        data: section.data.filter(
-          (c) =>
-            c.name.toLowerCase().includes(q) ||
-            c.countryName.toLowerCase().includes(q)
-        ),
-      }))
-      .filter((s) => s.data.length > 0);
-  }, [sections, search]);
-
-  const filteredCountries = useMemo(() => {
-    if (!search.trim()) return countries;
-    const q = search.toLowerCase();
-    return countries.filter((c) => c.name.toLowerCase().includes(q));
-  }, [countries, search]);
-
-  const renderSectionHeader = useCallback(
-    ({ section }: { section: Section }) => (
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionHeaderText}>{section.title}</Text>
-        <Text style={styles.sectionHeaderCount}>
-          {section.data.length} {section.data.length === 1 ? 'city' : 'cities'}
-        </Text>
-      </View>
-    ),
-    []
-  );
-
-  const renderCity = useCallback(
-    ({ item }: { item: CityRow }) => (
-      <Pressable
-        style={({ pressed }) => [styles.cityItem, pressed && styles.pressed]}
-        onPress={() => router.push(`/(tabs)/discover/city/${item.slug}`)}
-      >
-        <Image
-          source={{ uri: item.heroImageUrl ?? undefined }}
-          style={styles.cityImage}
-          contentFit="cover"
-          transition={200}
-        />
-        <View style={styles.cityContent}>
-          <Text style={styles.cityName}>{item.name}</Text>
-          {item.shortBlurb && (
-            <Text style={styles.cityBlurb} numberOfLines={2}>
-              {item.shortBlurb}
-            </Text>
-          )}
-        </View>
-      </Pressable>
-    ),
-    [router]
-  );
-
-  const countriesHeader = useCallback(
-    () => (
-      <View style={styles.countriesSection}>
-        <Text style={styles.pageTitle}>Where do you want to go?</Text>
-        <Text style={styles.pageSubtitle}>
-          Countries, cities, and places across Southeast Asia and beyond
-        </Text>
-
-        {/* Search */}
-        <View style={styles.searchContainer}>
-          <Feather name="search" size={16} color={colors.textMuted} />
-          <TextInput
-            style={styles.searchInput}
-            value={search}
-            onChangeText={setSearch}
-            placeholder="Search destinations"
-            placeholderTextColor={colors.textMuted}
-            autoCorrect={false}
-          />
-          {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')} hitSlop={8}>
-              <Feather name="x" size={16} color={colors.textMuted} />
-            </Pressable>
-          )}
-        </View>
-
-        {/* Countries grid */}
-        {filteredCountries.length > 0 && (() => {
-          const [leftCol, rightCol] = toColumns(filteredCountries);
-          return (
-            <>
-              <Text style={styles.countriesSectionTitle}>Countries</Text>
-              <View style={styles.masonry}>
-                <View style={styles.masonryColumn}>
-                  {leftCol.map((country, i) => (
-                    <CountryCard
-                      key={country.id}
-                      country={country}
-                      index={i * 2}
-                      onPress={() =>
-                        router.push(`/(tabs)/discover/country/${country.slug}`)
-                      }
-                    />
-                  ))}
-                </View>
-                <View style={[styles.masonryColumn, styles.masonryColumnRight]}>
-                  {rightCol.map((country, i) => (
-                    <CountryCard
-                      key={country.id}
-                      country={country}
-                      index={i * 2 + 1}
-                      onPress={() =>
-                        router.push(`/(tabs)/discover/country/${country.slug}`)
-                      }
-                    />
-                  ))}
-                </View>
-              </View>
-            </>
-          );
-        })()}
-
-        {/* Cities divider */}
-        {filteredSections.length > 0 && (
-          <Text style={styles.countriesSectionTitle}>Cities</Text>
-        )}
-      </View>
-    ),
-    [filteredCountries, filteredSections.length, search, router]
-  );
 
   return (
     <AppScreen>
-      <AppHeader title="Destinations" />
-      <SectionList
-        sections={filteredSections}
-        renderItem={renderCity}
-        renderSectionHeader={renderSectionHeader}
-        keyExtractor={(item) => item.id}
-        ListHeaderComponent={countriesHeader}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        stickySectionHeadersEnabled={false}
-        ListEmptyComponent={
-          loading ? null : (
-            <View style={styles.empty}>
-              <Text style={styles.emptyText}>No destinations found</Text>
-            </View>
-          )
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
         }
+        rightComponent={<MenuButton />}
       />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scroll}
+      >
+        <Breadcrumb onBack={() => router.back()} />
+        <View style={styles.cardList}>
+          {CONTINENTS.map((c) => (
+            <ContinentCard
+              key={c.key}
+              continent={c}
+              onPress={() =>
+                router.push(`/(tabs)/discover/continent/${c.key}` as any)
+              }
+            />
+          ))}
+        </View>
+      </ScrollView>
     </AppScreen>
   );
 }
 
+// ── Styles ──────────────────────────────────────────────────
+
 const styles = StyleSheet.create({
-  list: {
+  headerLogo: {
+    height: 22,
+    width: 76,
+  },
+  scroll: {
     paddingBottom: spacing.xxxxl,
   },
-  countriesSection: {
-    paddingHorizontal: spacing.screenX,
-  },
-  pageTitle: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
-    color: colors.textPrimary,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xs,
-  },
-  pageSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-    lineHeight: 20,
-  },
-  searchContainer: {
+
+  // Breadcrumb
+  breadcrumb: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.screenX,
     gap: spacing.sm,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.lg,
   },
-  searchInput: {
-    flex: 1,
+  breadcrumbLink: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  breadcrumbSep: {
     fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-    paddingVertical: spacing.xs,
+    fontSize: 13,
+    color: colors.textMuted,
   },
-  countriesSectionTitle: {
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // Page
+  pageTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 18,
+    fontSize: 24,
     color: colors.textPrimary,
-    letterSpacing: -0.3,
-    marginBottom: spacing.md,
-    marginTop: spacing.xl,
+    paddingHorizontal: spacing.screenX,
+    marginBottom: spacing.xl,
   },
-  masonry: {
-    flexDirection: 'row',
-    gap: spacing.md,
+
+  // Cards
+  cardList: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.lg,
   },
-  masonryColumn: {
-    flex: 1,
-    gap: spacing.md,
-  },
-  masonryColumnRight: {
-    paddingTop: spacing.xxxl,
+  card: {
+    width: '100%',
+    height: 180,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    backgroundColor: colors.neutralFill,
   },
   pressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
   },
-
-  // Section headers (country names in city list)
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
-    backgroundColor: colors.background,
+  cardContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.lg,
   },
-  sectionHeaderText: {
+  cardLabel: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
+    fontSize: 22,
+    color: '#FFFFFF',
   },
-  sectionHeaderCount: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-
-  // City items
-  cityItem: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.sm,
-  },
-  cityImage: {
-    width: 72,
-    height: 72,
-    borderRadius: radius.card,
-    backgroundColor: colors.neutralFill,
-  },
-  cityContent: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  cityName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  cityBlurb: {
+  cardTagline: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.textSecondary,
+    color: 'rgba(255,255,255,0.85)',
     marginTop: spacing.xs,
-    lineHeight: 18,
-  },
-  empty: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxxl,
-  },
-  emptyText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
   },
 });

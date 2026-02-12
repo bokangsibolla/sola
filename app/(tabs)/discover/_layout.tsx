@@ -13,6 +13,7 @@ export default function DiscoverLayout() {
       <Stack.Screen name="see-all" />
       <Stack.Screen name="all-countries" />
       <Stack.Screen name="all-destinations" />
+      <Stack.Screen name="continent/[name]" />
       <Stack.Screen name="all-activities" />
       <Stack.Screen name="country/[slug]" />
       <Stack.Screen name="country/cities" />
