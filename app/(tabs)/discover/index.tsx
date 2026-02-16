@@ -28,8 +28,7 @@ import { colors, fonts, spacing, radius, pressedState } from '@/constants/design
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CITY_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2.3;
 const CITY_CARD_HEIGHT = CITY_CARD_WIDTH * 1.3;
-const CONTAINER_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
-const COLLECTION_GRID_CARD_WIDTH = Math.floor((CONTAINER_WIDTH - spacing.md) / 2);
+// No longer need explicit card width — grid cards use flex: 1 in row containers
 
 // ── Inline components ──────────────────────────────────────
 
@@ -222,6 +221,12 @@ export default function DiscoverScreen() {
     collections.find((c) => c.isFeatured) ?? collections[0] ?? null;
   const gridCollections = collections.filter((c) => c !== featuredCollection);
 
+  // Pair grid collections into rows of 2 (avoids flexWrap issues in RN)
+  const gridRows: ExploreCollectionWithItems[][] = [];
+  for (let i = 0; i < gridCollections.length; i += 2) {
+    gridRows.push(gridCollections.slice(i, i + 2));
+  }
+
   return (
     <AppScreen>
       <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
@@ -294,21 +299,24 @@ export default function DiscoverScreen() {
               />
             )}
 
-            {gridCollections.length > 0 && (
-              <View style={styles.collectionsGrid}>
-                {gridCollections.map((collection) => (
-                  <CollectionGridCard
-                    key={collection.id}
-                    collection={collection}
-                    onPress={() =>
-                      router.push(
-                        `/(tabs)/discover/collection/${collection.slug}`,
-                      )
-                    }
-                  />
-                ))}
-              </View>
-            )}
+            {gridRows.length > 0 &&
+              gridRows.map((row, rowIdx) => (
+                <View key={rowIdx} style={styles.gridRow}>
+                  {row.map((collection) => (
+                    <CollectionGridCard
+                      key={collection.id}
+                      collection={collection}
+                      onPress={() =>
+                        router.push(
+                          `/(tabs)/discover/collection/${collection.slug}`,
+                        )
+                      }
+                    />
+                  ))}
+                  {/* Fill empty slot if odd number */}
+                  {row.length === 1 && <View style={styles.gridSpacer} />}
+                </View>
+              ))}
           </View>
         )}
       </ScrollView>
@@ -462,15 +470,17 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Collections — 2-col grid
-  collectionsGrid: {
+  // Collections — 2-col grid (explicit rows, no flexWrap)
+  gridRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
     gap: spacing.md,
     marginTop: spacing.md,
   },
+  gridSpacer: {
+    flex: 1,
+  },
   collectionGridItem: {
-    width: COLLECTION_GRID_CARD_WIDTH,
+    flex: 1,
     height: 160,
     borderRadius: 12,
     overflow: 'hidden',

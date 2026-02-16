@@ -1,7 +1,8 @@
 // app/(tabs)/discover/all-destinations.tsx
-// Browse all destinations — flat list of countries with city chips
+// Browse all destinations — visual country cards with city chips
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as Sentry from '@sentry/react-native';
@@ -11,7 +12,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { getCountries, getCitiesByCountry } from '@/data/api';
 import type { Country, City } from '@/data/types';
-import { colors, fonts, spacing, pressedState } from '@/constants/design';
+import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
 interface CountryWithCities {
   country: Country;
@@ -84,22 +85,31 @@ export default function AllDestinationsScreen() {
         <ScreenHeader title="Browse destinations" />
       </View>
 
+      {/* Breadcrumb */}
+      <View style={styles.breadcrumb}>
+        <Pressable onPress={() => router.back()} hitSlop={8}>
+          <Text style={styles.breadcrumbLink}>Discover</Text>
+        </Pressable>
+        <Text style={styles.breadcrumbSep}>/</Text>
+        <Text style={styles.breadcrumbCurrent}>All destinations</Text>
+      </View>
+
       <FlatList
         data={data}
         keyExtractor={(item) => item.country.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <CountryRow item={item} router={router} />
+          <CountryCard item={item} router={router} />
         )}
       />
     </AppScreen>
   );
 }
 
-// ── Country row ─────────────────────────────────────────────
+// ── Country card ────────────────────────────────────────────
 
-function CountryRow({
+function CountryCard({
   item,
   router,
 }: {
@@ -111,15 +121,26 @@ function CountryRow({
   return (
     <Pressable
       onPress={() => router.push(`/(tabs)/discover/country/${country.slug}`)}
-      style={({ pressed }) => [styles.countryRow, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
     >
-      <View style={styles.countryContent}>
-        <View style={styles.countryNameRow}>
-          <Text style={styles.countryName}>{country.name}</Text>
-          <Feather name="chevron-right" size={18} color={colors.textMuted} />
+      {/* Country image */}
+      <Image
+        source={{ uri: country.heroImageUrl ?? undefined }}
+        style={styles.cardImage}
+        contentFit="cover"
+        transition={200}
+      />
+
+      {/* Text content */}
+      <View style={styles.cardBody}>
+        <View style={styles.cardNameRow}>
+          <Text style={styles.cardName} numberOfLines={1}>
+            {country.name}
+          </Text>
+          <Feather name="chevron-right" size={16} color={colors.textMuted} />
         </View>
         {cities.length > 0 && (
-          <Text style={styles.cityList} numberOfLines={2}>
+          <Text style={styles.cardCities} numberOfLines={1}>
             {cities.map((c) => c.name).join(' · ')}
           </Text>
         )}
@@ -134,36 +155,74 @@ const styles = StyleSheet.create({
   headerWrap: {
     paddingHorizontal: spacing.screenX,
   },
+
+  // Breadcrumb
+  breadcrumb: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  breadcrumbLink: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  breadcrumbSep: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  breadcrumbCurrent: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+
+  // List
   listContent: {
     paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
     paddingBottom: spacing.xxxxl,
+    gap: spacing.md,
   },
-  countryRow: {
-    minHeight: 44,
-    justifyContent: 'center',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderSubtle,
-    paddingVertical: spacing.lg,
+
+  // Country card — image left, text right
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
   },
   pressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
   },
-  countryContent: {
+  cardImage: {
+    width: 80,
+    height: 80,
+    backgroundColor: colors.neutralFill,
+  },
+  cardBody: {
+    flex: 1,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
     gap: spacing.xs,
   },
-  countryNameRow: {
+  cardNameRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  countryName: {
+  cardName: {
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: colors.textPrimary,
+    flex: 1,
+    marginRight: spacing.sm,
   },
-  cityList: {
+  cardCities: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textSecondary,
