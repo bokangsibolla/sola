@@ -7,7 +7,9 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import * as Sentry from '@sentry/react-native';
 import AppScreen from '@/components/AppScreen';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import AppHeader from '@/components/AppHeader';
+import MenuButton from '@/components/MenuButton';
+import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { getCountries, getCitiesByCountry } from '@/data/api';
@@ -60,9 +62,22 @@ export default function AllDestinationsScreen() {
   if (loading) {
     return (
       <AppScreen>
-        <View style={styles.headerWrap}>
-          <ScreenHeader title="Browse destinations" />
-        </View>
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <View style={styles.headerRight}>
+            <NotificationButton />
+            <MenuButton />
+          </View>
+        }
+      />
         <LoadingScreen />
       </AppScreen>
     );
@@ -71,9 +86,22 @@ export default function AllDestinationsScreen() {
   if (error || data.length === 0) {
     return (
       <AppScreen>
-        <View style={styles.headerWrap}>
-          <ScreenHeader title="Browse destinations" />
-        </View>
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <View style={styles.headerRight}>
+            <NotificationButton />
+            <MenuButton />
+          </View>
+        }
+      />
         <ErrorScreen message={error ?? 'No destinations found'} onRetry={load} />
       </AppScreen>
     );
@@ -81,9 +109,22 @@ export default function AllDestinationsScreen() {
 
   return (
     <AppScreen>
-      <View style={styles.headerWrap}>
-        <ScreenHeader title="Browse destinations" />
-      </View>
+      <AppHeader
+        title=""
+        leftComponent={
+          <Image
+            source={require('@/assets/images/sola-logo.png')}
+            style={styles.headerLogo}
+            contentFit="contain"
+          />
+        }
+        rightComponent={
+          <View style={styles.headerRight}>
+            <NotificationButton />
+            <MenuButton />
+          </View>
+        }
+      />
 
       {/* Breadcrumb */}
       <View style={styles.breadcrumb}>
@@ -152,8 +193,14 @@ function CountryCard({
 // ── Styles ──────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  headerWrap: {
-    paddingHorizontal: spacing.screenX,
+  headerLogo: {
+    height: 22,
+    width: 76,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
   },
 
   // Breadcrumb

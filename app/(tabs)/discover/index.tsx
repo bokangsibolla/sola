@@ -54,11 +54,19 @@ function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel="Browse destinations"
     >
-      <View>
-        <Text style={styles.browseTitle}>Browse destinations</Text>
-        <Text style={styles.browseSubtitle}>Explore by continent</Text>
+      <Image
+        source={require('@/assets/images/pexels-driving.png')}
+        style={styles.browseImage}
+        contentFit="cover"
+        transition={200}
+      />
+      <View style={styles.browseBody}>
+        <View>
+          <Text style={styles.browseTitle}>Browse destinations</Text>
+          <Text style={styles.browseSubtitle}>All countries and cities</Text>
+        </View>
+        <Feather name="chevron-right" size={18} color={colors.textMuted} />
       </View>
-      <Feather name="chevron-right" size={20} color={colors.textMuted} />
     </Pressable>
   );
 }
@@ -385,15 +393,25 @@ const styles = StyleSheet.create({
   browseCard: {
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'center',
+    overflow: 'hidden',
+  },
+  browseImage: {
+    width: 80,
+    height: 80,
+  },
+  browseBody: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
   },
   browseTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 17,
+    fontSize: 16,
     color: colors.textPrimary,
   },
   browseSubtitle: {
