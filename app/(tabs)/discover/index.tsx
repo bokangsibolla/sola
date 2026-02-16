@@ -46,7 +46,16 @@ function CompactSearchBar({ onPress }: { onPress: () => void }) {
   );
 }
 
+// Rotate cover image daily — all bundled locally, zero network cost
+const BROWSE_IMAGES = [
+  require('@/assets/images/pexels-mountain-hiking.png'), // paddleboard turquoise water
+  require('@/assets/images/pexels-hiking.png'),           // sailboat open ocean
+  require('@/assets/images/pexels-sailing.png'),          // mountain trail hiking
+];
+
 function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {
+  const imageIndex = new Date().getDate() % BROWSE_IMAGES.length;
+
   return (
     <Pressable
       style={({ pressed }) => [styles.browseCard, pressed && styles.pressed]}
@@ -55,17 +64,23 @@ function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {
       accessibilityLabel="Browse destinations"
     >
       <Image
-        source={require('@/assets/images/pexels-driving.png')}
-        style={styles.browseImage}
+        source={BROWSE_IMAGES[imageIndex]}
+        style={StyleSheet.absoluteFillObject}
         contentFit="cover"
         transition={200}
       />
-      <View style={styles.browseBody}>
+      <LinearGradient
+        colors={['transparent', 'rgba(0,0,0,0.55)']}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.browseOverlay}>
         <View>
           <Text style={styles.browseTitle}>Browse destinations</Text>
-          <Text style={styles.browseSubtitle}>All countries and cities</Text>
+          <Text style={styles.browseSubtitle}>Explore by continent</Text>
         </View>
-        <Feather name="chevron-right" size={18} color={colors.textMuted} />
+        <View style={styles.browseArrow}>
+          <Feather name="arrow-right" size={16} color="#FFFFFF" />
+        </View>
       </View>
     </Pressable>
   );
@@ -389,36 +404,41 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
   },
 
-  // Browse destinations card
+  // Browse destinations card — full-width hero with image overlay
   browseCard: {
-    backgroundColor: colors.neutralFill,
+    height: 180,
     borderRadius: radius.card,
-    flexDirection: 'row',
-    alignItems: 'center',
     overflow: 'hidden',
+    backgroundColor: colors.neutralFill,
   },
-  browseImage: {
-    width: 80,
-    height: 80,
-  },
-  browseBody: {
-    flex: 1,
+  browseOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-end',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
+    padding: spacing.lg,
   },
   browseTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
+    fontSize: 18,
+    color: '#FFFFFF',
   },
   browseSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 2,
+    color: 'rgba(255,255,255,0.8)',
+    marginTop: spacing.xs,
+  },
+  browseArrow: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Recommended cities carousel
