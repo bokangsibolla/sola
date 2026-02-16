@@ -17,13 +17,13 @@ import PrimaryButton from '@/components/ui/PrimaryButton';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const heroImages = [
+  require('@/assets/images/solo-golden-field.jpg'),
+  require('@/assets/images/solo-cliff-fjord.jpg'),
+  require('@/assets/images/solo-canyon-mist.jpg'),
+  require('@/assets/images/solo-sand-dunes.jpg'),
+  require('@/assets/images/solo-canyon-relax.jpg'),
+  require('@/assets/images/solo-bali-palms.jpg'),
   require('@/assets/images/pexels-driving.png'),
-  require('@/assets/images/pexels-hiking.png'),
-  require('@/assets/images/pexels-mountain-cliff.png'),
-  require('@/assets/images/pexels-mountain-hiking.png'),
-  require('@/assets/images/pexels-paddleboarding.png'),
-  require('@/assets/images/pexels-sailing.png'),
-  require('@/assets/images/welcome-background.png'),
 ];
 
 const TAGLINE = 'Because women travel differently.';

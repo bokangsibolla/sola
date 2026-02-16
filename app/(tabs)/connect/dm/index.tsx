@@ -61,7 +61,7 @@ export default function DMListScreen() {
           {/* Warm photo with soft overlay */}
           <View style={styles.emptyImageWrapper}>
             <Image
-              source={require('@/assets/images/pexels-paddleboarding.png')}
+              source={require('@/assets/images/solo-canyon-relax.jpg')}
               style={styles.emptyImage}
               contentFit="cover"
               transition={300}

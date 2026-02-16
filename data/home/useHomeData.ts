@@ -1,37 +1,64 @@
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import {
-  fetchTripBlock,
+  fetchHeroState,
   fetchPersonalizedCities,
   fetchActiveTravelUpdate,
-  fetchCommunityHighlights,
+  fetchCommunityHighlightsVisual,
+  fetchUserFirstName,
+  fetchSavedPlacesPreview,
 } from './homeApi';
 import type {
-  TripBlockState,
+  HeroState,
   PersonalizedCity,
   TravelUpdate,
-  CommunityHighlightThread,
+  CommunityHighlightThreadVisual,
+  SavedPlacePreview,
 } from './types';
 
 interface HomeData {
-  tripBlock: TripBlockState;
+  firstName: string | null;
+  heroState: HeroState;
   personalizedCities: PersonalizedCity[];
   travelUpdate: TravelUpdate | null;
-  communityHighlights: CommunityHighlightThread[];
+  communityHighlights: CommunityHighlightThreadVisual[];
+  savedPlaces: SavedPlacePreview[];
   loading: boolean;
   refetch: () => void;
 }
+
+const DEFAULT_HERO: HeroState = {
+  kind: 'featured',
+  city: {
+    id: '',
+    name: 'Bangkok',
+    countryName: 'Thailand',
+    heroImageUrl: '',
+    slug: 'bangkok',
+    shortBlurb: 'Temples, street food, and a solo traveler favorite',
+    timezone: 'Asia/Bangkok',
+  },
+  upcomingTrip: null,
+  upcomingCityImageUrl: null,
+};
 
 export function useHomeData(): HomeData {
   const { userId } = useAuth();
 
   const {
-    data: tripBlock,
-    loading: tripLoading,
-    refetch: refetchTrip,
-  } = useData<TripBlockState>(
-    () => (userId ? fetchTripBlock(userId) : Promise.resolve({ kind: 'none' as const })),
-    ['home-trip', userId ?? ''],
+    data: firstName,
+  } = useData<string | null>(
+    () => (userId ? fetchUserFirstName(userId) : Promise.resolve(null)),
+    ['home-first-name', userId ?? ''],
+  );
+
+  const {
+    data: heroState,
+    loading: heroLoading,
+    refetch: refetchHero,
+  } = useData<HeroState>(
+    () => (userId ? fetchHeroState(userId) : Promise.resolve(DEFAULT_HERO)),
+    ['home-hero', userId ?? ''],
   );
 
   const {
@@ -49,41 +76,51 @@ export function useHomeData(): HomeData {
     refetch: refetchUpdate,
   } = useData<TravelUpdate | null>(
     () => {
-      if (!tripBlock || tripBlock.kind === 'none') {
+      if (!heroState || heroState.kind === 'featured') {
         return fetchActiveTravelUpdate();
       }
-      // Extract country IDs from trip stops
-      const countryIds = tripBlock.trip.stops
+      const countryIds = heroState.trip.stops
         .map((s) => s.countryIso2)
         .filter(Boolean);
       return fetchActiveTravelUpdate(countryIds.length > 0 ? countryIds : undefined);
     },
-    ['home-update', userId ?? '', tripBlock?.kind ?? ''],
+    ['home-update', userId ?? '', heroState?.kind ?? ''],
   );
 
   const {
     data: communityHighlights,
     loading: communityLoading,
     refetch: refetchCommunity,
-  } = useData<CommunityHighlightThread[]>(
-    () => (userId ? fetchCommunityHighlights(userId, 2) : Promise.resolve([])),
+  } = useData<CommunityHighlightThreadVisual[]>(
+    () => (userId ? fetchCommunityHighlightsVisual(userId, 3) : Promise.resolve([])),
     ['home-community', userId ?? ''],
   );
 
-  const loading = tripLoading || citiesLoading || updateLoading || communityLoading;
+  const {
+    data: savedPlaces,
+    refetch: refetchSaved,
+  } = useData<SavedPlacePreview[]>(
+    () => (userId ? fetchSavedPlacesPreview(userId, 4) : Promise.resolve([])),
+    ['home-saved-preview', userId ?? ''],
+  );
+
+  const loading = heroLoading || citiesLoading || updateLoading || communityLoading;
 
   const refetch = () => {
-    refetchTrip();
+    refetchHero();
     refetchCities();
     refetchUpdate();
     refetchCommunity();
+    refetchSaved();
   };
 
   return {
-    tripBlock: tripBlock ?? { kind: 'none' },
+    firstName: firstName ?? null,
+    heroState: heroState ?? DEFAULT_HERO,
     personalizedCities: personalizedCities ?? [],
     travelUpdate: travelUpdate ?? null,
     communityHighlights: communityHighlights ?? [],
+    savedPlaces: savedPlaces ?? [],
     loading,
     refetch,
   };

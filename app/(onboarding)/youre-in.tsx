@@ -89,7 +89,7 @@ export default function YoureInScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('@/assets/images/pexels-sailing.png')}
+        source={require('@/assets/images/solo-golden-field.jpg')}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
       />

@@ -48,9 +48,9 @@ function CompactSearchBar({ onPress }: { onPress: () => void }) {
 
 // Rotate cover image daily — all bundled locally, zero network cost
 const BROWSE_IMAGES = [
-  require('@/assets/images/pexels-mountain-hiking.png'), // paddleboard turquoise water
-  require('@/assets/images/pexels-hiking.png'),           // sailboat open ocean
-  require('@/assets/images/pexels-sailing.png'),          // mountain trail hiking
+  require('@/assets/images/solo-canyon-mist.jpg'),
+  require('@/assets/images/solo-cliff-fjord.jpg'),
+  require('@/assets/images/solo-sand-dunes.jpg'),
 ];
 
 function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {

@@ -39,7 +39,7 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
       {/* Hero image with overlay */}
       <View style={styles.heroWrapper}>
         <Image
-          source={require('@/assets/images/pexels-sailing.png')}
+          source={require('@/assets/images/solo-canyon-mist.jpg')}
           style={styles.heroImage}
           contentFit="cover"
           transition={300}

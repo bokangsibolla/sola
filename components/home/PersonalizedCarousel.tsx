@@ -1,5 +1,5 @@
 import React from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -8,74 +8,77 @@ import type { PersonalizedCity } from '@/data/home/types';
 
 interface PersonalizedCarouselProps {
   cities: PersonalizedCity[];
+  isPersonalized?: boolean;
 }
 
-const CARD_WIDTH = 280;
-const CARD_HEIGHT = 180;
+const SCREEN_WIDTH = Dimensions.get('window').width;
+const CARD_GAP = spacing.sm;
+const CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - CARD_GAP) / 2;
+const CARD_HEIGHT = 160;
 
-export function PersonalizedCarousel({ cities }: PersonalizedCarouselProps) {
+function getReasonLine(city: PersonalizedCity): string | null {
+  if (city.soloLevel === 'beginner') return 'Great for first-timers';
+  if (city.bestFor) return city.bestFor;
+  return null;
+}
+
+export function PersonalizedCarousel({ cities, isPersonalized = false }: PersonalizedCarouselProps) {
   const router = useRouter();
 
   if (cities.length === 0) return null;
 
+  const title = isPersonalized ? 'Recommended for you' : 'Popular with solo women';
+
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Recommended for you</Text>
+      <Text style={styles.sectionTitle}>{title}</Text>
       <FlatList
         data={cities}
         keyExtractor={(item) => item.cityId}
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <Pressable
-            style={({ pressed }) => [
-              styles.card,
-              pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
-            ]}
-            onPress={() => router.push(`/discover/city/${item.slug}` as any)}
-          >
-            {item.heroImageUrl ? (
-              <Image
-                source={{ uri: item.heroImageUrl }}
-                style={styles.image}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View style={[styles.image, styles.placeholder]} />
-            )}
-            <LinearGradient
-              colors={['transparent', 'rgba(0,0,0,0.6)']}
-              style={styles.gradient}
-            />
-            <View style={styles.overlay}>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {item.cityName}
-              </Text>
-              <Text style={styles.countryName} numberOfLines={1}>
-                {item.countryName}
-              </Text>
-              {(item.planningCount > 0 || item.activityCount > 0) && (
-                <View style={styles.countRow}>
-                  {item.planningCount > 0 && (
-                    <Text style={styles.countText}>
-                      {item.planningCount} planning
-                    </Text>
-                  )}
-                  {item.planningCount > 0 && item.activityCount > 0 && (
-                    <Text style={styles.countDot}>&middot;</Text>
-                  )}
-                  {item.activityCount > 0 && (
-                    <Text style={styles.countText}>
-                      {item.activityCount} posts
-                    </Text>
-                  )}
-                </View>
+        renderItem={({ item }) => {
+          const reasonLine = getReasonLine(item);
+
+          return (
+            <Pressable
+              style={({ pressed }) => [
+                styles.card,
+                pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
+              ]}
+              onPress={() => router.push(`/discover/city/${item.slug}` as any)}
+            >
+              {item.heroImageUrl ? (
+                <Image
+                  source={{ uri: item.heroImageUrl }}
+                  style={styles.image}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={[styles.image, styles.placeholder]} />
               )}
-            </View>
-          </Pressable>
-        )}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.65)']}
+                style={styles.gradient}
+              />
+              <View style={styles.overlay}>
+                <Text style={styles.cityName} numberOfLines={1}>
+                  {item.cityName}
+                </Text>
+                <Text style={styles.countryName} numberOfLines={1}>
+                  {item.countryName}
+                </Text>
+                {reasonLine && (
+                  <Text style={styles.reasonLine} numberOfLines={1}>
+                    {reasonLine}
+                  </Text>
+                )}
+              </View>
+            </Pressable>
+          );
+        }}
       />
     </View>
   );
@@ -87,15 +90,15 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
-    lineHeight: 28,
+    fontSize: 18,
+    lineHeight: 24,
     color: colors.textPrimary,
     paddingHorizontal: spacing.screenX,
     marginBottom: spacing.md,
   },
   listContent: {
     paddingHorizontal: spacing.screenX,
-    gap: spacing.md,
+    gap: CARD_GAP,
   },
   card: {
     width: CARD_WIDTH,
@@ -118,37 +121,26 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    padding: spacing.lg,
+    padding: spacing.md,
   },
   cityName: {
     fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 20,
     color: colors.background,
   },
   countryName: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 16,
     color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
+    marginTop: 1,
   },
-  countRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-    gap: spacing.xs,
-  },
-  countText: {
+  reasonLine: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 14,
     color: 'rgba(255,255,255,0.7)',
-  },
-  countDot: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    lineHeight: 16,
-    color: 'rgba(255,255,255,0.5)',
+    marginTop: spacing.xs,
   },
 });
