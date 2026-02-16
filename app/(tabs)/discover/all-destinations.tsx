@@ -1,41 +1,52 @@
 // app/(tabs)/discover/all-destinations.tsx
-// Unified Browse Destinations — continent tabs → country rows → city chips
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+// Browse all destinations — flat list of countries with city chips
+import React, { useCallback, useEffect, useState } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
+import * as Sentry from '@sentry/react-native';
 import AppScreen from '@/components/AppScreen';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { fetchBrowseData } from '@/data/discover/discoverApi';
-import { CONTINENT_LABELS, CONTINENT_ORDER } from '@/data/discover/types';
-import type { BrowseCountry, ContinentKey } from '@/data/discover/types';
+import { getCountries, getCitiesByCountry } from '@/data/api';
+import type { Country, City } from '@/data/types';
 import { colors, fonts, spacing, pressedState } from '@/constants/design';
 
-// ── Screen ──────────────────────────────────────────────────
+interface CountryWithCities {
+  country: Country;
+  cities: City[];
+}
 
 export default function AllDestinationsScreen() {
   const router = useRouter();
-  const listRef = useRef<FlatList>(null);
-
-  const [browseData, setBrowseData] = useState<Map<ContinentKey, BrowseCountry[]> | null>(null);
+  const [data, setData] = useState<CountryWithCities[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedContinent, setSelectedContinent] = useState<ContinentKey | null>(null);
 
   const load = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await fetchBrowseData();
-      setBrowseData(data);
 
-      // Select the first continent that has data
-      const firstWithData = CONTINENT_ORDER.find((key) => data.has(key)) ?? null;
-      setSelectedContinent(firstWithData);
-    } catch {
+      const countries = await getCountries();
+
+      // Fetch cities for each country in parallel
+      const results = await Promise.all(
+        countries.map(async (country) => {
+          try {
+            const cities = await getCitiesByCountry(country.id);
+            return { country, cities };
+          } catch {
+            return { country, cities: [] as City[] };
+          }
+        }),
+      );
+
+      setData(results);
+    } catch (e) {
       setError('Could not load destinations. Please try again.');
+      Sentry.captureException(e);
     } finally {
       setLoading(false);
     }
@@ -44,28 +55,6 @@ export default function AllDestinationsScreen() {
   useEffect(() => {
     load();
   }, [load]);
-
-  // Continents that actually have data, in display order
-  const availableContinents = useMemo(() => {
-    if (!browseData) return [];
-    return CONTINENT_ORDER.filter((key) => browseData.has(key));
-  }, [browseData]);
-
-  // Countries for the selected continent
-  const countries = useMemo(() => {
-    if (!browseData || !selectedContinent) return [];
-    return browseData.get(selectedContinent) ?? [];
-  }, [browseData, selectedContinent]);
-
-  const handleContinentPress = useCallback(
-    (continent: ContinentKey) => {
-      setSelectedContinent(continent);
-      listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    },
-    [],
-  );
-
-  // ── Loading / error states ──────────────────────────────────
 
   if (loading) {
     return (
@@ -78,18 +67,16 @@ export default function AllDestinationsScreen() {
     );
   }
 
-  if (error || !browseData) {
+  if (error || data.length === 0) {
     return (
       <AppScreen>
         <View style={styles.headerWrap}>
           <ScreenHeader title="Browse destinations" />
         </View>
-        <ErrorScreen message={error ?? 'Something went wrong'} onRetry={load} />
+        <ErrorScreen message={error ?? 'No destinations found'} onRetry={load} />
       </AppScreen>
     );
   }
-
-  // ── Main content ────────────────────────────────────────────
 
   return (
     <AppScreen>
@@ -97,51 +84,14 @@ export default function AllDestinationsScreen() {
         <ScreenHeader title="Browse destinations" />
       </View>
 
-      {/* Continent tabs */}
-      <View style={styles.tabBarContainer}>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.tabBar}
-        >
-          {availableContinents.map((key) => {
-            const isSelected = key === selectedContinent;
-            return (
-              <Pressable
-                key={key}
-                onPress={() => handleContinentPress(key)}
-                style={styles.tab}
-              >
-                <Text
-                  style={[
-                    styles.tabText,
-                    isSelected && styles.tabTextSelected,
-                  ]}
-                >
-                  {CONTINENT_LABELS[key]}
-                </Text>
-                {isSelected && <View style={styles.tabUnderline} />}
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      </View>
-
-      {/* Country list */}
       <FlatList
-        ref={listRef}
-        data={countries}
-        keyExtractor={(item) => item.id}
+        data={data}
+        keyExtractor={(item) => item.country.id}
         contentContainerStyle={styles.listContent}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
-          <CountryRow country={item} router={router} />
+          <CountryRow item={item} router={router} />
         )}
-        ListEmptyComponent={
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No destinations yet</Text>
-          </View>
-        }
       />
     </AppScreen>
   );
@@ -149,12 +99,15 @@ export default function AllDestinationsScreen() {
 
 // ── Country row ─────────────────────────────────────────────
 
-interface CountryRowProps {
-  country: BrowseCountry;
+function CountryRow({
+  item,
+  router,
+}: {
+  item: CountryWithCities;
   router: ReturnType<typeof useRouter>;
-}
+}) {
+  const { country, cities } = item;
 
-function CountryRow({ country, router }: CountryRowProps) {
   return (
     <Pressable
       onPress={() => router.push(`/(tabs)/discover/country/${country.slug}`)}
@@ -165,24 +118,10 @@ function CountryRow({ country, router }: CountryRowProps) {
           <Text style={styles.countryName}>{country.name}</Text>
           <Feather name="chevron-right" size={18} color={colors.textMuted} />
         </View>
-        {country.cities.length > 0 && (
-          <View style={styles.cityChips}>
-            {country.cities.map((city, index) => (
-              <React.Fragment key={city.id}>
-                {index > 0 && (
-                  <Text style={styles.citySeparator}>{' \u00B7 '}</Text>
-                )}
-                <Pressable
-                  onPress={() =>
-                    router.push(`/(tabs)/discover/city/${city.slug}`)
-                  }
-                  hitSlop={4}
-                >
-                  <Text style={styles.cityName}>{city.name}</Text>
-                </Pressable>
-              </React.Fragment>
-            ))}
-          </View>
+        {cities.length > 0 && (
+          <Text style={styles.cityList} numberOfLines={2}>
+            {cities.map((c) => c.name).join(' · ')}
+          </Text>
         )}
       </View>
     </Pressable>
@@ -195,40 +134,9 @@ const styles = StyleSheet.create({
   headerWrap: {
     paddingHorizontal: spacing.screenX,
   },
-
-  // Tab bar
-  tabBarContainer: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.borderSubtle,
-  },
-  tabBar: {
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.xl,
-  },
-  tab: {
-    paddingVertical: spacing.md,
-    alignItems: 'center',
-  },
-  tabText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  tabTextSelected: {
-    color: colors.textPrimary,
-  },
-  tabUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: colors.orange,
-  },
-
-  // Country list
   listContent: {
     paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.md,
     paddingBottom: spacing.xxxxl,
   },
   countryRow: {
@@ -255,30 +163,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  cityChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    alignItems: 'center',
-  },
-  citySeparator: {
+  cityList: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textSecondary,
-  },
-  cityName: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-
-  // Empty state
-  emptyContainer: {
-    paddingTop: spacing.xxxl,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
+    lineHeight: 18,
   },
 });

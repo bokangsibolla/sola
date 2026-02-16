@@ -29,7 +29,7 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 const CITY_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2.3;
 const CITY_CARD_HEIGHT = CITY_CARD_WIDTH * 1.3;
 const CONTAINER_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
-const COLLECTION_GRID_CARD_WIDTH = (CONTAINER_WIDTH - spacing.md) / 2;
+const COLLECTION_GRID_CARD_WIDTH = Math.floor((CONTAINER_WIDTH - spacing.md) / 2);
 
 // ── Inline components ──────────────────────────────────────
 
@@ -162,11 +162,11 @@ function CollectionGridCard({
         locations={[0, 0.3, 1]}
         style={StyleSheet.absoluteFillObject}
       />
-      <View style={styles.collectionCardContent}>
-        <Text style={styles.collectionGridTitle} numberOfLines={2}>
+      <View style={styles.collectionGridContent}>
+        <Text style={styles.collectionGridTitle} numberOfLines={1}>
           {collection.title}
         </Text>
-        <Text style={styles.collectionCardCount}>
+        <Text style={styles.collectionCardCount} numberOfLines={1}>
           {collection.items.length}{' '}
           {collection.items.length === 1 ? 'destination' : 'destinations'}
         </Text>
@@ -476,10 +476,17 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
   },
+  collectionGridContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.md,
+  },
   collectionGridTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
+    fontSize: 14,
+    lineHeight: 20,
     color: '#FFFFFF',
   },
 });
