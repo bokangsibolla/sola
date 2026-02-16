@@ -221,6 +221,10 @@ export interface Place {
   physicalLevel: 'easy' | 'moderate' | 'challenging' | null;
   badgeLabel: string | null;
   isFeatured: boolean;
+  // Activity detail structured fields
+  pickupIncluded: boolean | null;
+  bookAheadText: string | null;
+  ourTakeBullets: string[];
   createdAt: string;
   updatedAt: string;
 }

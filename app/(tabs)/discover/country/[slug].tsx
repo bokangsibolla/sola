@@ -4,9 +4,8 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
-import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
-import MenuButton from '@/components/MenuButton';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { UniversalHeader } from '@/components/UniversalHeader';
 import { eventTracker } from '@/data/events/eventTracker';
 import {
   getCountryBySlug,
@@ -28,46 +27,6 @@ import { FinalNote } from '@/components/explore/country/FinalNote';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
 import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
 import { colors, fonts, spacing } from '@/constants/design';
-
-// ---------------------------------------------------------------------------
-// Breadcrumb
-// ---------------------------------------------------------------------------
-
-function Breadcrumb({
-  countryName,
-  fromCollection,
-  fromCollectionSlug,
-  onDiscover,
-  onCollection,
-}: {
-  countryName: string;
-  fromCollection?: string;
-  fromCollectionSlug?: string;
-  onDiscover: () => void;
-  onCollection?: () => void;
-}) {
-  return (
-    <View style={styles.breadcrumb}>
-      <Pressable onPress={onDiscover} hitSlop={8}>
-        <Text style={styles.breadcrumbLink}>Discover</Text>
-      </Pressable>
-      {fromCollection && onCollection ? (
-        <>
-          <Text style={styles.breadcrumbSep}>/</Text>
-          <Pressable onPress={onCollection} hitSlop={8}>
-            <Text style={styles.breadcrumbLink} numberOfLines={1}>
-              {fromCollection}
-            </Text>
-          </Pressable>
-        </>
-      ) : null}
-      <Text style={styles.breadcrumbSep}>/</Text>
-      <Text style={styles.breadcrumbCurrent} numberOfLines={1}>
-        {countryName}
-      </Text>
-    </View>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Section Header
@@ -151,36 +110,42 @@ export default function CountryGuideScreen() {
     ['healthPlaces', country?.id],
   );
 
-  const headerLeft = (
-    <Image
-      source={require('@/assets/images/sola-logo.png')}
-      style={styles.headerLogo}
-      contentFit="contain"
-    />
-  );
+  const buildCrumbs = () => {
+    const crumbs: Array<{ label: string; onPress?: () => void }> = [
+      { label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) },
+    ];
+    if (fromCollection && fromCollectionSlug) {
+      crumbs.push({
+        label: fromCollection,
+        onPress: () => router.push(`/(tabs)/discover/collection/${fromCollectionSlug}` as any),
+      });
+    }
+    crumbs.push({ label: country?.name ?? 'Country' });
+    return crumbs;
+  };
 
   if (countryLoading || (country && citiesLoading)) {
     return (
-      <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading…' }]} />
         <LoadingScreen />
-      </AppScreen>
+      </SafeAreaView>
     );
   }
   if (error) {
     return (
-      <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
         <ErrorScreen message={error.message} onRetry={refetch} />
-      </AppScreen>
+      </SafeAreaView>
     );
   }
   if (!country) {
     return (
-      <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
         <Text style={styles.notFound}>Guide not found</Text>
-      </AppScreen>
+      </SafeAreaView>
     );
   }
 
@@ -190,22 +155,10 @@ export default function CountryGuideScreen() {
   const healthList = (healthPlaces ?? []) as PlaceWithCity[];
 
   return (
-    <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
+      <UniversalHeader crumbs={buildCrumbs()} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Breadcrumb */}
-        <Breadcrumb
-          countryName={country.name}
-          fromCollection={fromCollection}
-          fromCollectionSlug={fromCollectionSlug}
-          onDiscover={() => router.push('/(tabs)/discover')}
-          onCollection={
-            fromCollectionSlug
-              ? () => router.push(`/(tabs)/discover/collection/${fromCollectionSlug}`)
-              : undefined
-          }
-        />
 
         {/* 1. Hero (200px) */}
         <View style={styles.heroContainer}>
@@ -308,7 +261,7 @@ export default function CountryGuideScreen() {
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
       </ScrollView>
-    </AppScreen>
+    </SafeAreaView>
   );
 }
 
@@ -317,9 +270,9 @@ export default function CountryGuideScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
+  safeArea: {
+    flex: 1,
+    backgroundColor: colors.background,
   },
   notFound: {
     fontFamily: fonts.regular,
@@ -327,32 +280,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxl,
-  },
-
-  // Breadcrumb
-  breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  breadcrumbLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-    flexShrink: 1,
-  },
-  breadcrumbSep: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  breadcrumbCurrent: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-    flexShrink: 1,
   },
 
   // Hero (200px — compact)

@@ -1,52 +1,164 @@
 // app/(tabs)/discover/activity/[slug].tsx
-import { Pressable, ScrollView, StyleSheet, Text, View, Linking, Alert } from 'react-native';
-import { Image } from 'expo-image';
+import { useCallback, useEffect, useState } from 'react';
+import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import BackButton from '@/components/ui/BackButton';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { usePostHog } from 'posthog-react-native';
+import * as Sentry from '@sentry/react-native';
+import { eventTracker } from '@/data/events/eventTracker';
+import { colors, spacing, typography } from '@/constants/design';
 import { useData } from '@/hooks/useData';
-import { getActivityWithDetails } from '@/data/api';
-import LoadingScreen from '@/components/LoadingScreen';
+import { useAuth } from '@/state/AuthContext';
+import {
+  getActivityWithDetails,
+  isPlaceSaved,
+  toggleSavePlace,
+} from '@/data/api';
 import ErrorScreen from '@/components/ErrorScreen';
+import { UniversalHeader } from '@/components/UniversalHeader';
+import { ActivityHero } from '@/components/explore/activity/ActivityHero';
+import { AtAGlance } from '@/components/explore/activity/AtAGlance';
+import { WomenRecommend } from '@/components/explore/activity/WomenRecommend';
+import { OurTake } from '@/components/explore/activity/OurTake';
+import { WhatStandsOut } from '@/components/explore/activity/WhatStandsOut';
+import { GoodToKnow } from '@/components/explore/activity/GoodToKnow';
+import { TagsSection } from '@/components/explore/activity/TagsSection';
+import { PracticalDetails } from '@/components/explore/activity/PracticalDetails';
+import { ActivitySkeleton } from '@/components/explore/activity/ActivitySkeleton';
 
 export default function ActivityDetailScreen() {
   const router = useRouter();
-  const insets = useSafeAreaInsets();
+  const posthog = usePostHog();
   const { slug } = useLocalSearchParams<{ slug: string }>();
+  const { userId } = useAuth();
+
+  // ---------------------------------------------------------------------------
+  // Data fetching
+  // ---------------------------------------------------------------------------
 
   const { data, loading, error, refetch } = useData(
-    () => slug ? getActivityWithDetails(slug) : Promise.resolve(undefined),
-    [slug ?? ''],
+    () => (slug ? getActivityWithDetails(slug) : Promise.resolve(undefined)),
+    ['activityDetail', slug ?? ''],
   );
 
   const activity = data?.activity;
   const media = data?.media ?? [];
   const tags = data?.tags ?? [];
+  const city = data?.city;
+  const country = data?.country;
 
-  // Get the hero image URL from media (null if no media available)
-  const heroImageUrl = media[0]?.url ?? null;
+  // Save state
+  const { data: isSavedFromDb } = useData(
+    () =>
+      userId && activity?.id
+        ? isPlaceSaved(userId, activity.id)
+        : Promise.resolve(false),
+    ['activitySaved', userId, activity?.id],
+  );
+  const [saved, setSaved] = useState(false);
 
-  // Format price level as dollar signs (1-4 scale)
-  const formatPriceLevel = (level: number | null): string => {
-    if (!level) return 'Price varies';
-    return '$'.repeat(level);
-  };
+  useEffect(() => {
+    if (isSavedFromDb != null) setSaved(isSavedFromDb);
+  }, [isSavedFromDb]);
 
-  // Handle "Check availability" button press
-  const handleCheckAvailability = () => {
-    if (activity?.website) {
-      Linking.openURL(activity.website).catch(() => {
-        Alert.alert('Error', 'Could not open the website');
+  // ---------------------------------------------------------------------------
+  // Analytics
+  // ---------------------------------------------------------------------------
+
+  useEffect(() => {
+    if (activity?.id) {
+      posthog.capture('activity_detail_viewed', {
+        activity_id: activity.id,
+        activity_name: activity.name,
+        city: city?.name ?? null,
+        country: country?.name ?? null,
       });
-    } else {
-      Alert.alert('Coming Soon', 'Booking will be available soon.');
+      eventTracker.track('viewed_place', 'place', activity.id);
     }
+  }, [activity?.id]);
+
+  // ---------------------------------------------------------------------------
+  // Handlers
+  // ---------------------------------------------------------------------------
+
+  const canSave = Boolean(userId && activity?.id);
+
+  const handleSave = useCallback(async () => {
+    if (!userId || !activity?.id) return;
+    const newSaved = !saved;
+    setSaved(newSaved);
+    posthog.capture(newSaved ? 'activity_saved' : 'activity_unsaved', {
+      activity_id: activity.id,
+    });
+    try {
+      await toggleSavePlace(userId, activity.id);
+    } catch (err) {
+      setSaved(saved);
+      Sentry.captureException(err);
+    }
+  }, [userId, activity?.id, saved, posthog]);
+
+  const handleOpenMaps = useCallback(() => {
+    if (!activity) return;
+    const url =
+      activity.googleMapsUrl ||
+      (activity.lat && activity.lng
+        ? `https://www.google.com/maps/search/?api=1&query=${activity.lat},${activity.lng}`
+        : activity.googlePlaceId
+          ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name)}&query_place_id=${activity.googlePlaceId}`
+          : `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(activity.name + ' ' + (activity.address || ''))}`);
+
+    posthog.capture('activity_maps_opened', {
+      activity_id: activity.id,
+      activity_name: activity.name,
+    });
+    Linking.openURL(url);
+  }, [activity, posthog]);
+
+  // ---------------------------------------------------------------------------
+  // Breadcrumbs
+  // ---------------------------------------------------------------------------
+
+  const buildCrumbs = () => {
+    const crumbs: Array<{ label: string; onPress?: () => void }> = [
+      {
+        label: 'Discover',
+        onPress: () => router.push('/(tabs)/discover' as any),
+      },
+    ];
+
+    if (country) {
+      crumbs.push({
+        label: country.name,
+        onPress: () =>
+          router.push(`/(tabs)/discover/country/${country.slug}` as any),
+      });
+    }
+
+    if (city) {
+      crumbs.push({
+        label: city.name,
+        onPress: () =>
+          router.push(`/(tabs)/discover/city/${city.slug}` as any),
+      });
+    }
+
+    crumbs.push({ label: activity?.name ?? 'Activity' });
+
+    return crumbs;
   };
+
+  // ---------------------------------------------------------------------------
+  // Render states
+  // ---------------------------------------------------------------------------
 
   if (loading) {
-    return <LoadingScreen />;
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading…' }]} />
+        <ActivitySkeleton />
+      </SafeAreaView>
+    );
   }
 
   if (error) {
@@ -55,159 +167,66 @@ export default function ActivityDetailScreen() {
 
   if (!activity) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.notFoundHeader}>
-          <BackButton />
-        </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Activity not found</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <UniversalHeader crumbs={buildCrumbs()} />
+
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero Image */}
-        <View style={styles.heroContainer} pointerEvents="box-none">
-          {heroImageUrl ? (
-            <Image
-              source={{ uri: heroImageUrl }}
-              style={styles.heroImage}
-              contentFit="cover"
-              pointerEvents="none"
-            />
-          ) : (
-            <View style={[styles.heroImage, { backgroundColor: colors.neutralFill }]} pointerEvents="none" />
-          )}
-          {/* Back Button Overlay */}
-          <View style={[styles.backButton, { top: insets.top + spacing.sm }]}>
-            <BackButton />
-          </View>
-          {/* Favorite Button Overlay */}
-          <Pressable
-            style={[styles.favoriteButton, { top: insets.top + spacing.sm }]}
-            hitSlop={8}
-          >
-            <Ionicons name="heart-outline" size={24} color={colors.textPrimary} />
-          </Pressable>
-        </View>
+        {/* 1. Hero: Carousel + identity + signal tags */}
+        <ActivityHero
+          activity={activity}
+          media={media}
+          cityName={city?.name}
+          countryName={country?.name}
+          tags={tags}
+        />
 
-        {/* Content */}
+        {/* Sections with padding */}
         <View style={styles.content}>
-          <Text style={styles.title}>{activity.name}</Text>
+          {/* 2. At a Glance */}
+          <AtAGlance activity={activity} />
 
-          {activity.address && (
-            <View style={styles.locationRow}>
-              <Ionicons name="location" size={16} color={colors.textSecondary} />
-              <Text style={styles.location}>{activity.address}</Text>
-            </View>
-          )}
+          {/* 3. From Women Who've Done This */}
+          <WomenRecommend text={activity.soloFemaleReviews} />
 
-          <View style={styles.divider} />
+          {/* 4. Why We Include This */}
+          <OurTake
+            bullets={activity.ourTakeBullets ?? []}
+            fallbackText={activity.whySelected}
+          />
 
-          <View style={styles.infoRow}>
-            {activity.estimatedDuration && (
-              <View style={styles.infoItem}>
-                <Ionicons name="time-outline" size={20} color={colors.textSecondary} />
-                <Text style={styles.infoLabel}>Duration</Text>
-                <Text style={styles.infoValue}>{activity.estimatedDuration}</Text>
-              </View>
-            )}
-            <View style={styles.infoItem}>
-              <Ionicons name="cash-outline" size={20} color={colors.textSecondary} />
-              <Text style={styles.infoLabel}>Price</Text>
-              <Text style={styles.infoValue}>{formatPriceLevel(activity.priceLevel)}</Text>
-            </View>
-            {activity.physicalLevel && (
-              <View style={styles.infoItem}>
-                <Ionicons name="fitness-outline" size={20} color={colors.textSecondary} />
-                <Text style={styles.infoLabel}>Difficulty</Text>
-                <Text style={styles.infoValue}>
-                  {activity.physicalLevel.charAt(0).toUpperCase() + activity.physicalLevel.slice(1)}
-                </Text>
-              </View>
-            )}
-          </View>
+          {/* 5. What Stands Out */}
+          <WhatStandsOut highlights={activity.highlights ?? []} />
 
-          <View style={styles.divider} />
+          {/* 6. Good to Know */}
+          <GoodToKnow considerations={activity.considerations ?? []} />
 
-          {/* About this experience */}
-          <Text style={styles.sectionTitle}>About this experience</Text>
-          <Text style={styles.description}>
-            {activity.whySelected || activity.description || 'No description available.'}
-          </Text>
+          {/* 7. Tags (grouped + color-coded) */}
+          <TagsSection tags={tags} />
 
-          {/* What's included - from highlights array */}
-          {activity.highlights && activity.highlights.length > 0 && (
-            <>
-              <Text style={styles.sectionTitle}>What's included</Text>
-              <View style={styles.includesList}>
-                {activity.highlights.map((highlight, index) => (
-                  <View key={index} style={styles.includeItem}>
-                    <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} />
-                    <Text style={styles.includeText}>{highlight}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* Considerations - things to be aware of */}
-          {activity.considerations && activity.considerations.length > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
-                Good to know
-              </Text>
-              <View style={styles.includesList}>
-                {activity.considerations.map((consideration, index) => (
-                  <View key={index} style={styles.includeItem}>
-                    <Ionicons name="information-circle" size={18} color={colors.orange} />
-                    <Text style={styles.includeText}>{consideration}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* Tags */}
-          {tags.length > 0 && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>Tags</Text>
-              <View style={styles.tagsContainer}>
-                {tags.map((tag) => (
-                  <View key={tag.id} style={styles.tag}>
-                    <Text style={styles.tagText}>{tag.label}</Text>
-                  </View>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* Booking info if available */}
-          {activity.bookingInfo && (
-            <>
-              <Text style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
-                Booking info
-              </Text>
-              <Text style={styles.description}>{activity.bookingInfo}</Text>
-            </>
-          )}
+          {/* 8. Practical Details + Actions */}
+          <PracticalDetails
+            activity={activity}
+            onSave={handleSave}
+            onOpenMaps={handleOpenMaps}
+            saved={saved}
+            canSave={canSave}
+          />
         </View>
+
+        {/* Bottom spacing */}
+        <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
-
-      {/* Bottom CTA */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.md }]}>
-        <View style={styles.priceContainer}>
-          <Text style={styles.priceLabel}>Price</Text>
-          <Text style={styles.priceValue}>{formatPriceLevel(activity.priceLevel)}</Text>
-        </View>
-        <Pressable style={styles.bookButton} onPress={handleCheckAvailability}>
-          <Text style={styles.bookButtonText}>Check availability</Text>
-        </Pressable>
-      </View>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -216,11 +235,8 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
-  notFoundHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  content: {
     paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.md,
   },
   emptyState: {
     flex: 1,
@@ -230,163 +246,5 @@ const styles = StyleSheet.create({
   emptyText: {
     ...typography.body,
     color: colors.textMuted,
-  },
-  heroContainer: {
-    position: 'relative',
-  },
-  heroImage: {
-    width: '100%',
-    height: 300,
-  },
-  backButton: {
-    position: 'absolute',
-    left: spacing.screenX,
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  favoriteButton: {
-    position: 'absolute',
-    right: spacing.screenX,
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(255,255,255,0.95)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  content: {
-    padding: spacing.screenX,
-    paddingBottom: 120,
-  },
-  title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
-  locationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.sm,
-  },
-  location: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    flex: 1,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginVertical: spacing.xl,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    gap: spacing.xl,
-  },
-  infoItem: {
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  infoLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  infoValue: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  description: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: spacing.xl,
-  },
-  includesList: {
-    gap: spacing.md,
-  },
-  includeItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: spacing.sm,
-  },
-  includeText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  tagsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  tag: {
-    backgroundColor: colors.neutralFill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-  },
-  tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  bottomBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
-    backgroundColor: colors.background,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-  },
-  priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 4,
-  },
-  priceLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  priceValue: {
-    fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: colors.textPrimary,
-  },
-  priceSuffix: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  bookButton: {
-    backgroundColor: colors.orange,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
-    borderRadius: radius.button,
-  },
-  bookButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.background,
   },
 });

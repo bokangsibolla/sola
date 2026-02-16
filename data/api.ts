@@ -597,22 +597,29 @@ export async function getActivityBySlug(slug: string): Promise<Place | undefined
 }
 
 /**
- * Get activity with its media and tags
+ * Get activity with its media, tags, and breadcrumb context (city + country)
  */
 export async function getActivityWithDetails(slug: string): Promise<{
   activity: Place;
   media: PlaceMedia[];
   tags: Tag[];
+  city?: City;
+  country?: Country;
 } | undefined> {
   const activity = await getActivityBySlug(slug);
   if (!activity) return undefined;
 
-  const [media, tags] = await Promise.all([
+  const [media, tags, city] = await Promise.all([
     getPlaceMedia(activity.id),
     getPlaceTags(activity.id),
+    activity.cityId ? getCityById(activity.cityId) : Promise.resolve(undefined),
   ]);
 
-  return { activity, media, tags };
+  const country = city?.countryId
+    ? await getCountryById(city.countryId)
+    : undefined;
+
+  return { activity, media, tags, city, country };
 }
 
 export async function getPlaceMedia(placeId: string): Promise<PlaceMedia[]> {
