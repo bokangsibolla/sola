@@ -1,7 +1,7 @@
 // data/explore/useFeedItems.ts
 import { useState, useEffect } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity, getSavedPlacesWithDetails, getCitiesByTags } from '../api';
+import { getPopularCitiesWithCountry, getCountries, getSavedPlaces, getPlacesByCity, getSavedPlacesWithDetails } from '../api';
 import type { Place } from '../types';
 import { getExploreCollections, getExploreCollectionItems } from '../collections';
 import { buildFeed, buildTravellingFeed } from './feedBuilder';
@@ -49,11 +49,10 @@ export function useFeedItems(): UseFeedItemsResult {
         setIsLoading(true);
         setError(null);
 
-        // Fetch countries, cities, and islands in parallel (critical path)
-        const [countriesResult, citiesResult, islandsResult] = await Promise.all([
+        // Fetch countries and cities in parallel (critical path)
+        const [countriesResult, citiesResult] = await Promise.all([
           withTimeout(getCountries(), 5000, 'getCountries'),
           withTimeout(getPopularCitiesWithCountry(20), 5000, 'getCities'),
-          withTimeout(getCitiesByTags(['island']), 5000, 'getIslands').catch(() => [] as CityWithCountry[]),
         ]);
 
         if (cancelled) return;
@@ -122,7 +121,6 @@ export function useFeedItems(): UseFeedItemsResult {
             collectionsWithItems,
             citiesResult,
             countriesResult,
-            islandsResult,
           );
         } else {
           // Fetch personal context in parallel (all non-critical)
@@ -191,7 +189,7 @@ export function useFeedItems(): UseFeedItemsResult {
             if (!hasPersonal) personal = undefined;
           }
 
-          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult, personal, islandsResult);
+          feed = buildFeed(collectionsWithItems, citiesResult, countriesResult, personal);
         }
 
         setFeedItems(feed);

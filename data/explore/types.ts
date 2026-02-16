@@ -22,7 +22,6 @@ export type FeedItem =
   | { type: 'featured-collection'; data: ExploreCollectionWithItems }
   | { type: 'countries-grid'; data: Country[] }
   | { type: 'popular-cities'; data: CityWithCountry[] }
-  | { type: 'featured-islands'; data: CityWithCountry[] }
   | { type: 'collections-section'; data: ExploreCollectionWithItems[] }
   | { type: 'community-signal' }
   // Keep these for potential future use but they won't be emitted by the new builder:
