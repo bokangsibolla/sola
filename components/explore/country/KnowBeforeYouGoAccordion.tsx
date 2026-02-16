@@ -64,6 +64,16 @@ function buildItems(country: Country, healthPlaces?: PlaceWithCity[]): Accordion
     });
   }
 
+  // Safety for women
+  if (country.safetyWomenMd) {
+    items.push({
+      key: 'safety',
+      title: 'Safety for women',
+      preview: extractLeadSentence(country.safetyWomenMd),
+      content: country.safetyWomenMd,
+    });
+  }
+
   return items;
 }
 
@@ -163,6 +173,7 @@ export function KnowBeforeYouGoAccordion({ country, healthPlaces }: Props) {
 
 const styles = StyleSheet.create({
   section: {
+    paddingHorizontal: spacing.screenX,
     marginBottom: spacing.xxl,
   },
   heading: {

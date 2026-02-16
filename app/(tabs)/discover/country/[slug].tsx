@@ -15,14 +15,18 @@ import {
 } from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
 import { getEmergencyNumbers } from '@/data/safety';
+import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import { SignalsRow } from '@/components/explore/country/SignalsRow';
 import { AtAGlanceGrid } from '@/components/explore/country/AtAGlanceGrid';
 import { WhyWomenLoveIt } from '@/components/explore/country/WhyWomenLoveIt';
 import { TravelFitSection } from '@/components/explore/country/TravelFitSection';
-import { PlanYourTripAccordion } from '@/components/explore/country/PlanYourTripAccordion';
+import { KnowBeforeYouGoAccordion } from '@/components/explore/country/KnowBeforeYouGoAccordion';
+import { BudgetBreakdown } from '@/components/explore/country/BudgetBreakdown';
 import { QuickReference } from '@/components/explore/country/QuickReference';
+import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
 import { FinalNote } from '@/components/explore/country/FinalNote';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
 import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
@@ -110,6 +114,12 @@ export default function CountryGuideScreen() {
     ['healthPlaces', country?.id],
   );
 
+  // Fetch community threads
+  const { data: communityData } = useData(
+    () => country?.id ? getCountryThreadPreviews(country.id, 3) : Promise.resolve({ threads: [], totalCount: 0 }),
+    ['countryThreads', country?.id],
+  );
+
   const buildCrumbs = () => {
     const crumbs: Array<{ label: string; onPress?: () => void }> = [
       { label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) },
@@ -127,7 +137,7 @@ export default function CountryGuideScreen() {
   if (countryLoading || (country && citiesLoading)) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading…' }]} />
+        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading\u2026' }]} />
         <LoadingScreen />
       </SafeAreaView>
     );
@@ -154,13 +164,20 @@ export default function CountryGuideScreen() {
   const experienceList = (experiences ?? []) as PlaceWithCity[];
   const healthList = (healthPlaces ?? []) as PlaceWithCity[];
 
+  // Derive intro text from introMd or summaryMd (first paragraph, cleaned)
+  const introText = country.introMd
+    ? country.introMd.replace(/^#+\s.*/gm, '').replace(/\*\*/g, '').trim().split(/\n\n+/)[0]?.trim()
+    : country.summaryMd
+      ? country.summaryMd.split(/\n\n+/)[0]?.trim()
+      : null;
+
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <UniversalHeader crumbs={buildCrumbs()} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
-        {/* 1. Hero (200px) */}
+        {/* 1. Hero (240px) */}
         <View style={styles.heroContainer}>
           {country.heroImageUrl ? (
             <Image
@@ -183,10 +200,17 @@ export default function CountryGuideScreen() {
           </View>
         </View>
 
-        {/* 2. At a Glance grid */}
-        <AtAGlanceGrid country={country} />
+        {/* 2. Signal chips */}
+        <SignalsRow country={country} />
 
-        {/* 3. Explore cities — images first for visual appeal */}
+        {/* 3. Intro paragraph */}
+        {introText ? (
+          <View style={styles.content}>
+            <Text style={styles.introText}>{introText}</Text>
+          </View>
+        ) : null}
+
+        {/* 4. Explore cities */}
         {cityList.length > 0 && (
           <View style={styles.section}>
             <View style={styles.content}>
@@ -214,7 +238,10 @@ export default function CountryGuideScreen() {
           </View>
         )}
 
-        {/* 4. Things to do — image cards */}
+        {/* 5. At a Glance grid */}
+        <AtAGlanceGrid country={country} />
+
+        {/* 6. Things to do */}
         {experienceList.length > 0 && (
           <View style={styles.section}>
             <View style={styles.content}>
@@ -235,27 +262,53 @@ export default function CountryGuideScreen() {
 
         <Divider />
 
-        {/* 5. Why Women Love It */}
+        {/* 7. Budget breakdown (standalone) */}
+        {country.budgetBreakdown && (
+          <>
+            <View style={styles.content}>
+              <BudgetBreakdown
+                budget={country.budgetBreakdown}
+                moneyMd={country.moneyMd}
+                cashVsCard={country.cashVsCard}
+              />
+            </View>
+            <Divider />
+          </>
+        )}
+
+        {/* 8. Why women love it */}
         <WhyWomenLoveIt country={country} />
 
         <Divider />
 
-        {/* 6. Travel Fit */}
+        {/* 9. Travel fit */}
         <TravelFitSection country={country} />
 
         <Divider />
 
-        {/* 7. Plan Your Trip */}
-        <PlanYourTripAccordion country={country} healthPlaces={healthList} />
+        {/* 10. Know before you go (3-4 items) */}
+        <KnowBeforeYouGoAccordion country={country} healthPlaces={healthList} />
 
         <Divider />
 
-        {/* 8. Quick Reference */}
+        {/* 11. Quick reference */}
         <View style={styles.content}>
           <QuickReference country={country} emergency={emergency} />
         </View>
 
-        {/* 9. Final Note */}
+        {/* 12. Community threads */}
+        {communityData && communityData.threads.length > 0 && (
+          <View style={styles.content}>
+            <CommunityThreadRows
+              threads={communityData.threads}
+              totalCount={communityData.totalCount}
+              countryId={country.id}
+              countryName={country.name}
+            />
+          </View>
+        )}
+
+        {/* 13. Final note */}
         <FinalNote country={country} />
 
         {/* Bottom spacing */}
@@ -282,21 +335,21 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
 
-  // Hero (200px — compact)
+  // Hero (240px)
   heroContainer: {
     position: 'relative',
-    height: 200,
+    height: 240,
   },
   heroImage: {
     width: '100%',
-    height: 200,
+    height: 240,
   },
   heroGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 120,
+    height: 140,
   },
   heroOverlay: {
     position: 'absolute',
@@ -305,16 +358,25 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
   },
   heroName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 32,
+    fontFamily: fonts.serif,
+    fontSize: 36,
     color: '#FFFFFF',
-    lineHeight: 36,
+    lineHeight: 40,
   },
   heroTagline: {
     fontFamily: fonts.regular,
     fontSize: 15,
     color: 'rgba(255,255,255,0.85)',
     marginTop: spacing.xs,
+  },
+
+  // Intro paragraph
+  introText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 23,
+    marginBottom: spacing.lg,
   },
 
   // Content area (padded sections)
