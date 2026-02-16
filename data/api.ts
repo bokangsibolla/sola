@@ -75,6 +75,7 @@ export function mapCountry(row: Record<string, any>): Country {
   return {
     id: row.id,
     slug: row.slug,
+    continent: row.continent,
     name: row.name,
     iso2: row.iso2,
     iso3: row.iso3,
@@ -221,6 +222,26 @@ export async function getCountries(): Promise<Country[]> {
     .order('order_index');
   if (error) throw error;
   return mapCountries(data ?? []);
+}
+
+export async function getCountriesWithCities(): Promise<
+  (Country & { cities: { id: string; name: string; slug: string }[] })[]
+> {
+  const { data, error } = await supabase
+    .from('countries')
+    .select('*, cities(id, name, slug)')
+    .eq('is_active', true)
+    .eq('cities.is_active', true)
+    .order('order_index');
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...mapCountry(row),
+    cities: (row.cities ?? []).map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      slug: c.slug,
+    })),
+  }));
 }
 
 export async function getCountryBySlug(slug: string): Promise<Country | undefined> {

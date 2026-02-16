@@ -1,6 +1,7 @@
 export interface Country {
   id: string;
   slug: string;
+  continent: 'africa' | 'asia' | 'europe' | 'latin_america' | 'middle_east' | 'oceania';
   name: string;
   iso2: string;
   iso3: string | null;
