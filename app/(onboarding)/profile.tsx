@@ -15,6 +15,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
@@ -24,21 +25,36 @@ import { countries } from '@/data/geo';
 import { getCurrencyForCountry } from '@/lib/currency';
 import { colors, fonts, radius } from '@/constants/design';
 
-const BIO_MAX = 140;
-
 const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
+
+/** Minimum age: 16 years */
+const MIN_AGE = 16;
+const MAX_DATE = new Date();
+MAX_DATE.setFullYear(MAX_DATE.getFullYear() - MIN_AGE);
+
+/** Maximum age: 100 years */
+const MIN_DATE = new Date();
+MIN_DATE.setFullYear(MIN_DATE.getFullYear() - 100);
+
+function formatDate(date: Date): string {
+  const months = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+}
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { navigateToNextScreen, trackScreenView } = useOnboardingNavigation();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [firstName, setFirstName] = useState('');
-  const [bio, setBio] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [search, setSearch] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // A/B Testing: Check which optional fields to show
-  const showBio = onboardingStore.shouldShowQuestion('bio');
   const showPhoto = onboardingStore.shouldShowQuestion('photo');
 
   // Track screen view
@@ -61,14 +77,12 @@ export default function ProfileScreen() {
     : null;
   const selectedInList = displayedCountries.some((c) => c.iso2 === selectedCountry);
 
-  const remaining = BIO_MAX - bio.length;
-  const counterColor =
-    remaining <= 10 ? '#E53E3E' : remaining <= 30 ? colors.orange : colors.textMuted;
-
-  const canContinue = firstName.trim().length > 0 && selectedCountry.length > 0;
+  const canContinue =
+    firstName.trim().length > 0 &&
+    selectedCountry.length > 0 &&
+    dateOfBirth !== null;
 
   const pickImage = async (fromCamera: boolean) => {
-    // Request permission first
     const permissionResult = fromCamera
       ? await ImagePicker.requestCameraPermissionsAsync()
       : await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -116,29 +130,29 @@ export default function ProfileScreen() {
     onboardingStore.set('preferredCurrency', getCurrencyForCountry(iso2));
   };
 
-  const handleBioChange = (text: string) => {
-    if (text.length <= BIO_MAX) setBio(text);
+  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+    if (Platform.OS === 'android') {
+      setShowDatePicker(false);
+    }
+    if (selectedDate) {
+      setDateOfBirth(selectedDate);
+    }
   };
 
   const handleContinue = () => {
     const country = countries.find((c) => c.iso2 === selectedCountry);
     onboardingStore.set('firstName', firstName.trim());
-    onboardingStore.set('bio', bio.trim());
     onboardingStore.set('photoUri', photoUri);
     onboardingStore.set('countryIso2', selectedCountry);
     onboardingStore.set('countryName', country?.name ?? '');
 
-    // Track which questions were answered vs skipped
-    const answered: string[] = ['first_name', 'country']; // Always required
-    const skipped: string[] = [];
-
-    if (showBio) {
-      if (bio.trim()) {
-        answered.push('bio');
-      } else {
-        skipped.push('bio');
-      }
+    if (dateOfBirth) {
+      onboardingStore.set('dateOfBirth', dateOfBirth.toISOString().split('T')[0]);
     }
+
+    // Track which questions were answered vs skipped
+    const answered: string[] = ['first_name', 'country', 'date_of_birth'];
+    const skipped: string[] = [];
 
     if (showPhoto) {
       if (photoUri) {
@@ -156,7 +170,7 @@ export default function ProfileScreen() {
 
   return (
     <OnboardingScreen
-      stage={3}
+      stage={1}
       screenName="profile"
       headline="Tell us about you"
       ctaLabel="Continue"
@@ -192,21 +206,6 @@ export default function ProfileScreen() {
               onChangeText={setFirstName}
               autoFocus={false}
             />
-            {showBio && (
-              <View style={styles.bioContainer}>
-                <TextInput
-                  style={styles.bioInput}
-                  placeholder="Something you'd want a fellow traveler to know..."
-                  placeholderTextColor={colors.textMuted}
-                  value={bio}
-                  onChangeText={handleBioChange}
-                  multiline
-                  maxLength={BIO_MAX}
-                  autoFocus={false}
-                />
-                <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
-              </View>
-            )}
           </View>
         </View>
 
@@ -253,6 +252,41 @@ export default function ProfileScreen() {
             <Text style={styles.noResults}>No countries found</Text>
           )}
         </View>
+
+        {/* Birthday section */}
+        <Text style={[styles.sectionLabel, styles.birthdaySection]}>When were you born?</Text>
+        <Text style={styles.sectionHint}>Used to personalise your experience</Text>
+
+        <Pressable
+          style={[styles.dateButton, dateOfBirth && styles.dateButtonSelected]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <Ionicons
+            name="calendar-outline"
+            size={18}
+            color={dateOfBirth ? colors.textPrimary : colors.textMuted}
+          />
+          <Text style={[styles.dateText, !dateOfBirth && styles.datePlaceholder]}>
+            {dateOfBirth ? formatDate(dateOfBirth) : 'Select your birthday'}
+          </Text>
+        </Pressable>
+
+        {showDatePicker && (
+          <DateTimePicker
+            value={dateOfBirth ?? MAX_DATE}
+            mode="date"
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            maximumDate={MAX_DATE}
+            minimumDate={MIN_DATE}
+            onChange={handleDateChange}
+          />
+        )}
+
+        {Platform.OS === 'ios' && showDatePicker && (
+          <Pressable style={styles.doneButton} onPress={() => setShowDatePicker(false)}>
+            <Text style={styles.doneText}>Done</Text>
+          </Pressable>
+        )}
       </ScrollView>
     </OnboardingScreen>
   );
@@ -290,9 +324,7 @@ const styles = StyleSheet.create({
     flex: 1,
     gap: 8,
   },
-  nameColumnFull: {
-    // When photo is hidden, name column takes full width
-  },
+  nameColumnFull: {},
   input: {
     height: 48,
     borderRadius: radius.input,
@@ -303,33 +335,21 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  bioContainer: {
-    borderRadius: radius.input,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    paddingBottom: 8,
-    minHeight: 56,
-  },
-  bioInput: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-    minHeight: 24,
-    padding: 0,
-  },
-  bioCounter: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    textAlign: 'right',
-    marginTop: 4,
-  },
   sectionLabel: {
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.textPrimary,
     marginBottom: 10,
+  },
+  sectionHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: -6,
+    marginBottom: 12,
+  },
+  birthdaySection: {
+    marginTop: 28,
   },
   searchContainer: {
     flexDirection: 'row',
@@ -366,5 +386,37 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     paddingVertical: 8,
+  },
+  dateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    paddingHorizontal: 16,
+    gap: 10,
+  },
+  dateButtonSelected: {
+    borderColor: colors.orange,
+  },
+  dateText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  datePlaceholder: {
+    color: colors.textMuted,
+  },
+  doneButton: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginTop: 4,
+  },
+  doneText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.orange,
   },
 });

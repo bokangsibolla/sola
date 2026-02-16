@@ -43,3 +43,10 @@ app-example
 /ios
 /android
 .worktrees/
+
+# IDE / tool configs
+.cursor/
+.playwright-mcp/
+
+# Temp files
+*.bak

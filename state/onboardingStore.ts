@@ -11,6 +11,7 @@ interface OnboardingData {
   photoUri: string | null;
   countryIso2: string;
   countryName: string;
+  dateOfBirth: string;
   tripIntent: 'planning' | 'exploring' | '';
   dayStyle: string[];
   priorities: string[];
@@ -46,6 +47,7 @@ const defaults: OnboardingData = {
   photoUri: null,
   countryIso2: '',
   countryName: '',
+  dateOfBirth: '',
   tripIntent: '',
   dayStyle: [],
   priorities: [],
@@ -133,7 +135,7 @@ export const onboardingStore = {
     const screens = store.screensToShow;
     if (screens.length === 0) {
       // Fallback to default order if no A/B config
-      const defaultOrder = ['profile', 'intent', 'trip-details', 'day-style', 'stay-preference', 'youre-in'];
+      const defaultOrder = ['profile', 'youre-in'];
       const idx = defaultOrder.indexOf(currentScreen);
       return idx >= 0 && idx < defaultOrder.length - 1 ? defaultOrder[idx + 1] : null;
     }

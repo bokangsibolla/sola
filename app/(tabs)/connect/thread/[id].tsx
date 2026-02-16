@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
+import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import BackButton from '@/components/ui/BackButton';
 import ScreenHeader from '@/components/ui/ScreenHeader';
@@ -106,6 +107,12 @@ export default function ThreadDetail() {
   const { userId } = useAuth();
   const { thread, replies, loading, refresh } = useThread(id);
 
+  useEffect(() => {
+    if (id) {
+      eventTracker.track('opened_thread', 'thread', id);
+    }
+  }, [id]);
+
   const [replyText, setReplyText] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -114,6 +121,7 @@ export default function ThreadDetail() {
     setSubmitting(true);
     try {
       await createReply(userId, { threadId: id, body: replyText.trim() });
+      eventTracker.track('replied_thread', 'thread', id);
       setReplyText('');
       refresh();
     } catch {

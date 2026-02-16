@@ -12,6 +12,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons, Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -839,6 +840,12 @@ export default function PlaceScreen() {
     () => city?.countryId ? getCountryById(city.countryId) : Promise.resolve(null),
     ['country', city?.countryId],
   );
+
+  useEffect(() => {
+    if (city?.id) {
+      eventTracker.track('viewed_city', 'city', city.id);
+    }
+  }, [city?.id]);
   const { data: areas } = useData(
     () => city ? getAreasByCity(city.id) : Promise.resolve([]),
     ['cityAreas', city?.id],

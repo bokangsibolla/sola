@@ -38,6 +38,7 @@ import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { captureAttribution, persistAttribution, getAttributionForPostHog } from '@/lib/attribution';
 import OfflineBanner from '@/components/OfflineBanner';
+import { eventTracker } from '@/data/events/eventTracker';
 
 // Ensure icon fonts are available (Ionicons uses native fonts, no explicit loading needed)
 // Importing here ensures the icon library is initialized before use
@@ -106,12 +107,16 @@ function AuthGate() {
   useEffect(() => {
     if (userId) {
       posthog.identify(userId);
+      eventTracker.init(userId);
       // Persist UTM attribution to Supabase and PostHog
       persistAttribution(userId);
       getAttributionForPostHog().then((props) => {
         if (props) posthog.identify(userId, { $set_once: props });
       });
+    } else {
+      eventTracker.destroy();
     }
+    return () => eventTracker.destroy();
   }, [userId, posthog]);
 
   useEffect(() => {

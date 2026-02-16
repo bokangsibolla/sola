@@ -22,6 +22,7 @@ import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
+import NotificationButton from '@/components/NotificationButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import LocationConsentBanner from '@/components/travelers/LocationConsentBanner';
@@ -877,7 +878,12 @@ export default function ConnectScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={<MenuButton />}
+        rightComponent={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <NotificationButton />
+            <MenuButton />
+          </View>
+        }
       />
 
       <SegmentControl

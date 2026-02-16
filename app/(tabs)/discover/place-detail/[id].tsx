@@ -14,6 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
+import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -221,6 +222,12 @@ export default function PlaceDetailScreen() {
       posthog.capture('place_detail_viewed', { place_id: id });
     }
   }, [id, posthog]);
+
+  useEffect(() => {
+    if (id) {
+      eventTracker.track('viewed_place', 'place', id);
+    }
+  }, [id]);
 
   const { data: place, loading, error, refetch } = useData(
     () => id ? getPlaceById(id) : Promise.resolve(undefined),

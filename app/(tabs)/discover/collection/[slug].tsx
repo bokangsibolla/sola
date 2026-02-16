@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Image } from 'expo-image';
@@ -9,6 +10,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useData } from '@/hooks/useData';
 import { getExploreCollectionWithItems } from '@/data/api';
+import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 import type { ExploreCollectionItem } from '@/data/types';
 
@@ -44,6 +46,12 @@ export default function CollectionPage() {
     () => getExploreCollectionWithItems(slug ?? ''),
     [slug],
   );
+
+  useEffect(() => {
+    if (collection?.id) {
+      eventTracker.track('opened_collection', 'collection', collection.id);
+    }
+  }, [collection?.id]);
 
   const headerLeft = (
     <Image

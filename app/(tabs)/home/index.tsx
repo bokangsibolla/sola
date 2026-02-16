@@ -8,6 +8,7 @@ import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
+import NotificationButton from '@/components/NotificationButton';
 import VibeSection from '@/components/home/VibeSection';
 import { useData } from '@/hooks/useData';
 import { getConversations } from '@/data/api';
@@ -163,7 +164,12 @@ export default function HomeScreen() {
             contentFit="contain"
           />
         }
-        rightComponent={<MenuButton unreadCount={unreadCount} />}
+        rightComponent={
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+            <NotificationButton />
+            <MenuButton unreadCount={unreadCount} />
+          </View>
+        }
       />
 
       <ScrollView

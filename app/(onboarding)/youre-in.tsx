@@ -10,7 +10,6 @@ import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
 import { completeOnboardingSession } from '@/lib/onboardingConfig';
-import { getCityByName } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -24,8 +23,8 @@ export default function YoureInScreen() {
 
   // Calculate dynamic progress for youre-in screen
   const screens = onboardingStore.get('screensToShow');
-  const totalStages = screens.length || 5;
-  const currentStage = screens.length > 0 ? screens.indexOf('youre-in') + 1 : 5;
+  const totalStages = screens.length || 2;
+  const currentStage = screens.length > 0 ? screens.indexOf('youre-in') + 1 : 2;
 
   const { userId } = useAuth();
   const posthog = usePostHog();
@@ -43,60 +42,24 @@ export default function YoureInScreen() {
   const handleFinish = async () => {
     setSaving(true);
 
-    // Persist profile data to Supabase
     if (userId) {
       const data = onboardingStore.getData();
       const avatarUrl = await uploadAvatar(userId, data.photoUri).catch(() => null);
-      const profileData: Record<string, unknown> = {
+
+      const { error: profileError } = await supabase.from('profiles').upsert({
         id: userId,
         first_name: data.firstName,
-        bio: data.bio || null,
         avatar_url: avatarUrl,
         home_country_iso2: data.countryIso2 || null,
         home_country_name: data.countryName || null,
-        travel_style: data.spendingStyle || null,
-        interests: data.dayStyle,
-      };
-
-      // Try with onboarding_completed_at first, fall back without it if column is missing
-      let profileError;
-      const { error: err1 } = await supabase.from('profiles').upsert({
-        ...profileData,
+        date_of_birth: data.dateOfBirth || null,
         onboarding_completed_at: new Date().toISOString(),
       });
-
-      if (err1?.message?.includes('onboarding_completed_at')) {
-        const { error: err2 } = await supabase.from('profiles').upsert(profileData);
-        profileError = err2;
-      } else {
-        profileError = err1;
-      }
 
       if (profileError) {
         setSaving(false);
         Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
         return;
-      }
-
-      // Create trip record if destination was selected during onboarding
-      const { tripDestination, tripArriving, tripLeaving, tripNights } = data;
-      if (tripDestination) {
-        try {
-          // Try to find the city by name to link destination_city_id
-          const city = await getCityByName(tripDestination);
-
-          await supabase.from('trips').insert({
-            user_id: userId,
-            destination_city_id: city?.id || null,
-            destination_name: tripDestination,
-            arriving: tripArriving || null,
-            leaving: tripLeaving || null,
-            nights: tripNights || null,
-            status: 'planned',
-          });
-        } catch {
-          // Don't block onboarding completion if trip creation fails
-        }
       }
     }
 
@@ -104,7 +67,6 @@ export default function YoureInScreen() {
 
     // Complete the A/B testing session
     const sessionId = onboardingStore.get('abTestSessionId');
-    const questionsShown = onboardingStore.get('questionsToShow');
     const questionsAnswered = onboardingStore.get('questionsAnswered');
     const questionsSkipped = onboardingStore.get('questionsSkipped');
 
@@ -112,10 +74,9 @@ export default function YoureInScreen() {
       await completeOnboardingSession(sessionId, questionsAnswered, questionsSkipped);
     }
 
-    // Track completion with full breakdown
+    // Track completion
     posthog.capture('onboarding_completed', {
       session_id: sessionId,
-      questions_shown: questionsShown,
       questions_answered: questionsAnswered,
       questions_skipped: questionsSkipped,
       screens_shown: onboardingStore.get('screensToShow'),
