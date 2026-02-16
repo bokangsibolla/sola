@@ -46,19 +46,12 @@ export interface OnboardingSession {
 const DEFAULT_CONFIG: OnboardingQuestionConfig[] = [
   { id: '1', questionKey: 'first_name', screenName: 'profile', isRequired: true, probability: 1, orderIndex: 1, isActive: true },
   { id: '2', questionKey: 'country', screenName: 'profile', isRequired: true, probability: 1, orderIndex: 2, isActive: true },
-  { id: '3', questionKey: 'bio', screenName: 'profile', isRequired: false, probability: 1, orderIndex: 3, isActive: true },
+  { id: '3', questionKey: 'date_of_birth', screenName: 'profile', isRequired: true, probability: 1, orderIndex: 3, isActive: true },
   { id: '4', questionKey: 'photo', screenName: 'profile', isRequired: false, probability: 1, orderIndex: 4, isActive: true },
-  { id: '5', questionKey: 'trip_intent', screenName: 'intent', isRequired: false, probability: 1, orderIndex: 5, isActive: true },
-  { id: '6', questionKey: 'trip_destination', screenName: 'trip-details', isRequired: false, probability: 1, orderIndex: 6, isActive: true },
-  { id: '7', questionKey: 'trip_dates', screenName: 'trip-details', isRequired: false, probability: 1, orderIndex: 7, isActive: true },
-  { id: '8', questionKey: 'day_style', screenName: 'day-style', isRequired: false, probability: 1, orderIndex: 8, isActive: true },
-  { id: '9', questionKey: 'priorities', screenName: 'day-style', isRequired: false, probability: 1, orderIndex: 9, isActive: true },
-  { id: '10', questionKey: 'stay_preference', screenName: 'stay-preference', isRequired: false, probability: 1, orderIndex: 10, isActive: true },
-  { id: '11', questionKey: 'spending_style', screenName: 'stay-preference', isRequired: false, probability: 1, orderIndex: 11, isActive: true },
 ];
 
 // Screen order for navigation (after profile)
-const SCREEN_ORDER = ['profile', 'intent', 'trip-details', 'day-style', 'stay-preference', 'youre-in'];
+const SCREEN_ORDER = ['profile', 'youre-in'];
 
 // ---------------------------------------------------------------------------
 // Seeded Random Number Generator

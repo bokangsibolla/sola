@@ -10,10 +10,6 @@ export default function OnboardingLayout() {
       <Stack.Screen name="login" />
       <Stack.Screen name="create-account" />
       <Stack.Screen name="profile" />
-      <Stack.Screen name="intent" />
-      <Stack.Screen name="trip-details" />
-      <Stack.Screen name="day-style" />
-      <Stack.Screen name="stay-preference" />
       <Stack.Screen name="youre-in" />
     </Stack>
   );

@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import BackButton from '@/components/ui/BackButton';
 import { useSearch, SearchResult } from '@/data/explore';
@@ -102,6 +103,7 @@ export default function SearchScreen() {
       query,
     });
     addRecentSearch(result.name);
+    eventTracker.track('searched', null, null, { query, result_type: result.type, result_name: result.name });
 
     switch (result.type) {
       case 'country':

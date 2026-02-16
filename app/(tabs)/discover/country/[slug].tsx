@@ -7,6 +7,7 @@ import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
+import { eventTracker } from '@/data/events/eventTracker';
 import {
   getCountryBySlug,
   getCitiesByCountry,
@@ -126,6 +127,12 @@ export default function CountryGuideScreen() {
     () => slug ? getCountryBySlug(slug) : Promise.resolve(null),
     [slug],
   );
+
+  useEffect(() => {
+    if (country?.id) {
+      eventTracker.track('viewed_country', 'country', country.id);
+    }
+  }, [country?.id]);
 
   // Fetch cities
   const { data: cities, loading: citiesLoading } = useData(

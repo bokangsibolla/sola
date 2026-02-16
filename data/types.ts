@@ -301,6 +301,7 @@ export interface Profile {
   locationCityName: string | null;
   locationCountryName: string | null;
   locationUpdatedAt: string | null;
+  dateOfBirth: string | null;
   nationality: string | null;
   isDiscoverable: boolean;
   preferredCurrency: string;
