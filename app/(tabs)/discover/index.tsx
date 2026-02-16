@@ -2,8 +2,8 @@
 import React from 'react';
 import {
   Dimensions,
-  FlatList,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
@@ -20,28 +20,16 @@ import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
-import { useFeedItems } from '@/data/explore/useFeedItems';
-import type { FeedItem, CityWithCountry } from '@/data/explore/types';
+import { useDiscoverData } from '@/data/discover/useDiscoverData';
+import type { RecommendedCity } from '@/data/discover/types';
+import type { ExploreCollectionWithItems } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
-const MAX_COUNTRIES_SHOWN = 9;
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const GRID_GAP = spacing.sm;
-const COUNTRY_CARD_SIZE =
-  (SCREEN_WIDTH - spacing.screenX * 2 - GRID_GAP * 2) / 3;
-
-/** Chunk array into groups of n */
-function chunk<T>(arr: T[], n: number): T[][] {
-  const result: T[][] = [];
-  for (let i = 0; i < arr.length; i += n) {
-    result.push(arr.slice(i, i + n));
-  }
-  return result;
-}
-
-// City card sizing: show ~2.3 cards so user sees there's more to scroll
 const CITY_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2.3;
 const CITY_CARD_HEIGHT = CITY_CARD_WIDTH * 1.3;
+const CONTAINER_WIDTH = SCREEN_WIDTH - spacing.screenX * 2;
+const COLLECTION_GRID_CARD_WIDTH = (CONTAINER_WIDTH - spacing.md) / 2;
 
 // ── Inline components ──────────────────────────────────────
 
@@ -59,46 +47,37 @@ function CompactSearchBar({ onPress }: { onPress: () => void }) {
   );
 }
 
-function CountryGridCard({
-  country,
-  onPress,
-}: {
-  country: { id: string; name: string; heroImageUrl: string | null; slug: string };
-  onPress: () => void;
-}) {
+function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
+      style={({ pressed }) => [styles.browseCard, pressed && styles.pressed]}
       onPress={onPress}
-      style={({ pressed }) => [styles.countryCard, pressed && styles.pressed]}
+      accessibilityRole="button"
+      accessibilityLabel="Browse destinations"
     >
-      <Image
-        source={{ uri: country.heroImageUrl ?? undefined }}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
-        locations={[0, 0.35, 1]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.countryCardContent}>
-        <Text style={styles.countryCardName} numberOfLines={1}>
-          {country.name}
-        </Text>
+      <View>
+        <Text style={styles.browseTitle}>Browse destinations</Text>
+        <Text style={styles.browseSubtitle}>Explore by continent</Text>
       </View>
+      <Feather name="chevron-right" size={20} color={colors.textMuted} />
     </Pressable>
   );
 }
 
-function CityCard({ city, onPress }: { city: CityWithCountry; onPress: () => void }) {
+function RecommendedCityCard({
+  city,
+  onPress,
+}: {
+  city: RecommendedCity;
+  onPress: () => void;
+}) {
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
     >
       <Image
-        source={{ uri: city.heroImageUrl ?? undefined }}
+        source={{ uri: city.heroImageUrl }}
         style={StyleSheet.absoluteFillObject}
         contentFit="cover"
         transition={200}
@@ -108,29 +87,33 @@ function CityCard({ city, onPress }: { city: CityWithCountry; onPress: () => voi
         style={StyleSheet.absoluteFillObject}
       />
       <View style={styles.cityCardContent}>
-        <Text style={styles.cityCardName} numberOfLines={1}>{city.name}</Text>
-        <Text style={styles.cityCardCountry} numberOfLines={1}>{city.countryName}</Text>
+        <Text style={styles.cityCardName} numberOfLines={1}>
+          {city.cityName}
+        </Text>
+        <Text style={styles.cityCardCountry} numberOfLines={1}>
+          {city.countryName}
+        </Text>
+        {city.planningCount > 0 && (
+          <Text style={styles.cityCardSignal}>
+            {city.planningCount} women planning
+          </Text>
+        )}
       </View>
     </Pressable>
   );
 }
 
-function CollectionCard({
+function CollectionHeroCard({
   collection,
   onPress,
 }: {
-  collection: {
-    title: string;
-    subtitle: string | null;
-    heroImageUrl: string | null;
-    items: { length: number };
-  };
+  collection: ExploreCollectionWithItems;
   onPress: () => void;
 }) {
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.collectionCard, pressed && styles.pressed]}
+      style={({ pressed }) => [styles.collectionHero, pressed && styles.pressed]}
     >
       <Image
         source={{ uri: collection.heroImageUrl ?? undefined }}
@@ -139,27 +122,54 @@ function CollectionCard({
         transition={200}
       />
       <LinearGradient
-        colors={['transparent', 'transparent', 'rgba(0,0,0,0.7)']}
+        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
         locations={[0, 0.3, 1]}
         style={StyleSheet.absoluteFillObject}
       />
-      <View style={styles.collectionTypeLabel}>
-        <Text style={styles.collectionTypeLabelText}>COLLECTION</Text>
-      </View>
       <View style={styles.collectionCardContent}>
-        <Text style={styles.collectionCardTitle} numberOfLines={2}>
+        <Text style={styles.collectionHeroTitle} numberOfLines={2}>
           {collection.title}
         </Text>
-        {collection.subtitle ? (
-          <Text style={styles.collectionCardSubtitle} numberOfLines={1}>
-            {collection.subtitle}
-          </Text>
-        ) : (
-          <Text style={styles.collectionCardCount}>
-            {collection.items.length}{' '}
-            {collection.items.length === 1 ? 'destination' : 'destinations'}
-          </Text>
-        )}
+        <Text style={styles.collectionCardCount}>
+          {collection.items.length}{' '}
+          {collection.items.length === 1 ? 'destination' : 'destinations'}
+        </Text>
+      </View>
+    </Pressable>
+  );
+}
+
+function CollectionGridCard({
+  collection,
+  onPress,
+}: {
+  collection: ExploreCollectionWithItems;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.collectionGridItem, pressed && styles.pressed]}
+    >
+      <Image
+        source={{ uri: collection.heroImageUrl ?? undefined }}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        transition={200}
+      />
+      <LinearGradient
+        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
+        locations={[0, 0.3, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.collectionCardContent}>
+        <Text style={styles.collectionGridTitle} numberOfLines={2}>
+          {collection.title}
+        </Text>
+        <Text style={styles.collectionCardCount}>
+          {collection.items.length}{' '}
+          {collection.items.length === 1 ? 'destination' : 'destinations'}
+        </Text>
       </View>
     </Pressable>
   );
@@ -168,15 +178,9 @@ function CollectionCard({
 // ── Main screen ──────────────────────────────────────────────
 
 export default function DiscoverScreen() {
-  const { feedItems, isLoading, error, refresh } = useFeedItems();
+  const { recommended, isPersonalized, collections, isLoading, error, refresh } =
+    useDiscoverData();
   const router = useRouter();
-
-  const discoverItems = feedItems.filter(
-    (item) =>
-      item.type === 'countries-grid' ||
-      item.type === 'featured-islands' ||
-      item.type === 'collections-section',
-  );
 
   const headerLeft = (
     <Image
@@ -186,48 +190,73 @@ export default function DiscoverScreen() {
     />
   );
 
-  const renderItem = ({ item }: { item: FeedItem }) => {
-    switch (item.type) {
-      case 'countries-grid': {
-        const visible = item.data.slice(0, MAX_COUNTRIES_SHOWN);
-        const hasMore = item.data.length > MAX_COUNTRIES_SHOWN;
-        const rows = chunk(visible, 3);
-        return (
-          <View style={styles.zone}>
-            <View style={styles.countryGrid}>
-              {rows.map((row, rowIndex) => (
-                <View key={rowIndex} style={styles.countryRow}>
-                  {row.map((country) => (
-                    <CountryGridCard
-                      key={country.id}
-                      country={country}
-                      onPress={() => router.push(`/(tabs)/discover/country/${country.slug}`)}
-                    />
-                  ))}
-                </View>
-              ))}
-            </View>
-            {hasMore && (
-              <Pressable
-                style={({ pressed }) => [
-                  styles.seeAllButton,
-                  pressed && { opacity: pressedState.opacity },
-                ]}
-                onPress={() => router.push('/(tabs)/discover/all-destinations')}
-              >
-                <Text style={styles.seeAllText}>See all destinations</Text>
-                <Ionicons name="arrow-forward" size={14} color={colors.orange} />
-              </Pressable>
-            )}
-          </View>
-        );
-      }
+  const headerRight = (
+    <View style={styles.headerRight}>
+      <NotificationButton />
+      <MenuButton />
+    </View>
+  );
 
-      case 'featured-islands':
-        return (
-          <View style={styles.zoneWide}>
-            <View style={styles.zonePaddedHeader}>
-              <SectionHeader title="Featured islands" />
+  // Loading state
+  if (isLoading && recommended.length === 0) {
+    return (
+      <AppScreen>
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+        <LoadingScreen />
+      </AppScreen>
+    );
+  }
+
+  // Error state
+  if (error && recommended.length === 0) {
+    return (
+      <AppScreen>
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+        <ErrorScreen message="Something went wrong" onRetry={refresh} />
+      </AppScreen>
+    );
+  }
+
+  // Determine featured collection (first isFeatured or index 0)
+  const featuredCollection =
+    collections.find((c) => c.isFeatured) ?? collections[0] ?? null;
+  const gridCollections = collections.filter((c) => c !== featuredCollection);
+
+  return (
+    <AppScreen>
+      <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={styles.scrollContent}
+        refreshControl={
+          <RefreshControl refreshing={isLoading} onRefresh={refresh} />
+        }
+      >
+        {/* Section 1: Search bar */}
+        <View style={styles.searchBarWrap}>
+          <CompactSearchBar
+            onPress={() => router.push('/(tabs)/discover/search')}
+          />
+        </View>
+
+        {/* Section 2: Browse destinations entry point */}
+        <View style={styles.sectionPadded}>
+          <BrowseDestinationsCard
+            onPress={() => router.push('/(tabs)/discover/all-destinations')}
+          />
+        </View>
+
+        {/* Section 3: Recommended cities carousel */}
+        {recommended.length > 0 && (
+          <View style={styles.sectionWide}>
+            <View style={styles.sectionPaddedHeader}>
+              <SectionHeader
+                title={
+                  isPersonalized
+                    ? 'Recommended for you'
+                    : 'Popular with solo women'
+                }
+              />
             </View>
             <ScrollView
               horizontal
@@ -236,77 +265,53 @@ export default function DiscoverScreen() {
               snapToInterval={CITY_CARD_WIDTH + spacing.md}
               decelerationRate="fast"
             >
-              {item.data.map((city) => (
-                <CityCard
-                  key={city.id}
+              {recommended.map((city) => (
+                <RecommendedCityCard
+                  key={city.cityId}
                   city={city}
-                  onPress={() => router.push(`/(tabs)/discover/city/${city.slug}`)}
+                  onPress={() =>
+                    router.push(`/(tabs)/discover/city/${city.citySlug}`)
+                  }
                 />
               ))}
             </ScrollView>
           </View>
-        );
+        )}
 
-      case 'collections-section':
-        return (
-          <View style={styles.zone}>
+        {/* Section 4: Collections — featured hero + 2-col grid */}
+        {collections.length > 0 && (
+          <View style={styles.sectionPadded}>
             <SectionHeader title="Ways to travel solo" />
-            <View style={styles.collectionsList}>
-              {item.data.map((collection) => (
-                <CollectionCard
-                  key={collection.id}
-                  collection={collection}
-                  onPress={() =>
-                    router.push(`/(tabs)/discover/collection/${collection.slug}`)
-                  }
-                />
-              ))}
-            </View>
+
+            {featuredCollection && (
+              <CollectionHeroCard
+                collection={featuredCollection}
+                onPress={() =>
+                  router.push(
+                    `/(tabs)/discover/collection/${featuredCollection.slug}`,
+                  )
+                }
+              />
+            )}
+
+            {gridCollections.length > 0 && (
+              <View style={styles.collectionsGrid}>
+                {gridCollections.map((collection) => (
+                  <CollectionGridCard
+                    key={collection.id}
+                    collection={collection}
+                    onPress={() =>
+                      router.push(
+                        `/(tabs)/discover/collection/${collection.slug}`,
+                      )
+                    }
+                  />
+                ))}
+              </View>
+            )}
           </View>
-        );
-
-      default:
-        return null;
-    }
-  };
-
-  const keyExtractor = (item: FeedItem, index: number) => `${item.type}-${index}`;
-
-  if (isLoading && discoverItems.length === 0) {
-    return (
-      <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
-        <LoadingScreen />
-      </AppScreen>
-    );
-  }
-
-  if (error && discoverItems.length === 0) {
-    return (
-      <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
-        <ErrorScreen message="Something went wrong" onRetry={refresh} />
-      </AppScreen>
-    );
-  }
-
-  return (
-    <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
-      <FlatList
-        data={discoverItems}
-        renderItem={renderItem}
-        keyExtractor={keyExtractor}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-        onRefresh={refresh}
-        refreshing={isLoading}
-        ListHeaderComponent={
-          <View style={styles.searchBarWrap}>
-            <CompactSearchBar onPress={() => router.push('/(tabs)/discover/search')} />
-          </View>
-        }
-      />
+        )}
+      </ScrollView>
     </AppScreen>
   );
 }
@@ -314,7 +319,7 @@ export default function DiscoverScreen() {
 // ── Styles ───────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  list: {
+  scrollContent: {
     paddingBottom: spacing.xxxxl,
   },
 
@@ -323,8 +328,13 @@ const styles = StyleSheet.create({
     height: 22,
     width: 76,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
 
-  // Search bar — compact, matches Home's MiniSearchBar
+  // Search bar
   searchBarWrap: {
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.sm,
@@ -345,69 +355,47 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // Zone spacing
-  zone: {
-    paddingHorizontal: spacing.screenX,
-    marginTop: spacing.xxxl,
-  },
-  zoneWide: {
-    marginTop: spacing.xl,
-  },
-  zonePaddedHeader: {
-    paddingHorizontal: spacing.screenX,
-  },
+  // Shared
   pressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
   },
 
-  // Country grid — 3 per row, equal size
-  countryGrid: {
-    gap: GRID_GAP,
+  // Section wrappers
+  sectionPadded: {
+    paddingHorizontal: spacing.screenX,
+    marginTop: spacing.xxxl,
   },
-  countryRow: {
-    flexDirection: 'row',
-    gap: GRID_GAP,
+  sectionWide: {
+    marginTop: spacing.xxxl,
   },
-  countryCard: {
-    width: COUNTRY_CARD_SIZE,
-    height: COUNTRY_CARD_SIZE * 1.2,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
-  },
-  countryCardContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingHorizontal: spacing.sm,
-    paddingBottom: spacing.sm,
-  },
-  countryCardName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: '#FFFFFF',
+  sectionPaddedHeader: {
+    paddingHorizontal: spacing.screenX,
   },
 
-  // See all button — below the grid
-  seeAllButton: {
+  // Browse destinations card
+  browseCard: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.xs,
-    paddingVertical: spacing.lg,
-    marginTop: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.borderSubtle,
+    justifyContent: 'space-between',
   },
-  seeAllText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
+  browseTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+    color: colors.textPrimary,
+  },
+  browseSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
 
-  // Featured cities/islands horizontal scroll
+  // Recommended cities carousel
   citiesScroll: {
     paddingHorizontal: spacing.screenX,
     gap: spacing.md,
@@ -438,34 +426,21 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
   },
-
-  // Collections — full-width image cards
-  collectionsList: {
-    gap: spacing.lg,
-    marginTop: spacing.md,
+  cityCardSignal: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.7)',
+    marginTop: spacing.xs,
   },
-  collectionCard: {
+
+  // Collections — hero
+  collectionHero: {
     width: '100%',
-    height: 180,
-    borderRadius: radius.card,
+    height: 200,
+    borderRadius: 12,
     overflow: 'hidden',
     backgroundColor: colors.neutralFill,
-  },
-  collectionTypeLabel: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    backgroundColor: colors.overlaySoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-  },
-  collectionTypeLabelText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    letterSpacing: 0.5,
-    color: '#FFFFFF',
-    textTransform: 'uppercase',
+    marginTop: spacing.md,
   },
   collectionCardContent: {
     position: 'absolute',
@@ -474,22 +449,37 @@ const styles = StyleSheet.create({
     right: 0,
     padding: spacing.lg,
   },
-  collectionCardTitle: {
+  collectionHeroTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 18,
     lineHeight: 24,
     color: '#FFFFFF',
-  },
-  collectionCardSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xs,
   },
   collectionCardCount: {
     fontFamily: fonts.regular,
     fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
     marginTop: spacing.xs,
+  },
+
+  // Collections — 2-col grid
+  collectionsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  collectionGridItem: {
+    width: COLLECTION_GRID_CARD_WIDTH,
+    height: 160,
+    borderRadius: 12,
+    overflow: 'hidden',
+    backgroundColor: colors.neutralFill,
+  },
+  collectionGridTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    lineHeight: 22,
+    color: '#FFFFFF',
   },
 });
