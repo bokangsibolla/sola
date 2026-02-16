@@ -4,6 +4,11 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 
+interface QuickLinksRowProps {
+  /** Trip ID to deep-link safety to the trip plan tab. Null = no trip. */
+  activeTripId?: string | null;
+}
+
 interface DashboardItem {
   label: string;
   subtitle: string;
@@ -12,36 +17,40 @@ interface DashboardItem {
   accentColor: string;
 }
 
-const ITEMS: DashboardItem[] = [
-  {
-    label: 'Safety',
-    subtitle: 'SOS & emergency info',
-    route: '/(tabs)/sos',
-    bg: colors.greenFill,
-    accentColor: colors.greenSoft,
-  },
-  {
-    label: 'Browse destinations',
-    subtitle: 'Explore countries and cities',
-    route: '/discover/browse',
-    bg: colors.blueFill,
-    accentColor: colors.blueSoft,
-  },
-  {
-    label: 'Community',
-    subtitle: 'Ask real solo travelers',
-    route: '/(tabs)/connect',
-    bg: colors.orangeFill,
-    accentColor: colors.orange,
-  },
-];
-
-export function QuickLinksRow() {
+export function QuickLinksRow({ activeTripId }: QuickLinksRowProps) {
   const router = useRouter();
+
+  const items: DashboardItem[] = [
+    {
+      label: 'Safety',
+      subtitle: activeTripId
+        ? 'Emergency numbers & contacts'
+        : 'Set up your emergency contact',
+      route: activeTripId
+        ? `/(tabs)/home/trips/${activeTripId}`
+        : '/(tabs)/home/settings',
+      bg: colors.greenFill,
+      accentColor: colors.greenSoft,
+    },
+    {
+      label: 'Browse destinations',
+      subtitle: 'Explore countries and cities',
+      route: '/discover/browse',
+      bg: colors.blueFill,
+      accentColor: colors.blueSoft,
+    },
+    {
+      label: 'Community',
+      subtitle: 'Ask real solo travelers',
+      route: '/(tabs)/connect',
+      bg: colors.orangeFill,
+      accentColor: colors.orange,
+    },
+  ];
 
   return (
     <View style={styles.container}>
-      {ITEMS.map((item) => (
+      {items.map((item) => (
         <Pressable
           key={item.label}
           style={({ pressed }) => [

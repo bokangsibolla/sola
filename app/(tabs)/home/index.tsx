@@ -173,7 +173,13 @@ export default function HomeScreen() {
         <QuickUpdate update={travelUpdate} />
 
         {/* 10. Dashboard tiles — Safety / Browse / Community */}
-        <QuickLinksRow />
+        <QuickLinksRow
+          activeTripId={
+            heroState.kind === 'active' || heroState.kind === 'upcoming'
+              ? heroState.trip.id
+              : null
+          }
+        />
 
         {/* 11. EndCard — image CTA */}
         <EndCard onExplore={() => router.push('/(tabs)/discover' as any)} />

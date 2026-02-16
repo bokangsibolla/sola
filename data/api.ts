@@ -1725,6 +1725,9 @@ export interface UpdateProfileInput {
   travelStyle?: string | null;
   preferredCurrency?: string;
   preferredLanguage?: string;
+  emergencyContactName?: string | null;
+  emergencyContactPhone?: string | null;
+  emergencyContactRelationship?: string | null;
 }
 
 export async function updateProfile(
@@ -1745,6 +1748,9 @@ export async function updateProfile(
   if (updates.travelStyle !== undefined) payload.travel_style = updates.travelStyle;
   if (updates.preferredCurrency !== undefined) payload.preferred_currency = updates.preferredCurrency;
   if (updates.preferredLanguage !== undefined) payload.preferred_language = updates.preferredLanguage;
+  if (updates.emergencyContactName !== undefined) payload.emergency_contact_name = updates.emergencyContactName;
+  if (updates.emergencyContactPhone !== undefined) payload.emergency_contact_phone = updates.emergencyContactPhone;
+  if (updates.emergencyContactRelationship !== undefined) payload.emergency_contact_relationship = updates.emergencyContactRelationship;
 
   const { data, error } = await supabase
     .from('profiles')

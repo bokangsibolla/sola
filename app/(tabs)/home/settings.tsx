@@ -8,6 +8,7 @@ import {
   ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -23,6 +24,15 @@ import { getSupportedCurrencies, getSymbol } from '@/lib/currency';
 import { getSupportedLanguages, changeLanguage, type SupportedLanguage } from '@/lib/i18n';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import ScreenHeader from '@/components/ui/ScreenHeader';
+
+const RELATIONSHIP_OPTIONS = ['Parent', 'Partner', 'Sibling', 'Friend'] as const;
+const RELATIONSHIP_VALUES = ['parent', 'partner', 'sibling', 'friend'] as const;
+const RELATIONSHIP_LABELS: Record<string, string> = {
+  parent: 'Parent',
+  partner: 'Partner',
+  sibling: 'Sibling',
+  friend: 'Friend',
+};
 
 const PRIVACY_POLICY_URL = 'https://solatravel.app/privacy';
 const TERMS_URL = 'https://solatravel.app/terms';
@@ -92,6 +102,72 @@ export default function SettingsScreen() {
   }, [posthog]);
 
   const [privacy, setPrivacy] = useState(onboardingStore.get('privacyDefaults'));
+
+  // Emergency contact state
+  const [ecName, setEcName] = useState('');
+  const [ecPhone, setEcPhone] = useState('');
+  const [ecRelationship, setEcRelationship] = useState('');
+  const [ecEditing, setEcEditing] = useState(false);
+  const [ecSaving, setEcSaving] = useState(false);
+
+  // Sync emergency contact from profile
+  useEffect(() => {
+    if (profile) {
+      setEcName(profile.emergencyContactName ?? '');
+      setEcPhone(profile.emergencyContactPhone ?? '');
+      setEcRelationship(profile.emergencyContactRelationship ?? '');
+    }
+  }, [profile]);
+
+  const hasEmergencyContact = Boolean(ecName && ecPhone);
+
+  const handleSaveEmergencyContact = async () => {
+    if (!userId || !ecName.trim() || !ecPhone.trim()) return;
+    setEcSaving(true);
+    try {
+      await updateProfile(userId, {
+        emergencyContactName: ecName.trim(),
+        emergencyContactPhone: ecPhone.trim(),
+        emergencyContactRelationship: ecRelationship || null,
+      });
+      posthog.capture('emergency_contact_saved');
+      setEcEditing(false);
+      refetchProfile();
+    } catch (error) {
+      Sentry.captureException(error);
+      Alert.alert('Could not save', 'Please try again.');
+    } finally {
+      setEcSaving(false);
+    }
+  };
+
+  const handleClearEmergencyContact = () => {
+    Alert.alert('Remove emergency contact?', 'You can add one again anytime.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Remove',
+        style: 'destructive',
+        onPress: async () => {
+          if (!userId) return;
+          try {
+            await updateProfile(userId, {
+              emergencyContactName: null,
+              emergencyContactPhone: null,
+              emergencyContactRelationship: null,
+            });
+            setEcName('');
+            setEcPhone('');
+            setEcRelationship('');
+            setEcEditing(false);
+            posthog.capture('emergency_contact_removed');
+            refetchProfile();
+          } catch (error) {
+            Sentry.captureException(error);
+          }
+        },
+      },
+    ]);
+  };
 
   const verificationStatus = profile?.verificationStatus || 'unverified';
   const verificationInfo = VERIFICATION_DISPLAY[verificationStatus] || VERIFICATION_DISPLAY.unverified;
@@ -188,6 +264,111 @@ export default function SettingsScreen() {
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           )}
         </Pressable>
+
+        {/* Emergency Contact */}
+        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Emergency contact</Text>
+
+        {!ecEditing && hasEmergencyContact ? (
+          <View style={styles.ecCard}>
+            <View style={styles.ecCardHeader}>
+              <View style={styles.ecCardInfo}>
+                <Text style={styles.ecCardName}>{ecName}</Text>
+                {ecRelationship ? (
+                  <Text style={styles.ecCardRelationship}>
+                    {RELATIONSHIP_LABELS[ecRelationship] ?? ecRelationship}
+                  </Text>
+                ) : null}
+              </View>
+              <Text style={styles.ecCardPhone}>{ecPhone}</Text>
+            </View>
+            <View style={styles.ecCardActions}>
+              <Pressable
+                style={styles.ecEditBtn}
+                onPress={() => setEcEditing(true)}
+              >
+                <Text style={styles.ecEditBtnText}>Edit</Text>
+              </Pressable>
+              <Pressable
+                style={styles.ecRemoveBtn}
+                onPress={handleClearEmergencyContact}
+              >
+                <Text style={styles.ecRemoveBtnText}>Remove</Text>
+              </Pressable>
+            </View>
+          </View>
+        ) : (
+          <View style={styles.ecForm}>
+            <TextInput
+              style={styles.ecInput}
+              placeholder="Name"
+              placeholderTextColor={colors.textMuted}
+              value={ecName}
+              onChangeText={setEcName}
+              onFocus={() => setEcEditing(true)}
+            />
+            <Pressable
+              style={styles.ecPickerRow}
+              onPress={() =>
+                showPicker(
+                  'Relationship',
+                  RELATIONSHIP_OPTIONS,
+                  RELATIONSHIP_VALUES.indexOf(ecRelationship as any),
+                  (i) => {
+                    setEcRelationship(RELATIONSHIP_VALUES[i]);
+                    setEcEditing(true);
+                  },
+                )
+              }
+            >
+              <Text style={ecRelationship ? styles.ecPickerValue : styles.ecPickerPlaceholder}>
+                {ecRelationship ? RELATIONSHIP_LABELS[ecRelationship] : 'Relationship'}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
+            </Pressable>
+            <TextInput
+              style={styles.ecInput}
+              placeholder="Phone (with country code, e.g. +1...)"
+              placeholderTextColor={colors.textMuted}
+              value={ecPhone}
+              onChangeText={setEcPhone}
+              keyboardType="phone-pad"
+              onFocus={() => setEcEditing(true)}
+            />
+            {ecEditing && (
+              <View style={styles.ecFormActions}>
+                <Pressable
+                  style={[
+                    styles.ecSaveBtn,
+                    (!ecName.trim() || !ecPhone.trim()) && styles.ecSaveBtnDisabled,
+                  ]}
+                  onPress={handleSaveEmergencyContact}
+                  disabled={!ecName.trim() || !ecPhone.trim() || ecSaving}
+                >
+                  <Text style={styles.ecSaveBtnText}>
+                    {ecSaving ? 'Saving...' : 'Save contact'}
+                  </Text>
+                </Pressable>
+                {hasEmergencyContact && (
+                  <Pressable
+                    style={styles.ecCancelBtn}
+                    onPress={() => {
+                      setEcName(profile?.emergencyContactName ?? '');
+                      setEcPhone(profile?.emergencyContactPhone ?? '');
+                      setEcRelationship(profile?.emergencyContactRelationship ?? '');
+                      setEcEditing(false);
+                    }}
+                  >
+                    <Text style={styles.ecCancelBtnText}>Cancel</Text>
+                  </Pressable>
+                )}
+              </View>
+            )}
+          </View>
+        )}
+
+        <Text style={styles.ecHint}>
+          Shown on your trip safety cards for quick access
+        </Text>
 
         {/* Preferences */}
         <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Preferences</Text>
@@ -354,5 +535,130 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: '#E53E3E',
+  },
+
+  // Emergency contact
+  ecCard: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+  },
+  ecCardHeader: {
+    gap: spacing.xs,
+  },
+  ecCardInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  ecCardName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  ecCardRelationship: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.greenSoft,
+    backgroundColor: colors.greenFill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  ecCardPhone: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  ecCardActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.md,
+  },
+  ecEditBtn: {
+    paddingVertical: spacing.xs,
+  },
+  ecEditBtnText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  ecRemoveBtn: {
+    paddingVertical: spacing.xs,
+  },
+  ecRemoveBtnText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  ecForm: {
+    gap: spacing.sm,
+  },
+  ecInput: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  ecPickerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.input,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+  },
+  ecPickerValue: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  ecPickerPlaceholder: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+  },
+  ecFormActions: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  ecSaveBtn: {
+    backgroundColor: colors.orange,
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.md,
+    borderRadius: radius.button,
+  },
+  ecSaveBtnDisabled: {
+    opacity: 0.4,
+  },
+  ecSaveBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  ecCancelBtn: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
+  ecCancelBtnText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  ecHint: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
 });

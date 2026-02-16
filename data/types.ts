@@ -319,6 +319,9 @@ export interface Profile {
   preferredCurrency: string;
   preferredLanguage: string;
   verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  emergencyContactName: string | null;
+  emergencyContactPhone: string | null;
+  emergencyContactRelationship: string | null;
   createdAt: string;
   updatedAt: string;
 }
