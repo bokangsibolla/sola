@@ -34,3 +34,17 @@ export const CONTINENT_LABELS: Record<ContinentKey, string> = {
 export const CONTINENT_ORDER: ContinentKey[] = [
   'africa', 'asia', 'europe', 'latin_america', 'middle_east', 'oceania',
 ];
+
+export interface ContinentSummary {
+  key: ContinentKey;
+  label: string;
+  countryCount: number;
+  cityCount: number;
+  imageUrl: string | null;
+}
+
+export interface BrowseCountryWithMeta extends BrowseCountry {
+  communityPostCount: number;
+}
+
+export type CountrySortOption = 'popular' | 'discussed' | 'alphabetical';

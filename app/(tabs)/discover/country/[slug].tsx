@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -12,22 +12,21 @@ import {
   getCountryBySlug,
   getCitiesByCountry,
   getExperiencesByCountry,
-  getSocialSpotsByCountry,
   getPlacesByCountryAndType,
 } from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
-import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { getEmergencyNumbers } from '@/data/safety';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { SignalsRow } from '@/components/explore/country/SignalsRow';
-import { BudgetBreakdown } from '@/components/explore/country/BudgetBreakdown';
-import { KnowBeforeYouGoAccordion } from '@/components/explore/country/KnowBeforeYouGoAccordion';
+import { AtAGlanceGrid } from '@/components/explore/country/AtAGlanceGrid';
+import { WhyWomenLoveIt } from '@/components/explore/country/WhyWomenLoveIt';
+import { TravelFitSection } from '@/components/explore/country/TravelFitSection';
+import { PlanYourTripAccordion } from '@/components/explore/country/PlanYourTripAccordion';
 import { QuickReference } from '@/components/explore/country/QuickReference';
+import { FinalNote } from '@/components/explore/country/FinalNote';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
 import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
-import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
 import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -146,22 +145,10 @@ export default function CountryGuideScreen() {
     ['experiencesByCountry', country?.id],
   );
 
-  // Fetch social spots (bars, cafes, restaurants, clubs, rooftops)
-  const { data: socialSpots } = useData(
-    () => country?.id ? getSocialSpotsByCountry(country.id, 8) : Promise.resolve([]),
-    ['socialSpotsByCountry', country?.id],
-  );
-
   // Fetch health facilities
   const { data: healthPlaces } = useData(
     () => country?.id ? getPlacesByCountryAndType(country.id, ['hospital', 'clinic', 'pharmacy']) : Promise.resolve([]),
     ['healthPlaces', country?.id],
-  );
-
-  // Fetch community threads
-  const { data: threadData } = useData(
-    () => country?.id ? getCountryThreadPreviews(country.id, 3) : Promise.resolve(null),
-    ['countryThreadPreviews', country?.id],
   );
 
   const headerLeft = (
@@ -200,34 +187,14 @@ export default function CountryGuideScreen() {
   const emergency = getEmergencyNumbers(country.iso2);
   const cityList = cities ?? [];
   const experienceList = (experiences ?? []) as PlaceWithCity[];
-  const socialList = (socialSpots ?? []) as PlaceWithCity[];
   const healthList = (healthPlaces ?? []) as PlaceWithCity[];
-
-  // Build introduction text: prefer intro_md, fall back to editorial fields
-  const introText = country.introMd
-    || country.summaryMd
-    || country.whyWeLoveMd
-    || country.portraitMd;
-
-  // Split intro into paragraphs (max 2)
-  const introParagraphs = introText
-    ? introText
-        .replace(/^#+\s.*/gm, '')
-        .replace(/\*\*/g, '')
-        .replace(/^[-*]\s+/gm, '')
-        .replace(/\n{3,}/g, '\n\n')
-        .trim()
-        .split(/\n\n+/)
-        .map((p: string) => p.replace(/\n/g, ' ').trim())
-        .filter((p: string) => p.length > 0)
-        .slice(0, 2)
-    : [];
 
   return (
     <AppScreen>
       <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
 
       <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Breadcrumb */}
         <Breadcrumb
           countryName={country.name}
           fromCollection={fromCollection}
@@ -240,7 +207,7 @@ export default function CountryGuideScreen() {
           }
         />
 
-        {/* A. Hero */}
+        {/* 1. Hero (200px) */}
         <View style={styles.heroContainer}>
           {country.heroImageUrl ? (
             <Image
@@ -263,62 +230,15 @@ export default function CountryGuideScreen() {
           </View>
         </View>
 
-        {/* B. Signals Row */}
-        <View style={styles.signalsSpacing}>
-          <SignalsRow country={country} />
-        </View>
+        {/* 2. At a Glance grid */}
+        <AtAGlanceGrid country={country} />
 
-        {/* C. Introduction */}
-        {introParagraphs.length > 0 && (
-          <View style={styles.content}>
-            {introParagraphs.map((paragraph, index) => (
-              <Text key={index} style={styles.introText}>{paragraph}</Text>
-            ))}
-          </View>
-        )}
-
-        <Divider />
-
-        {/* D. Top Experiences (activities only, NEVER accommodations) */}
-        {experienceList.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.content}>
-              {country.experienceDensityMd && (
-                <Text style={styles.sectionIntro} numberOfLines={2}>
-                  {country.experienceDensityMd
-                    .replace(/^#+\s.*/gm, '')
-                    .replace(/\*\*/g, '')
-                    .replace(/^[-*]\s+/gm, '')
-                    .trim()
-                    .split(/[.!?]\s/)
-                    .slice(0, 1)
-                    .join('. ')
-                    .replace(/\s*$/, '.')}
-                </Text>
-              )}
-              <SectionHeader title="Top experiences" />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-              style={styles.horizontalScrollContainer}
-            >
-              {experienceList.map((place) => (
-                <PlaceHorizontalCard key={place.id} place={place} />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        <Divider />
-
-        {/* E. Where to Go (Cities) */}
+        {/* 3. Explore cities — images first for visual appeal */}
         {cityList.length > 0 && (
           <View style={styles.section}>
             <View style={styles.content}>
               <SectionHeader
-                title="Where to go"
+                title="Explore cities"
                 actionLabel={cityList.length > 3 ? `All ${cityList.length} cities` : undefined}
                 onAction={cityList.length > 3 ? () => {
                   router.push({
@@ -335,47 +255,17 @@ export default function CountryGuideScreen() {
               style={styles.horizontalScrollContainer}
             >
               {cityList.map((city) => (
-                <CityHorizontalCard key={city.slug} city={city} />
+                <CityHorizontalCard key={city.slug} city={city} compact />
               ))}
             </ScrollView>
           </View>
         )}
 
-        <Divider />
-
-        {/* F. Budget Breakdown */}
-        <View style={styles.content}>
-          {country.budgetBreakdown && (
-            <BudgetBreakdown budget={country.budgetBreakdown} />
-          )}
-        </View>
-
-        {/* G. Know Before You Go (accordion) */}
-        <View style={styles.content}>
-          <KnowBeforeYouGoAccordion
-            country={country}
-            healthPlaces={healthList}
-          />
-        </View>
-
-        {/* H. Social Scene */}
-        {socialList.length > 0 && (
+        {/* 4. Things to do — image cards */}
+        {experienceList.length > 0 && (
           <View style={styles.section}>
             <View style={styles.content}>
-              {country.communityConnectionMd && (
-                <Text style={styles.sectionIntro} numberOfLines={2}>
-                  {country.communityConnectionMd
-                    .replace(/^#+\s.*/gm, '')
-                    .replace(/\*\*/g, '')
-                    .replace(/^[-*]\s+/gm, '')
-                    .trim()
-                    .split(/[.!?]\s/)
-                    .slice(0, 1)
-                    .join('. ')
-                    .replace(/\s*$/, '.')}
-                </Text>
-              )}
-              <SectionHeader title="Social scene" />
+              <SectionHeader title="Things to do" />
             </View>
             <ScrollView
               horizontal
@@ -383,8 +273,8 @@ export default function CountryGuideScreen() {
               contentContainerStyle={styles.horizontalScroll}
               style={styles.horizontalScrollContainer}
             >
-              {socialList.map((place) => (
-                <PlaceHorizontalCard key={place.id} place={place} />
+              {experienceList.map((place) => (
+                <PlaceHorizontalCard key={place.id} place={place} compact />
               ))}
             </ScrollView>
           </View>
@@ -392,22 +282,28 @@ export default function CountryGuideScreen() {
 
         <Divider />
 
-        {/* I. Quick Reference */}
+        {/* 5. Why Women Love It */}
+        <WhyWomenLoveIt country={country} />
+
+        <Divider />
+
+        {/* 6. Travel Fit */}
+        <TravelFitSection country={country} />
+
+        <Divider />
+
+        {/* 7. Plan Your Trip */}
+        <PlanYourTripAccordion country={country} healthPlaces={healthList} />
+
+        <Divider />
+
+        {/* 8. Quick Reference */}
         <View style={styles.content}>
           <QuickReference country={country} emergency={emergency} />
         </View>
 
-        {/* J. Community */}
-        {threadData && threadData.threads.length > 0 && (
-          <View style={styles.content}>
-            <CommunityThreadRows
-              threads={threadData.threads}
-              totalCount={threadData.totalCount}
-              countryId={country.id}
-              countryName={country.name}
-            />
-          </View>
-        )}
+        {/* 9. Final Note */}
+        <FinalNote country={country} />
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
@@ -459,21 +355,21 @@ const styles = StyleSheet.create({
     flexShrink: 1,
   },
 
-  // Hero
+  // Hero (200px — compact)
   heroContainer: {
     position: 'relative',
-    height: 280,
+    height: 200,
   },
   heroImage: {
     width: '100%',
-    height: 280,
+    height: 200,
   },
   heroGradient: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 160,
+    height: 120,
   },
   heroOverlay: {
     position: 'absolute',
@@ -483,9 +379,9 @@ const styles = StyleSheet.create({
   },
   heroName: {
     fontFamily: fonts.semiBold,
-    fontSize: 36,
+    fontSize: 32,
     color: '#FFFFFF',
-    lineHeight: 40,
+    lineHeight: 36,
   },
   heroTagline: {
     fontFamily: fonts.regular,
@@ -494,23 +390,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
 
-  // Signals spacing
-  signalsSpacing: {
-    marginTop: spacing.xl,
-  },
-
   // Content area (padded sections)
   content: {
     paddingHorizontal: spacing.screenX,
-  },
-
-  // Introduction
-  introText: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    color: colors.textPrimary,
-    lineHeight: 26,
-    marginBottom: spacing.lg,
   },
 
   // Section divider
@@ -540,13 +422,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.orange,
-  },
-  sectionIntro: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
-    marginBottom: spacing.md,
   },
 
   // Horizontal scroll containers

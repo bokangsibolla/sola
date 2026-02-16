@@ -67,7 +67,9 @@ export async function fetchBrowseData(): Promise<Map<ContinentKey, BrowseCountry
 
   const grouped = new Map<ContinentKey, BrowseCountry[]>();
   for (const country of countriesWithCities) {
-    const continent = country.continent as ContinentKey;
+    const continent = country.continent as ContinentKey | null;
+    // Skip countries without a continent (migration may not be applied yet)
+    if (!continent) continue;
     if (!grouped.has(continent)) {
       grouped.set(continent, []);
     }
@@ -82,6 +84,27 @@ export async function fetchBrowseData(): Promise<Map<ContinentKey, BrowseCountry
   }
 
   return grouped;
+}
+
+/**
+ * Fetch community thread counts grouped by country.
+ * Returns a Map of countryId → threadCount for active threads.
+ */
+export async function fetchCommunityCountsByCountry(): Promise<Map<string, number>> {
+  const { data, error } = await supabase
+    .from('community_threads')
+    .select('country_id')
+    .eq('status', 'active')
+    .not('country_id', 'is', null);
+
+  if (error || !data) return new Map();
+
+  const counts = new Map<string, number>();
+  for (const row of data) {
+    const id = row.country_id as string;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+  return counts;
 }
 
 /**

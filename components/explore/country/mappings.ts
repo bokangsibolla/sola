@@ -3,13 +3,13 @@
 
 import type { Country } from '@/data/types';
 
-/** Map solo_level enum to a human-readable phrase. */
+/** Map solo_level enum to a compact label for grid cells. */
 export function mapSoloLevel(level: Country['soloLevel']): string {
   switch (level) {
-    case 'beginner': return 'Great for first-timers';
-    case 'intermediate': return 'Best with some travel experience';
-    case 'expert': return 'For confident solo travelers';
-    default: return 'Suitable for solo travelers';
+    case 'beginner': return 'First-timers welcome';
+    case 'intermediate': return 'Some experience';
+    case 'expert': return 'Confident travelers';
+    default: return 'Solo-friendly';
   }
 }
 

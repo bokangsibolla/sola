@@ -1,278 +1,174 @@
 // app/(tabs)/discover/all-destinations.tsx
-// Browse all destinations — visual country cards with city chips
-import React, { useCallback, useEffect, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+// Browse destinations — 2-column continent grid
+import React from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
-import * as Sentry from '@sentry/react-native';
+import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
-import MenuButton from '@/components/MenuButton';
-import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { getCountries, getCitiesByCountry } from '@/data/api';
-import type { Country, City } from '@/data/types';
+import { useBrowseData } from '@/data/discover/useBrowseData';
+import type { ContinentSummary } from '@/data/discover/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
-interface CountryWithCities {
-  country: Country;
-  cities: City[];
+// ── Continent card ──────────────────────────────────────────
+
+function ContinentCard({
+  continent,
+  onPress,
+}: {
+  continent: ContinentSummary;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [styles.gridItem, pressed && styles.pressed]}
+    >
+      {continent.imageUrl ? (
+        <Image
+          source={{ uri: continent.imageUrl }}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={200}
+        />
+      ) : (
+        <View style={[StyleSheet.absoluteFillObject, { backgroundColor: colors.neutralFill }]} />
+      )}
+      <LinearGradient
+        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
+        locations={[0, 0.3, 1]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.gridContent}>
+        <Text style={styles.gridName}>{continent.label}</Text>
+        <Text style={styles.gridMeta}>
+          {continent.countryCount} {continent.countryCount === 1 ? 'country' : 'countries'} · {continent.cityCount} {continent.cityCount === 1 ? 'city' : 'cities'}
+        </Text>
+      </View>
+    </Pressable>
+  );
 }
+
+// ── Main screen ──────────────────────────────────────────────
 
 export default function AllDestinationsScreen() {
   const router = useRouter();
-  const [data, setData] = useState<CountryWithCities[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { continents, isLoading, error, refresh } = useBrowseData();
 
-  const load = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
+  const backButton = (
+    <Pressable onPress={() => router.back()} hitSlop={8}>
+      <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
+    </Pressable>
+  );
 
-      const countries = await getCountries();
-
-      // Fetch cities for each country in parallel
-      const results = await Promise.all(
-        countries.map(async (country) => {
-          try {
-            const cities = await getCitiesByCountry(country.id);
-            return { country, cities };
-          } catch {
-            return { country, cities: [] as City[] };
-          }
-        }),
-      );
-
-      setData(results);
-    } catch (e) {
-      setError('Could not load destinations. Please try again.');
-      Sentry.captureException(e);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  if (loading) {
+  if (isLoading && continents.length === 0) {
     return (
       <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
-          <View style={styles.headerRight}>
-            <NotificationButton />
-            <MenuButton />
-          </View>
-        }
-      />
+        <AppHeader title="" leftComponent={backButton} />
         <LoadingScreen />
       </AppScreen>
     );
   }
 
-  if (error || data.length === 0) {
+  if (error && continents.length === 0) {
     return (
       <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
-          <View style={styles.headerRight}>
-            <NotificationButton />
-            <MenuButton />
-          </View>
-        }
-      />
-        <ErrorScreen message={error ?? 'No destinations found'} onRetry={load} />
+        <AppHeader title="" leftComponent={backButton} />
+        <ErrorScreen message="Could not load destinations" onRetry={refresh} />
       </AppScreen>
     );
   }
 
+  // Pair continents into rows of 2
+  const rows: ContinentSummary[][] = [];
+  for (let i = 0; i < continents.length; i += 2) {
+    rows.push(continents.slice(i, i + 2));
+  }
+
   return (
     <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
-          <View style={styles.headerRight}>
-            <NotificationButton />
-            <MenuButton />
-          </View>
-        }
-      />
+      <AppHeader title="" leftComponent={backButton} />
 
-      {/* Breadcrumb */}
-      <View style={styles.breadcrumb}>
-        <Pressable onPress={() => router.back()} hitSlop={8}>
-          <Text style={styles.breadcrumbLink}>Discover</Text>
-        </Pressable>
-        <Text style={styles.breadcrumbSep}>/</Text>
-        <Text style={styles.breadcrumbCurrent}>All destinations</Text>
-      </View>
-
-      <FlatList
-        data={data}
-        keyExtractor={(item) => item.country.id}
-        contentContainerStyle={styles.listContent}
+      <ScrollView
         showsVerticalScrollIndicator={false}
-        renderItem={({ item }) => (
-          <CountryCard item={item} router={router} />
-        )}
-      />
+        contentContainerStyle={styles.scrollContent}
+      >
+        <Text style={styles.pageTitle}>Browse destinations</Text>
+
+        {rows.map((row, rowIdx) => (
+          <View key={rowIdx} style={styles.gridRow}>
+            {row.map((continent) => (
+              <ContinentCard
+                key={continent.key}
+                continent={continent}
+                onPress={() =>
+                  router.push(`/(tabs)/discover/continent/${continent.key}` as any)
+                }
+              />
+            ))}
+            {row.length === 1 && <View style={styles.gridSpacer} />}
+          </View>
+        ))}
+      </ScrollView>
     </AppScreen>
-  );
-}
-
-// ── Country card ────────────────────────────────────────────
-
-function CountryCard({
-  item,
-  router,
-}: {
-  item: CountryWithCities;
-  router: ReturnType<typeof useRouter>;
-}) {
-  const { country, cities } = item;
-
-  return (
-    <Pressable
-      onPress={() => router.push(`/(tabs)/discover/country/${country.slug}`)}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
-    >
-      {/* Country image */}
-      <Image
-        source={{ uri: country.heroImageUrl ?? undefined }}
-        style={styles.cardImage}
-        contentFit="cover"
-        transition={200}
-      />
-
-      {/* Text content */}
-      <View style={styles.cardBody}>
-        <View style={styles.cardNameRow}>
-          <Text style={styles.cardName} numberOfLines={1}>
-            {country.name}
-          </Text>
-          <Feather name="chevron-right" size={16} color={colors.textMuted} />
-        </View>
-        {cities.length > 0 && (
-          <Text style={styles.cardCities} numberOfLines={1}>
-            {cities.map((c) => c.name).join(' · ')}
-          </Text>
-        )}
-      </View>
-    </Pressable>
   );
 }
 
 // ── Styles ──────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-  },
-
-  // Breadcrumb
-  breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  breadcrumbLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  breadcrumbSep: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  breadcrumbCurrent: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-
-  // List
-  listContent: {
+  scrollContent: {
     paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xxxxl,
-    gap: spacing.md,
   },
-
-  // Country card — image left, text right
-  card: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    overflow: 'hidden',
+  pageTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xl,
   },
   pressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
   },
-  cardImage: {
-    width: 80,
-    height: 80,
+
+  // Grid — explicit row pairs
+  gridRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+  },
+  gridSpacer: {
+    flex: 1,
+  },
+  gridItem: {
+    flex: 1,
+    height: 160,
+    borderRadius: radius.card,
+    overflow: 'hidden',
     backgroundColor: colors.neutralFill,
   },
-  cardBody: {
-    flex: 1,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    gap: spacing.xs,
+  gridContent: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: spacing.md,
   },
-  cardNameRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  cardName: {
+  gridName: {
     fontFamily: fonts.semiBold,
     fontSize: 16,
-    color: colors.textPrimary,
-    flex: 1,
-    marginRight: spacing.sm,
+    color: '#FFFFFF',
   },
-  cardCities: {
+  gridMeta: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.75)',
+    marginTop: spacing.xs,
   },
 });

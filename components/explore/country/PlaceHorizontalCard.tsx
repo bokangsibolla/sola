@@ -7,13 +7,16 @@ import type { PlaceWithCity } from '@/data/types';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.6;
+const COMPACT_WIDTH = Dimensions.get('window').width * 0.5;
 const IMAGE_HEIGHT = 180;
+const COMPACT_IMAGE_HEIGHT = 140;
 
 interface Props {
   place: PlaceWithCity;
+  compact?: boolean;
 }
 
-export function PlaceHorizontalCard({ place }: Props) {
+export function PlaceHorizontalCard({ place, compact }: Props) {
   const router = useRouter();
   const posthog = usePostHog();
 
@@ -23,9 +26,13 @@ export function PlaceHorizontalCard({ place }: Props) {
         posthog.capture('place_tapped', { place_id: place.id, place_name: place.name });
         router.push(`/(tabs)/discover/place-detail/${place.id}` as any);
       }}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        compact && styles.cardCompact,
+        pressed && styles.pressed,
+      ]}
     >
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, compact && styles.imageContainerCompact]}>
         {place.imageUrl ? (
           <Image
             source={{ uri: place.imageUrl }}
@@ -71,13 +78,19 @@ const styles = StyleSheet.create({
     borderColor: colors.borderDefault,
     backgroundColor: colors.background,
   },
+  cardCompact: {
+    width: COMPACT_WIDTH,
+  },
   pressed: {
     opacity: pressedState.opacity,
-    transform: [...pressedState.transform],
+    transform: [{ scale: 0.98 }],
   },
   imageContainer: {
     height: IMAGE_HEIGHT,
     position: 'relative',
+  },
+  imageContainerCompact: {
+    height: COMPACT_IMAGE_HEIGHT,
   },
   gradient: {
     position: 'absolute',

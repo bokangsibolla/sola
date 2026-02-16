@@ -65,6 +65,13 @@ export interface Country {
   culturalNote: string | null;
   transportSummary: string | null;
   introMd: string | null;
+  // Country guide v2 fields
+  bestForMd: string | null;
+  mightStruggleMd: string | null;
+  legalContextMd: string | null;
+  finalNoteMd: string | null;
+  cashVsCard: string | null;
+  plugType: string | null;
   publishedAt: string | null;
 }
 

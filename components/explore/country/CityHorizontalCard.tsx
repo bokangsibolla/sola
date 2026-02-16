@@ -7,13 +7,16 @@ import type { City } from '@/data/types';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.7;
+const COMPACT_WIDTH = Dimensions.get('window').width * 0.6;
 const CARD_HEIGHT = 200;
+const COMPACT_HEIGHT = 160;
 
 interface Props {
   city: City;
+  compact?: boolean;
 }
 
-export function CityHorizontalCard({ city }: Props) {
+export function CityHorizontalCard({ city, compact }: Props) {
   const router = useRouter();
   const posthog = usePostHog();
 
@@ -23,7 +26,11 @@ export function CityHorizontalCard({ city }: Props) {
         posthog.capture('city_tapped', { city_slug: city.slug, city_name: city.name });
         router.push(`/(tabs)/discover/city/${city.slug}` as any);
       }}
-      style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      style={({ pressed }) => [
+        styles.card,
+        compact && styles.cardCompact,
+        pressed && styles.pressed,
+      ]}
     >
       {city.heroImageUrl ? (
         <Image
@@ -69,9 +76,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderDefault,
   },
+  cardCompact: {
+    width: COMPACT_WIDTH,
+    height: COMPACT_HEIGHT,
+  },
   pressed: {
     opacity: pressedState.opacity,
-    transform: [...pressedState.transform],
+    transform: [{ scale: 0.98 }],
   },
   gradient: {
     position: 'absolute',

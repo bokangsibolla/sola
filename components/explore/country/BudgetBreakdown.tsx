@@ -4,6 +4,8 @@ import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface Props {
   budget: BudgetBreakdownType;
+  /** When true, renders without section heading/margin — for inline use inside accordions */
+  headless?: boolean;
 }
 
 interface CellData {
@@ -53,8 +55,23 @@ function Cell({ data, isRight, isBottom }: { data: CellData; isRight: boolean; i
   );
 }
 
-export function BudgetBreakdown({ budget }: Props) {
+export function BudgetBreakdown({ budget, headless }: Props) {
   const cells = buildCells(budget);
+
+  if (headless) {
+    return (
+      <View style={styles.grid}>
+        <View style={styles.row}>
+          <Cell data={cells[0]} isRight={false} isBottom={false} />
+          <Cell data={cells[1]} isRight={true} isBottom={false} />
+        </View>
+        <View style={styles.row}>
+          <Cell data={cells[2]} isRight={false} isBottom={true} />
+          <Cell data={cells[3]} isRight={true} isBottom={true} />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.section}>

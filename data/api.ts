@@ -138,6 +138,13 @@ export function mapCountry(row: Record<string, any>): Country {
     culturalNote: row.cultural_note ?? null,
     transportSummary: row.transport_summary ?? null,
     introMd: row.intro_md ?? null,
+    // Country guide v2 fields
+    bestForMd: row.best_for_md ?? null,
+    mightStruggleMd: row.might_struggle_md ?? null,
+    legalContextMd: row.legal_context_md ?? null,
+    finalNoteMd: row.final_note_md ?? null,
+    cashVsCard: row.cash_vs_card ?? null,
+    plugType: row.plug_type ?? null,
     publishedAt: row.published_at,
   };
 }
