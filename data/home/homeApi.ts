@@ -113,30 +113,51 @@ export async function fetchFeaturedCity(): Promise<FeaturedCity> {
     .not('hero_image_url', 'is', null)
     .order('order_index');
 
-  if (error || !data || data.length === 0) {
-    // Ultimate fallback — SEA launch market
+  if (!error && data && data.length > 0) {
+    const idx = weekOfYear % data.length;
+    const row = data[idx] as Record<string, any>;
     return {
-      id: '',
-      name: 'Bangkok',
-      countryName: 'Thailand',
-      heroImageUrl: '',
-      slug: 'bangkok',
-      shortBlurb: 'Temples, street food, and a solo traveler favorite',
-      timezone: 'Asia/Bangkok',
+      id: row.id,
+      name: row.name,
+      countryName: (row.countries as any)?.name ?? '',
+      heroImageUrl: row.hero_image_url,
+      slug: row.slug,
+      shortBlurb: row.short_blurb ?? null,
+      timezone: row.timezone ?? 'UTC',
     };
   }
 
-  const idx = weekOfYear % data.length;
-  const row = data[idx] as Record<string, any>;
+  // No featured cities — pull a real city from the DB by slug so we get its actual image
+  const { data: fallbackCity } = await supabase
+    .from('cities')
+    .select('id, name, slug, short_blurb, hero_image_url, timezone, countries(name)')
+    .eq('is_active', true)
+    .not('hero_image_url', 'is', null)
+    .order('order_index')
+    .limit(1)
+    .maybeSingle();
 
+  if (fallbackCity) {
+    return {
+      id: fallbackCity.id,
+      name: fallbackCity.name,
+      countryName: (fallbackCity.countries as any)?.name ?? '',
+      heroImageUrl: fallbackCity.hero_image_url,
+      slug: fallbackCity.slug,
+      shortBlurb: fallbackCity.short_blurb ?? null,
+      timezone: fallbackCity.timezone ?? 'UTC',
+    };
+  }
+
+  // Ultimate hardcoded fallback — should never reach here if DB has any cities
   return {
-    id: row.id,
-    name: row.name,
-    countryName: (row.countries as any)?.name ?? '',
-    heroImageUrl: row.hero_image_url,
-    slug: row.slug,
-    shortBlurb: row.short_blurb ?? null,
-    timezone: row.timezone ?? 'UTC',
+    id: '',
+    name: 'Bangkok',
+    countryName: 'Thailand',
+    heroImageUrl: '',
+    slug: 'bangkok',
+    shortBlurb: 'Temples, street food, and a solo traveler favorite',
+    timezone: 'Asia/Bangkok',
   };
 }
 
