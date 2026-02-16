@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
+import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
@@ -274,7 +275,7 @@ export default function DiscoverScreen() {
   if (isLoading && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
         <LoadingScreen />
       </AppScreen>
     );
@@ -283,7 +284,7 @@ export default function DiscoverScreen() {
   if (error && discoverItems.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
@@ -291,7 +292,7 @@ export default function DiscoverScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+      <AppHeader title="" leftComponent={headerLeft} rightComponent={<View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}><NotificationButton /><MenuButton /></View>} />
       <FlatList
         data={discoverItems}
         renderItem={renderItem}

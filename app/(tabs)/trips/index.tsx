@@ -8,6 +8,7 @@ import { Image } from 'expo-image';
 import AppScreen from '@/components/AppScreen';
 import AppHeader from '@/components/AppHeader';
 import MenuButton from '@/components/MenuButton';
+import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -56,6 +57,7 @@ export default function TripsScreen() {
           }
           rightComponent={
             <View style={styles.headerRight}>
+              <NotificationButton />
               <MenuButton />
               <Pressable
                 style={styles.addButton}
@@ -94,6 +96,7 @@ export default function TripsScreen() {
         }
         rightComponent={
           <View style={styles.headerRight}>
+            <NotificationButton />
             <MenuButton />
             <Pressable
               style={styles.addButton}
