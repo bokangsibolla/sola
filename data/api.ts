@@ -229,18 +229,19 @@ export async function getCountriesWithCities(): Promise<
 > {
   const { data, error } = await supabase
     .from('countries')
-    .select('*, cities(id, name, slug)')
+    .select('*, cities(id, name, slug, is_active)')
     .eq('is_active', true)
-    .eq('cities.is_active', true)
     .order('order_index');
   if (error) throw error;
   return (data ?? []).map((row: any) => ({
     ...mapCountry(row),
-    cities: (row.cities ?? []).map((c: any) => ({
-      id: c.id,
-      name: c.name,
-      slug: c.slug,
-    })),
+    cities: (row.cities ?? [])
+      .filter((c: any) => c.is_active)
+      .map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        slug: c.slug,
+      })),
   }));
 }
 
