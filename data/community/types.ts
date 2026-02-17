@@ -5,6 +5,15 @@ export type ReplyStatus = 'active' | 'removed';
 export type ReportStatus = 'open' | 'reviewed' | 'actioned';
 export type CommunityEntityType = 'thread' | 'reply';
 export type VoteDirection = 'up' | 'down' | null;
+export type AuthorType = 'user' | 'system' | 'seed';
+
+export interface SeedProfile {
+  id: string;
+  displayName: string;
+  avatarUrl: string | null;
+  bio: string | null;
+  homeBase: string | null;
+}
 
 export interface CommunityTopic {
   id: string;
@@ -28,8 +37,9 @@ export interface CommunityThread {
   helpfulCount: number;
   voteScore: number;
   replyCount: number;
-  authorType: string;
+  authorType: AuthorType;
   isSeed: boolean;
+  seedProfileId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -42,6 +52,7 @@ export interface ThreadWithAuthor extends CommunityThread {
     username: string | null;
     avatarUrl: string | null;
   };
+  seedProfile: SeedProfile | null;
   countryName: string | null;
   cityName: string | null;
   cityImageUrl: string | null;
@@ -59,6 +70,8 @@ export interface CommunityReply {
   status: ReplyStatus;
   helpfulCount: number;
   voteScore: number;
+  authorType: AuthorType;
+  seedProfileId: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +84,7 @@ export interface ReplyWithAuthor extends CommunityReply {
     username: string | null;
     avatarUrl: string | null;
   };
+  seedProfile: SeedProfile | null;
   userVote: VoteDirection;
 }
 

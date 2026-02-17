@@ -15,7 +15,24 @@ import type {
   CreateThreadInput,
   CreateReplyInput,
   VoteDirection,
+  SeedProfile,
 } from './types';
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function mapSeedProfile(row: any): SeedProfile | null {
+  const sp = row.community_seed_profiles;
+  if (!sp || !sp.id) return null;
+  return {
+    id: sp.id,
+    displayName: sp.display_name,
+    avatarUrl: sp.avatar_url ?? null,
+    bio: sp.bio ?? null,
+    homeBase: sp.home_base ?? null,
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Topics
@@ -43,12 +60,13 @@ export async function getThreadFeed(
   const { countryId, cityId, topicId, searchQuery, sort, page, pageSize } = params;
   const offset = page * pageSize;
 
-  // Build base query with joined author profile + place names
+  // Build base query with joined author profile + place names + seed profile
   let query = supabase
     .from('community_threads')
     .select(`
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -103,6 +121,7 @@ export async function getThreadFeed(
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
+    seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,
     cityName: row.cities?.name ?? null,
     cityImageUrl: row.cities?.hero_image_url ?? null,
@@ -124,6 +143,7 @@ export async function getThread(
     .select(`
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -143,6 +163,7 @@ export async function getThread(
       username: data.profiles?.username ?? null,
       avatarUrl: data.profiles?.avatar_url ?? null,
     },
+    seedProfile: mapSeedProfile(data),
     countryName: data.countries?.name ?? null,
     cityName: data.cities?.name ?? null,
     cityImageUrl: data.cities?.hero_image_url ?? null,
@@ -199,7 +220,8 @@ export async function getThreadReplies(
     .from('community_replies')
     .select(`
       *,
-      profiles!community_replies_author_profile_fkey(id, first_name, username, avatar_url)
+      profiles!community_replies_author_profile_fkey(id, first_name, username, avatar_url),
+      community_seed_profiles!community_replies_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base)
     `)
     .eq('thread_id', threadId)
     .eq('status', 'active')
@@ -224,6 +246,7 @@ export async function getThreadReplies(
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
+    seedProfile: mapSeedProfile(row),
     userVote: userVotes.get(row.id) ?? null,
   }));
 }
@@ -368,6 +391,7 @@ export async function getCityThreadPreviews(
     .select(`
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -389,6 +413,7 @@ export async function getCityThreadPreviews(
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
+    seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,
     cityName: row.cities?.name ?? null,
     cityImageUrl: row.cities?.hero_image_url ?? null,
@@ -427,6 +452,7 @@ export async function getCountryThreadPreviews(
     .select(`
       *,
       profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
       community_topics(label)
@@ -448,6 +474,7 @@ export async function getCountryThreadPreviews(
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
     },
+    seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,
     cityName: row.cities?.name ?? null,
     cityImageUrl: row.cities?.hero_image_url ?? null,

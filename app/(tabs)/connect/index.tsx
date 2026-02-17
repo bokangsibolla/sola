@@ -20,7 +20,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import MenuButton from '@/components/MenuButton';
 import NotificationButton from '@/components/NotificationButton';
 import ErrorScreen from '@/components/ErrorScreen';
@@ -131,11 +131,14 @@ function ThreadCard({
   const helpfulColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
 
   const isSystem = thread.authorType === 'system';
+  const isSeed = thread.authorType === 'seed';
   const authorName = isSystem
     ? 'Sola Team'
-    : thread.author.username
-      ? `${thread.author.firstName} @${thread.author.username}`
-      : thread.author.firstName;
+    : isSeed && thread.seedProfile
+      ? thread.seedProfile.displayName
+      : thread.author.username
+        ? `${thread.author.firstName} @${thread.author.username}`
+        : thread.author.firstName;
   const placeName = thread.cityName ?? thread.countryName;
   const hasImage = !!thread.cityImageUrl;
 
@@ -148,6 +151,12 @@ function ThreadCard({
   const avatarContent = isSystem ? (
     <View style={[styles.avatar, styles.avatarSystem]}>
       <Text style={styles.avatarSystemText}>S</Text>
+    </View>
+  ) : isSeed ? (
+    <View style={[styles.avatar, styles.avatarFallback]}>
+      <Text style={styles.avatarFallbackText}>
+        {authorName.charAt(0).toUpperCase()}
+      </Text>
     </View>
   ) : thread.author.avatarUrl ? (
     <Image
@@ -173,15 +182,7 @@ function ThreadCard({
         <View style={styles.threadCardLeft}>
           {/* Author row */}
           <View style={styles.authorRow}>
-            {!isSystem ? (
-              <Pressable
-                onPress={() => router.push(`/connect/user/${thread.author.id}` as any)}
-                style={styles.authorPressable}
-              >
-                {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
-              </Pressable>
-            ) : (
+            {isSystem ? (
               <View style={styles.authorPressable}>
                 {avatarContent}
                 <Text style={styles.authorName}>{authorName}</Text>
@@ -189,6 +190,19 @@ function ThreadCard({
                   <Text style={styles.teamBadgeText}>TEAM</Text>
                 </View>
               </View>
+            ) : isSeed ? (
+              <View style={styles.authorPressable}>
+                {avatarContent}
+                <Text style={styles.authorName}>{authorName}</Text>
+              </View>
+            ) : (
+              <Pressable
+                onPress={() => router.push(`/connect/user/${thread.author.id}` as any)}
+                style={styles.authorPressable}
+              >
+                {avatarContent}
+                <Text style={styles.authorName}>{authorName}</Text>
+              </Pressable>
             )}
             <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
           </View>
@@ -869,16 +883,9 @@ export default function ConnectScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={{ height: 22, width: 76 }}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
+      <NavigationHeader
+        title="Connect"
+        rightActions={
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <NotificationButton />
             <MenuButton />

@@ -17,8 +17,7 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import BackButton from '@/components/ui/BackButton';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { useThread } from '@/data/community/useThread';
 import { castVote, createReply, reportContent } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
@@ -43,26 +42,51 @@ function ReplyCard({
   const router = useRouter();
 
   const isHelpful = reply.userVote === 'up';
+  const isSystem = reply.authorType === 'system';
+  const isSeed = reply.authorType === 'seed';
+
+  const authorAvatar = isSystem ? (
+    <View style={[styles.avatar, styles.avatarSolaTeam]}>
+      <Text style={styles.avatarSolaTeamInitial}>S</Text>
+    </View>
+  ) : isSeed && reply.seedProfile ? (
+    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+      <Text style={styles.avatarInitial}>
+        {reply.seedProfile.displayName.charAt(0)}
+      </Text>
+    </View>
+  ) : reply.author.avatarUrl ? (
+    <Image source={{ uri: reply.author.avatarUrl }} style={styles.avatar} />
+  ) : (
+    <View style={[styles.avatar, styles.avatarPlaceholder]}>
+      <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
+    </View>
+  );
+
+  const authorNameText = isSystem
+    ? 'Sola Team'
+    : isSeed && reply.seedProfile
+      ? reply.seedProfile.displayName
+      : reply.author.firstName + (reply.author.username ? ` @${reply.author.username}` : '');
 
   return (
     <View style={styles.replyCard}>
       <View style={styles.replyHeader}>
-        <Pressable
-          style={styles.authorPressable}
-          onPress={() => router.push(`/connect/user/${reply.author.id}` as any)}
-        >
-          {reply.author.avatarUrl ? (
-            <Image source={{ uri: reply.author.avatarUrl }} style={styles.avatar} />
-          ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
-            </View>
-          )}
-          <Text style={styles.replyAuthorName}>
-            {reply.author.firstName}
-            {reply.author.username ? ` @${reply.author.username}` : ''}
-          </Text>
-        </Pressable>
+        {isSystem || isSeed ? (
+          <View style={styles.authorPressable}>
+            {authorAvatar}
+            <Text style={styles.replyAuthorName}>{authorNameText}</Text>
+            {isSystem && <Text style={styles.teamBadge}>TEAM</Text>}
+          </View>
+        ) : (
+          <Pressable
+            style={styles.authorPressable}
+            onPress={() => router.push(`/connect/user/${reply.author.id}` as any)}
+          >
+            {authorAvatar}
+            <Text style={styles.replyAuthorName}>{authorNameText}</Text>
+          </Pressable>
+        )}
         <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
         <View style={{ flex: 1 }} />
         <Pressable
@@ -182,9 +206,7 @@ export default function ThreadDetail() {
   if (!thread) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.headerBar}>
-          <BackButton />
-        </View>
+        <NavigationHeader title="Discussion" parentTitle="Connect" />
         <View style={styles.emptyState}>
           <Text style={styles.emptyTitle}>Thread not found</Text>
         </View>
@@ -220,6 +242,15 @@ export default function ThreadDetail() {
             </View>
             <Text style={styles.authorName}>Sola Team</Text>
             <Text style={styles.teamBadge}>TEAM</Text>
+          </>
+        ) : thread.authorType === 'seed' && thread.seedProfile ? (
+          <>
+            <View style={[styles.avatar, styles.avatarPlaceholder]}>
+              <Text style={styles.avatarInitial}>
+                {thread.seedProfile.displayName.charAt(0)}
+              </Text>
+            </View>
+            <Text style={styles.authorName}>{thread.seedProfile.displayName}</Text>
           </>
         ) : (
           <Pressable
@@ -283,9 +314,7 @@ export default function ThreadDetail() {
       keyboardVerticalOffset={0}
     >
       {/* Header bar */}
-      <View style={styles.headerBar}>
-        <ScreenHeader title="Discussion" />
-      </View>
+      <NavigationHeader title="Discussion" parentTitle="Connect" />
 
       {/* Replies list */}
       <FlatList
@@ -343,13 +372,6 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   loader: { marginTop: 60 },
 
-  // Header bar
-  headerBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.sm,
-  },
   listContent: { paddingHorizontal: spacing.screenX, paddingBottom: 20 },
 
   // Thread header
