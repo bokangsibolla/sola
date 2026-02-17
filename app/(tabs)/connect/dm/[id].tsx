@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { getConversations, getMessagesPaginated, getProfileById, sendMessage as apiSendMessage, blockUser, reportUser, markMessagesAsRead } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { usePaginatedData } from '@/hooks/usePaginatedData';
@@ -163,9 +163,10 @@ export default function DMThreadScreen() {
     >
       {/* Header */}
       <View style={styles.headerWrapper}>
-        <ScreenHeader
+        <NavigationHeader
           title={other?.firstName ?? 'Chat'}
-          rightComponent={
+          parentTitle="Messages"
+          rightActions={
             <Pressable onPress={showMenu} hitSlop={12} style={styles.menuButton}>
               <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
             </Pressable>

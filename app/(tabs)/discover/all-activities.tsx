@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { getAllActivities, getCityById } from '@/data/api';
@@ -104,9 +104,7 @@ export default function AllActivitiesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={{ paddingHorizontal: spacing.screenX }}>
-        <ScreenHeader title="All Activities" />
-      </View>
+      <NavigationHeader title="All Activities" parentTitle="Discover" />
 
       {/* Search */}
       <View style={styles.searchContainer}>

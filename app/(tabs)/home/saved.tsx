@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import {
@@ -94,7 +94,6 @@ function PlaceRow({
 // ---------------------------------------------------------------------------
 
 export default function SavedPlacesScreen() {
-  const router = useRouter();
   const { userId } = useAuth();
   const posthog = usePostHog();
 
@@ -121,18 +120,7 @@ export default function SavedPlacesScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title="Your Shortlist"
-        leftComponent={
-          <Pressable
-            onPress={() => router.back()}
-            hitSlop={12}
-            style={styles.backButton}
-          >
-            <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-          </Pressable>
-        }
-      />
+      <NavigationHeader title="Your Shortlist" parentTitle="Home" />
 
       {visiblePlaces.length === 0 ? (
         <View style={styles.emptyContainer}>
@@ -167,14 +155,6 @@ export default function SavedPlacesScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  // Back button
-  backButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
   // List
   listContent: {
     paddingBottom: spacing.xxl,

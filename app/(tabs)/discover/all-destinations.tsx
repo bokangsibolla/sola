@@ -5,9 +5,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useBrowseData } from '@/data/discover/useBrowseData';
@@ -59,16 +58,15 @@ export default function AllDestinationsScreen() {
   const router = useRouter();
   const { continents, isLoading, error, refresh } = useBrowseData();
 
-  const backButton = (
-    <Pressable onPress={() => router.back()} hitSlop={8}>
-      <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-    </Pressable>
-  );
+  const navCrumbs = JSON.stringify([
+    { label: 'Discover', path: '/(tabs)/discover' },
+    { label: 'All Destinations', path: '/(tabs)/discover/all-destinations' },
+  ]);
 
   if (isLoading && continents.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={backButton} />
+        <NavigationHeader title="All Destinations" parentTitle="Discover" />
         <LoadingScreen />
       </AppScreen>
     );
@@ -77,7 +75,7 @@ export default function AllDestinationsScreen() {
   if (error && continents.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={backButton} />
+        <NavigationHeader title="All Destinations" parentTitle="Discover" />
         <ErrorScreen message="Could not load destinations" onRetry={refresh} />
       </AppScreen>
     );
@@ -91,13 +89,12 @@ export default function AllDestinationsScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={backButton} />
+      <NavigationHeader title="All Destinations" parentTitle="Discover" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        <Text style={styles.pageTitle}>Browse destinations</Text>
 
         {rows.map((row, rowIdx) => (
           <View key={rowIdx} style={styles.gridRow}>
@@ -106,7 +103,10 @@ export default function AllDestinationsScreen() {
                 key={continent.key}
                 continent={continent}
                 onPress={() =>
-                  router.push(`/(tabs)/discover/continent/${continent.key}` as any)
+                  router.push({
+                    pathname: '/(tabs)/discover/continent/[key]' as any,
+                    params: { key: continent.key, _navCrumbs: navCrumbs },
+                  })
                 }
               />
             ))}
@@ -124,13 +124,6 @@ const styles = StyleSheet.create({
   scrollContent: {
     paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xxxxl,
-  },
-  pageTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: colors.textPrimary,
-    marginTop: spacing.sm,
-    marginBottom: spacing.xl,
   },
   pressed: {
     opacity: pressedState.opacity,

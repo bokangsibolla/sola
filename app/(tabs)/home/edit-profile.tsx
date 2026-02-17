@@ -28,7 +28,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { countries } from '@/data/geo';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 
 const BIO_MAX = 140;
 const ALL_INTERESTS = [
@@ -231,10 +231,7 @@ export default function EditProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Nav */}
-      <View style={styles.nav}>
-        <ScreenHeader title="Edit profile" />
-      </View>
+      <NavigationHeader title="Edit profile" parentTitle="Profile" />
 
       <ScrollView
         contentContainerStyle={styles.content}
@@ -401,15 +398,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
   },
   content: {
     paddingHorizontal: spacing.lg,

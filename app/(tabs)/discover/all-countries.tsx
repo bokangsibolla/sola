@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import {
@@ -93,9 +93,7 @@ export default function AllCountriesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={{ paddingHorizontal: spacing.screenX }}>
-        <ScreenHeader title="All Countries" />
-      </View>
+      <NavigationHeader title="All Countries" parentTitle="Discover" />
 
       {/* Search */}
       <View style={styles.searchContainer}>

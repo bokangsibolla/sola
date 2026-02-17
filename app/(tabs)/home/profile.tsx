@@ -6,7 +6,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { getCollections, getProfileById, getSavedPlaces, getUserVisitedCountries } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -60,9 +60,9 @@ export default function ProfileScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
+      <NavigationHeader
         title="Profile"
-        rightComponent={
+        rightActions={
           <Pressable
             onPress={() => {
               posthog.capture('settings_tapped', { source: 'header' });

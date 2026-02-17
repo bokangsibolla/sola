@@ -21,7 +21,7 @@ import CredibilityStats from '@/components/travelers/CredibilityStats';
 import ProfileTripCard from '@/components/travelers/ProfileTripCard';
 import VisitedCountries from '@/components/travelers/VisitedCountries';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
 import type { ConnectionStatus } from '@/data/types';
@@ -195,8 +195,10 @@ export default function UserProfileScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <ScreenHeader
-        rightComponent={
+      <NavigationHeader
+        title={profile?.firstName ?? 'Traveler'}
+        parentTitle="Connect"
+        rightActions={
           <Pressable onPress={handleMoreMenu} hitSlop={12}>
             <Feather name="more-horizontal" size={24} color={colors.textPrimary} />
           </Pressable>

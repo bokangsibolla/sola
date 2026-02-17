@@ -23,7 +23,7 @@ import { getProfileById, updateProfile } from '@/data/api';
 import { getSupportedCurrencies, getSymbol } from '@/lib/currency';
 import { getSupportedLanguages, changeLanguage, type SupportedLanguage } from '@/lib/i18n';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 
 const RELATIONSHIP_OPTIONS = ['Parent', 'Partner', 'Sibling', 'Friend'] as const;
 const RELATIONSHIP_VALUES = ['parent', 'partner', 'sibling', 'friend'] as const;
@@ -243,9 +243,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.nav}>
-        <ScreenHeader title="Settings" />
-      </View>
+      <NavigationHeader title="Settings" parentTitle="Profile" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Verification */}
@@ -489,15 +487,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
   },
   content: {
     paddingHorizontal: spacing.lg,

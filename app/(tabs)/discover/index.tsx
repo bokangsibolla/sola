@@ -14,9 +14,9 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
-import MenuButton from '@/components/MenuButton';
+import NavigationHeader from '@/components/NavigationHeader';
 import NotificationButton from '@/components/NotificationButton';
+import MenuButton from '@/components/MenuButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
@@ -204,16 +204,8 @@ export default function DiscoverScreen() {
     useDiscoverData();
   const router = useRouter();
 
-  const headerLeft = (
-    <Image
-      source={require('@/assets/images/sola-logo.png')}
-      style={styles.headerLogo}
-      contentFit="contain"
-    />
-  );
-
-  const headerRight = (
-    <View style={styles.headerRight}>
+  const headerActions = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <NotificationButton />
       <MenuButton />
     </View>
@@ -223,7 +215,7 @@ export default function DiscoverScreen() {
   if (isLoading && recommended.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+        <NavigationHeader title="Discover" rightActions={headerActions} />
         <LoadingScreen />
       </AppScreen>
     );
@@ -233,7 +225,7 @@ export default function DiscoverScreen() {
   if (error && recommended.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+        <NavigationHeader title="Discover" rightActions={headerActions} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
@@ -252,7 +244,7 @@ export default function DiscoverScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} rightComponent={headerRight} />
+      <NavigationHeader title="Discover" rightActions={headerActions} />
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
@@ -352,17 +344,6 @@ export default function DiscoverScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xxxxl,
-  },
-
-  // Header
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
   },
 
   // Search bar

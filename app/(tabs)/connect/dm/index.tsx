@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { getConversationsPaginated, getProfileById, getBlockedUserIds } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { usePaginatedData } from '@/hooks/usePaginatedData';
@@ -54,7 +54,7 @@ export default function DMListScreen() {
 
   return (
     <AppScreen>
-      <ScreenHeader title="Messages" />
+      <NavigationHeader title="Messages" parentTitle="Connect" />
 
       {visibleConversations.length === 0 ? (
         <View style={styles.emptyContainer}>

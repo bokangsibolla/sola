@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useQueryClient } from '@tanstack/react-query';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { getConnectionRequests, getProfileById, respondToConnectionRequest } from '@/data/api';
@@ -17,7 +17,6 @@ import type { ConnectionRequest, Profile } from '@/data/types';
 
 export default function ConnectionsScreen() {
   const { userId } = useAuth();
-  const router = useRouter();
   const queryClient = useQueryClient();
 
   const { data: requests, loading, error, refetch } = useData(
@@ -32,14 +31,7 @@ export default function ConnectionsScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title="Connection Requests"
-        leftComponent={
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Feather name="arrow-left" size={24} color={colors.textPrimary} />
-          </Pressable>
-        }
-      />
+      <NavigationHeader title="Connection Requests" parentTitle="Connect" />
 
       <FlatList
         data={pendingRequests}

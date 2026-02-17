@@ -4,8 +4,7 @@ import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
-import MenuButton from '@/components/MenuButton';
+import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useData } from '@/hooks/useData';
@@ -13,28 +12,6 @@ import { getExploreCollectionWithItems } from '@/data/api';
 import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 import type { ExploreCollectionItem } from '@/data/types';
-
-// ── Breadcrumb ──────────────────────────────────────────────
-
-function Breadcrumb({
-  collectionTitle,
-  onDiscover,
-}: {
-  collectionTitle: string;
-  onDiscover: () => void;
-}) {
-  return (
-    <View style={styles.breadcrumb}>
-      <Pressable onPress={onDiscover} hitSlop={8}>
-        <Text style={styles.breadcrumbLink}>Discover</Text>
-      </Pressable>
-      <Text style={styles.breadcrumbSep}>/</Text>
-      <Text style={styles.breadcrumbCurrent} numberOfLines={1}>
-        {collectionTitle}
-      </Text>
-    </View>
-  );
-}
 
 // ── Screen ──────────────────────────────────────────────────
 
@@ -53,18 +30,12 @@ export default function CollectionPage() {
     }
   }, [collection?.id]);
 
-  const headerLeft = (
-    <Image
-      source={require('@/assets/images/sola-logo.png')}
-      style={styles.headerLogo}
-      contentFit="contain"
-    />
-  );
+  const collectionTitle = collection?.title ?? 'Collection';
 
   if (loading) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <NavigationHeader title="Loading…" parentTitle="Discover" />
         <LoadingScreen />
       </AppScreen>
     );
@@ -73,7 +44,7 @@ export default function CollectionPage() {
   if (error) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <NavigationHeader title="Collection" parentTitle="Discover" />
         <ErrorScreen message={error.message} onRetry={refetch} />
       </AppScreen>
     );
@@ -82,7 +53,7 @@ export default function CollectionPage() {
   if (!collection) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+        <NavigationHeader title="Collection" parentTitle="Discover" />
         <View style={styles.empty}>
           <Text style={styles.emptyText}>This collection is being updated.</Text>
         </View>
@@ -90,29 +61,35 @@ export default function CollectionPage() {
     );
   }
 
+  const navCrumbs = JSON.stringify([
+    { label: 'Discover', path: '/(tabs)/discover' },
+    { label: collection.title, path: `/(tabs)/discover/collection/${slug}` },
+  ]);
+
   const handleItemPress = (item: ExploreCollectionItem) => {
     if (item.entityType === 'country') {
       router.push({
-        pathname: '/(tabs)/discover/country/[slug]',
+        pathname: '/(tabs)/discover/country/[slug]' as any,
         params: {
           slug: item.entitySlug,
-          fromCollection: collection.title,
-          fromCollectionSlug: slug,
+          _navCrumbs: navCrumbs,
         },
       });
     } else if (item.entityType === 'city') {
-      router.push(`/(tabs)/discover/city/${item.entitySlug}`);
+      router.push({
+        pathname: '/(tabs)/discover/city/[slug]' as any,
+        params: {
+          slug: item.entitySlug,
+          _navCrumbs: navCrumbs,
+        },
+      });
     }
   };
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={headerLeft} rightComponent={<MenuButton />} />
+      <NavigationHeader title={collection.title} parentTitle="Discover" />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <Breadcrumb
-          collectionTitle={collection.title}
-          onDiscover={() => router.push('/(tabs)/discover')}
-        />
 
         {/* Hero */}
         <View style={styles.hero}>
@@ -199,37 +176,8 @@ export default function CollectionPage() {
 // ── Styles ──────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
   scroll: {
     paddingBottom: spacing.xxxxl,
-  },
-
-  // Breadcrumb
-  breadcrumb: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.sm,
-    marginBottom: spacing.lg,
-  },
-  breadcrumbLink: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  breadcrumbSep: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  breadcrumbCurrent: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-    flexShrink: 1,
   },
 
   // Hero

@@ -12,6 +12,8 @@ import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import NavigationHeader from '@/components/NavigationHeader';
+import { useNavContext } from '@/hooks/useNavContext';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
@@ -250,6 +252,15 @@ export default function PlaceDetailScreen() {
     ['city', place?.cityId ?? ''],
   );
 
+  const { parentTitle, ancestors, handleBack } = useNavContext({
+    title: place?.name ?? 'Place',
+    path: `/(tabs)/discover/place-detail/${id}`,
+    fallbackCrumbs: [
+      { label: 'Discover', path: '/(tabs)/discover' },
+      ...(city ? [{ label: city.name, path: `/(tabs)/discover/city/${city.slug}` }] : []),
+    ],
+  });
+
   const { userId } = useAuth();
   const { data: profile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
@@ -359,30 +370,26 @@ export default function PlaceDetailScreen() {
   const displayType = place.originalType
     ? place.originalType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase())
     : category?.name || place.placeType.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-  const useSerifName = place.name.length < 35;
+  const useSerifName = false;
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => city ? router.push(`/(tabs)/discover/city/${city.slug}` as any) : router.back()}
-          hitSlop={12}
-          style={styles.backButton}
-        >
-          <Ionicons name="chevron-back" size={20} color={colors.textPrimary} />
-          {city && (
-            <Text style={styles.backLabel}>Back to {city.name}</Text>
-          )}
-        </Pressable>
-        <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
-          <Ionicons
-            name={saved ? 'heart' : 'heart-outline'}
-            size={24}
-            color={saved ? colors.orange : canSave ? colors.textPrimary : colors.textMuted}
-          />
-        </Pressable>
-      </View>
+      <NavigationHeader
+        title={place.name}
+        parentTitle={parentTitle ?? city?.name ?? 'Back'}
+        ancestors={ancestors}
+        onBack={handleBack}
+        rightActions={
+          <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
+            <Ionicons
+              name={saved ? 'heart' : 'heart-outline'}
+              size={24}
+              color={saved ? colors.orange : canSave ? colors.textPrimary : colors.textMuted}
+            />
+          </Pressable>
+        }
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* Image carousel */}
@@ -628,25 +635,6 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
 
-  // Header
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  backLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-
   // Carousel
   carouselImage: {
     width: SCREEN_WIDTH,
@@ -694,8 +682,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   placeNameSerif: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
+    fontFamily: fonts.semiBold,
+    fontSize: 26,
     color: colors.textPrimary,
     flex: 1,
     marginRight: spacing.sm,

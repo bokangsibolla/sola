@@ -5,7 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UniversalHeader } from '@/components/UniversalHeader';
+import NavigationHeader from '@/components/NavigationHeader';
+import { useNavContext } from '@/hooks/useNavContext';
 import { eventTracker } from '@/data/events/eventTracker';
 import {
   getCountryBySlug,
@@ -70,10 +71,8 @@ function Divider() {
 // ---------------------------------------------------------------------------
 
 export default function CountryGuideScreen() {
-  const { slug, fromCollection, fromCollectionSlug } = useLocalSearchParams<{
+  const { slug } = useLocalSearchParams<{
     slug: string;
-    fromCollection?: string;
-    fromCollectionSlug?: string;
   }>();
   const router = useRouter();
   const posthog = usePostHog();
@@ -120,24 +119,18 @@ export default function CountryGuideScreen() {
     ['countryThreads', country?.id],
   );
 
-  const buildCrumbs = () => {
-    const crumbs: Array<{ label: string; onPress?: () => void }> = [
-      { label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) },
-    ];
-    if (fromCollection && fromCollectionSlug) {
-      crumbs.push({
-        label: fromCollection,
-        onPress: () => router.push(`/(tabs)/discover/collection/${fromCollectionSlug}` as any),
-      });
-    }
-    crumbs.push({ label: country?.name ?? 'Country' });
-    return crumbs;
-  };
+  const { parentTitle, ancestors, handleBack, childNavParams } = useNavContext({
+    title: country?.name ?? 'Country',
+    path: `/(tabs)/discover/country/${slug}`,
+    fallbackCrumbs: [
+      { label: 'Discover', path: '/(tabs)/discover' },
+    ],
+  });
 
   if (countryLoading || (country && citiesLoading)) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading\u2026' }]} />
+        <NavigationHeader title="Loading…" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <LoadingScreen />
       </SafeAreaView>
     );
@@ -145,7 +138,7 @@ export default function CountryGuideScreen() {
   if (error) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
+        <NavigationHeader title="Country" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <ErrorScreen message={error.message} onRetry={refetch} />
       </SafeAreaView>
     );
@@ -153,7 +146,7 @@ export default function CountryGuideScreen() {
   if (!country) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
+        <NavigationHeader title="Country" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <Text style={styles.notFound}>Guide not found</Text>
       </SafeAreaView>
     );
@@ -173,7 +166,12 @@ export default function CountryGuideScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <UniversalHeader crumbs={buildCrumbs()} />
+      <NavigationHeader
+        title={country.name}
+        parentTitle={parentTitle ?? 'Discover'}
+        ancestors={ancestors}
+        onBack={handleBack}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
 
@@ -358,7 +356,7 @@ const styles = StyleSheet.create({
     right: spacing.screenX,
   },
   heroName: {
-    fontFamily: fonts.serif,
+    fontFamily: fonts.semiBold,
     fontSize: 36,
     color: '#FFFFFF',
     lineHeight: 40,

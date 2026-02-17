@@ -15,7 +15,8 @@ import {
   toggleSavePlace,
 } from '@/data/api';
 import ErrorScreen from '@/components/ErrorScreen';
-import { UniversalHeader } from '@/components/UniversalHeader';
+import NavigationHeader from '@/components/NavigationHeader';
+import { useNavContext } from '@/hooks/useNavContext';
 import { ActivityHero } from '@/components/explore/activity/ActivityHero';
 import { AtAGlance } from '@/components/explore/activity/AtAGlance';
 import { WomenRecommend } from '@/components/explore/activity/WomenRecommend';
@@ -116,37 +117,20 @@ export default function ActivityDetailScreen() {
   }, [activity, posthog]);
 
   // ---------------------------------------------------------------------------
-  // Breadcrumbs
+  // Navigation context
   // ---------------------------------------------------------------------------
 
-  const buildCrumbs = () => {
-    const crumbs: Array<{ label: string; onPress?: () => void }> = [
-      {
-        label: 'Discover',
-        onPress: () => router.push('/(tabs)/discover' as any),
-      },
-    ];
+  const fallbackCrumbs = [
+    { label: 'Discover', path: '/(tabs)/discover' },
+    ...(country ? [{ label: country.name, path: `/(tabs)/discover/country/${country.slug}` }] : []),
+    ...(city ? [{ label: city.name, path: `/(tabs)/discover/city/${city.slug}` }] : []),
+  ];
 
-    if (country) {
-      crumbs.push({
-        label: country.name,
-        onPress: () =>
-          router.push(`/(tabs)/discover/country/${country.slug}` as any),
-      });
-    }
-
-    if (city) {
-      crumbs.push({
-        label: city.name,
-        onPress: () =>
-          router.push(`/(tabs)/discover/city/${city.slug}` as any),
-      });
-    }
-
-    crumbs.push({ label: activity?.name ?? 'Activity' });
-
-    return crumbs;
-  };
+  const { parentTitle, ancestors, handleBack } = useNavContext({
+    title: activity?.name ?? 'Activity',
+    path: `/(tabs)/discover/activity/${slug}`,
+    fallbackCrumbs,
+  });
 
   // ---------------------------------------------------------------------------
   // Render states
@@ -155,7 +139,7 @@ export default function ActivityDetailScreen() {
   if (loading) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover' }, { label: 'Loading…' }]} />
+        <NavigationHeader title="Loading…" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <ActivitySkeleton />
       </SafeAreaView>
     );
@@ -168,7 +152,7 @@ export default function ActivityDetailScreen() {
   if (!activity) {
     return (
       <SafeAreaView style={styles.container} edges={['top']}>
-        <UniversalHeader crumbs={[{ label: 'Discover', onPress: () => router.push('/(tabs)/discover' as any) }]} />
+        <NavigationHeader title="Activity" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <View style={styles.emptyState}>
           <Text style={styles.emptyText}>Activity not found</Text>
         </View>
@@ -178,7 +162,12 @@ export default function ActivityDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <UniversalHeader crumbs={buildCrumbs()} />
+      <NavigationHeader
+        title={activity.name}
+        parentTitle={parentTitle ?? city?.name ?? 'Discover'}
+        ancestors={ancestors}
+        onBack={handleBack}
+      />
 
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* 1. Hero: Carousel + identity + signal tags */}

@@ -20,8 +20,7 @@ import AddEntrySheet from '@/components/trips/AddEntrySheet';
 import PlanTab from '@/components/trips/PlanTab';
 import PeopleTab from '@/components/trips/PeopleTab';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import BackButton from '@/components/ui/BackButton';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 
 const TABS = ['Journey', 'Plan', 'People'];
 
@@ -88,9 +87,7 @@ export default function TripDetailScreen() {
   if (!trip) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <View style={styles.nav}>
-          <BackButton />
-        </View>
+        <NavigationHeader title="Trip" parentTitle="Trips" />
         <Text style={styles.notFound}>Trip not found</Text>
       </View>
     );
@@ -110,15 +107,15 @@ export default function TripDetailScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
-      <View style={styles.nav}>
-        <ScreenHeader
-          rightComponent={
-            <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
-              <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
-            </Pressable>
-          }
-        />
-      </View>
+      <NavigationHeader
+        title="Trip"
+        parentTitle="Trips"
+        rightActions={
+          <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
+            <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
+          </Pressable>
+        }
+      />
 
       {/* Overflow menu */}
       {showMenu && (
@@ -227,12 +224,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxl,
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
   },
   menu: {
     position: 'absolute',

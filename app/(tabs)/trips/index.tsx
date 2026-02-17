@@ -4,9 +4,8 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
-import { Image } from 'expo-image';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import MenuButton from '@/components/MenuButton';
 import NotificationButton from '@/components/NotificationButton';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -46,25 +45,12 @@ export default function TripsScreen() {
   if (mode === 'travelling' && trips.current) {
     return (
       <AppScreen>
-        <AppHeader
-          title=""
-          leftComponent={
-            <Image
-              source={require('@/assets/images/sola-logo.png')}
-              style={styles.headerLogo}
-              contentFit="contain"
-            />
-          }
-          rightComponent={
+        <NavigationHeader
+          title="Trips"
+          rightActions={
             <View style={styles.headerRight}>
               <NotificationButton />
               <MenuButton />
-              <Pressable
-                style={styles.addButton}
-                onPress={() => router.push(`/trips/${trips.current!.id}`)}
-              >
-                <Ionicons name="expand-outline" size={18} color={colors.orange} />
-              </Pressable>
             </View>
           }
         />
@@ -85,28 +71,12 @@ export default function TripsScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
+      <NavigationHeader
+        title="Trips"
+        rightActions={
           <View style={styles.headerRight}>
             <NotificationButton />
             <MenuButton />
-            <Pressable
-              style={styles.addButton}
-              onPress={() => {
-                posthog.capture('add_trip_tapped');
-                router.push('/trips/new');
-              }}
-            >
-              <Ionicons name="add" size={22} color={colors.orange} />
-            </Pressable>
           </View>
         }
       />
@@ -156,10 +126,6 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerLogo: {
-    height: 22,
-    width: 76,
-  },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',

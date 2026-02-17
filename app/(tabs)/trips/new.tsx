@@ -28,7 +28,7 @@ import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { useLocationConsent } from '@/hooks/useLocationConsent';
 import { colors, fonts, radius, spacing } from '@/constants/design';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 
 const DAY_MS = 86_400_000;
 const NAME_MAX = 50;
@@ -280,9 +280,7 @@ export default function NewTripScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
-      <View style={styles.nav}>
-        <ScreenHeader title="New trip" variant="close" />
-      </View>
+      <NavigationHeader title="New trip" variant="modal" />
 
       <ScrollView
         ref={scrollRef}
@@ -730,15 +728,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  nav: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
   },
   scrollView: {
     flex: 1,

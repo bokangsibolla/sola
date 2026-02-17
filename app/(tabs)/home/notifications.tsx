@@ -3,22 +3,19 @@ import {
   View,
   Text,
   SectionList,
-  Pressable,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
+import NavigationHeader from '@/components/NavigationHeader';
 import { NotificationRow } from '@/components/notifications/NotificationRow';
 import { NotificationSectionHeader } from '@/components/notifications/NotificationSectionHeader';
 import { useNotifications } from '@/data/notifications/useNotifications';
-import { colors, fonts, spacing, typography } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 import type { Notification } from '@/data/notifications/types';
 
 export default function NotificationsScreen() {
-  const router = useRouter();
   const { grouped, loading, refetch, markAllRead } = useNotifications();
 
   // Mark all as read when the screen opens
@@ -53,20 +50,7 @@ export default function NotificationsScreen() {
 
   return (
     <AppScreen>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          style={styles.backButton}
-          accessibilityRole="button"
-          accessibilityLabel="Go back"
-        >
-          <Feather name="arrow-left" size={22} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>Activity</Text>
-        <View style={styles.headerSpacer} />
-      </View>
+      <NavigationHeader title="Activity" parentTitle="Home" />
 
       {/* Loading state */}
       {loading && sections.length === 0 && (
@@ -105,29 +89,6 @@ export default function NotificationsScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
-    paddingHorizontal: spacing.screenX,
-    minHeight: 44,
-  },
-  backButton: {
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.sm,
-  },
-  headerTitle: {
-    ...typography.screenTitle,
-    color: colors.textPrimary,
-    flex: 1,
-  },
-  headerSpacer: {
-    width: 36,
-  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',

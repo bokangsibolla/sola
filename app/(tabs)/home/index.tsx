@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
-import { Image } from 'expo-image';
 import { usePostHog } from 'posthog-react-native';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import MenuButton from '@/components/MenuButton';
 import NotificationButton from '@/components/NotificationButton';
 import { HeroCard } from '@/components/home/HeroCard';
@@ -101,16 +100,9 @@ export default function HomeScreen() {
 
   return (
     <AppScreen>
-      <AppHeader
-        title=""
-        leftComponent={
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.headerLogo}
-            contentFit="contain"
-          />
-        }
-        rightComponent={
+      <NavigationHeader
+        title="Home"
+        rightActions={
           <View style={styles.headerRight}>
             <NotificationButton />
             <MenuButton unreadCount={unreadCount} />
@@ -193,10 +185,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: spacing.xxl,
-  },
-  headerLogo: {
-    height: 22,
-    width: 76,
   },
   headerRight: {
     flexDirection: 'row',

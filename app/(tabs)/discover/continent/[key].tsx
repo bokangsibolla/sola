@@ -4,9 +4,10 @@ import React, { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather, Ionicons } from '@expo/vector-icons';
+import { Feather } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
-import AppHeader from '@/components/AppHeader';
+import NavigationHeader from '@/components/NavigationHeader';
+import { useNavContext } from '@/hooks/useNavContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useBrowseData } from '@/data/discover/useBrowseData';
@@ -104,6 +105,15 @@ export default function ContinentDetailScreen() {
   const label = CONTINENT_LABELS[continentKey] ?? key;
   const countries = countriesByContinent[continentKey] ?? [];
 
+  const { handleBack, childNavParams } = useNavContext({
+    title: label,
+    path: `/(tabs)/discover/continent/${key}`,
+    fallbackCrumbs: [
+      { label: 'Discover', path: '/(tabs)/discover' },
+      { label: 'All Destinations', path: '/(tabs)/discover/all-destinations' },
+    ],
+  });
+
   const filtered = useMemo(() => {
     let list = [...countries];
 
@@ -130,16 +140,10 @@ export default function ContinentDetailScreen() {
     return list;
   }, [countries, search, sort]);
 
-  const backButton = (
-    <Pressable onPress={() => router.back()} hitSlop={8}>
-      <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-    </Pressable>
-  );
-
   if (isLoading && countries.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={backButton} />
+        <NavigationHeader title={label} parentTitle="All Destinations" onBack={handleBack} />
         <LoadingScreen />
       </AppScreen>
     );
@@ -148,7 +152,7 @@ export default function ContinentDetailScreen() {
   if (error && countries.length === 0) {
     return (
       <AppScreen>
-        <AppHeader title="" leftComponent={backButton} />
+        <NavigationHeader title={label} parentTitle="All Destinations" onBack={handleBack} />
         <ErrorScreen message="Could not load countries" onRetry={refresh} />
       </AppScreen>
     );
@@ -156,7 +160,7 @@ export default function ContinentDetailScreen() {
 
   return (
     <AppScreen>
-      <AppHeader title="" leftComponent={backButton} />
+      <NavigationHeader title={label} parentTitle="All Destinations" onBack={handleBack} />
 
       <FlatList
         data={filtered}
@@ -165,8 +169,6 @@ export default function ContinentDetailScreen() {
         contentContainerStyle={styles.listContent}
         ListHeaderComponent={
           <View style={styles.header}>
-            <Text style={styles.pageTitle}>{label}</Text>
-
             {/* Search bar */}
             <View style={styles.searchBar}>
               <Feather name="search" size={16} color={colors.textMuted} />
@@ -193,7 +195,10 @@ export default function ContinentDetailScreen() {
         renderItem={({ item }) => (
           <CountryRow
             country={item}
-            onPress={() => router.push(`/(tabs)/discover/country/${item.slug}` as any)}
+            onPress={() => router.push({
+              pathname: '/(tabs)/discover/country/[slug]' as any,
+              params: { slug: item.slug, ...childNavParams },
+            })}
           />
         )}
         ListEmptyComponent={

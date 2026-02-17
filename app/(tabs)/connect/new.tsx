@@ -16,7 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import ScreenHeader from '@/components/ui/ScreenHeader';
+import NavigationHeader from '@/components/NavigationHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import {
@@ -115,10 +115,10 @@ export default function NewThread() {
     >
       {/* Header */}
       <View style={styles.header}>
-        <ScreenHeader
+        <NavigationHeader
           title="Ask a question"
-          variant="close"
-          rightComponent={
+          variant="modal"
+          rightActions={
             <Pressable
               onPress={handleSubmit}
               disabled={!canSubmit}
