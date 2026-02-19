@@ -4,11 +4,11 @@ import type { SpeechRecognitionEvent } from '../types';
 interface RecorderProps {
   isRecording: boolean;
   onToggle: () => void;
-  onAddToNotes: (text: string) => void;
+  onAddToCategory: (text: string, category: 'wins' | 'focus' | 'blockers') => void;
+  onConvertToTask: (text: string) => void;
   activeSpeakerName: string;
 }
 
-// Get the SpeechRecognition constructor (Chrome/Edge)
 function getSpeechRecognition(): (new () => any) | null {
   const w = window as any;
   return w.SpeechRecognition || w.webkitSpeechRecognition || null;
@@ -17,7 +17,8 @@ function getSpeechRecognition(): (new () => any) | null {
 export default function Recorder({
   isRecording,
   onToggle,
-  onAddToNotes,
+  onAddToCategory,
+  onConvertToTask,
   activeSpeakerName,
 }: RecorderProps) {
   const [transcript, setTranscript] = useState<string[]>([]);
@@ -54,12 +55,11 @@ export default function Recorder({
     };
 
     recognition.onerror = (event: any) => {
-      if (event.error === 'no-speech') return; // Normal — just silence
+      if (event.error === 'no-speech') return;
       console.warn('Speech recognition error:', event.error);
     };
 
     recognition.onend = () => {
-      // Auto-restart if still recording
       if (recognitionRef.current) {
         try {
           recognitionRef.current.start();
@@ -91,24 +91,29 @@ export default function Recorder({
     return () => stopRecognition();
   }, [isRecording, startRecognition, stopRecognition]);
 
-  const handleAddLine = (index: number) => {
+  const handleAddLine = (index: number, category: 'wins' | 'focus' | 'blockers') => {
     const line = transcript[index];
-    onAddToNotes(line);
+    onAddToCategory(line, category);
+    setTranscript(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleConvertLine = (index: number) => {
+    const line = transcript[index];
+    onConvertToTask(line);
     setTranscript(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleAddAll = () => {
-    transcript.forEach(line => onAddToNotes(line));
+    transcript.forEach(line => onAddToCategory(line, 'focus'));
     setTranscript([]);
   };
 
   if (!supported) {
-    return null; // Don't show anything if browser doesn't support it
+    return null;
   }
 
   return (
     <div className="recorder-section">
-      {/* Mic toggle button */}
       <button
         className={`recorder-toggle ${isRecording ? 'active' : ''}`}
         onClick={onToggle}
@@ -116,30 +121,23 @@ export default function Recorder({
       >
         <span className="recorder-icon">{isRecording ? '⏸' : '●'}</span>
         <span className="recorder-label">
-          {isRecording ? 'Recording' : 'Record'}
+          {isRecording ? `Recording ${activeSpeakerName}...` : `Record ${activeSpeakerName}`}
         </span>
       </button>
 
-      {/* Transcript panel */}
       {(isRecording || transcript.length > 0) && (
         <div className="recorder-panel">
           <div className="recorder-panel-header">
             <span className="recorder-panel-title">
-              Live Transcript
+              Transcript
               {isRecording && <span className="recorder-live-dot" />}
             </span>
             {transcript.length > 0 && (
               <div className="recorder-panel-actions">
-                <button
-                  className="btn-ghost btn-small"
-                  onClick={handleAddAll}
-                >
-                  Add all to {activeSpeakerName}
+                <button className="btn-ghost btn-small" onClick={handleAddAll}>
+                  All → Focus
                 </button>
-                <button
-                  className="btn-ghost btn-small"
-                  onClick={() => setTranscript([])}
-                >
+                <button className="btn-ghost btn-small" onClick={() => setTranscript([])}>
                   Clear
                 </button>
               </div>
@@ -147,26 +145,43 @@ export default function Recorder({
           </div>
 
           <div className="recorder-lines">
+            {transcript.length === 0 && !interim && isRecording && (
+              <div className="recorder-empty">
+                Listening... speak and words appear here. Then categorize each line.
+              </div>
+            )}
+
             {transcript.map((line, i) => (
               <div key={i} className="recorder-line">
                 <span className="recorder-line-text">{line}</span>
-                <button
-                  className="recorder-line-add"
-                  onClick={() => handleAddLine(i)}
-                  title={`Add to ${activeSpeakerName}'s notes`}
-                >
-                  +
-                </button>
+                <div className="recorder-line-cats">
+                  <button
+                    className="cat-btn win"
+                    onClick={() => handleAddLine(i, 'wins')}
+                    title="Add as win"
+                  >W</button>
+                  <button
+                    className="cat-btn focus"
+                    onClick={() => handleAddLine(i, 'focus')}
+                    title="Add as today's focus"
+                  >F</button>
+                  <button
+                    className="cat-btn blocker"
+                    onClick={() => handleAddLine(i, 'blockers')}
+                    title="Add as blocker"
+                  >B</button>
+                  <button
+                    className="cat-btn task"
+                    onClick={() => handleConvertLine(i)}
+                    title="Create task"
+                  >T</button>
+                </div>
               </div>
             ))}
+
             {interim && (
               <div className="recorder-line interim">
                 <span className="recorder-line-text">{interim}</span>
-              </div>
-            )}
-            {transcript.length === 0 && !interim && isRecording && (
-              <div className="recorder-empty">
-                Listening... speak and your words will appear here.
               </div>
             )}
           </div>

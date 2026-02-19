@@ -18,6 +18,7 @@ import Summary from './components/Summary';
 import History from './components/History';
 import Tracker from './components/Tracker';
 import Timeline from './components/Timeline';
+import WeekCalendar from './components/WeekCalendar';
 import HelpModal from './components/HelpModal';
 
 type Phase = 'idle' | 'active' | 'wrapup' | 'summary' | 'history' | 'tracker';
@@ -174,18 +175,40 @@ export default function App() {
     [standup.id, showToast],
   );
 
-  const handleAddTranscriptToNotes = useCallback(
-    (text: string) => {
+  const handleAddToCategory = useCallback(
+    (text: string, category: 'wins' | 'focus' | 'blockers') => {
       setStandup(prev => {
         const speakers = [...prev.speakers];
         const speaker = { ...speakers[activeSpeaker] };
-        speaker.focus = [...speaker.focus, text];
+        speaker[category] = [...speaker[category], text];
         speakers[activeSpeaker] = speaker;
         return { ...prev, speakers };
       });
-      showToast(`Added to ${TEAM[activeSpeaker].name}'s focus`);
+      const labels = { wins: 'wins', focus: 'focus', blockers: 'blockers' };
+      showToast(`Added to ${TEAM[activeSpeaker].name}'s ${labels[category]}`);
     },
     [activeSpeaker, showToast],
+  );
+
+  const handleTranscriptToTask = useCallback(
+    (text: string) => {
+      const member = TEAM[activeSpeaker];
+      setTasks(prev => [
+        ...prev,
+        {
+          id: generateId(),
+          title: text,
+          ownerId: member.id,
+          priority: 'medium' as const,
+          dueDate: '',
+          completed: false,
+          createdAt: new Date().toISOString(),
+          standupId: standup.id,
+        },
+      ]);
+      showToast(`Task → ${member.name}`);
+    },
+    [activeSpeaker, standup.id, showToast],
   );
 
   // ─── Phase transitions ────────────────────────────────────────────
@@ -328,6 +351,13 @@ export default function App() {
             </div>
           )}
 
+          {/* Week calendar — visual accountability */}
+          <WeekCalendar
+            tasks={tasks}
+            team={TEAM}
+            onToggle={toggleTask}
+          />
+
           {/* Upcoming timeline — accountability view */}
           <Timeline
             tasks={tasks}
@@ -439,7 +469,8 @@ export default function App() {
             <Recorder
               isRecording={isRecording}
               onToggle={() => setIsRecording(prev => !prev)}
-              onAddToNotes={handleAddTranscriptToNotes}
+              onAddToCategory={handleAddToCategory}
+              onConvertToTask={handleTranscriptToTask}
               activeSpeakerName={TEAM[activeSpeaker].name}
             />
           </div>

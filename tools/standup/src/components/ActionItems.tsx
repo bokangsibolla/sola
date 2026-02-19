@@ -26,7 +26,7 @@ export default function ActionItems({
   const [priority, setPriority] = useState<'low' | 'medium' | 'high'>('medium');
   const [dueDate, setDueDate] = useState('');
   const [filter, setFilter] = useState<string>('all');
-  const [showCompleted, setShowCompleted] = useState(false);
+  const [showCompleted, setShowCompleted] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const openTasks = tasks.filter(t => !t.completed);
