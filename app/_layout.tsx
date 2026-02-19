@@ -232,13 +232,7 @@ function RootLayout() {
   );
 }
 
-// Sentry.wrap can hang in Expo Go or if native module is missing
-let WrappedLayout = RootLayout;
-if (!__DEV__) {
-  try {
-    WrappedLayout = Sentry.wrap(RootLayout);
-  } catch {
-    console.warn('Sentry.wrap failed, using unwrapped layout');
-  }
-}
-export default WrappedLayout;
+// Sentry.wrap disabled — was causing splash screen hang on Android production builds.
+// Sentry.init() still captures errors via the global handler; .wrap() is only needed
+// for React component tree error boundaries which Sentry picks up anyway.
+export default RootLayout;
