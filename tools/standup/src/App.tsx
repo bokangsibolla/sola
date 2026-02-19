@@ -17,6 +17,7 @@ import Recorder from './components/Recorder';
 import Summary from './components/Summary';
 import History from './components/History';
 import Tracker from './components/Tracker';
+import Timeline from './components/Timeline';
 import HelpModal from './components/HelpModal';
 
 type Phase = 'idle' | 'active' | 'wrapup' | 'summary' | 'history' | 'tracker';
@@ -146,6 +147,10 @@ export default function App() {
 
   const deleteTask = useCallback((id: string) => {
     setTasks(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const updateTask = useCallback((id: string, updates: Partial<ActionItem>) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   }, []);
 
   const handleConvertToTask = useCallback(
@@ -298,6 +303,39 @@ export default function App() {
             </button>
           </div>
 
+          {/* Yesterday's standup summary */}
+          {previousStandup.current && previousStandup.current.speakers.some(
+            s => s.wins.length > 0 || s.focus.length > 0 || s.blockers.length > 0,
+          ) && (
+            <div className="dash-yesterday">
+              <div className="dash-yesterday-header">Yesterday's focus</div>
+              {previousStandup.current.speakers.map(speaker => {
+                const member = TEAM.find(m => m.id === speaker.memberId);
+                if (!member) return null;
+                const items = [...speaker.focus, ...speaker.wins].slice(0, 3);
+                if (items.length === 0) return null;
+                return (
+                  <div key={speaker.memberId} className="dash-yesterday-item">
+                    <span
+                      className="dash-yesterday-dot"
+                      style={{ background: member.color }}
+                    />
+                    <span className="dash-yesterday-name">{member.name}</span>
+                    <span className="dash-yesterday-text">{items.join(' · ')}</span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* Upcoming timeline — accountability view */}
+          <Timeline
+            tasks={tasks}
+            team={TEAM}
+            onToggle={toggleTask}
+          />
+
+          {/* Full task board */}
           <ActionItems
             tasks={tasks}
             team={TEAM}
@@ -305,6 +343,7 @@ export default function App() {
             onAdd={addTask}
             onToggle={toggleTask}
             onDelete={deleteTask}
+            onUpdate={updateTask}
           />
         </div>
       )}
@@ -460,6 +499,7 @@ export default function App() {
             onAdd={addTask}
             onToggle={toggleTask}
             onDelete={deleteTask}
+            onUpdate={updateTask}
           />
 
           <div className="wrapup-actions">

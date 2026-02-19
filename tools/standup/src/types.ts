@@ -24,6 +24,7 @@ export interface ActionItem {
   completedAt?: string;
   createdAt: string;
   standupId: string;
+  notes?: string;
 }
 
 export interface Standup {

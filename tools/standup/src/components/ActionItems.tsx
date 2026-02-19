@@ -9,6 +9,7 @@ interface ActionItemsProps {
   onAdd: (item: ActionItem) => void;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
+  onUpdate?: (id: string, updates: Partial<ActionItem>) => void;
 }
 
 export default function ActionItems({
@@ -18,6 +19,7 @@ export default function ActionItems({
   onAdd,
   onToggle,
   onDelete,
+  onUpdate,
 }: ActionItemsProps) {
   const [title, setTitle] = useState('');
   const [ownerId, setOwnerId] = useState(team[0]?.id || '');
@@ -25,6 +27,7 @@ export default function ActionItems({
   const [dueDate, setDueDate] = useState('');
   const [filter, setFilter] = useState<string>('all');
   const [showCompleted, setShowCompleted] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const openTasks = tasks.filter(t => !t.completed);
   const completedTasks = tasks.filter(t => t.completed);
@@ -67,39 +70,99 @@ export default function ActionItems({
   const renderItem = (item: ActionItem) => {
     const owner = team.find(m => m.id === item.ownerId);
     const isOverdue = item.dueDate && item.dueDate < today && !item.completed;
+    const isExpanded = expandedId === item.id;
 
     return (
-      <div
-        key={item.id}
-        className={`action-item ${item.completed ? 'completed' : ''}`}
-      >
+      <div key={item.id} className="task-wrapper">
         <div
-          className={`action-checkbox ${item.completed ? 'checked' : ''}`}
-          onClick={() => onToggle(item.id)}
-          title={item.completed ? 'Mark as incomplete' : 'Mark as done'}
-        />
-        <span className="action-title">{item.title}</span>
-        <div className="action-meta">
-          {owner && (
-            <span
-              className="action-owner-badge"
-              style={{ background: owner.color }}
-            >
-              {owner.name}
-            </span>
-          )}
-          <span className={`action-priority ${item.priority}`}>
-            {item.priority}
+          className={`action-item ${item.completed ? 'completed' : ''} ${isExpanded ? 'expanded' : ''}`}
+        >
+          <div
+            className={`action-checkbox ${item.completed ? 'checked' : ''}`}
+            onClick={() => onToggle(item.id)}
+            title={item.completed ? 'Mark as incomplete' : 'Mark as done'}
+          />
+          <span
+            className="action-title"
+            onClick={() => !item.completed && onUpdate && setExpandedId(isExpanded ? null : item.id)}
+            style={{ cursor: onUpdate && !item.completed ? 'pointer' : 'default' }}
+          >
+            {item.title}
           </span>
-          {item.dueDate && (
-            <span className={`action-due ${isOverdue ? 'overdue' : ''}`}>
-              {item.dueDate}
+          <div className="action-meta">
+            {owner && (
+              <span
+                className="action-owner-badge"
+                style={{ background: owner.color }}
+              >
+                {owner.name}
+              </span>
+            )}
+            <span className={`action-priority ${item.priority}`}>
+              {item.priority}
             </span>
-          )}
+            {item.dueDate && (
+              <span className={`action-due ${isOverdue ? 'overdue' : ''}`}>
+                {item.dueDate}
+              </span>
+            )}
+            {item.notes && (
+              <span className="action-has-notes" title="Has notes">
+                ✎
+              </span>
+            )}
+          </div>
+          <button className="action-delete" onClick={() => onDelete(item.id)}>
+            ×
+          </button>
         </div>
-        <button className="action-delete" onClick={() => onDelete(item.id)}>
-          ×
-        </button>
+
+        {/* Expandable detail panel */}
+        {isExpanded && onUpdate && (
+          <div className="task-detail">
+            <div className="task-detail-row">
+              <div className="task-detail-field">
+                <label>Owner</label>
+                <select
+                  value={item.ownerId}
+                  onChange={e => onUpdate(item.id, { ownerId: e.target.value })}
+                >
+                  {team.map(m => (
+                    <option key={m.id} value={m.id}>{m.name} — {m.role}</option>
+                  ))}
+                </select>
+              </div>
+              <div className="task-detail-field">
+                <label>Priority</label>
+                <select
+                  value={item.priority}
+                  onChange={e => onUpdate(item.id, { priority: e.target.value as 'low' | 'medium' | 'high' })}
+                >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div className="task-detail-field">
+                <label>Due date</label>
+                <input
+                  type="date"
+                  value={item.dueDate}
+                  onChange={e => onUpdate(item.id, { dueDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <div className="task-detail-field full">
+              <label>Notes</label>
+              <textarea
+                value={item.notes || ''}
+                onChange={e => onUpdate(item.id, { notes: e.target.value })}
+                placeholder="Add notes, links, or context..."
+                rows={3}
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -108,7 +171,7 @@ export default function ActionItems({
     <div className="action-items-section">
       <div className="section-divider">
         <span className="section-divider-text">
-          Action Items · {openTasks.length} open
+          Tasks · {openTasks.length} open
           {completedTasks.length > 0 && ` · ${completedTasks.length} done`}
         </span>
       </div>
@@ -205,7 +268,44 @@ export default function ActionItems({
           </button>
           {showCompleted && (
             <div className="action-list">
-              {completedTasks.map(renderItem)}
+              {[...completedTasks]
+                .sort((a, b) => {
+                  const aTime = a.completedAt || a.createdAt;
+                  const bTime = b.completedAt || b.createdAt;
+                  return bTime.localeCompare(aTime);
+                })
+                .map(item => {
+                  const owner = team.find(m => m.id === item.ownerId);
+                  const completedDate = item.completedAt
+                    ? new Date(item.completedAt).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      })
+                    : '';
+                  return (
+                    <div key={item.id} className="action-item completed">
+                      <div
+                        className="action-checkbox checked"
+                        onClick={() => onToggle(item.id)}
+                        title="Mark as incomplete"
+                      />
+                      <span className="action-title">{item.title}</span>
+                      <div className="action-meta">
+                        {owner && (
+                          <span
+                            className="action-owner-badge"
+                            style={{ background: owner.color }}
+                          >
+                            {owner.name}
+                          </span>
+                        )}
+                        {completedDate && (
+                          <span className="action-due">{completedDate}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
             </div>
           )}
         </div>
