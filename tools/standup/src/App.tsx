@@ -251,90 +251,61 @@ export default function App() {
 
   return (
     <div className="app">
-      {/* ─── IDLE: Landing ─────────────────────────────────────────── */}
+      {/* ─── IDLE: Dashboard ────────────────────────────────────────── */}
       {phase === 'idle' && (
-        <div className="landing">
-          <div className="landing-hero">
-            <div className="landing-brand">sola standup</div>
-
-            <div className="landing-date">
-              <div className="landing-day">{dayName}</div>
-              <div className="landing-full-date">{dateStr}</div>
+        <div className="dashboard">
+          <div className="dash-header">
+            <div className="dash-brand">sola standup</div>
+            <div className="dash-header-right">
+              <button className="btn-ghost btn-small" onClick={() => setPhase('tracker')}>
+                Tracker
+              </button>
+              <button className="btn-ghost btn-small" onClick={() => setPhase('history')}>
+                History
+              </button>
+              <button className="btn-ghost btn-small" onClick={() => setShowHelp(true)}>
+                ?
+              </button>
             </div>
+          </div>
 
-            <div className="landing-tagline">
-              {formatTime(TIMER_DURATION)} &middot; {TEAM.length} speakers &middot; Full alignment
-            </div>
-
-            <div className="landing-team">
-              {TEAM.map(member => (
-                <div key={member.id} className="landing-member">
-                  <div className="landing-avatar" style={{ background: member.color }}>
-                    {member.name.charAt(0)}
-                  </div>
-                  <span className="landing-member-name">{member.name}</span>
-                  <span className="landing-member-role">{member.role}</span>
+          <div className="dash-launcher">
+            <div className="dash-launcher-left">
+              <div className="dash-launcher-date">{dayName}, {dateStr}</div>
+              <div className="dash-launcher-title">
+                {hasDraftContent ? 'Standup in progress' : 'Daily standup'}
+              </div>
+              <div className="dash-launcher-meta">
+                <div className="dash-launcher-team">
+                  {TEAM.map(m => (
+                    <div
+                      key={m.id}
+                      className="dash-launcher-avatar"
+                      style={{ background: m.color }}
+                      title={`${m.name} — ${m.role}`}
+                    >
+                      {m.name.charAt(0)}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </div>
-
-            {hasDraftContent ? (
-              <button className="landing-cta" onClick={resumeStandup}>
-                Resume Standup
-              </button>
-            ) : (
-              <button className="landing-cta" onClick={beginStandup}>
-                Begin Standup
-              </button>
-            )}
-          </div>
-
-          {/* Open tasks preview */}
-          {openTasks.length > 0 && (
-            <div className="landing-tasks">
-              <div className="landing-tasks-header">
-                {openTasks.length} open task{openTasks.length !== 1 ? 's' : ''}
-              </div>
-              <div className="landing-tasks-list">
-                {openTasks
-                  .sort((a, b) => {
-                    const p = { high: 0, medium: 1, low: 2 };
-                    return p[a.priority] - p[b.priority];
-                  })
-                  .slice(0, 6)
-                  .map(task => {
-                    const owner = TEAM.find(m => m.id === task.ownerId);
-                    return (
-                      <div key={task.id} className="landing-task-item">
-                        <span
-                          className="landing-task-dot"
-                          style={{ background: owner?.color }}
-                        />
-                        <span className="landing-task-title">{task.title}</span>
-                        <span className="landing-task-owner">{owner?.name}</span>
-                      </div>
-                    );
-                  })}
-                {openTasks.length > 6 && (
-                  <div className="landing-task-more">
-                    +{openTasks.length - 6} more
-                  </div>
-                )}
+                <span className="dash-launcher-info">
+                  {formatTime(TIMER_DURATION)} &middot; {TEAM.length} speakers
+                </span>
               </div>
             </div>
-          )}
-
-          <div className="landing-footer">
-            <button className="btn-ghost" onClick={() => setPhase('tracker')}>
-              Tracker
-            </button>
-            <button className="btn-ghost" onClick={() => setPhase('history')}>
-              History
-            </button>
-            <button className="btn-ghost" onClick={() => setShowHelp(true)}>
-              Help
+            <button className="dash-cta" onClick={hasDraftContent ? resumeStandup : beginStandup}>
+              {hasDraftContent ? 'Resume' : 'Begin'} →
             </button>
           </div>
+
+          <ActionItems
+            tasks={tasks}
+            team={TEAM}
+            standupId={standup.id}
+            onAdd={addTask}
+            onToggle={toggleTask}
+            onDelete={deleteTask}
+          />
         </div>
       )}
 

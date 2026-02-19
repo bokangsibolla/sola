@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Standup, ActionItem, TeamMember } from '../types';
 import {
   generateMarkdownSummary,
+  generateEmailSummary,
   generateSlackSummary,
   copyToClipboard,
   downloadJSON,
@@ -28,6 +29,11 @@ export default function Summary({
 
   const markdown = useMemo(
     () => generateMarkdownSummary(standup, tasks, team),
+    [standup, tasks, team],
+  );
+
+  const emailText = useMemo(
+    () => generateEmailSummary(standup, tasks, team),
     [standup, tasks, team],
   );
 
@@ -72,6 +78,12 @@ export default function Summary({
       </div>
 
       <div className="summary-export-row">
+        <button
+          className="btn-primary"
+          onClick={() => handleCopy(emailText, 'email')}
+        >
+          {copied === 'email' ? '✓ Copied' : 'Copy for Email'}
+        </button>
         <button
           className="btn-secondary"
           onClick={() => handleCopy(markdown, 'markdown')}

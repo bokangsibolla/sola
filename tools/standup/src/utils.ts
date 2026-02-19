@@ -140,6 +140,62 @@ export function generateMarkdownSummary(
   return md;
 }
 
+// ─── Email-ready summary (clean plain text) ─────────────────────────
+
+export function generateEmailSummary(
+  standup: Standup,
+  tasks: ActionItem[],
+  team: TeamMember[],
+): string {
+  const date = new Date(standup.date + 'T00:00:00').toLocaleDateString('en-US', {
+    weekday: 'long',
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric',
+  });
+
+  let email = `Standup Summary — ${date}\n\n`;
+
+  for (const speaker of standup.speakers) {
+    const member = team.find(m => m.id === speaker.memberId);
+    if (!member || !hasContent(speaker)) continue;
+
+    email += `${member.name.toUpperCase()} (${member.role})\n`;
+    if (speaker.wins.length > 0) {
+      email += `  Wins: ${speaker.wins.join('; ')}\n`;
+    }
+    if (speaker.focus.length > 0) {
+      email += `  Focus: ${speaker.focus.join('; ')}\n`;
+    }
+    if (speaker.blockers.length > 0) {
+      email += `  Blockers: ${speaker.blockers.join('; ')}\n`;
+    }
+    if (speaker.decisions.length > 0) {
+      email += `  Decisions: ${speaker.decisions.join('; ')}\n`;
+    }
+    email += '\n';
+  }
+
+  const activeTasks = tasks.filter(t => !t.completed);
+  if (activeTasks.length > 0) {
+    email += `ACTION ITEMS (${activeTasks.length} open)\n`;
+    for (const task of activeTasks) {
+      const owner = team.find(m => m.id === task.ownerId);
+      let line = `  • ${task.title}`;
+      if (owner) line += ` — ${owner.name}`;
+      const tags: string[] = [];
+      if (task.priority === 'high') tags.push('High');
+      if (task.dueDate) tags.push(`due ${task.dueDate}`);
+      if (tags.length > 0) line += ` (${tags.join(', ')})`;
+      email += line + '\n';
+    }
+    email += '\n';
+  }
+
+  email += '—\nSola Standup';
+  return email;
+}
+
 // ─── Slack-friendly summary (plain text) ────────────────────────────
 
 export function generateSlackSummary(
