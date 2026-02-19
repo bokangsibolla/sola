@@ -79,9 +79,10 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
           'Sola needs camera access to take a profile photo or capture travel moments.',
       },
     ],
+    './plugins/withSplashBackstop',
   ],
   experiments: {
     typedRoutes: true,
-    reactCompiler: true,
+    reactCompiler: false,
   },
 });

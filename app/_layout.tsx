@@ -44,11 +44,23 @@ import { captureAttribution, persistAttribution, getAttributionForPostHog } from
 import OfflineBanner from '@/components/OfflineBanner';
 import { eventTracker } from '@/data/events/eventTracker';
 
-// Ensure icon fonts are available (Ionicons uses native fonts, no explicit loading needed)
-// Importing here ensures the icon library is initialized before use
+// Global error handler: ensures splash screen hides even on uncaught JS errors.
+// Without this, an unhandled exception before React renders leaves the native
+// splash visible forever.
+const originalHandler = (globalThis as any).ErrorUtils?.getGlobalHandler?.();
+(globalThis as any).ErrorUtils?.setGlobalHandler?.((error: any, isFatal: boolean) => {
+  console.error('[Sola] Uncaught JS error during startup:', error);
+  try { SplashScreen.hideAsync(); } catch {}
+  try { Sentry.captureException(error); } catch {}
+  if (originalHandler) originalHandler(error, isFatal);
+});
 
 // Keep the native splash visible while we load fonts
-SplashScreen.preventAutoHideAsync();
+try {
+  SplashScreen.preventAutoHideAsync();
+} catch (e) {
+  console.warn('SplashScreen.preventAutoHideAsync failed:', e);
+}
 
 export const unstable_settings = {
   initialRouteName: '(onboarding)',
