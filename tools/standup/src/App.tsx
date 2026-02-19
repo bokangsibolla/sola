@@ -254,12 +254,16 @@ export default function App() {
       {/* ─── IDLE: Landing ─────────────────────────────────────────── */}
       {phase === 'idle' && (
         <div className="landing">
-          <div className="landing-top">
-            <div className="landing-brand">SOLA STANDUP</div>
+          <div className="landing-hero">
+            <div className="landing-brand">sola standup</div>
 
             <div className="landing-date">
               <div className="landing-day">{dayName}</div>
               <div className="landing-full-date">{dateStr}</div>
+            </div>
+
+            <div className="landing-tagline">
+              {formatTime(TIMER_DURATION)} &middot; {TEAM.length} speakers &middot; Full alignment
             </div>
 
             <div className="landing-team">
@@ -269,12 +273,9 @@ export default function App() {
                     {member.name.charAt(0)}
                   </div>
                   <span className="landing-member-name">{member.name}</span>
+                  <span className="landing-member-role">{member.role}</span>
                 </div>
               ))}
-            </div>
-
-            <div className="landing-info">
-              {formatTime(TIMER_DURATION)} total &middot; {formatTime(SPEAKER_TIME)} per speaker
             </div>
 
             {hasDraftContent ? (
@@ -412,6 +413,15 @@ export default function App() {
                 </button>
               );
             })}
+          </div>
+
+          {/* Speaker heading */}
+          <div className="speaker-heading">
+            <div className="speaker-heading-bar" style={{ background: TEAM[activeSpeaker].color }} />
+            <div>
+              <div className="speaker-heading-name">{TEAM[activeSpeaker].name}</div>
+              <div className="speaker-heading-role">{TEAM[activeSpeaker].role}</div>
+            </div>
           </div>
 
           {/* Recorder */}

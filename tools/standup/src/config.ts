@@ -76,7 +76,7 @@ export const SEED_TASKS: ActionItem[] = [
   {
     id: 'seed-05',
     title: 'Daily community engagement — Facebook groups, Reddit, Quora (15 min/day)',
-    ownerId: 'sergio',
+    ownerId: 'aya',
     priority: 'high',
     dueDate: '2026-03-08',
     completed: false,
