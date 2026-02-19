@@ -23,7 +23,7 @@ const heroImages = [
   require('@/assets/images/solo-sand-dunes.jpg'),
   require('@/assets/images/solo-canyon-relax.jpg'),
   require('@/assets/images/solo-bali-palms.jpg'),
-  require('@/assets/images/pexels-driving.png'),
+  require('@/assets/images/pexels-driving.jpg'),
 ];
 
 const TAGLINE = 'Because women travel differently.';

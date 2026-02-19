@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1024">
+<title>Sola Feature Graphic</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    width: 1024px;
+    height: 500px;
+    overflow: hidden;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #E5653A;
+    position: relative;
+  }
+
+  /* Subtle texture overlay */
+  body::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 60% at 85% 50%, rgba(255,255,255,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 80% at 10% 80%, rgba(0,0,0,0.06) 0%, transparent 60%);
+    z-index: 1;
+  }
+
+  .container {
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 80px;
+  }
+
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .logo-mark {
+    width: 56px;
+    height: 56px;
+    background: white;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 28px;
+    color: #E5653A;
+    letter-spacing: -0.5px;
+  }
+
+  .app-name {
+    font-size: 52px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -1.5px;
+    line-height: 1;
+  }
+
+  .tagline {
+    font-size: 20px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.88);
+    line-height: 1.5;
+    max-width: 420px;
+    letter-spacing: -0.2px;
+  }
+
+  .pills {
+    display: flex;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .pill {
+    padding: 8px 16px;
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 100px;
+    color: white;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+  }
+
+  .right {
+    position: relative;
+    width: 280px;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Phone mockup */
+  .phone {
+    width: 220px;
+    height: 440px;
+    background: white;
+    border-radius: 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 20px 60px rgba(0,0,0,0.15),
+      0 2px 8px rgba(0,0,0,0.08);
+    transform: rotate(2deg) translateY(30px);
+  }
+
+  .phone-notch {
+    width: 100px;
+    height: 28px;
+    background: white;
+    border-radius: 0 0 16px 16px;
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+  }
+
+  .phone-screen {
+    width: 100%;
+    height: 100%;
+    padding: 40px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .screen-header {
+    font-size: 11px;
+    font-weight: 700;
+    color: #E5653A;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+
+  .screen-title {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.3px;
+    line-height: 1.2;
+  }
+
+  .screen-card {
+    width: 100%;
+    height: 100px;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-1 {
+    background: linear-gradient(135deg, #E5653A 0%, #c44a25 100%);
+    height: 110px;
+  }
+
+  .card-2 {
+    background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%);
+    height: 70px;
+  }
+
+  .card-3 {
+    background: linear-gradient(135deg, #f0e6d3 0%, #e8d5b8 100%);
+    height: 70px;
+  }
+
+  .card-label {
+    position: absolute;
+    bottom: 10px;
+    left: 12px;
+    color: white;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: -0.1px;
+  }
+
+  .card-3 .card-label {
+    color: #1a1a1a;
+  }
+
+  .screen-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .screen-chip {
+    padding: 4px 10px;
+    background: #F3F3F3;
+    border-radius: 100px;
+    font-size: 9px;
+    font-weight: 600;
+    color: #666;
+  }
+</style>
+</head>
+<body>
+  <div class="container">
+    <div class="left">
+      <div class="logo-mark">S</div>
+      <div class="app-name">Sola</div>
+      <div class="tagline">Everything a solo woman traveler needs. One app.</div>
+      <div class="pills">
+        <span class="pill">Destinations</span>
+        <span class="pill">Safety</span>
+        <span class="pill">Community</span>
+      </div>
+    </div>
+    <div class="right">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen">
+          <div class="screen-header">Explore</div>
+          <div class="screen-title">Where to next?</div>
+          <div class="screen-card card-1">
+            <div class="card-label">Bali, Indonesia</div>
+          </div>
+          <div class="screen-chips">
+            <span class="screen-chip">Solo-friendly</span>
+            <span class="screen-chip">$$</span>
+            <span class="screen-chip">Tropical</span>
+          </div>
+          <div class="screen-card card-2">
+            <div class="card-label">Lisbon, Portugal</div>
+          </div>
+          <div class="screen-card card-3">
+            <div class="card-label">Kyoto, Japan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

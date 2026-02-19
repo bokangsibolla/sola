@@ -55,9 +55,9 @@ const styles = StyleSheet.create({
     letterSpacing: -0.3,
   },
   titleEditorial: {
-    fontFamily: fonts.serif,
-    fontSize: 24,
-    letterSpacing: -0.5,
+    fontFamily: fonts.semiBold,
+    fontSize: 22,
+    letterSpacing: -0.3,
   },
   subtitle: {
     fontFamily: fonts.regular,

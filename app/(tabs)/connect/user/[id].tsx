@@ -24,6 +24,7 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
+import { requireVerification } from '@/lib/verification';
 import type { ConnectionStatus } from '@/data/types';
 
 export default function UserProfileScreen() {
@@ -64,6 +65,7 @@ export default function UserProfileScreen() {
 
   const handleConnect = useCallback(async () => {
     if (!userId || !id) return;
+    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'connect with travelers')) return;
     posthog.capture('connection_request_sent', { recipient_id: id });
     setLocalStatus('pending_sent');
     try {
@@ -72,7 +74,7 @@ export default function UserProfileScreen() {
     } catch {
       setLocalStatus(null);
     }
-  }, [userId, id, contextLabel, posthog, queryClient]);
+  }, [userId, id, contextLabel, posthog, queryClient, userProfile]);
 
   const handleAccept = useCallback(async () => {
     if (!incomingRequest) return;

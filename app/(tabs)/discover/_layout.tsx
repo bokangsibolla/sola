@@ -22,6 +22,7 @@ export default function DiscoverLayout() {
       <Stack.Screen name="collection/[slug]" />
       <Stack.Screen name="activity/[slug]" />
       <Stack.Screen name="place-detail/[id]" />
+      <Stack.Screen name="area/[id]" />
     </Stack>
   );
 }

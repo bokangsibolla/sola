@@ -5,9 +5,9 @@ import * as Crypto from 'expo-crypto';
 import { supabase } from '@/lib/supabase';
 
 const GOOGLE_IOS_CLIENT_ID =
-  '77400652458-m3uj46bcd7um2rgihm3bu7m5pqu38imd.apps.googleusercontent.com';
+  '234937383727-41lbcel6j3nrn4t58huag5ig11582bca.apps.googleusercontent.com';
 const GOOGLE_WEB_CLIENT_ID =
-  '77400652458-nll46gae96u8rq2givvkciuc3s5tvtf9.apps.googleusercontent.com';
+  '234937383727-2oj58631smi815k534jn2k5lfdvlup06.apps.googleusercontent.com';
 
 // ─── Google ───────────────────────────────────────────────────────────────────
 

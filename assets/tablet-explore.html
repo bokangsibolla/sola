@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 1200px;
+    height: 1920px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #FFFFFF;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .status-bar {
+    height: 80px;
+    padding: 20px 40px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1a1a1a;
+  }
+  .status-icons { display: flex; gap: 10px; align-items: center; }
+
+  .header {
+    padding: 12px 40px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .logo {
+    font-size: 38px;
+    font-weight: 800;
+    color: #E5653A;
+    letter-spacing: -0.5px;
+  }
+  .header-icon {
+    width: 56px;
+    height: 56px;
+    border-radius: 28px;
+    background: #F3F3F3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .header-icon svg { width: 28px; height: 28px; }
+
+  .content {
+    padding: 0 40px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .hero-card {
+    width: 100%;
+    height: 340px;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.65) 100%),
+      linear-gradient(135deg, #c44a25 0%, #E5653A 40%, #e8815f 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-label {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 6px 12px;
+    background: rgba(0,0,0,0.35);
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .hero-content {
+    position: absolute;
+    bottom: 24px;
+    left: 24px;
+  }
+  .hero-title {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    letter-spacing: -0.3px;
+  }
+  .hero-sub {
+    font-size: 18px;
+    color: rgba(255,255,255,0.8);
+    margin-top: 4px;
+  }
+
+  .city-row {
+    display: flex;
+    gap: 20px;
+  }
+  .city-card {
+    flex: 1;
+    height: 260px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .city-card-1 {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%),
+      linear-gradient(135deg, #2c5f4a 0%, #3a7a5c 50%, #5a9a7c 100%);
+  }
+  .city-card-2 {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%),
+      linear-gradient(135deg, #c49a4a 0%, #d4aa5a 50%, #e4c47a 100%);
+  }
+  .city-card .hero-label { font-size: 12px; }
+  .city-card .hero-content { bottom: 20px; left: 20px; }
+  .city-card .hero-title { font-size: 24px; }
+  .city-card .hero-sub { font-size: 16px; }
+
+  .search-bar {
+    padding: 22px 24px;
+    background: #F3F3F3;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .search-icon { color: #999; font-size: 24px; }
+  .search-text { display: flex; flex-direction: column; gap: 2px; }
+  .search-main { font-size: 20px; font-weight: 600; color: #1a1a1a; letter-spacing: -0.2px; }
+  .search-sub { font-size: 16px; color: #999; }
+
+  .section-label {
+    font-size: 16px;
+    font-weight: 700;
+    color: #999;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: -12px;
+  }
+
+  .popular-row { display: flex; gap: 20px; }
+  .popular-card {
+    flex: 1;
+    height: 220px;
+    border-radius: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .popular-1 {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%),
+      linear-gradient(135deg, #4a6a8a 0%, #5a7a9a 50%, #7a9aba 100%);
+  }
+  .popular-2 {
+    background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.6) 100%),
+      linear-gradient(135deg, #8a4a6a 0%, #a05a7a 50%, #ba7a9a 100%);
+  }
+  .popular-card .hero-content { bottom: 18px; left: 18px; }
+  .popular-card .hero-title { font-size: 22px; }
+  .popular-card .hero-sub { font-size: 15px; }
+
+  .tab-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 100px;
+    background: white;
+    border-top: 1px solid #E8E8E8;
+    display: flex;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding-top: 14px;
+  }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .tab-dot { width: 30px; height: 30px; border-radius: 8px; background: #E8E8E8; }
+  .tab.active .tab-dot { background: #E5653A; }
+  .tab-label { font-size: 14px; font-weight: 600; color: #999; }
+  .tab.active .tab-label { color: #E5653A; }
+</style>
+</head>
+<body>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <span style="font-size:16px;font-weight:600">5G</span>
+      <span>🔋</span>
+    </div>
+  </div>
+
+  <div class="header">
+    <div class="logo">sola</div>
+    <div class="header-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#666" stroke-width="2" stroke-linecap="round">
+        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+        <polyline points="22,6 12,13 2,6"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="hero-card">
+      <div class="hero-label">Collection</div>
+      <div class="hero-content">
+        <div class="hero-title">Southeast Asia Solo Guide</div>
+        <div class="hero-sub">12 destinations verified for solo women</div>
+      </div>
+    </div>
+    <div class="city-row">
+      <div class="city-card city-card-1">
+        <div class="hero-label">City</div>
+        <div class="hero-content">
+          <div class="hero-title">Bali</div>
+          <div class="hero-sub">Indonesia</div>
+        </div>
+      </div>
+      <div class="city-card city-card-2">
+        <div class="hero-label">City</div>
+        <div class="hero-content">
+          <div class="hero-title">Lisbon</div>
+          <div class="hero-sub">Portugal</div>
+        </div>
+      </div>
+    </div>
+    <div class="search-bar">
+      <span class="search-icon">🔍</span>
+      <div class="search-text">
+        <span class="search-main">Where to next?</span>
+        <span class="search-sub">Search cities, countries, collections</span>
+      </div>
+    </div>
+    <div class="section-label">Popular with solo women</div>
+    <div class="popular-row">
+      <div class="popular-card popular-1">
+        <div class="hero-content">
+          <div class="hero-title">Tokyo</div>
+          <div class="hero-sub">Japan</div>
+        </div>
+      </div>
+      <div class="popular-card popular-2">
+        <div class="hero-content">
+          <div class="hero-title">Medellín</div>
+          <div class="hero-sub">Colombia</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="tab-bar">
+    <div class="tab active"><div class="tab-dot"></div><span class="tab-label">Explore</span></div>
+    <div class="tab"><div class="tab-dot"></div><span class="tab-label">Community</span></div>
+    <div class="tab"><div class="tab-dot"></div><span class="tab-label">Trips</span></div>
+    <div class="tab"><div class="tab-dot"></div><span class="tab-label">Connect</span></div>
+    <div class="tab"><div class="tab-dot"></div><span class="tab-label">Profile</span></div>
+  </div>
+</body>
+</html>

@@ -137,6 +137,16 @@ export interface City {
   // City-specific content fields
   transportMd: string | null;
   topThingsToDo: string[] | null;
+  // City page redesign — structured content
+  positioningLine: string | null;
+  budgetTier: 'budget' | 'moderate' | 'premium' | null;
+  vibe: string | null;
+  walkability: 'very_walkable' | 'walkable' | 'somewhat_walkable' | 'car_needed' | null;
+  transitEase: 'excellent' | 'good' | 'limited' | 'minimal' | null;
+  womenShouldKnow: string[] | null;
+  experiencePillars: { title: string; descriptor: string }[] | null;
+  howWomenUse: { summary: string; bullets: string[] } | null;
+  awareness: { summary: string; bullets: string[] } | null;
 }
 
 export interface CityArea {
@@ -150,6 +160,10 @@ export interface CityArea {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
+  // City page redesign enrichment
+  positioningLine: string | null;
+  whoItSuits: string | null;
+  heroImageUrl: string | null;
 }
 
 export interface PlaceCategory {
@@ -225,6 +239,7 @@ export interface Place {
   pickupIncluded: boolean | null;
   bookAheadText: string | null;
   ourTakeBullets: string[];
+  imageUrlCached: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Sola Roadmap — February 2026</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    color: #1a1a1a;
+    background: #fff;
+    line-height: 1.55;
+    padding: 44px 52px;
+    font-size: 10.5px;
+  }
+
+  .header {
+    display: table;
+    width: 100%;
+    margin-bottom: 6px;
+    padding-bottom: 14px;
+    border-bottom: 2px solid #E5653A;
+  }
+
+  .header-left {
+    display: table-cell;
+    vertical-align: top;
+  }
+
+  .header-right {
+    display: table-cell;
+    vertical-align: top;
+    text-align: right;
+  }
+
+  .logo {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-style: italic;
+    font-size: 34px;
+    color: #E5653A;
+    letter-spacing: -0.5px;
+  }
+
+  .header-right {
+    font-size: 10px;
+    color: #666;
+    line-height: 1.5;
+  }
+
+  .header-right strong { color: #1a1a1a; }
+
+  .subtitle {
+    font-size: 17px;
+    font-weight: 600;
+    color: #1a1a1a;
+    margin: 14px 0 3px 0;
+    letter-spacing: -0.3px;
+  }
+
+  .tagline {
+    font-size: 10.5px;
+    color: #888;
+    margin-bottom: 22px;
+  }
+
+  .week-header {
+    font-size: 12px;
+    font-weight: 700;
+    color: #E5653A;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #f0e8e5;
+  }
+
+  .row {
+    display: table;
+    width: 100%;
+    margin-bottom: 4px;
+  }
+
+  .col {
+    display: table-cell;
+    width: 50%;
+    vertical-align: top;
+    padding-right: 16px;
+  }
+
+  .col:last-child {
+    padding-right: 0;
+    padding-left: 16px;
+  }
+
+  .category {
+    margin-bottom: 12px;
+  }
+
+  .category-title {
+    font-size: 10.5px;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 4px;
+  }
+
+  .badge {
+    display: inline-block;
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 1.5px 5px;
+    border-radius: 3px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+
+  .badge-critical {
+    background: #fee2e2;
+    color: #dc2626;
+  }
+
+  .badge-new {
+    background: #FFF5F1;
+    color: #E5653A;
+  }
+
+  .badge-important {
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  ul {
+    list-style: none;
+    padding-left: 0;
+  }
+
+  li {
+    position: relative;
+    padding-left: 12px;
+    margin-bottom: 2.5px;
+    font-size: 10px;
+    color: #444;
+    line-height: 1.5;
+  }
+
+  li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: #ccc;
+    font-size: 9px;
+  }
+
+  li strong {
+    color: #1a1a1a;
+    font-weight: 600;
+  }
+
+  .note-box {
+    background: #FFF5F1;
+    border-left: 3px solid #E5653A;
+    padding: 8px 12px;
+    margin: 10px 0 14px 0;
+    font-size: 9.5px;
+    color: #333;
+    line-height: 1.5;
+  }
+
+  .note-box strong { color: #E5653A; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 18px 0;
+  }
+
+  .summary-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-size: 9.5px;
+  }
+
+  .summary-table th {
+    text-align: left;
+    font-weight: 600;
+    font-size: 8.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    padding: 5px 6px;
+    border-bottom: 1.5px solid #e5e5e5;
+  }
+
+  .summary-table td {
+    padding: 4px 6px;
+    border-bottom: 1px solid #f3f3f3;
+    color: #444;
+    vertical-align: top;
+  }
+
+  .owner-tag {
+    display: inline-block;
+    font-size: 8.5px;
+    font-weight: 500;
+    padding: 1px 4px;
+    border-radius: 3px;
+    background: #f3f3f3;
+    color: #555;
+  }
+
+  .priority-high { color: #dc2626; font-weight: 600; }
+  .priority-med { color: #b45309; font-weight: 600; }
+
+  .footer {
+    margin-top: 24px;
+    padding-top: 10px;
+    border-top: 1px solid #e5e5e5;
+    font-size: 9px;
+    color: #aaa;
+    display: table;
+    width: 100%;
+  }
+
+  .footer-left { display: table-cell; }
+  .footer-right { display: table-cell; text-align: right; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <div class="logo">sola</div>
+  </div>
+  <div class="header-right">
+    <strong>Launch Roadmap</strong><br>
+    16 February 2026<br>
+    Prepared by Bokang<br>
+    For Sergio (Co-founder)
+  </div>
+</div>
+
+<div class="subtitle">February 2026 — Launch Sprint</div>
+<div class="tagline">From beta to market. Distribution, monetization, and real users.</div>
+
+<!-- ===== WEEK 1 ===== -->
+<div class="week-header">Week of 16 February — Launch Week</div>
+
+<div class="row">
+  <div class="col">
+    <div class="category">
+      <div class="category-title">Launch & Distribution</div>
+      <ul>
+        <li><strong>Feb 17</strong> — Launch v1 on Google Play Store</li>
+        <li><strong>Feb 18</strong> — Finalize PR releases with Sergio</li>
+        <li>Send out media pitches, submit stories</li>
+        <li>Beta test for ~1 week — recruit testers, gather feedback</li>
+        <li>Resubmit Apple Developer application (Bokang, individual)</li>
+        <li>Estonia company registration once funded</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Marketing & Growth</div>
+      <ul>
+        <li><strong>Ad campaign with Aya</strong> — paid IG growth + beta users</li>
+        <li><strong>In-person with Aya & Clem</strong> — Mad Monkey, Z Hostel</li>
+        <li>Target solo female travelers for real-life signups</li>
+        <li>App improvements driven by PostHog analytics</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Finance & Operations</div>
+      <ul>
+        <li><strong>Set up bank account</strong> — receive Dennis's $1,000 investment</li>
+        <li><strong>Monetization strategy</strong> — define model with Sergio</li>
+        <li>Document investor terms (informal — Dennis repaid on success)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="category">
+      <div class="category-title">Bokang — Product & Engineering</div>
+      <ul>
+        <li>Finalize ops dashboard</li>
+        <li>Finalize marketing dashboard</li>
+        <li>Finalize partner dashboard</li>
+        <li>Ongoing bug fixes from beta feedback</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Pre-Launch QA <span class="badge badge-critical">Critical</span></div>
+      <ul>
+        <li><strong>Full QA pass</strong> — every screen, every flow, on real devices</li>
+        <li><strong>Android device testing</strong> — test across screen sizes</li>
+        <li><strong>Crash monitoring</strong> — verify Sentry captures production errors</li>
+        <li><strong>Performance audit</strong> — feed load times, image loading, memory</li>
+        <li><strong>Offline behavior</strong> — graceful errors with no connection</li>
+        <li><strong>Deep link testing</strong> — shared links open correct screens</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Security & Privacy <span class="badge badge-critical">Critical</span></div>
+      <ul>
+        <li><strong>RLS audit</strong> — verify every Supabase table has row-level security</li>
+        <li><strong>Location data review</strong> — who can see user locations?</li>
+        <li><strong>DM privacy</strong> — messages between users must be private</li>
+        <li><strong>Profile visibility</strong> — can strangers see too much info?</li>
+        <li><strong>SOS feature validation</strong> — must work reliably under stress</li>
+        <li><strong>Auth flow hardening</strong> — session management, token refresh</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="note-box">
+  <strong>Items you may have missed:</strong> Everything marked <span class="badge badge-critical" style="font-size:7px">CRITICAL</span> or <span class="badge badge-new" style="font-size:7px">MISSING</span> was not in the original plan but is essential for a safe, compliant launch.
+</div>
+
+<div class="row">
+  <div class="col">
+    <div class="category">
+      <div class="category-title">App Store Compliance <span class="badge badge-new">Missing</span></div>
+      <ul>
+        <li><strong>Privacy Policy</strong> — required by both stores, must be live URL</li>
+        <li><strong>Terms of Service</strong> — required with community features</li>
+        <li><strong>Google Play data safety section</strong> — declare all data collected</li>
+        <li><strong>Content rating questionnaire</strong> — required for Play Store</li>
+        <li><strong>Store listing assets</strong> — professional screenshots, description</li>
+        <li><strong>GDPR compliance</strong> — data export + deletion for EU users</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Community Moderation <span class="badge badge-new">Missing</span></div>
+      <ul>
+        <li><strong>Content moderation plan</strong> — who reviews reported posts?</li>
+        <li><strong>Community guidelines</strong> — published, linked in-app</li>
+        <li><strong>Report / block / flag system</strong> — verified end-to-end</li>
+        <li><strong>Abuse response plan</strong> — protocol when someone is harassed</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <div class="category">
+      <div class="category-title">User Support & Onboarding <span class="badge badge-new">Missing</span></div>
+      <ul>
+        <li><strong>Support channel</strong> — email? In-app? Who responds?</li>
+        <li><strong>Bug reporting</strong> — how do beta testers report issues?</li>
+        <li><strong>Onboarding flow</strong> — first-time experience must be flawless</li>
+        <li><strong>Retention nudges</strong> — day 1, day 3, day 7 push notifications</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Infrastructure & Backup <span class="badge badge-new">Missing</span></div>
+      <ul>
+        <li><strong>Database backups</strong> — automatic + tested recovery</li>
+        <li><strong>Supabase plan limits</strong> — are you on free tier?</li>
+        <li><strong>Push notifications</strong> — verified on Android + iOS</li>
+        <li><strong>Image storage</strong> — Supabase Storage buckets configured</li>
+      </ul>
+    </div>
+
+    <div class="category">
+      <div class="category-title">Legal / Business <span class="badge badge-important">Important</span></div>
+      <ul>
+        <li><strong>Co-founder agreement</strong> — equity split, roles, vesting</li>
+        <li><strong>Investor note</strong> — even a simple SAFE for Dennis's $1K</li>
+        <li><strong>IP ownership</strong> — who owns code, brand, assets?</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== WEEK 2 ===== -->
+<div class="week-header">Week of 21 February — Growth & Revenue</div>
+
+<div class="row">
+  <div class="col">
+    <div class="category">
+      <div class="category-title">Merch Store Exploration</div>
+      <ul>
+        <li>Research dropship providers (Printful, Gelato, etc.)</li>
+        <li>Sola-branded travel gear — pouches, tags, adapters</li>
+        <li>Zero upfront cost model — test demand first</li>
+      </ul>
+    </div>
+  </div>
+  <div class="col">
+    <div class="category">
+      <div class="category-title">Beta Feedback Sprint</div>
+      <ul>
+        <li>Aggregate all beta tester feedback</li>
+        <li>Prioritize top 10 issues / requests</li>
+        <li>Ship fixes daily — fast iteration cycle</li>
+        <li>Track retention metrics (D1, D7, D30)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== WEEK 3 ===== -->
+<div class="week-header">Week of 28 February — 8 March — Automation & Scale</div>
+
+<div class="row">
+  <div class="col">
+    <div class="category">
+      <div class="category-title">AI Agent Teams</div>
+      <ul>
+        <li>Map all manual / repetitive operational tasks</li>
+        <li>Design agent workflows for content, support, moderation</li>
+        <li>Build and test first automated pipeline</li>
+      </ul>
+    </div>
+  </div>
+  <div class="col">
+    <div class="category">
+      <div class="category-title">Growth Optimization</div>
+      <ul>
+        <li>Analyze ad campaign performance with Aya</li>
+        <li>Double down on what's working</li>
+        <li>Begin ASO optimization for Play Store listing</li>
+        <li>Plan Apple App Store submission (pending approval)</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ===== SUMMARY TABLE ===== -->
+<div class="week-header" style="border-bottom-color: #333; color: #333;">Owner Summary</div>
+<table class="summary-table">
+  <thead>
+    <tr>
+      <th style="width:32%">Task</th>
+      <th style="width:18%">Owner</th>
+      <th style="width:10%">Priority</th>
+      <th style="width:20%">Deadline</th>
+      <th style="width:20%">Status</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>Google Play Store launch</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Feb 17</td>
+      <td>Ready</td>
+    </tr>
+    <tr>
+      <td>PR releases & media pitches</td>
+      <td><span class="owner-tag">Sergio</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Feb 18</td>
+      <td>Draft needed</td>
+    </tr>
+    <tr>
+      <td>Security & RLS audit</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Before launch</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Privacy Policy & Terms of Service</td>
+      <td><span class="owner-tag">Sergio</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Before launch</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>QA pass — all flows on real devices</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Feb 17</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Google Play data safety & content rating</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td class="priority-high">P0</td>
+      <td>Feb 17</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Ad campaign setup</td>
+      <td><span class="owner-tag">Aya</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-med">P1</td>
+      <td>Week of Feb 16</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>In-person hostel campaign</td>
+      <td><span class="owner-tag">Aya</span> <span class="owner-tag">Clem</span></td>
+      <td class="priority-med">P1</td>
+      <td>Week of Feb 16</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Bank account + Dennis funding</td>
+      <td><span class="owner-tag">Sergio</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-med">P1</td>
+      <td>Week of Feb 16</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Monetization strategy</td>
+      <td><span class="owner-tag">Sergio</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-med">P1</td>
+      <td>Week of Feb 16</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Community moderation plan</td>
+      <td><span class="owner-tag">Sergio</span></td>
+      <td class="priority-med">P1</td>
+      <td>Before launch</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Co-founder agreement</td>
+      <td><span class="owner-tag">Sergio</span> <span class="owner-tag">Bokang</span></td>
+      <td class="priority-med">P1</td>
+      <td>Feb 28</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>Dashboards (ops / marketing / partner)</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td>P2</td>
+      <td>Week of Feb 16</td>
+      <td>In progress</td>
+    </tr>
+    <tr>
+      <td>Merch store exploration</td>
+      <td><span class="owner-tag">TBD</span></td>
+      <td>P2</td>
+      <td>Week of Feb 21</td>
+      <td>Not started</td>
+    </tr>
+    <tr>
+      <td>AI agent automation</td>
+      <td><span class="owner-tag">Bokang</span></td>
+      <td>P2</td>
+      <td>Week of Feb 28</td>
+      <td>Not started</td>
+    </tr>
+  </tbody>
+</table>
+
+<div class="footer">
+  <div class="footer-left">sola — women-first solo travel</div>
+  <div class="footer-right">Confidential — February 2026</div>
+</div>
+
+</body>
+</html>

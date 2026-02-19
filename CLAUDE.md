@@ -68,7 +68,7 @@ Source of truth: `constants/design.ts`. See `.claude/skills/sola-design-system.m
 4. **44pt minimum touch targets.**
 5. **Flat design.** No shadows. Cards use 1px border.
 6. **White backgrounds.** `colors.background` everywhere.
-7. **Serif for display only.** `fonts.serif` only for h1 hero headings.
+7. **No serif fonts.** Only PlusJakartaSans. Never use InstrumentSerif or any serif font.
 8. **Colors mean something.** Orange=action. Green=safe. Yellow=caution. Blue=info.
 9. **Animations ≤ 300ms.** Gentle easing. No bouncing.
 10. **Premium tone.** No "queen", no "girl boss", no "bestie". See `.claude/skills/sola-feminist-ux-writing.md`.

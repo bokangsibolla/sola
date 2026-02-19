@@ -49,7 +49,7 @@ const ActivityHero: React.FC<ActivityHeroProps> = ({
     .filter((t) => SIGNAL_FILTER_GROUPS.includes(t.filterGroup))
     .slice(0, 3);
 
-  const useSerif = activity.name.length < 35;
+  const useSerif = false;
   const price = formatPrice(activity.priceLevel);
   const location = [cityName, countryName].filter(Boolean).join(', ');
 
@@ -166,8 +166,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   nameSerif: {
-    fontFamily: fonts.serif,
-    fontSize: 28,
+    fontFamily: fonts.semiBold,
+    fontSize: 26,
     color: colors.textPrimary,
     flex: 1,
     marginRight: spacing.sm,

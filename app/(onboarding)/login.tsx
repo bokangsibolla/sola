@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,7 +15,6 @@ export default function LoginScreen() {
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
 
@@ -48,23 +47,28 @@ export default function LoginScreen() {
     }
   };
 
-  const canLogin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
+  const canLogin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !loading;
 
   const handleLogin = async () => {
-    posthog.capture('email_login_attempted');
+    posthog.capture('magic_link_login_attempted');
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
 
-    if (error) {
-      posthog.capture('auth_failed', { provider: 'email', error: error.message });
-      Alert.alert('Login failed', error.message);
-      return;
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+
+      if (error) {
+        posthog.capture('auth_failed', { provider: 'magic_link', error: error.message });
+        Alert.alert('Something went wrong', error.message);
+        return;
+      }
+
+      posthog.capture('magic_link_sent', { mode: 'login' });
+      router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'login' } });
+    } catch (e: any) {
+      Alert.alert('Something went wrong', e.message ?? 'Please try again');
+    } finally {
+      setLoading(false);
     }
-
-    posthog.capture('auth_success', { provider: 'email' });
-    await onboardingStore.set('onboardingCompleted', true);
-    router.replace('/(tabs)/home');
   };
 
   return (
@@ -100,20 +104,22 @@ export default function LoginScreen() {
               </>
             )}
           </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
-            disabled={loading}
-            onPress={() => handleOAuth('apple')}
-          >
-            {loading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <>
-                <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
-              </>
-            )}
-          </Pressable>
+          {Platform.OS === 'ios' && (
+            <Pressable
+              style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
+              disabled={loading}
+              onPress={() => handleOAuth('apple')}
+            >
+              {loading ? (
+                <ActivityIndicator size="small" color="#FFFFFF" />
+              ) : (
+                <>
+                  <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+                  <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+                </>
+              )}
+            </Pressable>
+          )}
         </View>
 
         {/* Divider */}
@@ -123,7 +129,7 @@ export default function LoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Fields */}
+        {/* Email field */}
         <View style={styles.fields}>
           <TextInput
             style={styles.input}
@@ -134,40 +140,14 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
           />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textMuted}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
         </View>
 
-        <Pressable
-          style={styles.forgotRow}
-          onPress={async () => {
-            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-              Alert.alert('Enter your email', 'Type your email address above, then tap Forgot password.');
-              return;
-            }
-            const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: 'sola://reset-password',
-            });
-            if (resetError) {
-              Alert.alert('Error', resetError.message);
-            } else {
-              Alert.alert('Check your email', 'We sent you a password reset link.');
-            }
-          }}
-        >
-          <Text style={styles.forgotText}>Forgot password?</Text>
-        </Pressable>
+        <Text style={styles.hint}>We'll send you a verification code — no password needed.</Text>
       </View>
 
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
-        <PrimaryButton label="Log in" onPress={handleLogin} disabled={!canLogin} />
+        <PrimaryButton label="Send code" onPress={handleLogin} disabled={!canLogin} />
         <View style={styles.signupRow}>
           <Text style={styles.signupLabel}>New here? </Text>
           <Pressable onPress={() => router.back()}>
@@ -284,14 +264,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  forgotRow: {
-    alignSelf: 'flex-end',
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    paddingHorizontal: spacing.screenX,
     marginTop: 14,
-  },
-  forgotText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
   },
   footer: {
     paddingHorizontal: spacing.screenX,

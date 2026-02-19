@@ -23,6 +23,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Failsafe: never stay loading for more than 5 seconds
+    const timeout = setTimeout(() => setLoading(false), 5_000);
+
     // Restore session on mount
     supabase.auth
       .getSession()
@@ -33,17 +36,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Network or storage error — continue as signed out
       })
       .finally(() => {
+        clearTimeout(timeout);
         setLoading(false);
       });
 
     // Listen for auth changes (sign in, sign out, token refresh)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, s) => {
-      setSession(s);
-    });
+    let subscription: { unsubscribe: () => void } | null = null;
+    try {
+      const result = supabase.auth.onAuthStateChange((_event, s) => {
+        setSession(s);
+      });
+      subscription = result.data.subscription;
+    } catch {
+      // Supabase client may be broken if env vars are missing
+    }
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const signOut = async () => {

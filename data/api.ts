@@ -204,6 +204,16 @@ export function mapCity(row: Record<string, any>): City {
     // City-specific content fields
     transportMd: row.transport_md,
     topThingsToDo: row.top_things_to_do,
+    // City page redesign — structured content
+    positioningLine: row.positioning_line ?? null,
+    budgetTier: row.budget_tier ?? null,
+    vibe: row.vibe ?? null,
+    walkability: row.walkability ?? null,
+    transitEase: row.transit_ease ?? null,
+    womenShouldKnow: row.women_should_know ?? null,
+    experiencePillars: row.experience_pillars ?? null,
+    howWomenUse: row.how_women_use ?? null,
+    awareness: row.awareness ?? null,
   };
 }
 
@@ -373,6 +383,16 @@ export async function getCityByName(name: string): Promise<City | null> {
 
   if (error || !data) return null;
   return mapCity(data);
+}
+
+export async function getAreaById(areaId: string): Promise<CityArea | null> {
+  const { data, error } = await supabase
+    .from('city_areas')
+    .select('*')
+    .eq('id', areaId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<CityArea>(data) : null;
 }
 
 export async function getAreasByCity(cityId: string): Promise<CityArea[]> {

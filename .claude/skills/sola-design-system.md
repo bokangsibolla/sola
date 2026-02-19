@@ -41,7 +41,7 @@ Use spacing scale only: screenX(24), xs(4), sm(8), md(12), lg(16), xl(24), xxl(3
 - Headings: fonts.semiBold (PlusJakartaSans-SemiBold)
 - Body: fonts.regular (PlusJakartaSans-Regular)
 - Emphasis: fonts.medium (PlusJakartaSans-Medium)
-- Display/emotional headings only: fonts.serif (InstrumentSerif-Regular) — used sparingly for hero moments
+- **No serif fonts.** InstrumentSerif is banned. Only PlusJakartaSans weights.
 - Always use typography presets (h1, h2, body, bodyMuted, label, caption, captionSmall, button)
 
 ### Radius
@@ -56,7 +56,7 @@ sm(8) for chips, md(12) for medium elements, input(14) for inputs, card(14) for 
 5. **Flat design.** No shadows, no elevation, no gradients on UI chrome. Gradients allowed only on hero image overlays for text legibility.
 6. **Cards: 1px border, no shadow.** `borderWidth: 1, borderColor: colors.borderDefault, borderRadius: radius.card`.
 7. **White background everywhere.** `colors.background`. No gray backgrounds.
-8. **Serif for display only.** `fonts.serif` only for h1-level hero headings.
+8. **No serif fonts.** Only PlusJakartaSans. InstrumentSerif is permanently removed.
 9. **Color means something.** Orange = action/brand. Green = safe/positive. Yellow = caution. Blue = info. Never decorative.
 10. **Animations are calm.** Max 300ms for UI transitions. Gentle easing. No bouncing, wiggling, or attention-grabbing motion.
 

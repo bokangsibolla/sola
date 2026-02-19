@@ -65,7 +65,6 @@ export const pressedState = {
 };
 
 export const fonts = {
-  serif: 'InstrumentSerif-Regular',
   regular: 'PlusJakartaSans-Regular',
   medium: 'PlusJakartaSans-Medium',
   semiBold: 'PlusJakartaSans-SemiBold',

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    width: 393px;
+    height: 852px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #FFFFFF;
+    overflow: hidden;
+  }
+
+  .status-bar {
+    height: 54px;
+    padding: 14px 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 15px;
+    font-weight: 600;
+    color: white;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 10;
+  }
+  .status-icons { display: flex; gap: 6px; align-items: center; }
+  .signal { width: 17px; height: 11px; display: flex; gap: 1.5px; align-items: flex-end; }
+  .signal span { width: 3px; background: white; border-radius: 1px; }
+  .signal span:nth-child(1) { height: 4px; }
+  .signal span:nth-child(2) { height: 6px; }
+  .signal span:nth-child(3) { height: 8px; }
+  .signal span:nth-child(4) { height: 11px; }
+  .battery { width: 25px; height: 12px; border: 1.5px solid white; border-radius: 3px; position: relative; }
+  .battery::after { content: ''; position: absolute; right: -4px; top: 3px; width: 2px; height: 5px; background: white; border-radius: 0 1px 1px 0; }
+  .battery-fill { width: 75%; height: 100%; background: white; border-radius: 1.5px; }
+
+  /* Hero */
+  .hero {
+    width: 100%;
+    height: 280px;
+    background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0) 30%, rgba(0,0,0,0.55) 100%),
+      linear-gradient(135deg, #1a6b4a 0%, #2a8a5a 30%, #3aaa6a 60%, #4aba7a 100%);
+    position: relative;
+  }
+  .back-btn {
+    position: absolute;
+    top: 56px;
+    left: 16px;
+    width: 36px;
+    height: 36px;
+    border-radius: 18px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 18px;
+  }
+  .hero-bottom {
+    position: absolute;
+    bottom: 20px;
+    left: 24px;
+  }
+  .country-name {
+    font-size: 32px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.8px;
+  }
+  .country-sub {
+    font-size: 14px;
+    color: rgba(255,255,255,0.85);
+    margin-top: 2px;
+  }
+
+  /* Signals row */
+  .signals {
+    display: flex;
+    gap: 8px;
+    padding: 16px 24px;
+    flex-wrap: wrap;
+  }
+  .signal-chip {
+    padding: 6px 12px;
+    background: #F3F3F3;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #555;
+    letter-spacing: -0.1px;
+  }
+
+  /* Content sections */
+  .section {
+    padding: 0 24px;
+    margin-bottom: 20px;
+  }
+  .section-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    letter-spacing: -0.4px;
+    margin-bottom: 10px;
+  }
+  .section-text {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #555;
+    letter-spacing: -0.1px;
+  }
+
+  .divider {
+    height: 1px;
+    background: #F0F0F0;
+    margin: 0 24px 20px;
+  }
+
+  /* Budget grid */
+  .budget-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .budget-cell {
+    background: #FFF5F1;
+    border-radius: 12px;
+    padding: 14px;
+  }
+  .budget-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .budget-value {
+    font-size: 20px;
+    font-weight: 800;
+    color: #E5653A;
+    margin-top: 4px;
+    letter-spacing: -0.5px;
+  }
+  .budget-note {
+    font-size: 11px;
+    color: #999;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+  <div class="status-bar">
+    <span>9:41</span>
+    <div class="status-icons">
+      <div class="signal"><span></span><span></span><span></span><span></span></div>
+      <span style="font-size:12px;font-weight:600">5G</span>
+      <div class="battery"><div class="battery-fill"></div></div>
+    </div>
+  </div>
+
+  <div class="hero">
+    <div class="back-btn">←</div>
+    <div class="hero-bottom">
+      <div class="country-name">Thailand</div>
+      <div class="country-sub">Southeast Asia</div>
+    </div>
+  </div>
+
+  <div class="signals">
+    <span class="signal-chip">Very safe for solo women</span>
+    <span class="signal-chip">Budget-friendly</span>
+    <span class="signal-chip">Warm & welcoming</span>
+    <span class="signal-chip">Nov – Mar</span>
+  </div>
+
+  <div class="section">
+    <div class="section-text">Thailand is one of the most popular destinations for solo women travelers. Affordable, friendly, and well-connected, it's an ideal first solo trip with a strong community of women exploring independently.</div>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section">
+    <div class="section-title">Budget Breakdown</div>
+    <div class="budget-grid">
+      <div class="budget-cell">
+        <div class="budget-label">Accommodation</div>
+        <div class="budget-value">$25</div>
+        <div class="budget-note">per night</div>
+      </div>
+      <div class="budget-cell">
+        <div class="budget-label">Food</div>
+        <div class="budget-value">$12</div>
+        <div class="budget-note">per day</div>
+      </div>
+      <div class="budget-cell">
+        <div class="budget-label">Transport</div>
+        <div class="budget-value">$8</div>
+        <div class="budget-note">per day</div>
+      </div>
+      <div class="budget-cell">
+        <div class="budget-label">Activities</div>
+        <div class="budget-value">$15</div>
+        <div class="budget-note">per day</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
@@ -7,56 +7,18 @@ import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
 import { supabase } from '@/lib/supabase';
 import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
-import {
-  fetchOnboardingConfig,
-  calculateOnboardingFlow,
-  createOnboardingSession,
-} from '@/lib/onboardingConfig';
 import { colors, fonts, radius } from '@/constants/design';
-
-/** Initialize the A/B testing flow for a new user */
-async function initializeOnboardingFlow(userId: string, posthog: ReturnType<typeof usePostHog>) {
-  try {
-    // Fetch config from Supabase (with fallback to defaults)
-    const config = await fetchOnboardingConfig();
-
-    // Calculate which questions/screens to show based on user ID
-    const flowResult = calculateOnboardingFlow(config, userId);
-
-    // Store in onboardingStore for use throughout onboarding
-    onboardingStore.set('questionsToShow', flowResult.questionsToShow);
-    onboardingStore.set('screensToShow', flowResult.screensToShow);
-    onboardingStore.set('profileOptionalFields', flowResult.profileOptionalFields);
-    onboardingStore.set('configSnapshot', flowResult.configSnapshot);
-
-    // Create session record in database
-    const sessionId = await createOnboardingSession(userId, flowResult);
-    if (sessionId) {
-      onboardingStore.set('abTestSessionId', sessionId);
-    }
-
-    // Track flow started in PostHog
-    posthog.capture('onboarding_flow_started', {
-      questions_shown: flowResult.questionsToShow,
-      screens_shown: flowResult.screensToShow,
-      session_id: sessionId,
-    });
-  } catch {
-    // Non-blocking: if A/B setup fails, onboarding still works with defaults
-  }
-}
 
 export default function CreateAccountScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
 
   const [loading, setLoading] = useState(false);
 
   const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
 
-  const canContinue = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && password.length >= 6 && !loading;
+  const canContinue = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !loading;
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     setLoading(true);
@@ -65,17 +27,13 @@ export default function CreateAccountScreen() {
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
       if (result.isNewUser) {
-        // Initialize A/B testing flow for new user
-        if (result.userId) {
-          await initializeOnboardingFlow(result.userId, posthog);
-        }
         router.push('/(onboarding)/profile');
       } else {
         await onboardingStore.set('onboardingCompleted', true);
         router.replace('/(tabs)/home');
       }
     } catch (e: any) {
-      if (e.message?.includes('cancelled')) return; // user dismissed
+      if (e.message?.includes('cancelled')) return;
       Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
     } finally {
       setLoading(false);
@@ -85,26 +43,17 @@ export default function CreateAccountScreen() {
   const handleContinue = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithOtp({ email });
 
       if (error) {
-        Alert.alert('Sign up failed', error.message);
+        Alert.alert('Something went wrong', error.message);
         return;
       }
 
-      onboardingStore.set('email', email);
-
-      // Initialize A/B testing flow for new user
-      if (data.user?.id) {
-        await initializeOnboardingFlow(data.user.id, posthog);
-      }
-
-      router.push('/(onboarding)/profile');
+      posthog.capture('magic_link_sent', { mode: 'signup' });
+      router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'signup' } });
     } catch (e: any) {
-      Alert.alert('Sign up failed', e.message ?? 'Something went wrong');
+      Alert.alert('Something went wrong', e.message ?? 'Please try again');
     } finally {
       setLoading(false);
     }
@@ -115,7 +64,7 @@ export default function CreateAccountScreen() {
       stage={2}
       headline="Let's get you in."
       subtitle="Travel information designed for how women travel."
-      ctaLabel="Create account"
+      ctaLabel="Continue"
       ctaDisabled={!canContinue}
       onCtaPress={handleContinue}
     >
@@ -135,30 +84,32 @@ export default function CreateAccountScreen() {
             </>
           )}
         </Pressable>
-        <Pressable
-          style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
-          disabled={loading}
-          onPress={() => handleOAuth('apple')}
-        >
-          {loading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <>
-              <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-              <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
-            </>
-          )}
-        </Pressable>
+        {Platform.OS === 'ios' && (
+          <Pressable
+            style={({ pressed }) => [styles.socialButton, styles.appleButton, pressed && styles.socialPressed]}
+            disabled={loading}
+            onPress={() => handleOAuth('apple')}
+          >
+            {loading ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
+                <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+              </>
+            )}
+          </Pressable>
+        )}
       </View>
 
       {/* Divider */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or</Text>
+        <Text style={styles.dividerText}>or continue with email</Text>
         <View style={styles.dividerLine} />
       </View>
 
-      {/* Email/password fields */}
+      {/* Email field */}
       <View style={styles.fields}>
         <TextInput
           style={styles.input}
@@ -170,16 +121,9 @@ export default function CreateAccountScreen() {
           autoCapitalize="none"
           autoFocus={false}
         />
-        <TextInput
-          style={styles.input}
-          placeholder="Create a password"
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-          autoFocus={false}
-        />
       </View>
+
+      <Text style={styles.hint}>We'll send you a verification code — no password needed.</Text>
 
       <View style={styles.loginRow}>
         <Text style={styles.loginLabel}>Already have an account? </Text>
@@ -256,6 +200,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.textPrimary,
+  },
+  hint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 16,
   },
   loginRow: {
     flexDirection: 'row',

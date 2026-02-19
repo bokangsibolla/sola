@@ -53,6 +53,7 @@ export default function ProfileScreen() {
   const [search, setSearch] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [confirmedWoman, setConfirmedWoman] = useState(false);
 
   // A/B Testing: Check which optional fields to show
   const showPhoto = onboardingStore.shouldShowQuestion('photo');
@@ -80,7 +81,8 @@ export default function ProfileScreen() {
   const canContinue =
     firstName.trim().length > 0 &&
     selectedCountry.length > 0 &&
-    dateOfBirth !== null;
+    dateOfBirth !== null &&
+    confirmedWoman;
 
   const pickImage = async (fromCamera: boolean) => {
     const permissionResult = fromCamera
@@ -178,6 +180,22 @@ export default function ProfileScreen() {
       onCtaPress={handleContinue}
     >
       <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+        {/* Gender confirmation */}
+        <Pressable
+          style={[styles.confirmRow, confirmedWoman && styles.confirmRowActive]}
+          onPress={() => setConfirmedWoman(!confirmedWoman)}
+        >
+          <View style={[styles.checkbox, confirmedWoman && styles.checkboxActive]}>
+            {confirmedWoman && (
+              <Ionicons name="checkmark" size={14} color={colors.background} />
+            )}
+          </View>
+          <Text style={styles.confirmText}>I identify as a woman</Text>
+        </Pressable>
+        <Text style={styles.confirmHint}>
+          Sola is built for women travelers. This helps us keep the community safe.
+        </Text>
+
         {/* Photo + name row */}
         <View style={styles.topRow}>
           {showPhoto && (
@@ -293,6 +311,45 @@ export default function ProfileScreen() {
 }
 
 const styles = StyleSheet.create({
+  confirmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.input,
+    marginBottom: 8,
+  },
+  confirmRowActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orangeFill,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.borderDefault,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: colors.orange,
+    borderColor: colors.orange,
+  },
+  confirmText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  confirmHint: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginBottom: 24,
+  },
   topRow: {
     flexDirection: 'row',
     gap: 16,

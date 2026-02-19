@@ -17,10 +17,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import * as SplashScreen from 'expo-splash-screen';
 
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
-  tracesSampleRate: 0.2,
-});
+try {
+  Sentry.init({
+    dsn: process.env.EXPO_PUBLIC_SENTRY_DSN ?? '',
+    tracesSampleRate: 0.2,
+  });
+} catch (e) {
+  console.warn('Sentry init failed:', e);
+}
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -177,62 +181,64 @@ function RootLayout() {
     'PlusJakartaSans-Regular': require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
     'PlusJakartaSans-Medium': require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
     'PlusJakartaSans-SemiBold': require('../assets/fonts/PlusJakartaSans-SemiBold.ttf'),
-    'InstrumentSerif-Regular': require('../assets/fonts/InstrumentSerif-Regular.ttf'),
   });
 
   useEffect(() => {
-    onboardingStore.hydrate().then(() => setStoreReady(true));
+    onboardingStore.hydrate().then(() => setStoreReady(true)).catch(() => setStoreReady(true));
     initI18n().then(() => setI18nReady(true)).catch(() => setI18nReady(true));
     captureAttribution(); // Capture UTM params from deep link on first open
-    const timer = setTimeout(() => setInitTimedOut(true), 10_000);
+
+    // Failsafe: ALWAYS hide splash after 3 seconds no matter what
+    const timer = setTimeout(() => {
+      setInitTimedOut(true);
+      setStoreReady(true);
+      setI18nReady(true);
+      SplashScreen.hideAsync();
+    }, 3_000);
     return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
-    if (fontsLoaded && storeReady && i18nReady) {
+    if ((fontsLoaded || fontError) && storeReady && i18nReady) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, storeReady, i18nReady]);
-
-  if (initTimedOut && (!fontsLoaded || !storeReady || !i18nReady)) {
-    SplashScreen.hideAsync();
-    return (
-      <View style={errorStyles.container}>
-        <Text style={errorStyles.title}>Taking too long to load</Text>
-        <Text style={errorStyles.message}>Please close and reopen the app.</Text>
-      </View>
-    );
-  }
-
-  if (!fontsLoaded || !storeReady || !i18nReady) return null;
+  }, [fontsLoaded, fontError, storeReady, i18nReady]);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <OfflineBanner visible={isOffline} />
-      <QueryClientProvider client={queryClient}>
-        <PostHogProvider
-          apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
-          options={{
-            host: 'https://us.i.posthog.com',
-            enableSessionReplay: false,
-          }}
-        >
-          <AuthProvider>
-            <PreferencesProvider>
-              <AppModeProvider>
-                <SafeAreaProvider>
+      <SafeAreaProvider>
+        <OfflineBanner visible={isOffline} />
+        <QueryClientProvider client={queryClient}>
+          <PostHogProvider
+            apiKey={process.env.EXPO_PUBLIC_POSTHOG_KEY || ''}
+            options={{
+              host: 'https://us.i.posthog.com',
+              enableSessionReplay: false,
+            }}
+          >
+            <AuthProvider>
+              <PreferencesProvider>
+                <AppModeProvider>
                   <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                     <AuthGate />
                   </ThemeProvider>
-                </SafeAreaProvider>
-              </AppModeProvider>
-            </PreferencesProvider>
-          </AuthProvider>
-        </PostHogProvider>
-      </QueryClientProvider>
+                </AppModeProvider>
+              </PreferencesProvider>
+            </AuthProvider>
+          </PostHogProvider>
+        </QueryClientProvider>
+      </SafeAreaProvider>
     </GestureHandlerRootView>
   );
 }
 
-// Sentry.wrap can hang in Expo Go — use directly in dev
-export default __DEV__ ? RootLayout : Sentry.wrap(RootLayout);
+// Sentry.wrap can hang in Expo Go or if native module is missing
+let WrappedLayout = RootLayout;
+if (!__DEV__) {
+  try {
+    WrappedLayout = Sentry.wrap(RootLayout);
+  } catch {
+    console.warn('Sentry.wrap failed, using unwrapped layout');
+  }
+}
+export default WrappedLayout;
