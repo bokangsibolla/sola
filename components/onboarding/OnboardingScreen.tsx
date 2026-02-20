@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -89,7 +89,7 @@ export default function OnboardingScreen({
       </Animated.View>
 
       {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: insets.bottom + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 0) + 16 }]}>
         <PrimaryButton label={ctaLabel} onPress={onCtaPress} disabled={ctaDisabled} />
         {onSkip && (
           <Pressable onPress={onSkip} style={styles.skipButton} hitSlop={8}>

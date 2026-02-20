@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
     transform: [{ scale: 0.985 }],
   },
   buttonDisabled: {
-    opacity: 0.35,
+    opacity: 0.5,
   },
   buttonText: {
     fontFamily: fonts.semiBold,

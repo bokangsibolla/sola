@@ -47,9 +47,9 @@ export const radius = {
   sm: 4,
   md: 6,
   pill: 4,
-  input: 6,
+  input: 12,
   card: 8,
-  button: 2,
+  button: 14,
   full: 999,
 };
 

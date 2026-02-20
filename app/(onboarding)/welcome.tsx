@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
 
         <Animated.View
           entering={FadeIn.delay(1000).duration(600)}
-          style={[styles.bottomBlock, { paddingBottom: insets.bottom + 24 }]}
+          style={[styles.bottomBlock, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 0) + 24 }]}
         >
           <PrimaryButton
             label="Create account"

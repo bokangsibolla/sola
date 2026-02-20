@@ -50,7 +50,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     [
       'expo-splash-screen',
       {
-        image: './assets/images/sola-logo.png',
+        image: './assets/images/sola-logo-white.png',
         imageWidth: 160,
         resizeMode: 'contain',
         backgroundColor: '#E5653A',
