@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
 
         <Animated.View
           entering={FadeIn.delay(1000).duration(600)}
-          style={[styles.bottomBlock, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 0) + 24 }]}
+          style={[styles.bottomBlock, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 24 }]}
         >
           <PrimaryButton
             label="Create account"
@@ -128,10 +128,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   tagline: {
-    fontFamily: fonts.regular,
-    fontSize: 16,
-    color: '#FFFFFF',
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: 'rgba(255,255,255,0.85)',
     textAlign: 'center',
+    letterSpacing: 0.5,
   },
   bottomBlock: {
     paddingHorizontal: spacing.screenX,

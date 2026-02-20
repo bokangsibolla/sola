@@ -146,7 +146,7 @@ export default function LoginScreen() {
       </View>
 
       {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 0) + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 16 }]}>
         <PrimaryButton label="Send code" onPress={handleLogin} disabled={!canLogin} />
         <View style={styles.signupRow}>
           <Text style={styles.signupLabel}>New here? </Text>

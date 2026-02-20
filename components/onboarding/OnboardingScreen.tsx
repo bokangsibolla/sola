@@ -89,7 +89,7 @@ export default function OnboardingScreen({
       </Animated.View>
 
       {/* Footer */}
-      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 32 : 0) + 16 }]}>
+      <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 16 }]}>
         <PrimaryButton label={ctaLabel} onPress={onCtaPress} disabled={ctaDisabled} />
         {onSkip && (
           <Pressable onPress={onSkip} style={styles.skipButton} hitSlop={8}>

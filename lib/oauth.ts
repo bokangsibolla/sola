@@ -1,4 +1,3 @@
-import { makeRedirectUri } from 'expo-auth-session';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
@@ -12,13 +11,9 @@ const GOOGLE_WEB_CLIENT_ID =
 // ─── Google ───────────────────────────────────────────────────────────────────
 
 export function useGoogleAuth() {
-  const redirectUri = makeRedirectUri({ scheme: 'sola' });
-
   const [request, response, promptAsync] = Google.useIdTokenAuthRequest({
     iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_WEB_CLIENT_ID,
     webClientId: GOOGLE_WEB_CLIENT_ID,
-    redirectUri,
   });
 
   const signInWithGoogle = async (): Promise<{ isNewUser: boolean; userId: string }> => {
