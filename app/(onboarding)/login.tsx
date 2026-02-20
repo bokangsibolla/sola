@@ -54,18 +54,30 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      let lastError: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { error } = await supabase.auth.signInWithOtp({ email });
 
-      if (error) {
-        posthog.capture('auth_failed', { provider: 'magic_link', error: error.message });
-        Alert.alert('Something went wrong', error.message);
-        return;
+          if (error) {
+            posthog.capture('auth_failed', { provider: 'magic_link', error: error.message });
+            Alert.alert('Something went wrong', error.message);
+            return;
+          }
+
+          posthog.capture('magic_link_sent', { mode: 'login' });
+          router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'login' } });
+          return;
+        } catch (e: any) {
+          lastError = e;
+          if (attempt < 2 && e.message?.includes('Network')) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          break;
+        }
       }
-
-      posthog.capture('magic_link_sent', { mode: 'login' });
-      router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'login' } });
-    } catch (e: any) {
-      Alert.alert('Something went wrong', e.message ?? 'Please try again');
+      Alert.alert('Connection error', 'Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }

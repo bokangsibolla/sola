@@ -54,10 +54,8 @@ const styles = StyleSheet.create({
   },
   buttonText: {
     fontFamily: fonts.semiBold,
-    fontSize: 13,
+    fontSize: 16,
     color: colors.background,
-    letterSpacing: 1.2,
-    textTransform: 'uppercase',
   },
   buttonTextDisabled: {
     opacity: 0.9,

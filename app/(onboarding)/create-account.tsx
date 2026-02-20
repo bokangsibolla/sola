@@ -43,17 +43,30 @@ export default function CreateAccountScreen() {
   const handleContinue = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email });
+      // Retry up to 2 times on network failure
+      let lastError: any;
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { error } = await supabase.auth.signInWithOtp({ email });
 
-      if (error) {
-        Alert.alert('Something went wrong', error.message);
-        return;
+          if (error) {
+            Alert.alert('Something went wrong', error.message);
+            return;
+          }
+
+          posthog.capture('magic_link_sent', { mode: 'signup' });
+          router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'signup' } });
+          return;
+        } catch (e: any) {
+          lastError = e;
+          if (attempt < 2 && e.message?.includes('Network')) {
+            await new Promise(r => setTimeout(r, 1000));
+            continue;
+          }
+          break;
+        }
       }
-
-      posthog.capture('magic_link_sent', { mode: 'signup' });
-      router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'signup' } });
-    } catch (e: any) {
-      Alert.alert('Something went wrong', e.message ?? 'Please try again');
+      Alert.alert('Connection error', 'Please check your internet connection and try again.');
     } finally {
       setLoading(false);
     }
