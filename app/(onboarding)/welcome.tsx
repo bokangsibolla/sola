@@ -137,7 +137,9 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   loginButton: {
-    height: 48,
+    minHeight: 48,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
     borderRadius: radius.button,
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.3)',
@@ -148,6 +150,8 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: fonts.medium,
     fontSize: 15,
+    lineHeight: 22,
     color: '#FFFFFF',
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 });

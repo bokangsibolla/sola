@@ -1,4 +1,6 @@
-// Hermes polyfill MUST be first — fixes Set/Map iteration across all dependencies
+// URL polyfill MUST be very first — patches globalThis.URL on Hermes so fetch() works
+import 'react-native-url-polyfill/auto';
+// Hermes polyfill MUST be next — fixes Set/Map iteration across all dependencies
 import '@/lib/hermes-polyfill';
 // gesture-handler MUST be imported before other UI imports
 import 'react-native-gesture-handler';
@@ -139,7 +141,11 @@ function AuthGate() {
     if (authLoading) return;
     if (!router || !segments || segments.length < 1) return;
 
-    const currentGroup = segments[0];
+    const currentGroup = segments[0] as string;
+
+    // Never interfere with the OAuth callback screen — it handles its own routing
+    if (currentGroup === 'auth') return;
+
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
@@ -176,6 +182,7 @@ function AuthGate() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </>

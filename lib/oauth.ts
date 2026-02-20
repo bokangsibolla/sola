@@ -4,7 +4,6 @@ import * as Linking from 'expo-linking';
 import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
-import { makeRedirectUri } from 'expo-auth-session';
 import { supabase } from '@/lib/supabase';
 
 const GOOGLE_IOS_CLIENT_ID =
@@ -31,7 +30,11 @@ export function useGoogleAuth() {
     return signInWithGoogleIOS(promptAsync);
   };
 
-  return { request, signInWithGoogle };
+  // On Android, the button should always be enabled (doesn't use expo-auth-session request).
+  // On iOS, it depends on the auth request being ready.
+  const isReady = Platform.OS === 'android' ? true : !!request;
+
+  return { request, signInWithGoogle, isReady };
 }
 
 // iOS: ID token flow via expo-auth-session
@@ -95,22 +98,59 @@ async function signInWithGoogleAndroid(): Promise<{ isNewUser: boolean; userId: 
       throw new Error(error?.message || 'Failed to start Google sign-in');
     }
 
+    // Set up a Linking listener as a fallback — if Chrome Custom Tabs don't
+    // return the URL via openAuthSessionAsync, the deep link will fire here.
+    let linkingResolved = false;
+    const linkingPromise = new Promise<string>((resolve, reject) => {
+      const sub = Linking.addEventListener('url', ({ url }) => {
+        if (url.startsWith(redirectTo)) {
+          linkingResolved = true;
+          sub.remove();
+          resolve(url);
+        }
+      });
+      // Auto-cleanup after 120s to prevent memory leaks and dangling promises
+      setTimeout(() => {
+        sub.remove();
+        if (!linkingResolved) reject(new Error('Sign-in timed out'));
+      }, 120_000);
+    });
+
     const result = await WebBrowser.openAuthSessionAsync(
       data.url,
       redirectTo,
     );
 
-    if (result.type !== 'success' || !result.url) {
+    let callbackUrl: string | null = null;
+
+    if (result.type === 'success' && result.url) {
+      callbackUrl = result.url;
+    } else if (result.type === 'cancel' || result.type === 'dismiss') {
+      // Check if the Linking listener already captured the URL
+      // (race condition: deep link fired before Custom Tab closed)
+      if (linkingResolved) {
+        callbackUrl = await linkingPromise;
+      } else {
+        throw new Error('Sign-in was cancelled');
+      }
+    }
+
+    if (!callbackUrl) {
       throw new Error('Sign-in was cancelled');
     }
 
     // Extract tokens from the redirect URL fragment
-    const url = result.url;
-    const params = new URLSearchParams(url.split('#')[1] || '');
+    const fragment = callbackUrl.split('#')[1] || '';
+    const params = new URLSearchParams(fragment);
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
 
     if (!accessToken || !refreshToken) {
+      // Check for error in redirect
+      const errorDesc = params.get('error_description') || params.get('error');
+      if (errorDesc) {
+        throw new Error(decodeURIComponent(errorDesc));
+      }
       throw new Error('No session returned from Google sign-in');
     }
 

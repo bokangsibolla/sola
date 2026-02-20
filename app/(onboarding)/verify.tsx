@@ -44,10 +44,13 @@ export default function VerifyScreen() {
     setLoading(true);
 
     try {
+      // Use 'signup' type for email confirmation after signUp,
+      // 'email' type for OTP-based login (legacy flow)
+      const otpType = mode === 'signup' ? 'signup' : 'email';
       const { data, error } = await supabase.auth.verifyOtp({
         email: email!,
         token: code,
-        type: 'email',
+        type: otpType,
       });
 
       if (error) {
@@ -109,11 +112,25 @@ export default function VerifyScreen() {
   const handleResend = async () => {
     setResending(true);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ email: email! });
-      if (error) {
-        Alert.alert('Error', error.message);
+      if (mode === 'signup') {
+        // Resend signup confirmation OTP
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email!,
+        });
+        if (error) {
+          Alert.alert('Error', error.message);
+        } else {
+          Alert.alert('Code sent', 'Check your email for a new verification code.');
+        }
       } else {
-        Alert.alert('Code sent', 'Check your email for a new verification code.');
+        // Resend OTP for login (legacy flow)
+        const { error } = await supabase.auth.signInWithOtp({ email: email! });
+        if (error) {
+          Alert.alert('Error', error.message);
+        } else {
+          Alert.alert('Code sent', 'Check your email for a new verification code.');
+        }
       }
     } catch {
       Alert.alert('Error', 'Failed to resend code.');

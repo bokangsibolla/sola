@@ -29,7 +29,12 @@ export default function PrimaryButton({
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
-      <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]} numberOfLines={1}>
+      <Text
+        style={[styles.buttonText, disabled && styles.buttonTextDisabled]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.8}
+      >
         {label}
       </Text>
     </Pressable>
@@ -39,7 +44,9 @@ export default function PrimaryButton({
 const styles = StyleSheet.create({
   button: {
     backgroundColor: colors.orange,
-    height: 52,
+    minHeight: 52,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
     borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
@@ -55,7 +62,9 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: fonts.semiBold,
     fontSize: 16,
+    lineHeight: 22,
     color: colors.background,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   buttonTextDisabled: {
     opacity: 0.9,

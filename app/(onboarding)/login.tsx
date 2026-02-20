@@ -1,5 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, StyleSheet, Text, TextInput, View, Platform } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -10,23 +19,46 @@ import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
+function getAuthErrorMessage(error: { message: string; status?: number }): string {
+  const msg = error.message?.toLowerCase() ?? '';
+  if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
+    return 'Incorrect email or password. Please try again.';
+  }
+  if (msg.includes('email not confirmed')) {
+    return 'Please confirm your email before logging in. Check your inbox.';
+  }
+  if (msg.includes('no user') || msg.includes('user not found')) {
+    return 'No account found with this email. Try creating an account instead.';
+  }
+  if (msg.includes('rate limit') || msg.includes('too many')) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+  if (msg.includes('network') || msg.includes('fetch')) {
+    return 'Unable to connect. Please check your internet connection.';
+  }
+  return error.message || 'Something went wrong. Please try again.';
+}
+
 export default function LoginScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const posthog = usePostHog();
   const [email, setEmail] = useState('');
-
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
   useEffect(() => {
     posthog.capture('login_screen_viewed');
   }, [posthog]);
 
-  const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
+  const { signInWithGoogle, isReady: googleReady } = useGoogleAuth();
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     posthog.capture('oauth_login_tapped', { provider });
     setLoading(true);
+    setFieldError(null);
     try {
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
@@ -47,37 +79,91 @@ export default function LoginScreen() {
     }
   };
 
-  const canLogin = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !loading;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const canLogin = isValidEmail && password.length > 0 && !loading;
 
   const handleLogin = async () => {
-    posthog.capture('magic_link_login_attempted');
+    setFieldError(null);
+
+    if (!isValidEmail) {
+      setFieldError('Please enter a valid email address.');
+      return;
+    }
+    if (password.length === 0) {
+      setFieldError('Please enter your password.');
+      return;
+    }
+
+    posthog.capture('email_login_attempted');
     setLoading(true);
 
     try {
-      let lastError: any;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const { error } = await supabase.auth.signInWithOtp({ email });
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-          if (error) {
-            posthog.capture('auth_failed', { provider: 'magic_link', error: error.message });
-            Alert.alert('Something went wrong', error.message);
-            return;
-          }
-
-          posthog.capture('magic_link_sent', { mode: 'login' });
-          router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'login' } });
-          return;
-        } catch (e: any) {
-          lastError = e;
-          if (attempt < 2 && e.message?.includes('Network')) {
-            await new Promise(r => setTimeout(r, 1000));
-            continue;
-          }
-          break;
-        }
+      if (error) {
+        posthog.capture('auth_failed', { provider: 'email', error: error.message });
+        setFieldError(getAuthErrorMessage(error));
+        return;
       }
-      Alert.alert('Connection error', 'Please check your internet connection and try again.');
+
+      if (!data.user) {
+        setFieldError('Something went wrong. Please try again.');
+        return;
+      }
+
+      posthog.capture('auth_success', { provider: 'email', is_new_user: false });
+
+      // Check if user has completed onboarding
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id, onboarding_completed_at')
+        .eq('id', data.user.id)
+        .maybeSingle();
+
+      if (!profile) {
+        // User exists in auth but no profile — needs onboarding
+        router.push('/(onboarding)/profile');
+      } else if (!profile.onboarding_completed_at) {
+        router.push('/(onboarding)/profile');
+      } else {
+        await onboardingStore.set('onboardingCompleted', true);
+        router.replace('/(tabs)/home');
+      }
+    } catch (e: any) {
+      const msg = e.message?.toLowerCase() ?? '';
+      if (msg.includes('network') || msg.includes('fetch')) {
+        setFieldError('Unable to connect. Please check your internet connection.');
+      } else {
+        setFieldError(e.message ?? 'Something went wrong. Please try again.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async () => {
+    if (!isValidEmail) {
+      Alert.alert('Enter your email', 'Please enter your email address first, then tap "Forgot password?".');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+
+      if (error) {
+        Alert.alert('Error', getAuthErrorMessage(error));
+      } else {
+        Alert.alert(
+          'Check your email',
+          'We sent a password reset link to your email address.',
+        );
+      }
+    } catch (e: any) {
+      Alert.alert('Error', 'Failed to send reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -104,7 +190,7 @@ export default function LoginScreen() {
         <View style={styles.socialButtons}>
           <Pressable
             style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-            disabled={!googleRequest || loading}
+            disabled={!googleReady || loading}
             onPress={() => handleOAuth('google')}
           >
             {loading ? (
@@ -141,25 +227,59 @@ export default function LoginScreen() {
           <View style={styles.dividerLine} />
         </View>
 
-        {/* Email field */}
+        {/* Email + Password fields */}
         <View style={styles.fields}>
           <TextInput
-            style={styles.input}
+            style={[styles.input, fieldError && !isValidEmail && styles.inputError]}
             placeholder="Email"
             placeholderTextColor={colors.textMuted}
             value={email}
-            onChangeText={setEmail}
+            onChangeText={(t) => { setEmail(t); setFieldError(null); }}
             keyboardType="email-address"
             autoCapitalize="none"
+            autoComplete="email"
+            textContentType="emailAddress"
           />
+          <View style={[styles.passwordContainer, fieldError && isValidEmail && styles.inputError]}>
+            <TextInput
+              style={styles.passwordInput}
+              placeholder="Password"
+              placeholderTextColor={colors.textMuted}
+              value={password}
+              onChangeText={(t) => { setPassword(t); setFieldError(null); }}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoComplete="current-password"
+              textContentType="password"
+              onSubmitEditing={handleLogin}
+              returnKeyType="done"
+            />
+            <Pressable
+              onPress={() => setShowPassword(!showPassword)}
+              style={styles.eyeButton}
+              hitSlop={8}
+            >
+              <Ionicons
+                name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+                size={20}
+                color={colors.textMuted}
+              />
+            </Pressable>
+          </View>
         </View>
 
-        <Text style={styles.hint}>We'll send you a verification code — no password needed.</Text>
+        {fieldError ? (
+          <Text style={styles.errorText}>{fieldError}</Text>
+        ) : null}
+
+        <Pressable onPress={handleForgotPassword} style={styles.forgotButton} hitSlop={8}>
+          <Text style={styles.forgotText}>Forgot password?</Text>
+        </Pressable>
       </View>
 
       {/* Footer */}
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 16 }]}>
-        <PrimaryButton label="Send code" onPress={handleLogin} disabled={!canLogin} />
+        <PrimaryButton label="Log in" onPress={handleLogin} disabled={!canLogin} />
         <View style={styles.signupRow}>
           <Text style={styles.signupLabel}>New here? </Text>
           <Pressable onPress={() => router.back()}>
@@ -186,7 +306,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#F3F3F3',
+    backgroundColor: colors.neutralFill,
   },
   headlineBlock: {
     paddingHorizontal: spacing.screenX,
@@ -216,7 +336,9 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   socialButton: {
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: radius.button,
     borderWidth: 1,
     borderColor: colors.borderDefault,
@@ -242,7 +364,9 @@ const styles = StyleSheet.create({
   socialText: {
     fontFamily: fonts.medium,
     fontSize: 15,
+    lineHeight: 20,
     color: colors.textPrimary,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   appleText: {
     color: '#FFFFFF',
@@ -276,12 +400,45 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  hint: {
+  inputError: {
+    borderColor: colors.emergency,
+  },
+  passwordContainer: {
+    height: 50,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 16,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  eyeButton: {
+    paddingHorizontal: 14,
+    height: '100%',
+    justifyContent: 'center',
+  },
+  errorText: {
     fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.textMuted,
-    paddingHorizontal: spacing.screenX,
+    color: colors.emergency,
+    textAlign: 'center',
     marginTop: 14,
+  },
+  forgotButton: {
+    alignSelf: 'center',
+    marginTop: 16,
+  },
+  forgotText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
   },
   footer: {
     paddingHorizontal: spacing.screenX,

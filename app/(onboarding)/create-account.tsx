@@ -1,5 +1,14 @@
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
@@ -7,25 +16,53 @@ import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
 import { supabase } from '@/lib/supabase';
 import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
-import { colors, fonts, radius } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
+
+const MIN_PASSWORD_LENGTH = 8;
+
+function getAuthErrorMessage(error: { message: string; status?: number }): string {
+  const msg = error.message?.toLowerCase() ?? '';
+  if (msg.includes('already registered') || msg.includes('already been registered')) {
+    return 'An account with this email already exists. Try logging in instead.';
+  }
+  if (msg.includes('valid email') || msg.includes('invalid email')) {
+    return 'Please enter a valid email address.';
+  }
+  if (msg.includes('password') && msg.includes('short')) {
+    return `Password must be at least ${MIN_PASSWORD_LENGTH} characters.`;
+  }
+  if (msg.includes('rate limit') || msg.includes('too many')) {
+    return 'Too many attempts. Please wait a moment and try again.';
+  }
+  if (msg.includes('network') || msg.includes('fetch')) {
+    return 'Unable to connect. Please check your internet connection.';
+  }
+  return error.message || 'Something went wrong. Please try again.';
+}
 
 export default function CreateAccountScreen() {
   const router = useRouter();
   const posthog = usePostHog();
   const [email, setEmail] = useState('');
-
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const { request: googleRequest, signInWithGoogle } = useGoogleAuth();
+  const { signInWithGoogle, isReady: googleReady } = useGoogleAuth();
 
-  const canContinue = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && !loading;
+  const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isValidPassword = password.length >= MIN_PASSWORD_LENGTH;
+  const canContinue = isValidEmail && isValidPassword && !loading;
 
   const handleOAuth = async (provider: 'google' | 'apple') => {
     setLoading(true);
+    setFieldError(null);
     try {
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
+      posthog.capture('auth_success', { provider, is_new_user: result.isNewUser });
       if (result.isNewUser) {
         router.push('/(onboarding)/profile');
       } else {
@@ -40,33 +77,60 @@ export default function CreateAccountScreen() {
     }
   };
 
-  const handleContinue = async () => {
+  const handleSignUp = async () => {
+    setFieldError(null);
+
+    if (!isValidEmail) {
+      setFieldError('Please enter a valid email address.');
+      return;
+    }
+    if (!isValidPassword) {
+      setFieldError(`Password must be at least ${MIN_PASSWORD_LENGTH} characters.`);
+      return;
+    }
+
     setLoading(true);
     try {
-      // Retry up to 2 times on network failure
-      let lastError: any;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const { error } = await supabase.auth.signInWithOtp({ email });
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-          if (error) {
-            Alert.alert('Something went wrong', error.message);
-            return;
-          }
-
-          posthog.capture('magic_link_sent', { mode: 'signup' });
-          router.push({ pathname: '/(onboarding)/verify', params: { email, mode: 'signup' } });
-          return;
-        } catch (e: any) {
-          lastError = e;
-          if (attempt < 2 && e.message?.includes('Network')) {
-            await new Promise(r => setTimeout(r, 1000));
-            continue;
-          }
-          break;
-        }
+      if (error) {
+        setFieldError(getAuthErrorMessage(error));
+        return;
       }
-      Alert.alert('Connection error', 'Please check your internet connection and try again.');
+
+      if (!data.user) {
+        setFieldError('Something went wrong. Please try again.');
+        return;
+      }
+
+      // If email confirmation is required, Supabase returns a user with
+      // identities = [] (unconfirmed). Route to verify screen.
+      // If auto-confirm is on, user is fully authenticated — go to profile.
+      const needsConfirmation =
+        data.user.identities?.length === 0 ||
+        (!data.session && data.user.email_confirmed_at === null);
+
+      if (needsConfirmation) {
+        posthog.capture('signup_initiated', { provider: 'email', needs_confirmation: true });
+        router.push({
+          pathname: '/(onboarding)/verify',
+          params: { email, mode: 'signup' },
+        });
+      } else {
+        // Auto-confirmed — go to profile setup
+        posthog.capture('auth_success', { provider: 'email', is_new_user: true });
+        router.push('/(onboarding)/profile');
+      }
+    } catch (e: any) {
+      const msg = e.message?.toLowerCase() ?? '';
+      if (msg.includes('network') || msg.includes('fetch')) {
+        setFieldError('Unable to connect. Please check your internet connection.');
+      } else {
+        setFieldError(e.message ?? 'Something went wrong. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -75,17 +139,17 @@ export default function CreateAccountScreen() {
   return (
     <OnboardingScreen
       stage={2}
-      headline="Let's get you in."
+      headline="Create your account"
       subtitle="Travel information designed for how women travel."
-      ctaLabel="Continue"
+      ctaLabel="Create account"
       ctaDisabled={!canContinue}
-      onCtaPress={handleContinue}
+      onCtaPress={handleSignUp}
     >
       {/* Social login buttons */}
       <View style={styles.socialButtons}>
         <Pressable
           style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-          disabled={!googleRequest || loading}
+          disabled={!googleReady || loading}
           onPress={() => handleOAuth('google')}
         >
           {loading ? (
@@ -122,21 +186,52 @@ export default function CreateAccountScreen() {
         <View style={styles.dividerLine} />
       </View>
 
-      {/* Email field */}
+      {/* Email + Password fields */}
       <View style={styles.fields}>
         <TextInput
-          style={styles.input}
-          placeholder="Your email"
+          style={[styles.input, fieldError && !isValidEmail && styles.inputError]}
+          placeholder="Email"
           placeholderTextColor={colors.textMuted}
           value={email}
-          onChangeText={setEmail}
+          onChangeText={(t) => { setEmail(t); setFieldError(null); }}
           keyboardType="email-address"
           autoCapitalize="none"
-          autoFocus={false}
+          autoComplete="email"
+          textContentType="emailAddress"
         />
+        <View style={[styles.passwordContainer, fieldError && isValidEmail && !isValidPassword && styles.inputError]}>
+          <TextInput
+            style={styles.passwordInput}
+            placeholder="Password (8+ characters)"
+            placeholderTextColor={colors.textMuted}
+            value={password}
+            onChangeText={(t) => { setPassword(t); setFieldError(null); }}
+            secureTextEntry={!showPassword}
+            autoCapitalize="none"
+            autoComplete="new-password"
+            textContentType="newPassword"
+          />
+          <Pressable
+            onPress={() => setShowPassword(!showPassword)}
+            style={styles.eyeButton}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={showPassword ? 'eye-off-outline' : 'eye-outline'}
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        </View>
       </View>
 
-      <Text style={styles.hint}>We'll send you a verification code — no password needed.</Text>
+      {fieldError ? (
+        <Text style={styles.errorText}>{fieldError}</Text>
+      ) : (
+        <Text style={styles.hint}>
+          Your password must be at least {MIN_PASSWORD_LENGTH} characters.
+        </Text>
+      )}
 
       <View style={styles.loginRow}>
         <Text style={styles.loginLabel}>Already have an account? </Text>
@@ -154,7 +249,9 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   socialButton: {
-    height: 50,
+    minHeight: 50,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
     borderRadius: radius.button,
     borderWidth: 1,
     borderColor: colors.borderDefault,
@@ -180,7 +277,9 @@ const styles = StyleSheet.create({
   socialText: {
     fontFamily: fonts.medium,
     fontSize: 15,
+    lineHeight: 20,
     color: colors.textPrimary,
+    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   appleText: {
     color: '#FFFFFF',
@@ -214,10 +313,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
+  inputError: {
+    borderColor: colors.emergency,
+  },
+  passwordContainer: {
+    height: 50,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  passwordInput: {
+    flex: 1,
+    height: '100%',
+    paddingHorizontal: 16,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  eyeButton: {
+    paddingHorizontal: 14,
+    height: '100%',
+    justifyContent: 'center',
+  },
   hint: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: 16,
+  },
+  errorText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.emergency,
     textAlign: 'center',
     marginTop: 16,
   },
