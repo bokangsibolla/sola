@@ -63,7 +63,7 @@ try {
 }
 
 export const unstable_settings = {
-  initialRouteName: '(onboarding)',
+  initialRouteName: 'index',
 };
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
@@ -172,7 +172,8 @@ function AuthGate() {
 
   return (
     <>
-      <Stack initialRouteName="(onboarding)">
+      <Stack initialRouteName="index">
+        <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>
