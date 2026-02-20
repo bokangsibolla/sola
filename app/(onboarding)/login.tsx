@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { supabase } from '@/lib/supabase';
+import { supabase, diagnoseNetwork } from '@/lib/supabase';
 import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -73,7 +73,23 @@ export default function LoginScreen() {
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
       posthog.capture('auth_failed', { provider, error: e.message });
-      Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
+      const msg = e.message?.toLowerCase() ?? '';
+      if (msg.includes('network') || msg.includes('fetch')) {
+        try {
+          const diag = await diagnoseNetwork();
+          Alert.alert(
+            'Connection failed',
+            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
+            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
+            `Details: ${diag.details}\n` +
+            `Error: ${e.message}`,
+          );
+        } catch {
+          Alert.alert('Sign in failed', e.message);
+        }
+      } else {
+        Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
+      }
     } finally {
       setLoading(false);
     }
@@ -135,7 +151,18 @@ export default function LoginScreen() {
     } catch (e: any) {
       const msg = e.message?.toLowerCase() ?? '';
       if (msg.includes('network') || msg.includes('fetch')) {
-        setFieldError('Unable to connect. Please check your internet connection.');
+        try {
+          const diag = await diagnoseNetwork();
+          Alert.alert(
+            'Connection failed',
+            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
+            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
+            `Details: ${diag.details}\n` +
+            `Error: ${e.message}`,
+          );
+        } catch {
+          setFieldError(`Network error: ${e.message}`);
+        }
       } else {
         setFieldError(e.message ?? 'Something went wrong. Please try again.');
       }

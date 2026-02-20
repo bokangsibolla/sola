@@ -92,7 +92,7 @@ export default function WelcomeScreen() {
               router.push('/(onboarding)/login');
             }}
           >
-            <Text style={styles.loginText} numberOfLines={1}>Log in</Text>
+            <Text style={styles.loginText}>Log in</Text>
           </Pressable>
         </View>
       </View>
