@@ -81,7 +81,7 @@ async function signInWithGoogleIOS(
 // Android: Supabase OAuth redirect flow
 async function signInWithGoogleAndroid(): Promise<{ isNewUser: boolean; userId: string }> {
   try {
-    const redirectTo = Linking.createURL('/auth/callback');
+    const redirectTo = 'sola://auth/callback';
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
