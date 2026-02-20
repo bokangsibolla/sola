@@ -11,6 +11,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+// Note: FadeIn kept for logo animation, bottomBlock uses plain View to avoid Android text clipping
 import { usePostHog } from 'posthog-react-native';
 import AnimatedBackground from '@/components/onboarding/AnimatedBackground';
 import PrimaryButton from '@/components/ui/PrimaryButton';
@@ -76,10 +77,7 @@ export default function WelcomeScreen() {
           </View>
         </Animated.View>
 
-        <Animated.View
-          entering={FadeIn.delay(1000).duration(600)}
-          style={[styles.bottomBlock, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 24 }]}
-        >
+        <View style={[styles.bottomBlock, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 24 }]}>
           <PrimaryButton
             label="Create account"
             onPress={() => {
@@ -94,9 +92,9 @@ export default function WelcomeScreen() {
               router.push('/(onboarding)/login');
             }}
           >
-            <Text style={styles.loginText}>Log in</Text>
+            <Text style={styles.loginText} numberOfLines={1}>Log in</Text>
           </Pressable>
-        </Animated.View>
+        </View>
       </View>
     </View>
   );
@@ -137,7 +135,6 @@ const styles = StyleSheet.create({
   bottomBlock: {
     paddingHorizontal: spacing.screenX,
     gap: 12,
-    alignItems: 'center',
   },
   loginButton: {
     height: 48,

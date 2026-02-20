@@ -29,7 +29,7 @@ export default function PrimaryButton({
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
-      <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]}>
+      <Text style={[styles.buttonText, disabled && styles.buttonTextDisabled]} numberOfLines={1}>
         {label}
       </Text>
     </Pressable>
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     alignItems: 'center',
     justifyContent: 'center',
-    width: '100%',
+    alignSelf: 'stretch',
   },
   buttonPressed: {
     opacity: 0.92,
