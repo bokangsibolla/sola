@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, radius } from '@/constants/design';
@@ -113,6 +114,53 @@ const errorStyles = StyleSheet.create({
   },
 });
 
+/**
+ * Handle OAuth deep links (sola://auth/callback#access_token=...&refresh_token=...)
+ * This runs at the app level so it works even if Expo Router can't resolve the route.
+ */
+async function handleOAuthDeepLink(url: string, router: ReturnType<typeof useRouter>) {
+  if (!url.includes('auth/callback')) return;
+
+  const fragment = url.split('#')[1];
+  if (!fragment) return;
+
+  const params = new URLSearchParams(fragment);
+  const accessToken = params.get('access_token');
+  const refreshToken = params.get('refresh_token');
+
+  if (!accessToken || !refreshToken) return;
+
+  try {
+    const { data, error } = await supabase.auth.setSession({
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
+
+    if (error || !data.user) {
+      console.error('[DeepLink] Failed to set session:', error?.message);
+      router.replace('/(onboarding)/welcome');
+      return;
+    }
+
+    // Check if user has a profile
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', data.user.id)
+      .maybeSingle();
+
+    if (!profile) {
+      router.replace('/(onboarding)/profile');
+    } else {
+      await onboardingStore.set('onboardingCompleted', true);
+      router.replace('/(tabs)/home');
+    }
+  } catch (e: any) {
+    console.error('[DeepLink] Error handling OAuth callback:', e);
+    router.replace('/(onboarding)/welcome');
+  }
+}
+
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
@@ -121,6 +169,21 @@ function AuthGate() {
   usePushNotifications(userId);
 
   const posthog = usePostHog();
+
+  // Listen for OAuth deep links at the app level
+  useEffect(() => {
+    // Handle the URL that launched the app (cold start)
+    Linking.getInitialURL().then((url) => {
+      if (url) handleOAuthDeepLink(url, router);
+    });
+
+    // Handle deep links while the app is running (warm start)
+    const sub = Linking.addEventListener('url', ({ url }) => {
+      handleOAuthDeepLink(url, router);
+    });
+
+    return () => sub.remove();
+  }, [router]);
 
   useEffect(() => {
     if (userId) {
@@ -182,7 +245,7 @@ function AuthGate() {
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
+        <Stack.Screen name="auth" options={{ headerShown: false }} />
       </Stack>
       <StatusBar style="auto" />
     </>
