@@ -31,6 +31,9 @@ export const colors = {
   floatingNavBg: '#FFFFFF',
   floatingNavBorder: '#F0F0F0',
   floatingNavIconInactive: '#9A9A9A',
+  // Dashboard surfaces
+  surfacePage: '#FAFAF8',
+  surfaceCard: '#FFFFFF',
 };
 
 export const spacing = {
@@ -43,6 +46,7 @@ export const spacing = {
   xxl: 32,
   xxxl: 40,
   xxxxl: 48,
+  moduleInset: 20,
 };
 
 export const radius = {
@@ -54,6 +58,8 @@ export const radius = {
   input: 12,
   card: 8,
   button: 14,
+  module: 16,
+  cardLg: 12,
   full: 999,
 };
 
@@ -67,6 +73,38 @@ export const pressedState = {
   opacity: 0.9,
   transform: [{ scale: 0.98 }] as const,
 };
+
+export const elevation = {
+  none: {},
+  sm: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowRadius: 3,
+    shadowOpacity: 0.06,
+    elevation: 1,
+  },
+  md: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowRadius: 8,
+    shadowOpacity: 0.08,
+    elevation: 3,
+  },
+  lg: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowRadius: 16,
+    shadowOpacity: 0.10,
+    elevation: 6,
+  },
+  xl: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowRadius: 24,
+    shadowOpacity: 0.12,
+    elevation: 10,
+  },
+} as const;
 
 export const fonts = {
   regular: 'PlusJakartaSans-Regular',
@@ -86,4 +124,6 @@ export const typography = {
   tabLabel: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 12 },
   screenTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
   tabRootTitle: { fontFamily: fonts.semiBold, fontSize: 22, lineHeight: 28 },
+  greeting: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 32 },
+  sectionTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 24 },
 };
