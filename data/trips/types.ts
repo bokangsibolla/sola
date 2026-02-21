@@ -91,6 +91,10 @@ export interface TripFull {
   flexibleDates: boolean;
   coverImageUrl: string | null;
   notes: string | null;
+  timezone: string | null;
+  currency: string | null;
+  budgetTotal: number | null;
+  pace: string | null;
   createdAt: string;
 }
 
