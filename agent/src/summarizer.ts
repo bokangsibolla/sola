@@ -18,7 +18,7 @@ export async function generateDigestWithLLM(articles: ScoredArticle[], period: '
   return generateDigestText(articles, period);
 }
 
-async function summarizeWithClaude(articles: ScoredArticle[], period: string, apiKey: string): Promise<string> {
+async function summarizeWithClaude(articles: ScoredArticle[], period: 'daily' | 'weekly', apiKey: string): Promise<string> {
   const { default: Anthropic } = await import('@anthropic-ai/sdk');
   const client = new Anthropic({ apiKey });
 
@@ -61,7 +61,7 @@ ${articleList}`,
   return content.type === 'text' ? content.text : generateDigestText(articles, period);
 }
 
-async function summarizeWithOpenAI(articles: ScoredArticle[], period: string, apiKey: string): Promise<string> {
+async function summarizeWithOpenAI(articles: ScoredArticle[], period: 'daily' | 'weekly', apiKey: string): Promise<string> {
   const { default: OpenAI } = await import('openai');
   const client = new OpenAI({ apiKey });
 
