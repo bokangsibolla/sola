@@ -1,0 +1,28 @@
+{
+  "name": "sola-intel-agent",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "daily": "tsx src/main.ts --period daily",
+    "weekly": "tsx src/main.ts --period weekly",
+    "fetch-only": "tsx src/main.ts --fetch-only",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "better-sqlite3": "^11.0.0",
+    "rss-parser": "^3.13.0",
+    "resend": "^4.0.0",
+    "@anthropic-ai/sdk": "^0.39.0",
+    "openai": "^4.0.0",
+    "dotenv": "^16.4.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.0",
+    "tsx": "^4.0.0",
+    "vitest": "^2.0.0",
+    "typescript": "^5.5.0"
+  }
+}
