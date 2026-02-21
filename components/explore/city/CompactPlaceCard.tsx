@@ -84,17 +84,17 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
             </View>
           )}
           {isSolaVisited && (
-            <View style={[styles.overlayBadge, { backgroundColor: colors.orangeFill }]}>
-              <Ionicons name="checkmark-circle" size={10} color={colors.orange} />
-              <Text style={[styles.overlayBadgeText, { color: colors.orange }]}>
-                Visited
+            <View style={[styles.overlayBadge, { backgroundColor: colors.blueFill }]}>
+              <Ionicons name="checkmark-circle" size={10} color={colors.blueSoft} />
+              <Text style={[styles.overlayBadgeText, { color: colors.blueSoft }]}>
+                Verified
               </Text>
             </View>
           )}
           {!isSolaVisited && isVerified && (
-            <View style={[styles.overlayBadge, { backgroundColor: colors.blueFill }]}>
-              <Ionicons name="checkmark-circle-outline" size={10} color={colors.blueSoft} />
-              <Text style={[styles.overlayBadgeText, { color: colors.blueSoft }]}>
+            <View style={[styles.overlayBadge, { backgroundColor: colors.neutralFill }]}>
+              <Ionicons name="checkmark-circle-outline" size={10} color={colors.textMuted} />
+              <Text style={[styles.overlayBadgeText, { color: colors.textMuted }]}>
                 Checked
               </Text>
             </View>
