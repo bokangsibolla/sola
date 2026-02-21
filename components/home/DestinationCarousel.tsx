@@ -8,27 +8,22 @@ import type { PersonalizedCity } from '@/data/home/types';
 
 interface DestinationCarouselProps {
   cities: PersonalizedCity[];
-  isPersonalized?: boolean;
+  title?: string;
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CARD_GAP = spacing.md;
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - CARD_GAP) / 2;
+const CARD_WIDTH = Math.round(SCREEN_WIDTH * 0.42);
 
-export function DestinationCarousel({
-  cities,
-  isPersonalized = false,
-}: DestinationCarouselProps) {
+export function DestinationCarousel({ cities, title }: DestinationCarouselProps) {
   const router = useRouter();
 
   if (cities.length === 0) return null;
 
-  const title = isPersonalized ? 'Recommended for you' : 'Popular with Solo Women';
-
   return (
     <View style={styles.container}>
       <SectionHeader
-        title={title}
+        title={title ?? 'Go Anywhere'}
         onSeeAll={() => router.push('/discover/browse' as any)}
       />
       <FlatList
@@ -47,7 +42,7 @@ export function DestinationCarousel({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   listContent: {
     paddingHorizontal: spacing.screenX,

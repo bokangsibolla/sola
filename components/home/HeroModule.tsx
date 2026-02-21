@@ -6,7 +6,6 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   colors,
-  elevation,
   fonts,
   radius,
   spacing,
@@ -19,6 +18,7 @@ const FALLBACK_IMAGE = require('@/assets/images/solo-bali-palms.jpg');
 interface HeroModuleProps {
   hero: HeroState;
   travelUpdate: TravelUpdate | null;
+  height?: number;
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -31,29 +31,6 @@ function getImageSource(hero: HeroState) {
     uri = hero.city.heroImageUrl || null;
   }
   return uri ? { uri } : FALLBACK_IMAGE;
-}
-
-function formatLocalTime(timezone: string | null): string | null {
-  if (!timezone) return null;
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: timezone,
-    }).format(new Date());
-  } catch {
-    return null;
-  }
-}
-
-function formatDateRange(arriving: string | null, leaving: string | null): string | null {
-  if (!arriving) return null;
-  const fmt = (d: string) => {
-    const date = new Date(d);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  };
-  if (leaving) return `${fmt(arriving)} \u2013 ${fmt(leaving)}`;
-  return fmt(arriving);
 }
 
 function getDayProgress(arriving: string | null, leaving: string | null): string | null {
@@ -81,15 +58,28 @@ function getDaysUntil(arriving: string | null): string | null {
   return `In ${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
+function formatDateRange(arriving: string | null, leaving: string | null): string | null {
+  if (!arriving) return null;
+  const fmt = (d: string) => {
+    const date = new Date(d);
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+  if (leaving) return `${fmt(arriving)} \u2013 ${fmt(leaving)}`;
+  return fmt(arriving);
+}
+
 const SEVERITY_STYLES = {
   info: { bg: colors.blueFill, color: colors.blueSoft, icon: 'info' as const },
   advisory: { bg: colors.warningFill, color: colors.warning, icon: 'alert-triangle' as const },
   alert: { bg: colors.emergencyFill, color: colors.emergency, icon: 'alert-circle' as const },
 };
 
+const DEFAULT_IMAGE_HEIGHT = 240;
+
 // ── Component ────────────────────────────────────────────────────────────────
 
-export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
+export function HeroModule({ hero, travelUpdate, height }: HeroModuleProps) {
+  const IMAGE_HEIGHT = height ?? DEFAULT_IMAGE_HEIGHT;
   const router = useRouter();
 
   // Tick local time every minute for active trip
@@ -109,60 +99,88 @@ export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
   };
 
   const imageSource = getImageSource(hero);
-  const isFeatured = hero.kind === 'featured';
 
   return (
-    <View style={styles.module}>
-      {/* Image card */}
+    <View style={styles.wrapper}>
       <Pressable
         style={({ pressed }) => [
+          styles.container,
+          { height: IMAGE_HEIGHT },
           pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
         ]}
         onPress={handlePress}
       >
         <Image
           source={imageSource}
-          style={[styles.image, isFeatured && styles.imageFeatured]}
+          style={styles.image}
           contentFit="cover"
           transition={200}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.6)']}
-          style={[styles.gradient, isFeatured && styles.imageFeatured]}
+          colors={['transparent', 'rgba(0,0,0,0.05)', colors.heroGradientEnd]}
+          locations={[0, 0.4, 1]}
+          style={styles.gradient}
         />
 
-        {/* Status pill */}
+        {/* Status pill — frosted glass */}
         <View style={styles.pillContainer}>
           {hero.kind === 'active' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={[styles.pillText, { color: colors.greenFill }]}>
-                CURRENTLY TRAVELING
-              </Text>
+            <View style={styles.pill}>
+              <View style={styles.liveDot} />
+              <Text style={styles.pillText}>TRAVELING NOW</Text>
             </View>
           )}
           {hero.kind === 'upcoming' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={[styles.pillText, { color: colors.orangeFill }]}>UPCOMING</Text>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>
+                {getDaysUntil(hero.trip.arriving) ?? 'UPCOMING'}
+              </Text>
             </View>
           )}
           {hero.kind === 'featured' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(0,0,0,0.35)' }]}>
-              <Text style={[styles.pillText, { color: '#FFFFFF' }]}>FEATURED</Text>
+            <View style={styles.pill}>
+              <Text style={styles.pillText}>FEATURED</Text>
             </View>
           )}
         </View>
 
-        {/* Overlay text */}
+        {/* Travel advisory overlay (active trip only) */}
+        {hero.kind === 'active' && travelUpdate && (
+          <View
+            style={[
+              styles.advisoryOverlay,
+              { backgroundColor: SEVERITY_STYLES[travelUpdate.severity].bg },
+            ]}
+          >
+            <Feather
+              name={SEVERITY_STYLES[travelUpdate.severity].icon}
+              size={12}
+              color={SEVERITY_STYLES[travelUpdate.severity].color}
+            />
+            <Text
+              style={[styles.advisoryText, { color: SEVERITY_STYLES[travelUpdate.severity].color }]}
+              numberOfLines={1}
+            >
+              {travelUpdate.title}
+            </Text>
+          </View>
+        )}
+
+        {/* Overlay text at bottom */}
         <View style={styles.overlay}>
           {hero.kind === 'active' && (
             <>
               <Text style={styles.cityName} numberOfLines={1}>
                 {hero.trip.destinationName}
               </Text>
-              {(() => {
-                const progress = getDayProgress(hero.trip.arriving, hero.trip.leaving);
-                return progress ? <Text style={styles.metaText}>{progress}</Text> : null;
-              })()}
+              <Text style={styles.metaText}>
+                {[
+                  getDayProgress(hero.trip.arriving, hero.trip.leaving),
+                  formatDateRange(hero.trip.arriving, hero.trip.leaving),
+                ]
+                  .filter(Boolean)
+                  .join(' \u00B7 ')}
+              </Text>
             </>
           )}
           {hero.kind === 'upcoming' && (
@@ -170,10 +188,9 @@ export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
               <Text style={styles.cityName} numberOfLines={1}>
                 {hero.trip.destinationName}
               </Text>
-              {(() => {
-                const countdown = getDaysUntil(hero.trip.arriving);
-                return countdown ? <Text style={styles.metaText}>{countdown}</Text> : null;
-              })()}
+              <Text style={styles.metaText}>
+                {formatDateRange(hero.trip.arriving, hero.trip.leaving)}
+              </Text>
             </>
           )}
           {hero.kind === 'featured' && (
@@ -190,227 +207,108 @@ export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
           )}
         </View>
       </Pressable>
-
-      {/* Below-image content */}
-      <View style={styles.belowImage}>
-        {/* Active: data chips */}
-        {hero.kind === 'active' && (
-          <View style={styles.chipRow}>
-            {(() => {
-              const localTime = formatLocalTime(hero.cityTimezone);
-              return localTime ? (
-                <View style={styles.dataChip}>
-                  <Feather name="clock" size={12} color={colors.textSecondary} />
-                  <Text style={styles.chipText}>{localTime}</Text>
-                </View>
-              ) : null;
-            })()}
-          </View>
-        )}
-
-        {/* Upcoming: meta row + CTA */}
-        {hero.kind === 'upcoming' && (
-          <>
-            <Text style={styles.dateRange}>
-              {formatDateRange(hero.trip.arriving, hero.trip.leaving)}
-              {hero.savedItemCount > 0 &&
-                `  \u00B7  ${hero.savedItemCount} ${hero.savedItemCount === 1 ? 'place' : 'places'} saved`}
-            </Text>
-            <Pressable onPress={handlePress} hitSlop={8} style={styles.ctaRow}>
-              <Text style={styles.ctaText}>Continue planning</Text>
-              <Feather name="arrow-right" size={14} color={colors.orange} />
-            </Pressable>
-          </>
-        )}
-
-        {/* Featured: signal chips + CTA */}
-        {hero.kind === 'featured' && (
-          <>
-            <View style={styles.chipRow}>
-              <View style={styles.signalChip}>
-                <Text style={styles.signalChipText}>Solo-friendly</Text>
-              </View>
-            </View>
-            <Pressable onPress={handlePress} hitSlop={8} style={styles.ctaRow}>
-              <Text style={styles.ctaText}>Start planning</Text>
-              <Feather name="arrow-right" size={14} color={colors.orange} />
-            </Pressable>
-          </>
-        )}
-
-        {/* Travel advisory (active trip only) */}
-        {hero.kind === 'active' && travelUpdate && (
-          <View
-            style={[
-              styles.advisory,
-              { backgroundColor: SEVERITY_STYLES[travelUpdate.severity].bg },
-            ]}
-          >
-            <Feather
-              name={SEVERITY_STYLES[travelUpdate.severity].icon}
-              size={14}
-              color={SEVERITY_STYLES[travelUpdate.severity].color}
-            />
-            <Text
-              style={[
-                styles.advisoryText,
-                { color: SEVERITY_STYLES[travelUpdate.severity].color },
-              ]}
-              numberOfLines={1}
-            >
-              {travelUpdate.title}
-            </Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 }
 
 // ── Styles ──────────────────────────────────────────────────────────────────
 
-const IMAGE_HEIGHT_TRIP = 200;
-const IMAGE_HEIGHT_FEATURED = 220;
-
 const styles = StyleSheet.create({
-  module: {
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.xl,
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.module,
+  wrapper: {
+    marginHorizontal: -spacing.lg, // break out of AppScreen padding for full-bleed
+    marginBottom: spacing.xxl,
+  },
+  container: {
+    borderBottomLeftRadius: radius.module,
+    borderBottomRightRadius: radius.module,
     overflow: 'hidden',
-    ...elevation.lg,
   },
   image: {
     width: '100%',
-    height: IMAGE_HEIGHT_TRIP,
-  },
-  imageFeatured: {
-    height: IMAGE_HEIGHT_FEATURED,
+    height: '100%',
   },
   gradient: {
     ...StyleSheet.absoluteFillObject,
-    height: IMAGE_HEIGHT_TRIP,
   },
 
-  // Status pill
+  // Status pill — frosted glass
   pillContainer: {
     position: 'absolute',
-    top: spacing.md,
-    left: spacing.lg,
+    top: spacing.lg,
+    left: spacing.xl,
   },
   pill: {
-    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.frostedPillBg,
+    borderWidth: 1,
+    borderColor: colors.frostedPillBorder,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.greenSoft,
   },
   pillText: {
     fontFamily: fonts.semiBold,
     fontSize: 10,
     lineHeight: 14,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: colors.textOnImage,
   },
 
-  // Overlay text
+  // Advisory overlay
+  advisoryOverlay: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.xl,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    maxWidth: '50%',
+  },
+  advisoryText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    lineHeight: 14,
+    flex: 1,
+  },
+
+  // Bottom overlay text
   overlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   cityName: {
     fontFamily: fonts.semiBold,
-    fontSize: 22,
-    lineHeight: 28,
-    color: '#FFFFFF',
+    fontSize: 28,
+    lineHeight: 34,
+    color: colors.textOnImage,
   },
   metaText: {
     fontFamily: fonts.medium,
     fontSize: 14,
     lineHeight: 20,
-    color: 'rgba(255,255,255,0.85)',
+    color: colors.textOnImageMuted,
     marginTop: spacing.xs,
   },
   blurbText: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: 'rgba(255,255,255,0.85)',
+    color: colors.textOnImageMuted,
     marginTop: spacing.xs,
-  },
-
-  // Below image area
-  belowImage: {
-    padding: spacing.moduleInset,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  dataChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  chipText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textPrimary,
-  },
-  signalChip: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  signalChipText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
-  },
-  dateRange: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-  },
-  ctaText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.orange,
-  },
-
-  // Advisory
-  advisory: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.cardLg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.md,
-  },
-  advisoryText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
   },
 });

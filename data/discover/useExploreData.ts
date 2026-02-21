@@ -1,15 +1,21 @@
 // data/discover/useExploreData.ts
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import * as Sentry from '@sentry/react-native';
-import { getCountries } from '../api';
+import { getCountries, getCountriesByTags } from '../api';
+import { fetchSearchChips } from '../home/sectionApi';
 import type { Country } from '../types';
 import type { ContinentKey } from './types';
+import type { SearchChip } from '../home/sectionTypes';
 import { CONTINENT_LABELS, CONTINENT_ORDER } from './types';
 
 interface ExploreData {
   featuredCountry: Country | null;
   countries: Country[];
   continents: { key: ContinentKey; label: string }[];
+  filterChips: SearchChip[];
+  selectedTags: string[];
+  setSelectedTags: (tags: string[]) => void;
+  toggleTag: (tag: string) => void;
   isLoading: boolean;
   error: Error | null;
   refresh: () => void;
@@ -54,6 +60,14 @@ export function useExploreData(): ExploreData {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [filterChips, setFilterChips] = useState<SearchChip[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+
+  const toggleTag = useCallback((tag: string) => {
+    setSelectedTags((prev) =>
+      prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag],
+    );
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -62,8 +76,14 @@ export function useExploreData(): ExploreData {
       try {
         setIsLoading(true);
         setError(null);
-        const countries = await getCountries();
-        if (!cancelled) setAllCountries(countries);
+        const [countries, chips] = await Promise.all([
+          selectedTags.length > 0 ? getCountriesByTags(selectedTags) : getCountries(),
+          fetchSearchChips('explore'),
+        ]);
+        if (!cancelled) {
+          setAllCountries(countries);
+          setFilterChips(chips);
+        }
       } catch (e) {
         if (!cancelled) {
           const err = e instanceof Error ? e : new Error('Failed to load countries');
@@ -79,7 +99,7 @@ export function useExploreData(): ExploreData {
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, selectedTags]);
 
   const featuredCountry = useMemo(
     () => pickFeaturedCountry(allCountries),
@@ -100,6 +120,10 @@ export function useExploreData(): ExploreData {
     featuredCountry,
     countries,
     continents,
+    filterChips,
+    selectedTags,
+    setSelectedTags,
+    toggleTag,
     isLoading,
     error,
     refresh: () => setRefreshKey((k) => k + 1),

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
@@ -11,8 +11,10 @@ import {
   pressedState,
 } from '@/constants/design';
 import type { HeroState } from '@/data/home/types';
+import type { SearchChip } from '@/data/home/sectionTypes';
 
-interface DashboardHeaderProps {
+interface HomeSearchInputProps {
+  chips: SearchChip[];
   firstName: string | null;
   heroState: HeroState;
 }
@@ -34,7 +36,7 @@ function getSubline(hero: HeroState): string | null {
   return null;
 }
 
-export function DashboardHeader({ firstName, heroState }: DashboardHeaderProps) {
+export function HomeSearchInput({ chips, firstName, heroState }: HomeSearchInputProps) {
   const router = useRouter();
   const greeting = getGreeting();
   const greetingText = firstName ? `${greeting}, ${firstName}` : greeting;
@@ -52,8 +54,35 @@ export function DashboardHeader({ firstName, heroState }: DashboardHeaderProps) 
         accessibilityLabel="Search destinations"
       >
         <Feather name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.searchPlaceholder}>Where will you go next?</Text>
+        <Text style={styles.searchPlaceholder}>Where to next?</Text>
       </Pressable>
+
+      {chips.length > 0 && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.chipsContent}
+          style={styles.chipsRow}
+        >
+          {chips.map((chip) => (
+            <Pressable
+              key={chip.id}
+              style={({ pressed }) => [
+                styles.chip,
+                pressed && { opacity: pressedState.opacity },
+              ]}
+              onPress={() =>
+                router.push({
+                  pathname: '/discover/search',
+                  params: { tag: chip.value },
+                } as any)
+              }
+            >
+              <Text style={styles.chipText}>{chip.label}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      )}
     </View>
   );
 }
@@ -93,5 +122,25 @@ const styles = StyleSheet.create({
   searchPressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform,
+  },
+  chipsRow: {
+    marginTop: spacing.md,
+    marginHorizontal: -spacing.screenX,
+  },
+  chipsContent: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+  },
+  chip: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  chipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
   },
 });

@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sola — Product Playbook</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #E5653A;
+      --orange-fill: #FFF5F1;
+      --text: #0E0E0E;
+      --text2: #6B6B6B;
+      --muted: #9A9A9A;
+      --border: #E8E8E8;
+      --fill: #F3F3F3;
+      --green: #2D8A4E;
+      --green-fill: #EEFBF3;
+      --blue: #3B82F6;
+      --blue-fill: #EFF6FF;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: var(--text);
+      background: #fff;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    @page { size: A4; margin: 0; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { page-break-after: always; break-after: page; }
+      .page:last-child { page-break-after: avoid; }
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 52px 56px 72px;
+      position: relative;
+    }
+
+    /* Footer */
+    .pf {
+      position: absolute;
+      bottom: 32px;
+      left: 56px;
+      right: 56px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-top: 14px;
+      border-top: 1px solid var(--border);
+    }
+    .pf-logo { font-size: 13px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; }
+    .pf-r { font-size: 10px; color: var(--muted); }
+
+    /* Typography */
+    .label {
+      font-size: 10px; font-weight: 700; letter-spacing: 2px;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 6px;
+    }
+    .title { font-size: 26px; font-weight: 700; line-height: 1.25; margin-bottom: 8px; }
+    .subtitle { font-size: 18px; font-weight: 700; line-height: 1.3; margin-bottom: 6px; }
+    .body { font-size: 14px; color: var(--text2); line-height: 1.65; }
+    .body-sm { font-size: 13px; color: var(--text2); line-height: 1.6; }
+    .caption { font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+    /* Dividers */
+    .div { width: 100%; height: 1px; background: var(--border); margin: 24px 0; }
+    .div-sm { width: 100%; height: 1px; background: var(--border); margin: 16px 0; }
+
+    /* Cards */
+    .card {
+      border: 1px solid var(--border); border-radius: 8px;
+      padding: 20px 22px; margin-bottom: 12px;
+    }
+    .card-orange { background: var(--orange-fill); border-color: transparent; }
+    .card-fill { background: var(--fill); border-color: transparent; }
+    .card-title { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .card-body { font-size: 13px; color: var(--text2); line-height: 1.55; }
+
+    /* Grid */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    /* Pills */
+    .pill {
+      display: inline-block; padding: 5px 12px; border-radius: 4px;
+      font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .pill-o { background: var(--orange-fill); color: var(--orange); }
+    .pill-g { background: var(--green-fill); color: var(--green); }
+    .pill-b { background: var(--blue-fill); color: var(--blue); }
+    .pill-n { background: var(--fill); color: var(--text2); }
+
+    /* Bullet list */
+    .blist { list-style: none; padding: 0; }
+    .blist li {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 10px; font-size: 13px; line-height: 1.5;
+    }
+    .blist li::before {
+      content: ""; flex-shrink: 0; width: 6px; height: 6px;
+      border-radius: 50%; background: var(--orange); margin-top: 7px;
+    }
+    .blist.green li::before { background: var(--green); }
+    .blist.blue li::before { background: var(--blue); }
+    .blist.grey li::before { background: var(--muted); }
+
+    /* Numbered */
+    .nlist { list-style: none; counter-reset: n; padding: 0; }
+    .nlist li {
+      counter-increment: n; display: flex; align-items: flex-start;
+      gap: 14px; margin-bottom: 14px;
+    }
+    .nlist li::before {
+      content: counter(n); flex-shrink: 0; width: 26px; height: 26px;
+      background: var(--orange-fill); color: var(--orange);
+      font-size: 12px; font-weight: 700; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nlist .nt { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+    .nlist .nd { font-size: 13px; color: var(--text2); line-height: 1.5; }
+
+    /* Highlight box */
+    .hbox {
+      background: var(--orange-fill); border-radius: 8px;
+      padding: 24px 28px; margin: 20px 0;
+    }
+    .hbox-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .hbox-body { font-size: 13px; color: var(--text2); line-height: 1.6; }
+
+    /* Stat */
+    .stat-row { display: flex; gap: 16px; margin: 16px 0; }
+    .stat {
+      flex: 1; background: var(--fill); border-radius: 8px;
+      padding: 18px; text-align: center;
+    }
+    .stat-n { font-size: 28px; font-weight: 800; color: var(--orange); line-height: 1; margin-bottom: 4px; }
+    .stat-l { font-size: 11px; font-weight: 600; color: var(--text2); }
+
+    /* Table */
+    .tbl { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .tbl th {
+      text-align: left; font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase; color: var(--muted);
+      padding: 8px 12px; border-bottom: 1px solid var(--border);
+    }
+    .tbl td {
+      font-size: 13px; padding: 10px 12px;
+      border-bottom: 1px solid var(--border); vertical-align: top;
+    }
+    .tbl td:first-child { font-weight: 600; }
+    .tbl tr:last-child td { border-bottom: none; }
+
+    /* Cover specific */
+    .cover-corner {
+      position: absolute; bottom: 0; right: 0;
+      width: 240px; height: 240px;
+      background: var(--orange-fill); border-radius: 240px 0 0 0; opacity: 0.5;
+    }
+    .cover-dot {
+      position: absolute; top: 52px; right: 56px;
+      width: 10px; height: 10px; background: var(--orange); border-radius: 50%;
+    }
+
+    /* CTA */
+    .cta {
+      background: var(--orange); border-radius: 8px;
+      padding: 32px; text-align: center; margin-top: 24px;
+    }
+    .cta-t { font-size: 20px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .cta-s { font-size: 13px; color: rgba(255,255,255,0.85); margin-bottom: 16px; }
+    .cta-btn {
+      display: inline-block; background: #fff; color: var(--orange);
+      font-size: 13px; font-weight: 700; padding: 10px 28px;
+      border-radius: 6px; text-decoration: none;
+    }
+
+    /* Two col text */
+    .tcol { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  </style>
+</head>
+<body>
+
+<!-- ═══ PAGE 1: COVER ═══ -->
+<div class="page" style="display:flex; flex-direction:column; justify-content:center;">
+  <div class="cover-dot"></div>
+  <div class="cover-corner"></div>
+
+  <div style="margin-bottom: 40px;">
+    <div class="pill pill-o" style="margin-bottom: 28px;">Internal Playbook</div>
+    <div style="font-size: 64px; font-weight: 800; color: var(--orange); letter-spacing: -2px; margin-bottom: 20px;">SOLA</div>
+    <div style="font-size: 28px; font-weight: 700; line-height: 1.3; max-width: 400px; margin-bottom: 14px;">Product Playbook for Marketing & Business Development</div>
+    <div class="body" style="max-width: 400px;">
+      What we built, who it's for, and every feature explained in plain English.
+    </div>
+  </div>
+
+  <div style="width:100%; height:1px; background:var(--border); margin-bottom: 24px;"></div>
+
+  <div style="display:flex; gap:40px;">
+    <div>
+      <div class="caption" style="font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Platform</div>
+      <div style="font-size:14px; font-weight:600;">Android (Play Store)</div>
+    </div>
+    <div>
+      <div class="caption" style="font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Stage</div>
+      <div style="font-size:14px; font-weight:600;">V1 Launch</div>
+    </div>
+    <div>
+      <div class="caption" style="font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Date</div>
+      <div style="font-size:14px; font-weight:600;">February 2026</div>
+    </div>
+    <div>
+      <div class="caption" style="font-weight:700; letter-spacing:1.5px; text-transform:uppercase;">Confidential</div>
+      <div style="font-size:14px; font-weight:600;">Yes</div>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; Confidential</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 2: WHAT IS SOLA ═══ -->
+<div class="page">
+  <div class="label">Start Here</div>
+  <div class="title">What is Sola?</div>
+  <div class="body" style="max-width:480px; margin-bottom: 24px;">
+    Sola is a mobile app for women who travel solo. It gives them destination guides, trip planning tools, safety features, and a community of other women travelers — all in one place.
+  </div>
+
+  <div class="hbox">
+    <div class="hbox-title">The one-liner</div>
+    <div style="font-size: 16px; font-weight: 600; color: var(--text); line-height: 1.5; margin-top: 4px;">
+      Sola is the first travel app designed specifically for women traveling alone.
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="subtitle">Who is it for?</div>
+  <div class="body" style="margin-bottom: 16px;">
+    Women aged 25–45 who travel solo or are thinking about it. They're independent, curious, and value quality information over generic travel content. They want to feel prepared, not scared.
+  </div>
+
+  <table class="tbl">
+    <tr><th>Trait</th><th>Description</th></tr>
+    <tr><td>Age range</td><td>25–45, skewing millennial and early Gen Z professionals</td></tr>
+    <tr><td>Travel style</td><td>Solo or semi-solo (occasionally with one friend). Not group tours.</td></tr>
+    <tr><td>Mindset</td><td>Confident but practical. Wants honest info, not sugar-coated marketing.</td></tr>
+    <tr><td>Pain point</td><td>Safety info is scattered across Reddit, blogs, and Facebook groups. No single source of truth.</td></tr>
+    <tr><td>What she values</td><td>Authenticity, structured information, community with real women — not influencers.</td></tr>
+  </table>
+
+  <div class="div"></div>
+
+  <div class="subtitle">What does the app actually do?</div>
+  <div class="body" style="margin-bottom: 16px;">The app has five main areas. Think of them as five tabs at the bottom of the screen.</div>
+
+  <div class="g2" style="gap: 10px;">
+    <div class="card card-orange">
+      <div class="card-title">Home</div>
+      <div class="card-body">Your personal dashboard. Shows your trips, saved places, recommendations, and safety shortcuts.</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title">Discover</div>
+      <div class="card-body">Browse countries, cities, activities, and curated collections. This is where all the destination content lives.</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title">Community</div>
+      <div class="card-body">Discussions with other women travelers + a feed of traveler profiles you can connect and message with.</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title">Trips</div>
+      <div class="card-body">Create and manage your trips. Includes a travel journal, saved places, safety tools, and traveler matching.</div>
+    </div>
+    <div class="card card-orange">
+      <div class="card-title">Profile</div>
+      <div class="card-body">Your identity in the app. Interests, visited countries, settings, notifications, and identity verification.</div>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 2</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 3: DISCOVER FEATURES ═══ -->
+<div class="page">
+  <div class="label">Feature Area 1</div>
+  <div class="title">Discover</div>
+  <div class="body" style="margin-bottom: 20px;">
+    This is the biggest part of the app. It's where users research destinations. All content is written and structured with solo women travelers in mind.
+  </div>
+
+  <div class="card" style="margin-bottom: 10px;">
+    <div class="card-title">Country Guides</div>
+    <div class="card-body">Rich editorial pages for 40+ countries. Each one includes: a solo-friendliness rating, budget breakdown (accommodation, food, transport, activities), best months to visit, experiences, cities, transport and health info, social scene recommendations, and real questions from the community.</div>
+  </div>
+  <div class="card" style="margin-bottom: 10px;">
+    <div class="card-title">City Guides</div>
+    <div class="card-body">Three sections per city: an overview with neighborhoods, a filterable list of places (hotels, restaurants, cafes, attractions), and a calendar of local events. Users can save any place to their personal list.</div>
+  </div>
+  <div class="card" style="margin-bottom: 10px;">
+    <div class="card-title">Experiences</div>
+    <div class="card-body">Individual pages for tours, wellness retreats, landmarks, and activities. Each one has key info at a glance (duration, price, difficulty), tips from women travelers, practical details like address and booking links, and tags for filtering.</div>
+  </div>
+  <div class="g2">
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-title">Curated Collections</div>
+      <div class="card-body">Themed lists like "Beach towns for first-timers" or "Best cities for solo nightlife." Editorially curated, visually presented.</div>
+    </div>
+    <div class="card" style="margin-bottom: 0;">
+      <div class="card-title">Search</div>
+      <div class="card-body">Search across all destinations, cities, countries, and activities. Includes recent searches, popular destinations, and quick suggestion chips.</div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="subtitle" style="font-size: 15px;">What's inside a Country Guide</div>
+  <div class="body-sm" style="margin-bottom: 12px;">So marketing understands the depth of content on each country page:</div>
+  <table class="tbl">
+    <tr><th>Section</th><th>What it shows</th></tr>
+    <tr><td>Solo-friendliness</td><td>A rating (e.g. "Welcoming" or "Moderate") based on safety, infrastructure, and culture</td></tr>
+    <tr><td>Budget breakdown</td><td>Structured grid: typical cost per day for accommodation, food, transport, activities</td></tr>
+    <tr><td>Best months</td><td>When to go based on weather, crowds, and events</td></tr>
+    <tr><td>Experiences</td><td>Tours, landmarks, wellness, and activities in that country</td></tr>
+    <tr><td>Cities</td><td>All cities covered in that country, as tappable cards</td></tr>
+    <tr><td>Know Before You Go</td><td>Transport tips, health info (vaccines, hospitals), cultural notes (dress codes, customs)</td></tr>
+    <tr><td>Social scene</td><td>Bars, cafes, rooftops, restaurants curated for solo women</td></tr>
+    <tr><td>Emergency info</td><td>Tappable phone numbers for police/ambulance, embassy links, SIM providers</td></tr>
+    <tr><td>Community Q&A</td><td>Real questions and answers from women who have visited</td></tr>
+  </table>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 3</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 4: TRIPS ═══ -->
+<div class="page">
+  <div class="label">Feature Area 2</div>
+  <div class="title">Trips</div>
+  <div class="body" style="margin-bottom: 20px;">
+    Users can create, manage, and document their trips. Safety tools are built directly into the trip experience — not hidden in a settings menu.
+  </div>
+
+  <div class="subtitle" style="font-size: 15px;">Creating a trip</div>
+  <div class="body-sm" style="margin-bottom: 14px;">Users walk through a simple flow:</div>
+  <ol class="nlist" style="margin-bottom: 20px;">
+    <li><div><div class="nt">Choose trip type</div><div class="nd">Planning a future trip, currently traveling, or logging a past trip</div></div></li>
+    <li><div><div class="nt">Add destinations</div><div class="nd">Search and add up to 5 cities or countries as stops</div></div></li>
+    <li><div><div class="nt">Set dates</div><div class="nd">Pick start and end dates — the app calculates the number of nights</div></div></li>
+    <li><div><div class="nt">Customize</div><div class="nd">Add a trip name, cover photo, and invite travel companions from your connections</div></div></li>
+  </ol>
+
+  <div class="div-sm"></div>
+
+  <div class="subtitle" style="font-size: 15px;">Inside a trip — three tabs</div>
+  <div class="g3" style="margin-top: 12px; margin-bottom: 20px;">
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Journey</div>
+      <div class="card-body">A travel journal. Add notes, photos, and highlights as you go. This becomes your trip memory.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Plan</div>
+      <div class="card-body">Your safety command center. Emergency numbers, embassy lookup, share-my-trip, emergency contact, and your saved places for this destination.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">People</div>
+      <div class="card-body">See other women whose trips overlap with yours by city and date. Opt-in, with full privacy controls.</div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <div class="label">Feature Area 3</div>
+  <div class="title">Safety Tools</div>
+  <div class="body" style="margin-bottom: 16px;">
+    These are spread across the app but most are accessible from the trip Plan tab. Safety is not a separate section — it's part of how the app works.
+  </div>
+
+  <div class="g2">
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Emergency Numbers</div>
+      <div class="card-body">Country-specific police, ambulance, and fire numbers for 40+ countries. One tap to call directly from the app.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Share My Trip</div>
+      <div class="card-body">Sends a pre-written message with your destination and dates to a trusted contact. One tap, via the phone's native share sheet.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Emergency Contact</div>
+      <div class="card-body">Save a trusted person's name and phone number inside the app. The home screen reminds you to set one up before you travel.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Embassy Lookup</div>
+      <div class="card-body">A direct link to your country's embassy directory for wherever you're traveling. One tap from the trip dashboard.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Identity Verification</div>
+      <div class="card-body">Users verify their identity with a selfie and live pose prompt. Verified badge appears on their profile. Keeps the community trustworthy.</div>
+    </div>
+    <div class="card" style="margin-bottom:0;">
+      <div class="card-title">Safety Signals</div>
+      <div class="card-body">Every country guide includes honest solo-friendliness ratings, transport safety, health info, and cultural context — not sugar-coated marketing.</div>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 4</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 5: COMMUNITY + MESSAGING ═══ -->
+<div class="page">
+  <div class="label">Feature Area 4</div>
+  <div class="title">Community</div>
+  <div class="body" style="margin-bottom: 20px;">
+    A women-only space to ask real questions, get honest answers, and find other solo travelers. Two sections: Discussions and Travelers.
+  </div>
+
+  <div class="subtitle" style="font-size: 15px;">Discussions</div>
+  <div class="body-sm" style="margin-bottom: 12px;">A Q&A feed where women ask and answer travel questions.</div>
+
+  <ul class="blist" style="margin-bottom: 20px;">
+    <li>Users post questions tagged by topic and destination (e.g. "Safety in Medell&iacute;n" or "Best hostels in Lisbon")</li>
+    <li>Other women reply with their experiences and advice</li>
+    <li>Sola Team posts are clearly marked with a badge — these are editorial or conversation-starting questions from us</li>
+    <li>Users can upvote helpful threads</li>
+    <li>First-time visitors see an intro banner explaining the community</li>
+    <li>First-time posters get guided placeholder text to help them write a good question</li>
+  </ul>
+
+  <div class="div-sm"></div>
+
+  <div class="subtitle" style="font-size: 15px;">Travelers</div>
+  <div class="body-sm" style="margin-bottom: 12px;">A feed of other women on the platform. Users can browse, connect, and message.</div>
+
+  <ul class="blist blue" style="margin-bottom: 20px;">
+    <li><strong>Traveler profiles</strong> — name, photo, home country, bio, interests, visited countries</li>
+    <li><strong>Connection requests</strong> — send a request to connect. Both sides must accept before messaging.</li>
+    <li><strong>Matching</strong> — the app suggests women with similar interests or overlapping travel plans</li>
+    <li><strong>Direct messaging</strong> — real-time private chat with connected women. Block and report built in.</li>
+  </ul>
+
+  <div class="div"></div>
+
+  <div class="label">Feature Area 5</div>
+  <div class="title">Home Feed</div>
+  <div class="body" style="margin-bottom: 16px;">
+    A personalized dashboard that adapts to each user. It's the first thing they see when they open the app.
+  </div>
+
+  <div class="g2">
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Trip Status Card</div>
+      <div class="card-body">Changes based on the user's situation: prompts to plan a trip if none exists, shows a countdown for upcoming trips, or shows current trip info when traveling.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Personalized Recommendations</div>
+      <div class="card-body">City suggestions based on the user's stated interests (food, nightlife, outdoors, etc.) and browsing history.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Saved Places</div>
+      <div class="card-body">A preview of places the user has bookmarked while browsing. Quick access to their shortlist.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Community Highlights</div>
+      <div class="card-body">A preview of recent discussion threads, so users stay connected even from the home screen.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Safety Shortcuts</div>
+      <div class="card-body">Quick links to safety tools, emergency contact setup, and trip info — always one tap away.</div>
+    </div>
+    <div class="card card-fill" style="margin-bottom:0;">
+      <div class="card-title">Vibe Sections</div>
+      <div class="card-body">Themed content blocks like "Slow travel" or "City escapes" — two different ones shown each session to keep the feed fresh.</div>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 5</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 6: ONBOARDING + PROFILE ═══ -->
+<div class="page">
+  <div class="label">Feature Area 6</div>
+  <div class="title">Onboarding & Profile</div>
+  <div class="body" style="margin-bottom: 20px;">
+    How users sign up and set up their identity in the app.
+  </div>
+
+  <div class="subtitle" style="font-size: 15px;">Sign-up flow</div>
+  <div class="body-sm" style="margin-bottom: 14px;">Users sign up with Google or email. Then they walk through a short onboarding flow:</div>
+
+  <ol class="nlist" style="margin-bottom: 20px;">
+    <li><div><div class="nt">Travel intent</div><div class="nd">"I've got a trip coming up" vs. "Just dreaming for now" — this personalizes the entire app experience from the start</div></div></li>
+    <li><div><div class="nt">Interests and priorities</div><div class="nd">Pick what they care about: food, outdoors, nightlife, history, wellness, etc. Plus priorities like safety, meeting locals, hidden gems, solo-friendly spaces</div></div></li>
+    <li><div><div class="nt">Next trip (optional)</div><div class="nd">Enter a destination and dates so the home feed is immediately relevant</div></div></li>
+    <li><div><div class="nt">Profile setup</div><div class="nd">Name, photo, home country, bio, username, and countries visited</div></div></li>
+  </ol>
+
+  <div class="div-sm"></div>
+
+  <div class="subtitle" style="font-size: 15px;">Profile features</div>
+  <ul class="blist grey" style="margin-bottom: 20px;">
+    <li>Profile photo, name, username, home country flag, bio</li>
+    <li>Interests displayed as tags (up to 8 categories)</li>
+    <li>Visited countries shown as a flag list — editable at any time</li>
+    <li>Saved places count and trip history visible on profile</li>
+    <li>Identity verification status (unverified / pending / verified)</li>
+    <li>Notification feed — connection requests, replies, upvotes, system alerts</li>
+    <li>Settings: currency, language, emergency contact, privacy, sign out, delete account</li>
+  </ul>
+
+  <div class="div"></div>
+
+  <div class="label">Quick Reference</div>
+  <div class="title" style="font-size: 22px;">How to talk about Sola</div>
+  <div class="body" style="margin-bottom: 16px;">
+    Key phrases and positioning for external communication.
+  </div>
+
+  <div class="card card-orange" style="margin-bottom: 10px;">
+    <div class="card-title">Short description (for bios, listings, app store)</div>
+    <div class="card-body" style="color: var(--text); font-weight: 500;">The solo travel app for women. Destination guides, trip planning, safety tools, and a community — all in one place.</div>
+  </div>
+
+  <div class="card card-orange" style="margin-bottom: 10px;">
+    <div class="card-title">Tagline</div>
+    <div class="card-body" style="color: var(--text); font-weight: 500;">Because women travel differently.</div>
+  </div>
+
+  <div class="card card-orange" style="margin-bottom: 10px;">
+    <div class="card-title">Elevator pitch (30 seconds)</div>
+    <div class="card-body" style="color: var(--text); font-weight: 500;">Sola is a mobile app that gives women everything they need to travel solo with confidence. We combine destination intelligence — country guides, city guides, curated experiences — with built-in safety tools and a verified women-only community. Think of it as your travel research, planning, and safety net in one app.</div>
+  </div>
+
+  <div class="hbox" style="margin-top: 16px;">
+    <div class="hbox-title">Tone reminder</div>
+    <div class="hbox-body">Sola's voice is confident, warm, and intelligent. Never cheesy, never condescending. We don't use words like "queen," "girl boss," or "bestie." We speak to women the way smart friends talk to each other.</div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 6</span>
+  </div>
+</div>
+
+<!-- ═══ PAGE 7: FULL FEATURE LIST ═══ -->
+<div class="page">
+  <div class="label">Reference</div>
+  <div class="title">Complete Feature List — V1</div>
+  <div class="body" style="margin-bottom: 20px;">
+    Every feature shipping in the first version, organized by area.
+  </div>
+
+  <div class="tcol">
+    <div>
+      <div style="margin-bottom: 20px;">
+        <div class="pill pill-o" style="margin-bottom: 10px;">Discover</div>
+        <ul class="blist">
+          <li>Country guides (40+ countries)</li>
+          <li>City guides with places and events</li>
+          <li>Neighborhood / area pages</li>
+          <li>Experience and activity pages</li>
+          <li>Curated collections</li>
+          <li>Browse by continent</li>
+          <li>Destination search</li>
+          <li>Budget breakdowns</li>
+          <li>Solo-friendliness ratings</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div class="pill pill-g" style="margin-bottom: 10px;">Safety</div>
+        <ul class="blist green">
+          <li>Emergency numbers (one-tap call)</li>
+          <li>Embassy lookup</li>
+          <li>Share my trip</li>
+          <li>Emergency contact setup</li>
+          <li>Identity verification</li>
+          <li>Safety signals on every country</li>
+          <li>Block and report</li>
+        </ul>
+      </div>
+    </div>
+
+    <div>
+      <div style="margin-bottom: 20px;">
+        <div class="pill pill-b" style="margin-bottom: 10px;">Community</div>
+        <ul class="blist blue">
+          <li>Discussion feed with Q&A</li>
+          <li>Traveler profiles</li>
+          <li>Connection requests</li>
+          <li>Traveler matching</li>
+          <li>Direct messaging</li>
+          <li>Sola Team editorial posts</li>
+          <li>Upvotes and helpful marks</li>
+        </ul>
+      </div>
+
+      <div style="margin-bottom: 20px;">
+        <div class="pill pill-n" style="margin-bottom: 10px;">Trips & Profile</div>
+        <ul class="blist grey">
+          <li>Multi-stop trip creation</li>
+          <li>Travel journal</li>
+          <li>Save places to your list</li>
+          <li>Invite travel companions</li>
+          <li>Personalized home feed</li>
+          <li>Interest-based recommendations</li>
+          <li>Google Sign In</li>
+          <li>Push notifications</li>
+          <li>Visited countries list</li>
+          <li>Notification center</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="cta">
+    <div class="cta-t">Because women travel differently.</div>
+    <div class="cta-s">Questions? Reach out to the product team.</div>
+  </div>
+
+  <div class="pf" style="border-top-color: var(--border);">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">Product Playbook &mdash; 7</span>
+  </div>
+</div>
+
+</body>
+</html>

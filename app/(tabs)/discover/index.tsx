@@ -13,38 +13,31 @@ import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import AvatarButton from '@/components/AvatarButton';
-import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { EditorialHero } from '@/components/explore/EditorialHero';
 import { ContinentFilter } from '@/components/explore/ContinentFilter';
 import { CountryShowcaseCard } from '@/components/explore/CountryShowcaseCard';
+import { ExploreSkeleton } from '@/components/explore/ExploreSkeleton';
 import { useExploreData } from '@/data/discover/useExploreData';
 import type { ContinentKey } from '@/data/discover/types';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
-// ── Inline: search trigger ─────────────────────────────────
-
-function SearchTrigger({ onPress }: { onPress: () => void }) {
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.searchBar, pressed && { opacity: pressedState.opacity }]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="Search destinations"
-    >
-      <Feather name="search" size={18} color={colors.textMuted} />
-      <Text style={styles.searchText}>Find a destination</Text>
-    </Pressable>
-  );
-}
-
 // ── Main screen ─────────────────────────────────────────────
 
 export default function DiscoverScreen() {
-  const { featuredCountry, countries, continents, isLoading, error, refresh } =
-    useExploreData();
+  const {
+    featuredCountry,
+    countries,
+    continents,
+    filterChips,
+    selectedTags,
+    toggleTag,
+    isLoading,
+    error,
+    refresh,
+  } = useExploreData();
   const router = useRouter();
   const [selectedContinent, setSelectedContinent] = useState<ContinentKey | null>(null);
 
@@ -72,7 +65,7 @@ export default function DiscoverScreen() {
     return (
       <AppScreen>
         <NavigationHeader title="Discover" rightActions={headerActions} />
-        <LoadingScreen />
+        <ExploreSkeleton />
       </AppScreen>
     );
   }
@@ -99,10 +92,49 @@ export default function DiscoverScreen() {
       >
         {/* Search trigger */}
         <View style={styles.searchWrap}>
-          <SearchTrigger
+          <Pressable
+            style={({ pressed }) => [styles.searchBar, pressed && { opacity: pressedState.opacity }]}
             onPress={() => router.push('/(tabs)/discover/search')}
-          />
+            accessibilityRole="button"
+            accessibilityLabel="Search destinations"
+          >
+            <Feather name="search" size={16} color={colors.textMuted} />
+            <Text style={styles.searchText}>Where to next?</Text>
+          </Pressable>
         </View>
+
+        {/* Filter chips */}
+        {filterChips.length > 0 && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterChipsContent}
+            style={styles.filterChipsRow}
+          >
+            {filterChips.map((chip) => {
+              const isActive = selectedTags.includes(chip.value);
+              return (
+                <Pressable
+                  key={chip.id}
+                  style={[
+                    styles.filterChip,
+                    isActive && styles.filterChipActive,
+                  ]}
+                  onPress={() => toggleTag(chip.value)}
+                >
+                  <Text
+                    style={[
+                      styles.filterChipText,
+                      isActive && styles.filterChipTextActive,
+                    ]}
+                  >
+                    {chip.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        )}
 
         {/* Editorial hero */}
         {featuredCountry && (
@@ -162,15 +194,42 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
+    borderRadius: radius.full,
     paddingHorizontal: spacing.lg,
     height: 48,
     gap: spacing.sm,
   },
   searchText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
+    fontFamily: fonts.medium,
+    fontSize: 14,
     color: colors.textMuted,
+  },
+
+  // Filter chips
+  filterChipsRow: {
+    marginTop: spacing.md,
+  },
+  filterChipsContent: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+  },
+  filterChip: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  filterChipActive: {
+    backgroundColor: colors.orangeFill,
+  },
+  filterChipText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+    color: colors.textSecondary,
+  },
+  filterChipTextActive: {
+    color: colors.orange,
   },
 
   // Hero

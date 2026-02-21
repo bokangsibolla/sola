@@ -197,7 +197,7 @@ export default function TripDetailScreen() {
 
             {/* Itinerary section header */}
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>ITINERARY</Text>
+              <Text style={styles.sectionTitle}>Itinerary</Text>
             </View>
 
             {/* Generate days CTA (when no days and trip has dates) */}

@@ -4,12 +4,12 @@ import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import AvatarButton from '@/components/AvatarButton';
-import { DashboardHeader } from '@/components/home/DashboardHeader';
+import { HomeSearchInput } from '@/components/home/HomeSearchInput';
 import { HeroModule } from '@/components/home/HeroModule';
 import { SavedShortlist } from '@/components/home/SavedShortlist';
 import { DestinationCarousel } from '@/components/home/DestinationCarousel';
 import { CommunityPeek } from '@/components/home/CommunityPeek';
-import { QuickActionsGrid } from '@/components/home/QuickActionsGrid';
+import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { useHomeData } from '@/data/home/useHomeData';
 import { colors, spacing } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
@@ -24,75 +24,93 @@ export default function HomeScreen() {
   const {
     firstName,
     heroState,
-    personalizedCities,
-    travelUpdate,
-    communityHighlights,
-    savedPlaces,
+    homeSections,
     loading,
     refetch,
   } = useHomeData();
 
-  const activeTripId =
-    heroState.kind === 'active' || heroState.kind === 'upcoming'
-      ? heroState.trip.id
-      : null;
-
   return (
-    <AppScreen style={styles.screen}>
+    <AppScreen>
       <NavigationHeader
         title="Home"
         showLogo
         rightActions={<AvatarButton />}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={refetch}
-            tintColor={colors.orange}
-          />
-        }
-      >
-        {/* 1. Dashboard Header — greeting + contextual line + search */}
-        <DashboardHeader
-          firstName={firstName}
-          heroState={heroState}
-          savedCount={savedPlaces.length}
-        />
-
-        {/* 2. Hero Module — trip state or featured destination */}
-        <HeroModule hero={heroState} travelUpdate={travelUpdate} />
-
-        {/* 3. Saved Shortlist — conditional */}
-        <SavedShortlist places={savedPlaces} />
-
-        {/* 4. Destinations — horizontal carousel */}
-        <DestinationCarousel cities={personalizedCities} />
-
-        {/* 5. Community Peek — 2 text-only thread cards */}
-        <CommunityPeek threads={communityHighlights} />
-
-        {/* 6. Quick Actions — 2x2 grid */}
-        <QuickActionsGrid activeTripId={activeTripId} />
-
-        {/* Bottom spacing for floating tab bar */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+      {loading && homeSections.length === 0 ? (
+        <HomeSkeleton />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={refetch}
+              tintColor={colors.orange}
+            />
+          }
+        >
+          {homeSections.map((section) => {
+            switch (section.type) {
+              case 'search':
+                return (
+                  <HomeSearchInput
+                    key="search"
+                    chips={section.chips}
+                    firstName={firstName}
+                    heroState={heroState}
+                  />
+                );
+              case 'saved':
+                return (
+                  <SavedShortlist
+                    key="saved"
+                    places={section.places}
+                    totalCount={section.totalCount}
+                  />
+                );
+              case 'hero':
+                return (
+                  <HeroModule
+                    key="hero"
+                    hero={section.hero}
+                    travelUpdate={section.travelUpdate}
+                    height={section.height}
+                  />
+                );
+              case 'destinations':
+                return (
+                  <DestinationCarousel
+                    key="destinations"
+                    cities={section.cities}
+                    title={section.title}
+                  />
+                );
+              case 'community':
+                return (
+                  <CommunityPeek
+                    key="community"
+                    threads={section.threads}
+                    title={section.title}
+                  />
+                );
+              default:
+                return null;
+            }
+          })}
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      )}
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.surfacePage,
-  },
   scrollContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
   },
   bottomSpacer: {
-    height: FLOATING_TAB_BAR_HEIGHT,
+    height: spacing.xl,
   },
 });

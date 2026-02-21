@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sola — V1 Vision Document</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --orange: #E5653A;
+      --orange-fill: #FFF5F1;
+      --text: #0E0E0E;
+      --text2: #4A4A4A;
+      --muted: #9A9A9A;
+      --border: #E8E8E8;
+      --fill: #F5F5F3;
+      --green: #2D8A4E;
+      --green-fill: #EEFBF3;
+      --blue: #3B82F6;
+      --blue-fill: #EFF6FF;
+      --warm: #FAF9F7;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      color: var(--text);
+      background: #fff;
+      -webkit-font-smoothing: antialiased;
+    }
+    @page { size: A4; margin: 0; }
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { page-break-after: always; break-after: page; }
+      .page:last-child { page-break-after: avoid; }
+    }
+    .page {
+      width: 210mm;
+      min-height: 297mm;
+      margin: 0 auto;
+      padding: 56px 60px 76px;
+      position: relative;
+    }
+
+    /* Footer */
+    .pf {
+      position: absolute; bottom: 32px; left: 60px; right: 60px;
+      display: flex; justify-content: space-between; align-items: center;
+      padding-top: 12px; border-top: 1px solid var(--border);
+    }
+    .pf-logo { font-size: 12px; font-weight: 800; color: var(--orange); letter-spacing: -0.5px; }
+    .pf-r { font-size: 9px; color: var(--muted); letter-spacing: 0.5px; }
+
+    /* Typography */
+    .label {
+      font-size: 9px; font-weight: 700; letter-spacing: 2.5px;
+      text-transform: uppercase; color: var(--orange); margin-bottom: 10px;
+    }
+    h1 {
+      font-size: 30px; font-weight: 800; line-height: 1.2;
+      margin-bottom: 10px; letter-spacing: -0.5px;
+    }
+    h2 {
+      font-size: 22px; font-weight: 700; line-height: 1.25;
+      margin-bottom: 8px; letter-spacing: -0.3px;
+    }
+    h3 {
+      font-size: 16px; font-weight: 700; line-height: 1.35;
+      margin-bottom: 6px;
+    }
+    .lead {
+      font-size: 16px; color: var(--text2); line-height: 1.7;
+      max-width: 490px;
+    }
+    p {
+      font-size: 13px; color: var(--text2); line-height: 1.75;
+      margin-bottom: 14px;
+    }
+    p.tight { margin-bottom: 8px; }
+    .small { font-size: 12px; color: var(--text2); line-height: 1.7; }
+
+    /* Dividers */
+    .div { width: 100%; height: 1px; background: var(--border); margin: 28px 0; }
+    .div-sm { width: 100%; height: 1px; background: var(--border); margin: 18px 0; }
+
+    /* Callout */
+    .callout {
+      background: var(--orange-fill); border-radius: 8px;
+      padding: 24px 28px; margin: 22px 0;
+    }
+    .callout-dark {
+      background: var(--text); border-radius: 8px;
+      padding: 28px 32px; margin: 22px 0;
+    }
+    .callout-warm {
+      background: var(--warm); border-radius: 8px; border: 1px solid var(--border);
+      padding: 24px 28px; margin: 22px 0;
+    }
+    .callout p { margin-bottom: 0; }
+    .callout-title {
+      font-size: 14px; font-weight: 700; margin-bottom: 6px;
+    }
+
+    /* Pull quote */
+    .pull {
+      border-left: 3px solid var(--orange);
+      padding: 4px 0 4px 24px;
+      margin: 24px 0;
+    }
+    .pull p {
+      font-size: 15px; font-weight: 600; color: var(--text);
+      line-height: 1.6; margin-bottom: 0;
+    }
+    .pull .attr {
+      font-size: 11px; color: var(--muted); font-weight: 400;
+      margin-top: 6px; display: block;
+    }
+
+    /* Two column */
+    .tcol { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+
+    /* Numbered blocks */
+    .nblock {
+      display: flex; gap: 18px; margin-bottom: 18px;
+    }
+    .nblock-num {
+      flex-shrink: 0; width: 32px; height: 32px;
+      background: var(--orange-fill); color: var(--orange);
+      font-size: 14px; font-weight: 800; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .nblock h3 { margin-bottom: 4px; }
+    .nblock p { margin-bottom: 0; }
+
+    /* Pill */
+    .pill {
+      display: inline-block; padding: 4px 12px; border-radius: 4px;
+      font-size: 10px; font-weight: 700; letter-spacing: 0.5px;
+    }
+    .pill-o { background: var(--orange-fill); color: var(--orange); }
+
+    /* Card grid */
+    .card {
+      background: var(--warm); border: 1px solid var(--border);
+      border-radius: 8px; padding: 22px 24px;
+    }
+    .card h3 { font-size: 14px; margin-bottom: 4px; }
+    .card p { font-size: 12px; margin-bottom: 0; line-height: 1.65; }
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+    /* List */
+    .blist { list-style: none; padding: 0; }
+    .blist li {
+      display: flex; align-items: flex-start; gap: 10px;
+      margin-bottom: 8px; font-size: 13px; color: var(--text2); line-height: 1.55;
+    }
+    .blist li::before {
+      content: ""; flex-shrink: 0; width: 5px; height: 5px;
+      border-radius: 50%; background: var(--orange); margin-top: 8px;
+    }
+
+    /* Diagram block */
+    .diagram {
+      background: var(--fill); border-radius: 8px;
+      padding: 28px 32px; margin: 20px 0; text-align: center;
+    }
+    .diagram-row {
+      display: flex; justify-content: center; align-items: center;
+      gap: 12px; flex-wrap: wrap;
+    }
+    .diagram-box {
+      background: #fff; border: 1px solid var(--border); border-radius: 6px;
+      padding: 10px 16px; font-size: 12px; font-weight: 600;
+    }
+    .diagram-box.active {
+      background: var(--orange); color: #fff; border-color: var(--orange);
+    }
+    .diagram-arrow {
+      font-size: 16px; color: var(--muted);
+    }
+    .diagram-label {
+      font-size: 10px; color: var(--muted); font-weight: 600;
+      letter-spacing: 1px; text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    /* Cover */
+    .cover-accent {
+      position: absolute; bottom: 0; right: 0;
+      width: 200px; height: 200px;
+      background: var(--orange-fill); border-radius: 200px 0 0 0; opacity: 0.4;
+    }
+    .cover-line {
+      position: absolute; top: 0; left: 60px;
+      width: 3px; height: 180px; background: var(--orange); opacity: 0.15;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 1 — COVER                             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" style="display:flex; flex-direction:column; justify-content:center;">
+  <div class="cover-accent"></div>
+  <div class="cover-line"></div>
+
+  <div style="position:relative; z-index:1;">
+    <div class="pill pill-o" style="margin-bottom: 32px; font-size: 9px; letter-spacing: 2px;">V1 VISION DOCUMENT</div>
+
+    <div style="font-size: 56px; font-weight: 800; color: var(--orange); letter-spacing: -2px; margin-bottom: 24px; line-height: 1;">SOLA</div>
+
+    <h1 style="font-size: 26px; max-width: 380px; margin-bottom: 16px; line-height: 1.35;">
+      Rethinking how travel information is built, structured, and delivered.
+    </h1>
+
+    <div class="lead" style="font-size: 14px; max-width: 400px; margin-bottom: 48px;">
+      A thesis on the gender data gap in travel, the failure of default-male information design, and how Sola is building the intelligence layer that doesn't exist yet.
+    </div>
+
+    <div style="width:100%; height:1px; background:var(--border); margin-bottom: 24px;"></div>
+
+    <div style="display:flex; gap: 48px;">
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Classification</div>
+        <div style="font-size:13px; font-weight:600;">Internal</div>
+      </div>
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Version</div>
+        <div style="font-size:13px; font-weight:600;">1.0</div>
+      </div>
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Date</div>
+        <div style="font-size:13px; font-weight:600;">February 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; Confidential</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 2 — THE GAP                           -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 1</div>
+  <h1>The information gap</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    The travel industry has a data problem. Not a shortage of data — a bias in it.
+  </div>
+
+  <p>
+    Every major travel platform — TripAdvisor, Google Maps, Lonely Planet, Booking.com — was built on the same foundational assumption: that a traveler is a traveler. That the same hotel review, the same walking route, the same neighbourhood recommendation serves everyone equally.
+  </p>
+  <p>
+    It doesn't. A street that is "vibrant and lively" at midnight for one traveler can be unsafe for another. A hostel rated 4.8 stars might have no female-only dorms. A city described as "easy to get around" may have no reliable transport after dark. The information exists, but it was never collected through the lens of who is actually using it.
+  </p>
+  <p>
+    This is not a niche complaint. Women represent the majority of solo travelers globally. Yet the information infrastructure they depend on was designed without them as the primary user.
+  </p>
+
+  <div class="pull">
+    <p>The gender data gap is not about missing women from datasets. It's about building entire systems — from data collection to interface design — around a default user who was never explicitly chosen, just assumed.</p>
+    <span class="attr">Adapted from Caroline Criado Perez, <em>Invisible Women</em></span>
+  </div>
+
+  <p>
+    The result is a fragmented experience. Women planning solo trips today piece together safety information from Reddit threads, closed Facebook groups, personal blogs, and word of mouth. They cross-reference multiple sources to answer questions that should be answerable in one place: <em>Is it safe to walk alone here? What should I wear? Which neighbourhoods should I avoid at night? Where do other women actually stay?</em>
+  </p>
+  <p>
+    The data to answer these questions exists — scattered across millions of individual experiences. But no platform has structured it, verified it, and made it accessible. That is the gap Sola exists to close.
+  </p>
+
+  <div class="callout">
+    <div class="callout-title">What we mean by "the gap"</div>
+    <p>It's not that safety information doesn't exist. It's that no platform has ever made it the <strong>organising principle</strong> of their information architecture. Safety is always a footnote, a secondary filter, a government advisory buried three clicks deep. For women, it's the first question — and existing platforms answer it last, if at all.</p>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 2</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 3 — THE DEFAULT MALE LENS             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 2</div>
+  <h1>The default-male lens</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    Information platforms are not neutral. They encode the perspective of whoever designed them.
+  </div>
+
+  <p>
+    When a platform asks "What was your experience?" without asking "Who are you?", it treats all experiences as interchangeable. The review of a 25-year-old woman traveling alone in Marrakech is weighted the same as a 45-year-old man on a business trip. Statistically, the man's review is more likely to exist — men have historically been overrepresented in travel review platforms — and so the platform's aggregate picture skews toward his reality.
+  </p>
+  <p>
+    This is not a conspiracy. It's a design default. Most travel platforms were built by teams solving their own problems. The taxonomy of categories (hotels, restaurants, attractions), the sorting algorithms (price, rating, distance), the information hierarchy (photos first, logistics second, safety never) — all of it reflects assumptions about what travelers need. Those assumptions were not tested against the experience of women traveling alone.
+  </p>
+
+  <div class="div"></div>
+
+  <h2>Where the lens shows up</h2>
+
+  <div style="margin-top: 16px;">
+    <div class="nblock">
+      <div class="nblock-num">1</div>
+      <div>
+        <h3>Data collection</h3>
+        <p>Review forms don't capture the context that matters to women. "Was this area safe at night?" is not a standard question on any major platform. "Were there other solo women here?" is never asked.</p>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nblock-num">2</div>
+      <div>
+        <h3>Information architecture</h3>
+        <p>Safety is not a first-class category on any major travel platform. It's not filterable. It's not structured. It lives in the free-text body of reviews, if it appears at all.</p>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nblock-num">3</div>
+      <div>
+        <h3>Recommendation systems</h3>
+        <p>Algorithms optimise for popularity, not suitability. A restaurant can be the highest-rated in a city and still be a poor recommendation for a woman eating alone — if the neighbourhood is poorly lit, the staff are unwelcoming to solo diners, or there's no safe transport home after dark.</p>
+      </div>
+    </div>
+    <div class="nblock">
+      <div class="nblock-num">4</div>
+      <div>
+        <h3>Content tone and framing</h3>
+        <p>"Off the beaten path" is aspirational for some travelers and a risk assessment for others. Travel content rarely acknowledges this distinction. The framing assumes a universal appetite for adventure without accounting for the cost of that adventure being asymmetrically distributed.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout-dark">
+    <p style="color: rgba(255,255,255,0.9); font-size: 15px; font-weight: 600; line-height: 1.6; margin-bottom: 0;">
+      Sola's thesis: the solution is not to add a "women's filter" to existing platforms. The solution is to build from scratch — with women as the default user, not the edge case.
+    </p>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 3</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 4 — WHAT SOLA IS                      -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 3</div>
+  <h1>What Sola is</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    A product, a dataset, and a methodology — designed to close the information gap.
+  </div>
+
+  <p>
+    Sola is a mobile application for women who travel solo. On the surface, it combines destination guides, trip planning, safety tools, and a women-only community. But beneath the product is a more fundamental project: building a structured, verified, women-first travel intelligence layer that does not currently exist anywhere.
+  </p>
+  <p>
+    Every decision in Sola — from which data we collect, to how we organise it, to how it reaches the user — is made through the lens of our primary audience: women traveling alone. This is not a feature. It is the architecture.
+  </p>
+
+  <div class="div"></div>
+
+  <h2>Three layers</h2>
+  <div style="margin-top: 16px;">
+    <div class="g3" style="margin-bottom: 20px;">
+      <div class="card">
+        <h3>1. The product</h3>
+        <p>A mobile app with destination guides, trip tools, safety features, and community — the interface through which users experience Sola.</p>
+      </div>
+      <div class="card">
+        <h3>2. The dataset</h3>
+        <p>A structured, growing body of women-first travel intelligence — built from automated collection, editorial curation, and community contribution.</p>
+      </div>
+      <div class="card">
+        <h3>3. The methodology</h3>
+        <p>A repeatable system for collecting, verifying, structuring, and surfacing information that existing platforms do not capture.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <h2>The product philosophy</h2>
+  <p>
+    Sola is product-led. We don't start with content and ask how to distribute it. We start with the questions women actually ask and build the information architecture to answer them.
+  </p>
+  <p>
+    This means our product decisions are not conventional. We don't sort by rating. We don't default to "most popular." We structure every destination around the decision framework that solo women actually use:
+  </p>
+
+  <div class="tcol" style="margin-top: 16px;">
+    <div>
+      <ul class="blist">
+        <li><strong>Is it safe for me?</strong> — Solo-friendliness signals, transport safety, cultural context, neighbourhood walkscore.</li>
+        <li><strong>Can I afford it?</strong> — Structured budget breakdowns, not paragraphs. Daily cost grids for accommodation, food, transport, activities.</li>
+        <li><strong>When should I go?</strong> — Best months factoring weather, crowds, events, and seasonal safety considerations.</li>
+      </ul>
+    </div>
+    <div>
+      <ul class="blist">
+        <li><strong>What's it actually like?</strong> — Social scene, vibe, cultural notes, dress codes — the qualitative intelligence that determines whether a destination fits.</li>
+        <li><strong>What do other women say?</strong> — Community Q&A from verified women, not anonymous reviewers.</li>
+        <li><strong>What do I need to know right now?</strong> — Emergency numbers, embassy lookup, health info — one tap, not three clicks.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 4</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 5 — INFORMATION DESIGN                -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 4</div>
+  <h1>Rethinking information design</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    Most travel platforms organise information by geography. Sola organises it by decision.
+  </div>
+
+  <p>
+    The conventional travel platform information hierarchy is: <strong>Continent → Country → City → Attraction</strong>. It's a geographic taxonomy. It mirrors a map. It's intuitive for browsing but useless for deciding.
+  </p>
+  <p>
+    A woman deciding whether to visit Vietnam alone is not navigating a geographic tree. She's running a decision process: <em>Is it safe? Can I afford it? Will I enjoy it? What do I need to prepare?</em> The information she needs cuts across the traditional hierarchy — safety data, budget data, cultural data, experiential data — and she needs it structured for comparison and scanning, not buried in paragraphs.
+  </p>
+
+  <div class="div"></div>
+
+  <h2>How Sola structures information</h2>
+
+  <div class="nblock" style="margin-top: 16px;">
+    <div class="nblock-num">1</div>
+    <div>
+      <h3>Signals over summaries</h3>
+      <p>Every country and city in Sola opens with a row of structured signals: solo-friendliness level, budget tier, vibe, best months. These are scannable data points, not prose. A user can assess a destination in three seconds before deciding to read further.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">2</div>
+    <div>
+      <h3>Structured blocks over long-form</h3>
+      <p>Budget information is a 2x2 grid (accommodation, food, transport, activities), not a paragraph. Health and transport info lives in collapsible sections with clear labels. Cultural notes are actionable ("dress modestly in temples") not descriptive ("the culture is traditional"). Every piece of content is formatted for the way people actually consume information on mobile: scanning, not reading.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">3</div>
+    <div>
+      <h3>Layered depth</h3>
+      <p>Information is revealed progressively. The top layer is signals. The second layer is structured blocks. The third layer is community Q&A and editorial detail. A user can stop at any layer and have enough to make a decision — or go deeper if she wants to.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">4</div>
+    <div>
+      <h3>Safety as primary axis</h3>
+      <p>On every other platform, safety is a sub-category of "practical information." In Sola, safety is the first thing you see. Solo-friendliness level appears before the country description. Emergency numbers are one tap from the trip dashboard. Know-before-you-go content leads with transport safety and health, not visa requirements.</p>
+    </div>
+  </div>
+
+  <div class="callout">
+    <div class="callout-title">The design principle</div>
+    <p>Structure creates trust. When information is clearly organised, scannable, and honest, users trust it more — and use it more. We treat information design as a product feature, not a cosmetic layer.</p>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 5</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 6 — TECHNOLOGY                        -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 5</div>
+  <h1>Technology-first intelligence</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    Sola is a technology company that happens to operate in travel — not a travel company that uses technology.
+  </div>
+
+  <p>
+    Building the dataset we need requires more than editorial effort. The scale of information — every city, every neighbourhood, every transport route, every accommodation option, every seasonal variation — cannot be assembled manually. And even if it could, it would be outdated before publication.
+  </p>
+  <p>
+    Sola's approach combines automated intelligence gathering with human verification and community co-creation. The technology stack is not incidental to the product. It is the product.
+  </p>
+
+  <div class="div"></div>
+
+  <h2>The intelligence pipeline</h2>
+
+  <div class="diagram" style="margin-bottom: 20px;">
+    <div class="diagram-label">Data flow</div>
+    <div class="diagram-row">
+      <div class="diagram-box">Web scraping</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box">AI processing</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box">Filtering &amp; structuring</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box">Community validation</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box active">Verified intelligence</div>
+    </div>
+  </div>
+
+  <div class="g2" style="margin-top: 16px;">
+    <div class="card">
+      <h3>Automated collection</h3>
+      <p>Web scraping and API integrations gather raw data on destinations, accommodations, transport, events, safety advisories, and local infrastructure. This runs continuously — not on a publication cycle.</p>
+    </div>
+    <div class="card">
+      <h3>AI processing</h3>
+      <p>Machine learning models process raw data to extract structured signals: safety indicators, budget estimates, vibe classification, seasonal patterns. AI transforms unstructured web content into the structured data points that power our guides.</p>
+    </div>
+    <div class="card">
+      <h3>Filtering and curation</h3>
+      <p>Automated systems filter for relevance to solo women travelers. A nightclub review is processed differently than a hotel review. A transport safety note is weighted differently than a restaurant recommendation. The filtering logic encodes our women-first perspective.</p>
+    </div>
+    <div class="card">
+      <h3>Recommendation engine</h3>
+      <p>Personalisation driven by user interests, travel history, and behavioural signals. The system learns what matters to each user and adjusts destination recommendations, content ordering, and community suggestions accordingly.</p>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <h2>Automation as editorial voice</h2>
+  <p>
+    Our use of AI and automation is not about replacing editorial judgement. It's about scaling it. Every automated process in Sola encodes a specific editorial perspective: <em>what does a woman traveling alone need to know about this place?</em> The technology asks the question at scale. Humans and community verify the answers.
+  </p>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 6</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 7 — THE DATASET                       -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 6</div>
+  <h1>Building the dataset that doesn't exist</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    The most valuable thing Sola is building is not the app. It's the data inside it.
+  </div>
+
+  <p>
+    There is no comprehensive, structured dataset of women's solo travel experiences anywhere in the world. Google doesn't have it. TripAdvisor doesn't have it. Government tourism boards don't have it. The information exists — in millions of blog posts, social media comments, WhatsApp groups, Reddit threads, and personal conversations — but it has never been collected, structured, and made queryable.
+  </p>
+  <p>
+    Sola is building this dataset from three sources, each reinforcing the others.
+  </p>
+
+  <div class="div"></div>
+
+  <div class="nblock">
+    <div class="nblock-num">1</div>
+    <div>
+      <h3>Automated intelligence</h3>
+      <p>Web scraping, API integrations, and AI processing generate the baseline dataset. This provides coverage — we can have structured data on 40+ countries and hundreds of cities from day one, without waiting for a critical mass of users. The automation layer gives us a starting position that most community-dependent platforms take years to reach.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">2</div>
+    <div>
+      <h3>Community co-creation</h3>
+      <p>Every question asked in the community, every upvote, every reply, every connection request is a data point. When a woman asks "Is it safe to walk alone at night in Chiang Mai?" and three women answer with specific details — that becomes structured intelligence about Chiang Mai's nighttime safety from the perspective of solo women. This data does not exist anywhere else because no other platform has created the conditions to generate it.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">3</div>
+    <div>
+      <h3>Behavioural signals</h3>
+      <p>How users interact with content tells us what matters. Which cities do women save but not visit? Which safety sections do they read most carefully? Where do they zoom in on budget data? These signals refine our understanding of what information is most valuable and allow us to prioritise accordingly.</p>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <h2>The verification layer</h2>
+  <p>
+    Data without trust is noise. Sola invests heavily in verification at every level of the system.
+  </p>
+
+  <div class="g2" style="margin-top: 12px;">
+    <div class="card">
+      <h3>Identity verification</h3>
+      <p>Users verify their identity through a selfie with a live pose prompt. This is not optional friction — it's the foundation of community trust. When a woman reads a safety recommendation, she needs to know it came from a real person.</p>
+    </div>
+    <div class="card">
+      <h3>Content verification</h3>
+      <p>Automated data is cross-referenced across sources. Community-generated content is validated by engagement patterns and moderation. The system learns which contributors produce reliable information and weights their input accordingly.</p>
+    </div>
+  </div>
+
+  <div class="callout" style="margin-top: 20px;">
+    <div class="callout-title">The compounding effect</div>
+    <p>Each user who joins Sola makes the dataset more valuable. Each question asked, each trip logged, each place saved adds a data point that improves recommendations for every subsequent user. This is a network effect on information quality — not just user count.</p>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 7</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 8 — WOMEN-FIRST PRODUCT DECISIONS     -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 7</div>
+  <h1>Women-first is the architecture, not a filter</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    Every feature decision in Sola is made through the same question: what does this look like for a woman traveling alone?
+  </div>
+
+  <p>
+    "Women-first" is not a marketing position. It is a product methodology. It determines what data we collect, how we structure it, what features we build, and what we deliberately exclude. Below are examples of how this methodology manifests in specific product decisions.
+  </p>
+
+  <div class="div"></div>
+
+  <div class="nblock">
+    <div class="nblock-num">1</div>
+    <div>
+      <h3>Emergency numbers on the trip dashboard, not in settings</h3>
+      <p>On most travel apps, emergency information is buried in a help section or external link. In Sola, country-specific emergency numbers are on the trip Plan tab — the same screen where users check their saved places. The design decision: safety information should never require navigation to find.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">2</div>
+    <div>
+      <h3>Share-my-trip as a core feature</h3>
+      <p>One tap sends a pre-written message with destination and dates to a trusted contact. This exists because sharing your itinerary with someone at home is standard practice for women traveling alone. No other travel app treats this as a primary action.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">3</div>
+    <div>
+      <h3>Mutual-consent connections</h3>
+      <p>Users cannot message each other without a mutual connection request. This is not a social media paradigm — it's a safety paradigm. Women-only platforms must make unwanted contact structurally impossible, not just reportable after the fact.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">4</div>
+    <div>
+      <h3>Cultural context as practical information</h3>
+      <p>Dress codes, social norms, and local customs are not "cultural enrichment" — they are safety-relevant information. Sola structures them as actionable guidance ("cover shoulders in temples," "avoid eye contact in certain areas") rather than ethnographic description.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">5</div>
+    <div>
+      <h3>Social scene as a category</h3>
+      <p>Most platforms categorise nightlife as "things to do." Sola separates social scene into its own section because the decision to go to a bar alone as a woman is fundamentally different from the decision to visit a museum. The social scene section surfaces venues where solo women are welcome — not just venues that are popular.</p>
+    </div>
+  </div>
+  <div class="nblock">
+    <div class="nblock-num">6</div>
+    <div>
+      <h3>Identity verification as trust infrastructure</h3>
+      <p>Verification is not a premium feature or a moderation tool. It's the foundation of community trust. In a women-only space, every user needs confidence that other users are who they claim to be. The verified badge is not social proof — it's a safety mechanism.</p>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 8</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 9 — WHAT SOLA IS BECOMING             -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page">
+  <div class="label">Chapter 8</div>
+  <h1>What Sola is becoming</h1>
+  <div class="lead" style="margin-bottom: 24px;">
+    V1 is a product. The long-term vision is an intelligence platform.
+  </div>
+
+  <p>
+    The app launching today is a consumer product: destination guides, trip planning, community, safety tools. It serves a clear user need and delivers immediate value. But the app is also the mechanism through which Sola builds something larger.
+  </p>
+  <p>
+    Every interaction inside Sola generates structured data about women's solo travel experiences. Every question asked, every trip planned, every destination browsed, every safety section read adds to a growing body of intelligence that exists nowhere else. Over time, this creates a compounding asset: the most comprehensive dataset of women's travel experiences, behaviours, and preferences ever assembled.
+  </p>
+
+  <div class="div"></div>
+
+  <h2>The intelligence platform</h2>
+  <p>
+    As the dataset grows, Sola evolves from a product that surfaces curated content to a platform that generates intelligence. The recommendations become more precise. The safety signals become more granular. The community answers become more authoritative. Eventually, Sola becomes the default source of truth for the question: <em>What is it like to travel here as a woman?</em>
+  </p>
+
+  <div class="diagram">
+    <div class="diagram-label">Evolution</div>
+    <div class="diagram-row">
+      <div class="diagram-box active">V1: Product</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box">V2: Personalised intelligence</div>
+      <div class="diagram-arrow">&#8594;</div>
+      <div class="diagram-box">V3: Platform</div>
+    </div>
+    <div style="margin-top: 12px; display: flex; justify-content: center; gap: 40px;">
+      <div class="small" style="text-align: center; max-width: 140px;">Curated guides, community, safety tools</div>
+      <div class="small" style="text-align: center; max-width: 140px;">Adaptive recommendations, predictive signals</div>
+      <div class="small" style="text-align: center; max-width: 140px;">API, partnerships, data licensing</div>
+    </div>
+  </div>
+
+  <div class="div"></div>
+
+  <h2>What we aim to prove</h2>
+  <p>
+    Sola is a demonstration of what happens when you build an information product for a specific audience instead of for everyone. When you make that audience's needs the organising principle — not an afterthought, not a filter, not a separate section — you produce something fundamentally different. Better structured. More trusted. More useful.
+  </p>
+  <p>
+    The thesis is simple: the gender data gap in travel is not a social issue to be solved with awareness campaigns. It is a product opportunity. The first company to build a women-first travel intelligence layer — combining technology, community, and editorial rigour — will own a dataset and a relationship with an audience that no competitor can replicate by bolting on a filter.
+  </p>
+
+  <div class="callout-dark" style="margin-top: 24px;">
+    <p style="color: #fff; font-size: 17px; font-weight: 700; line-height: 1.5; margin-bottom: 8px;">
+      Sola is not an app with a women-first perspective.
+    </p>
+    <p style="color: rgba(255,255,255,0.8); font-size: 14px; line-height: 1.6; margin-bottom: 0;">
+      Sola is a women-first intelligence company whose first product is an app.
+    </p>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; 9</span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════ -->
+<!-- PAGE 10 — CLOSING                          -->
+<!-- ═══════════════════════════════════════════ -->
+<div class="page" style="display:flex; flex-direction:column; justify-content:center;">
+  <div class="cover-accent"></div>
+
+  <div style="position:relative; z-index:1;">
+    <div style="font-size: 56px; font-weight: 800; color: var(--orange); letter-spacing: -2px; margin-bottom: 32px; line-height: 1;">SOLA</div>
+
+    <h1 style="font-size: 24px; max-width: 420px; margin-bottom: 16px; line-height: 1.4;">
+      Because the question was never "do women need better travel tools?"
+    </h1>
+    <div class="lead" style="font-size: 15px; max-width: 420px; margin-bottom: 48px;">
+      The question was why nobody built them yet.
+    </div>
+
+    <div style="width:100%; height:1px; background:var(--border); margin-bottom: 28px;"></div>
+
+    <div style="display: flex; gap: 48px; margin-bottom: 48px;">
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Product</div>
+        <div style="font-size:13px; font-weight:600;">Sola for Android</div>
+      </div>
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Distribution</div>
+        <div style="font-size:13px; font-weight:600;">Google Play Store</div>
+      </div>
+      <div>
+        <div style="font-size:9px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom: 2px;">Stage</div>
+        <div style="font-size:13px; font-weight:600;">V1 Launch</div>
+      </div>
+    </div>
+
+    <div class="callout-warm" style="max-width: 420px;">
+      <p style="font-size: 12px; margin-bottom: 0;">
+        This document is confidential and intended for internal use by the Sola team. It outlines the product vision and philosophy as of February 2026 and will be updated as the product evolves.
+      </p>
+    </div>
+  </div>
+
+  <div class="pf">
+    <span class="pf-logo">SOLA</span>
+    <span class="pf-r">V1 Vision Document &mdash; Confidential</span>
+  </div>
+</div>
+
+</body>
+</html>

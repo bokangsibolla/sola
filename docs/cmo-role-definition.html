@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CMO & Cofounder — Role Definition | Sola</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800&display=swap');
+
+  :root {
+    --sola-orange: #E5653A;
+    --sola-orange-light: #FFF5F1;
+    --sola-dark: #1A1A1A;
+    --sola-body: #3D3D3D;
+    --sola-muted: #6B6B6B;
+    --sola-border: #E8E8E8;
+    --sola-bg: #FAFAFA;
+    --sola-white: #FFFFFF;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  @page { size: A4; margin: 0; }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    color: var(--sola-body);
+    background: var(--sola-white);
+    font-size: 10.5pt;
+    line-height: 1.7;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .page {
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0 auto;
+    padding: 48px 56px;
+  }
+
+  .cover {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 297mm;
+    padding: 56px;
+    page-break-after: always;
+  }
+
+  .cover-top { display: flex; align-items: center; gap: 12px; }
+
+  .sola-logo {
+    font-weight: 800; font-size: 18pt;
+    color: var(--sola-orange); letter-spacing: -0.5px;
+  }
+
+  .cover-badge {
+    display: inline-block; background: var(--sola-orange-light);
+    color: var(--sola-orange); font-size: 7.5pt; font-weight: 700;
+    letter-spacing: 1.5px; text-transform: uppercase;
+    padding: 5px 14px; border-radius: 20px;
+  }
+
+  .cover-main {
+    flex: 1; display: flex; flex-direction: column;
+    justify-content: center; padding: 60px 0;
+  }
+
+  .cover-main h1 {
+    font-size: 36pt; font-weight: 800; color: var(--sola-dark);
+    line-height: 1.15; letter-spacing: -1.5px; margin-bottom: 20px;
+  }
+
+  .cover-main h1 span { color: var(--sola-orange); }
+
+  .cover-subtitle {
+    font-size: 13pt; color: var(--sola-muted); font-weight: 400;
+    line-height: 1.7; max-width: 440px;
+  }
+
+  .cover-line {
+    width: 60px; height: 3px; background: var(--sola-orange);
+    margin: 28px 0; border-radius: 2px;
+  }
+
+  .cover-meta {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 28px; padding-top: 32px;
+    border-top: 1px solid var(--sola-border);
+  }
+
+  .cover-meta-item { display: flex; flex-direction: column; gap: 3px; }
+
+  .cover-meta-label {
+    font-size: 7pt; text-transform: uppercase; letter-spacing: 1.5px;
+    color: var(--sola-muted); font-weight: 600;
+  }
+
+  .cover-meta-value { font-size: 10.5pt; font-weight: 600; color: var(--sola-dark); }
+
+  h2 {
+    font-size: 17pt; font-weight: 800; color: var(--sola-dark);
+    margin-top: 38px; margin-bottom: 14px; letter-spacing: -0.5px;
+    page-break-after: avoid;
+  }
+
+  h3 {
+    font-size: 11.5pt; font-weight: 700; color: var(--sola-dark);
+    margin-top: 24px; margin-bottom: 8px; letter-spacing: -0.2px;
+    page-break-after: avoid;
+  }
+
+  p { margin-bottom: 12px; line-height: 1.75; }
+
+  .opener { font-size: 11pt; color: var(--sola-body); line-height: 1.8; margin-bottom: 16px; }
+
+  .callout {
+    background: var(--sola-orange-light); border-radius: 8px;
+    padding: 18px 22px; margin: 18px 0;
+    font-size: 10.5pt; line-height: 1.7;
+  }
+
+  .callout strong { color: var(--sola-orange); }
+
+  .dark-box {
+    background: var(--sola-dark); color: white;
+    border-radius: 10px; padding: 26px 30px;
+    margin: 24px 0; page-break-inside: avoid;
+  }
+
+  .dark-box h3 { color: white; margin-top: 0; font-size: 13pt; margin-bottom: 10px; }
+  .dark-box p { color: rgba(255,255,255,0.82); font-size: 10.5pt; line-height: 1.75; }
+  .dark-box .hl { color: var(--sola-orange); font-weight: 700; }
+
+  table {
+    width: 100%; border-collapse: collapse;
+    margin: 14px 0 20px 0; font-size: 9.5pt;
+    page-break-inside: avoid;
+  }
+
+  thead th {
+    background: var(--sola-dark); color: white; font-weight: 600;
+    text-align: left; padding: 10px 14px;
+    font-size: 8pt; text-transform: uppercase; letter-spacing: 0.8px;
+  }
+
+  thead th:first-child { border-radius: 6px 0 0 0; }
+  thead th:last-child { border-radius: 0 6px 0 0; }
+
+  tbody td {
+    padding: 10px 14px; border-bottom: 1px solid var(--sola-border);
+    vertical-align: top; line-height: 1.6;
+  }
+
+  tbody tr:nth-child(even) { background: var(--sola-bg); }
+  tbody tr:last-child td:first-child { border-radius: 0 0 0 6px; }
+  tbody tr:last-child td:last-child { border-radius: 0 0 6px 0; }
+
+  .col-label { font-weight: 600; color: var(--sola-dark); white-space: nowrap; }
+
+  .divider { border: none; height: 1px; background: var(--sola-border); margin: 32px 0; }
+
+  .cadence-block {
+    background: var(--sola-bg); border: 1px solid var(--sola-border);
+    border-radius: 10px; padding: 22px 24px; margin: 16px 0;
+    page-break-inside: avoid;
+  }
+
+  .cadence-block h4 {
+    font-size: 9pt; text-transform: uppercase; letter-spacing: 1.2px;
+    color: var(--sola-orange); font-weight: 700; margin-bottom: 10px;
+  }
+
+  .cadence-block p { font-size: 10pt; margin-bottom: 8px; line-height: 1.7; }
+  .cadence-block p:last-child { margin-bottom: 0; }
+
+  .time-label {
+    display: inline-block; font-weight: 700;
+    color: var(--sola-dark); min-width: 80px;
+  }
+
+  strong { font-weight: 700; color: var(--sola-dark); }
+
+  ul { margin: 8px 0 14px 0; padding-left: 18px; }
+  li { margin-bottom: 6px; line-height: 1.65; }
+
+  .check { color: var(--sola-orange); font-weight: 700; }
+  .joint { color: var(--sola-muted); font-style: italic; font-size: 8.5pt; }
+
+  /* Org diagram */
+  .org-diagram {
+    margin: 24px 0;
+    page-break-inside: avoid;
+  }
+
+  .org-center {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
+  .org-sola-badge {
+    display: inline-block;
+    background: var(--sola-dark);
+    color: white;
+    font-weight: 800;
+    font-size: 11pt;
+    padding: 10px 32px;
+    border-radius: 24px;
+    letter-spacing: 1px;
+  }
+
+  .org-connector-down {
+    width: 2px;
+    height: 20px;
+    background: var(--sola-border);
+    margin: 0 auto;
+  }
+
+  .org-connector-horizontal {
+    height: 2px;
+    background: var(--sola-border);
+    margin: 0 42px;
+    position: relative;
+  }
+
+  .org-branches {
+    display: flex;
+    gap: 0;
+    margin-top: 0;
+  }
+
+  .org-branch {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .org-branch-line {
+    width: 2px;
+    height: 16px;
+    background: var(--sola-border);
+  }
+
+  .org-node {
+    background: var(--sola-bg);
+    border: 1.5px solid var(--sola-border);
+    border-radius: 10px;
+    padding: 14px 10px 12px;
+    text-align: center;
+    width: calc(100% - 6px);
+  }
+
+  .org-node.highlighted {
+    background: var(--sola-orange-light);
+    border-color: var(--sola-orange);
+  }
+
+  .org-node .org-name {
+    font-weight: 700;
+    color: var(--sola-dark);
+    font-size: 10.5pt;
+    margin-bottom: 2px;
+  }
+
+  .org-node .org-title {
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--sola-orange);
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+
+  .org-node .org-owns {
+    font-size: 8.5pt;
+    color: var(--sola-muted);
+    line-height: 1.5;
+  }
+
+  /* Overlap zone */
+  .overlap-diagram {
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+
+  .overlap-row {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    margin-bottom: 0;
+  }
+
+  .overlap-person {
+    flex: 1;
+    padding: 14px 16px;
+    text-align: center;
+    font-size: 9pt;
+    font-weight: 600;
+    color: var(--sola-dark);
+    border: 1.5px solid var(--sola-border);
+  }
+
+  .overlap-person.left {
+    border-radius: 8px 0 0 0;
+    background: var(--sola-bg);
+    border-right: none;
+  }
+
+  .overlap-person.center {
+    border-radius: 0;
+    background: var(--sola-orange-light);
+    border-left: 1.5px solid var(--sola-orange);
+    border-right: 1.5px solid var(--sola-orange);
+    border-top: 1.5px solid var(--sola-orange);
+    color: var(--sola-orange);
+    font-size: 7.5pt;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 700;
+  }
+
+  .overlap-person.right {
+    border-radius: 0 8px 0 0;
+    background: var(--sola-bg);
+    border-left: none;
+  }
+
+  .overlap-items {
+    display: flex;
+    gap: 0;
+  }
+
+  .overlap-col {
+    flex: 1;
+    padding: 12px 14px;
+    font-size: 8.5pt;
+    line-height: 1.6;
+    color: var(--sola-body);
+    border: 1.5px solid var(--sola-border);
+    border-top: none;
+  }
+
+  .overlap-col.left {
+    border-radius: 0 0 0 8px;
+    border-right: none;
+  }
+
+  .overlap-col.center {
+    border-radius: 0;
+    background: var(--sola-orange-light);
+    border-left: 1.5px solid var(--sola-orange);
+    border-right: 1.5px solid var(--sola-orange);
+    border-bottom: 1.5px solid var(--sola-orange);
+    color: var(--sola-orange);
+    font-weight: 600;
+    font-size: 8.5pt;
+  }
+
+  .overlap-col.right {
+    border-radius: 0 0 8px 0;
+    border-left: none;
+  }
+
+  .overlap-col ul {
+    margin: 0;
+    padding-left: 14px;
+  }
+
+  .overlap-col li {
+    margin-bottom: 3px;
+    font-size: 8.5pt;
+    line-height: 1.5;
+  }
+
+  @media print {
+    body { background: white; }
+    .page { padding: 40px 48px; }
+    .cover { padding: 48px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-top">
+    <span class="sola-logo">sola</span>
+    <span class="cover-badge">Internal</span>
+  </div>
+
+  <div class="cover-main">
+    <h1>CMO & Cofounder<br><span>Role Definition</span></h1>
+    <div class="cover-line"></div>
+    <p class="cover-subtitle">
+      What this role owns, where it sits alongside the other cofounders, what the expectations are, and what it takes to build this together.
+    </p>
+  </div>
+
+  <div class="cover-meta">
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">For</span>
+      <span class="cover-meta-value">Aigerim Tabazhanova</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">From</span>
+      <span class="cover-meta-value">Bokang Sibolla</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Company</span>
+      <span class="cover-meta-value">Sola</span>
+    </div>
+    <div class="cover-meta-item">
+      <span class="cover-meta-label">Date</span>
+      <span class="cover-meta-value">February 2026</span>
+    </div>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div class="page">
+
+  <h2>Why I'm writing this</h2>
+  <p class="opener">
+    As we build Sola together, I want us to be completely clear on what the CMO role looks like in this company. Not in theory, not at a big company, but here, at our stage, with our constraints and our ambition.
+  </p>
+  <p>
+    We have a founding team of four people. Each of us owns a real piece of this company. That only works if we all understand where our lanes are, where they overlap, and where we depend on each other. This document is how I think about your lane. It's a starting point for us to align, not a final contract. If something feels off or missing, let's talk about it.
+  </p>
+
+  <hr class="divider">
+
+  <h2>The founding team</h2>
+  <p>
+    Before getting into the CMO role specifically, I want to lay out how the four of us map to the business. This is how I see the structure:
+  </p>
+
+  <div class="org-diagram">
+    <div class="org-center">
+      <div class="org-sola-badge">sola</div>
+    </div>
+    <div class="org-connector-down"></div>
+    <div class="org-connector-horizontal"></div>
+    <div class="org-branches">
+      <div class="org-branch">
+        <div class="org-branch-line"></div>
+        <div class="org-node">
+          <div class="org-name">Bokang</div>
+          <div class="org-title">Technology & Engineering</div>
+          <div class="org-owns">The app, the infrastructure, the architecture. Building what users interact with. Dev tooling, deployment, performance, data.</div>
+        </div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-line"></div>
+        <div class="org-node">
+          <div class="org-name">Clemence</div>
+          <div class="org-title">Product</div>
+          <div class="org-owns">Product strategy, UX, feature prioritization, design direction. What we build, why we build it, how users experience it.</div>
+        </div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-line"></div>
+        <div class="org-node highlighted">
+          <div class="org-name">Aigerim</div>
+          <div class="org-title">Marketing & Growth</div>
+          <div class="org-owns">Brand, acquisition, retention, community, press, content, partnerships. How people find us, why they stay, why they tell others.</div>
+        </div>
+      </div>
+      <div class="org-branch">
+        <div class="org-branch-line"></div>
+        <div class="org-node">
+          <div class="org-name">Sergio</div>
+          <div class="org-title">Biz Dev / Finance / Ops</div>
+          <div class="org-owns">Business development, finance, HR, legal, operations. The structures that keep the company running. Revenue partnerships, compliance.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Where you and Clemence overlap</h3>
+  <p>
+    I want to address this directly because marketing and product always have overlap, and it can create friction if it's not acknowledged upfront. Here's a clear picture of what belongs where, and the shared zone in the middle:
+  </p>
+
+  <div class="overlap-diagram">
+    <div class="overlap-row">
+      <div class="overlap-person left">Clemence (Product)</div>
+      <div class="overlap-person center">Shared Zone</div>
+      <div class="overlap-person right">Aigerim (Marketing)</div>
+    </div>
+    <div class="overlap-items">
+      <div class="overlap-col left">
+        <ul>
+          <li>Product roadmap</li>
+          <li>Feature design and UX</li>
+          <li>User research</li>
+          <li>Onboarding flow design</li>
+          <li>Paywall and upgrade UX</li>
+          <li>Share sheet UX</li>
+        </ul>
+      </div>
+      <div class="overlap-col center">
+        <ul>
+          <li>Onboarding messaging</li>
+          <li>Referral strategy</li>
+          <li>Community direction</li>
+          <li>Push notification cadence</li>
+          <li>Retention features</li>
+          <li>User feedback loops</li>
+        </ul>
+      </div>
+      <div class="overlap-col right">
+        <ul>
+          <li>Brand and positioning</li>
+          <li>All content and copy</li>
+          <li>Social media channels</li>
+          <li>Email and CRM</li>
+          <li>Press and influencers</li>
+          <li>Growth experiments</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <p>
+    The rule of thumb is: <strong>Clemence decides what the experience looks like. You decide what it says and how it grows.</strong> In the shared zone, you both have input and neither moves without the other being aligned. When in doubt, talk to each other. The overlap is healthy if you're communicating. It becomes a problem if you're not.
+  </p>
+
+  <h3>Where you and Sergio overlap</h3>
+  <p>
+    There's also some overlap between your role and Sergio's, particularly around partnerships. The line is: if it's a marketing partnership (influencer deals, media collaborations, co-marketing with travel brands), that's yours. If it's a revenue-generating business development deal (distribution agreements, B2B contracts, investment-related), that's Sergio's. Some partnerships will touch both. When that happens, you lead the marketing angle and Sergio leads the commercial angle. Communicate early so you're not approaching the same company with different pitches.
+  </p>
+
+  <hr class="divider">
+
+  <h2>The mission</h2>
+  <p>
+    Own the entire demand side of Sola. That means generating awareness, bringing users in, making sure they have a great first experience, keeping them around, and turning them into people who tell their friends about us.
+  </p>
+  <p>
+    At the same time, build a brand that makes Sola the obvious answer when someone asks "what app should I use to plan my solo trip?" We're not just building a product. We're building a category. The CMO is the person making that happen in the market.
+  </p>
+  <p>
+    This is a cofounder role, not a marketing hire. You're not executing someone else's strategy. You're building the strategy, running it, measuring it, and iterating on it. You're accountable for growth the same way I'm accountable for the technology.
+  </p>
+
+  <hr class="divider">
+
+  <h2>What this role owns</h2>
+
+  <h3>Brand and positioning</h3>
+  <p>
+    You own the Sola story. Why we exist, who we're for, what makes us different from everything else out there. This isn't a tagline exercise. It's the foundation that shapes every piece of content, every partnership pitch, every press angle, every email.
+  </p>
+  <p>
+    You're also the final voice on tone. Our audience is smart, independent women. The brand should feel premium and intellectual, never cheesy, never patronizing. If something sounds like "girl boss" or "travel bestie" content, it gets vetoed. That's your call to make.
+  </p>
+  <p>
+    The positioning has to thread a real needle here. Empowering but not patronizing. Safety-aware but not fear-based. Community-driven but not cringe. This requires genuine taste, not just marketing skills.
+  </p>
+
+  <h3>Growth strategy</h3>
+  <p>
+    You own how we grow. Which channels we invest time in, what experiments we run, how we think about the funnel from someone hearing about Sola for the first time to becoming a daily user who invites her friends.
+  </p>
+  <p>
+    This means building a real growth model over time. Understanding what our acquisition channels are, what our retention looks like, where people drop off, and what levers we can pull. It also means running experiments constantly. Most will fail. That's fine. The job is learning fast, not being right every time.
+  </p>
+
+  <h3>The full funnel</h3>
+  <p>
+    I want to be explicit about where your ownership sits relative to the rest of the team, because this is where confusion usually happens.
+  </p>
+  <table>
+    <thead>
+      <tr><th>Stage</th><th>You own (Marketing)</th><th>Clemence owns (Product)</th><th>Bokang owns (Tech)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label">Awareness</td>
+        <td>All channels that put Sola in front of people. Social, press, content, partnerships, word of mouth</td>
+        <td></td>
+        <td></td>
+      </tr>
+      <tr>
+        <td class="col-label">Acquisition</td>
+        <td>App store listing, landing pages, referral programs, campaigns that drive downloads</td>
+        <td>Onboarding UX design</td>
+        <td>Deep linking, app performance</td>
+      </tr>
+      <tr>
+        <td class="col-label">Activation</td>
+        <td>Onboarding messaging, welcome emails, push copy, first-session nudges</td>
+        <td>Onboarding flow, feature prioritization</td>
+        <td>Notification infrastructure</td>
+      </tr>
+      <tr>
+        <td class="col-label">Retention</td>
+        <td>Email cadence, re-engagement campaigns, content calendar, push strategy</td>
+        <td>Feature stickiness, what keeps people coming back</td>
+        <td>Data pipelines, analytics</td>
+      </tr>
+      <tr>
+        <td class="col-label">Referral</td>
+        <td>Referral program design, share copy, viral loop strategy</td>
+        <td>Share UX, referral flow design</td>
+        <td>Deep links, referral tracking</td>
+      </tr>
+      <tr>
+        <td class="col-label">Revenue</td>
+        <td>Subscription positioning, upgrade messaging, pricing page copy</td>
+        <td>Paywall UX, upgrade flow</td>
+        <td>Payment infrastructure</td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    The pattern: you own the strategy, the messaging, and the numbers. Clemence owns the user experience. I own the technical implementation. The three of us need to be in sync, especially in the middle of the funnel where everything touches.
+  </p>
+
+  <h3>Channels</h3>
+  <p>
+    Right now we don't have budget for paid acquisition, so everything is organic, earned, and owned. That's actually fine for our stage because it forces us to build real distribution instead of buying it. Here's what matters:
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Channel</th><th>What this looks like</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label">Instagram</td>
+        <td>Not just posting content. Building a systematic growth engine with content pillars, a Reels strategy, collaboration with other creators, and real DM engagement. This is our most visible channel right now</td>
+      </tr>
+      <tr>
+        <td class="col-label">TikTok</td>
+        <td>Short-form video is where discovery happens for our audience. Solo travel moments, safety tips, destination reveals. Test formats aggressively and double down on what gets traction</td>
+      </tr>
+      <tr>
+        <td class="col-label">Email</td>
+        <td>Build the list from day one. Every touchpoint should capture an email. Then use it well. Onboarding sequences, a weekly newsletter people actually want to open, re-engagement flows for dormant users</td>
+      </tr>
+      <tr>
+        <td class="col-label">PR and press</td>
+        <td>Build relationships with journalists who cover travel, women's media, and tech. The founder story is compelling. "Why we built a solo travel app for women" is something editors want to write about. Pitch consistently, not just at launch</td>
+      </tr>
+      <tr>
+        <td class="col-label">Micro-influencers</td>
+        <td>Women travel creators with 10K to 100K followers. Gifted collaborations and affiliate structures, not big sponsorship deals. Find 50 of them, build real relationships</td>
+      </tr>
+      <tr>
+        <td class="col-label">Community</td>
+        <td>The in-app community is a growth lever, not just a feature. Seed it, keep it alive, spotlight great posts, and pipe community content back into social ("real questions from real solo travelers" is better than any branded content we could make)</td>
+      </tr>
+      <tr>
+        <td class="col-label">ASO</td>
+        <td>App Store Optimization is underrated and free. Keyword strategy, screenshot design, description copy, getting ratings. At launch this is one of our most important acquisition channels</td>
+      </tr>
+      <tr>
+        <td class="col-label">SEO</td>
+        <td>Longer term play. High-intent articles like "solo travel in Medellín as a woman" that rank for search terms our audience actually uses. Build now, harvest later</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <h2>Tools, systems, and how you work</h2>
+  <p>
+    This might be the most important section after the role definition itself. At our stage, with no budget and a small team, the only way to have real impact is to think in systems, not tasks.
+  </p>
+  <p>
+    Every week you should be asking yourself: what did I do this week that I'll still be doing manually next month? And then figure out how to automate it, template it, or build a workflow around it so it takes a fraction of the time. Some examples of what I mean:
+  </p>
+  <ul>
+    <li>Scheduling tools for social content so you batch-create and schedule for the week, not post manually every day</li>
+    <li>Email automation for onboarding, re-engagement, and win-back sequences that run on their own once you set them up</li>
+    <li>Templates and workflows for influencer outreach so each new pitch doesn't start from scratch</li>
+    <li>A content repurposing system where one idea becomes a Reel, a carousel, a newsletter section, and a community post</li>
+    <li>Dashboards that pull metrics automatically so we're not manually checking five platforms every morning</li>
+    <li>AI tools for content drafting, caption variations, subject line testing, research, anything that multiplies your output without multiplying your hours</li>
+    <li>A CRM or simple spreadsheet that tracks every press contact, influencer relationship, and partnership conversation so nothing falls through the cracks</li>
+  </ul>
+  <p>
+    The mindset should always be: "how do I build this so it runs without me, so I can move on to the next thing?" A CMO who is still manually doing what they were doing in month one by month six isn't scaling. The goal is to spend your time on strategy and new initiatives, not on operational tasks you should have automated weeks ago.
+  </p>
+  <p>
+    You should be actively researching and adopting the best tools for the job. What's the best scheduling tool? What's the best email platform for our stage? What AI tools are actually useful, not just hyped? This is part of the job. Nobody is going to hand you a toolkit. You build it.
+  </p>
+
+  <hr class="divider">
+
+  <h2>What matters and how we measure it</h2>
+  <p>
+    I'm not putting specific targets here because we should set those together once we align on timelines and what's realistic. But these are the categories that matter. If we're not tracking these and moving them in the right direction, something is off.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Why it matters</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label">User growth</td>
+        <td>New users per week and per month, broken down by channel. This is the headline number. Everything else supports this</td>
+      </tr>
+      <tr>
+        <td class="col-label">Retention</td>
+        <td>How many people come back after day 1, day 7, day 30. Growth without retention is a leaking bucket. This tells us if we're acquiring the right people and if the product is delivering</td>
+      </tr>
+      <tr>
+        <td class="col-label">Email list growth</td>
+        <td>Before and after launch. The email list is our owned channel. Social platforms can change algorithms overnight. The email list is ours</td>
+      </tr>
+      <tr>
+        <td class="col-label">Earned media</td>
+        <td>Press mentions, influencer posts, podcast features, guest articles. Are people talking about Sola without us paying them to?</td>
+      </tr>
+      <tr>
+        <td class="col-label">Owned media performance</td>
+        <td>Social engagement rate, follower growth, email open and click rates, content performance. Are our own channels getting stronger over time?</td>
+      </tr>
+      <tr>
+        <td class="col-label">Community health</td>
+        <td>Posts per week, active contributors, quality of discussion. Is the community self-sustaining or does it die without us seeding it?</td>
+      </tr>
+      <tr>
+        <td class="col-label">Referral rate</td>
+        <td>What percentage of users invite someone else? This is the most honest signal of product-market fit and brand love combined</td>
+      </tr>
+      <tr>
+        <td class="col-label">App store metrics</td>
+        <td>Search impressions, conversion rate, rating. Free distribution that compounds over time if we get it right</td>
+      </tr>
+      <tr>
+        <td class="col-label">Experiment velocity</td>
+        <td>How many experiments did we run this week? What did we learn? This isn't a vanity metric. It's a measure of how fast we're learning what works</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <h2>Core functions</h2>
+  <p>
+    We don't track time. We track outcomes. The question is never "how many hours did you work" but "what moved forward." These are the core functions of the CMO role, broken into daily habits, weekly deliverables, and monthly outcomes.
+  </p>
+
+  <div class="cadence-block">
+    <h4>Every day</h4>
+    <ul>
+      <li>Check metrics. Know your numbers. What happened since yesterday?</li>
+      <li>Engage the community. Reply to DMs, respond in the app community, interact with user-generated content. Stay close to the audience</li>
+      <li>Publish or schedule content. Something should go out or be queued every day across our social channels</li>
+      <li>Move at least one outreach conversation forward. A pitch sent, a follow-up, a relationship nudged. This compounds</li>
+    </ul>
+  </div>
+
+  <div class="cadence-block">
+    <h4>Every week</h4>
+    <ul>
+      <li>Content for the week is planned and either created or in progress</li>
+      <li>At least one new growth experiment launched</li>
+      <li>Previous experiments reviewed and learnings documented</li>
+      <li>At least one email sent to the list (newsletter, drip, or campaign)</li>
+      <li>Outreach pipeline updated. Who did we contact, who responded, what's next</li>
+      <li>One system or automation improved. Even a small one. The machine should get better every week</li>
+    </ul>
+  </div>
+
+  <div class="cadence-block">
+    <h4>Every month</h4>
+    <ul>
+      <li>Growth dashboard updated with full picture: which channels grew, which didn't, what's working</li>
+      <li>Content calendar for the coming month ready</li>
+      <li>At least one partnership or press conversation that moved forward meaningfully</li>
+      <li>Experiment retrospective: what we tested, what we learned, what we're changing</li>
+      <li>One honest assessment: am I spending my time on the highest-leverage work, or am I stuck in tasks I should have automated?</li>
+    </ul>
+  </div>
+
+  <hr class="divider">
+
+  <h2>The daily standup</h2>
+  <p>
+    We're going to do a 10-minute standup call every day as a team. The purpose is simple: stay aligned, surface blockers fast, and keep each other accountable. Not a status meeting. Not a brainstorm. Ten minutes, tight, done.
+  </p>
+  <p>
+    Each person answers three questions. That's it.
+  </p>
+
+  <div class="callout">
+    <strong>1. What did I move forward yesterday?</strong><br>
+    Not what you were busy with. What actually moved. A piece of content published, an email sent, a pitch that got a response, a system set up, an experiment launched. Tangible progress.<br><br>
+    <strong>2. What am I moving forward today?</strong><br>
+    The one or two things that matter most today. Not a to-do list. The highest-leverage work for the day. If you can only get one thing done, what is it?<br><br>
+    <strong>3. What's blocking me?</strong><br>
+    Anything that's slowing you down or that you need from someone else on the team. If nothing is blocking you, say so and move on. This is where we help each other.
+  </div>
+
+  <p>
+    This document defines what "moving forward" means for the CMO role. The core functions above are the reference point. When you say "I moved X forward yesterday," we all know what that means because we all have the same map.
+  </p>
+  <p>
+    I'm going to create one of these documents for each of us. So in our standup, we're all speaking the same language. Everyone knows what their lane is, what the outcomes are, and what "progress" looks like in each role. No ambiguity, no talking past each other.
+  </p>
+
+  <hr class="divider">
+
+  <h2>What this role is not</h2>
+  <p>
+    This is the section that matters most for alignment. I've seen too many early stage startups where the "CMO" title gets confused with other things. Let me be direct about what this role is not.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>It's not this</th><th>Here's why</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="col-label">Social media manager</td>
+        <td>A CMO who only posts on Instagram is a social media manager with a big title. Posting is maybe 15% of the work. The other 85% is strategy, experiments, partnerships, email, community, press, systems, and measurement</td>
+      </tr>
+      <tr>
+        <td class="col-label">Content creator</td>
+        <td>You'll create some content, especially early on. But the job is directing the content strategy, building systems for content production, and eventually using tools and freelancers to handle volume. If you're still editing every carousel yourself in month six, something went wrong</td>
+      </tr>
+      <tr>
+        <td class="col-label">One-trick growth hacker</td>
+        <td>Growth is a portfolio of channels and experiments. Not "we went viral on TikTok once." The job is building a repeatable engine, not chasing one-off moments</td>
+      </tr>
+      <tr>
+        <td class="col-label">Brand police with no numbers</td>
+        <td>Brand matters a lot. But a CMO who talks about brand all day and can't point to growth numbers isn't doing the job. Brand is a means to growth, not a substitute for it</td>
+      </tr>
+      <tr>
+        <td class="col-label">"Handles marketing"</td>
+        <td>This framing reduces the role to a support function. You're not handling marketing for the rest of us. You're driving a third of the business. Product, technology, and growth are equally critical pillars</td>
+      </tr>
+      <tr>
+        <td class="col-label">Product manager</td>
+        <td>You'll influence product decisions, especially around onboarding, referral flows, and engagement features. But the product roadmap is Clemence's domain</td>
+      </tr>
+      <tr>
+        <td class="col-label">Customer support</td>
+        <td>You should talk to users constantly. Read every review, respond to DMs, be in the community. But running support operations is not your job</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <hr class="divider">
+
+  <h2>Decision rights</h2>
+  <p>
+    This is about avoiding friction. Not everything needs to be a group decision, and not everything should be a solo call. Here's how I think about it.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Decision</th><th style="text-align:center">You decide</th><th style="text-align:center">Joint (all cofounders)</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Brand voice and tone</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>What we post on social</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>Which channels to prioritize</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>Influencer and press outreach</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>Marketing tools and systems</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>Content and email strategy</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"></td>
+      </tr>
+      <tr>
+        <td>Onboarding messaging and copy</td>
+        <td style="text-align:center"><span class="check">&#10003;</span></td>
+        <td style="text-align:center"><span class="joint">Sync with Clemence</span></td>
+      </tr>
+      <tr>
+        <td>Pricing and subscription model</td>
+        <td style="text-align:center"></td>
+        <td style="text-align:center"><span class="joint">Joint</span></td>
+      </tr>
+      <tr>
+        <td>Product features that affect growth</td>
+        <td style="text-align:center"></td>
+        <td style="text-align:center"><span class="joint">Joint</span></td>
+      </tr>
+      <tr>
+        <td>Public statements on sensitive topics</td>
+        <td style="text-align:center"></td>
+        <td style="text-align:center"><span class="joint">Joint</span></td>
+      </tr>
+      <tr>
+        <td>Major brand positioning shifts</td>
+        <td style="text-align:center"></td>
+        <td style="text-align:center"><span class="joint">Joint</span></td>
+      </tr>
+    </tbody>
+  </table>
+  <p>
+    For the things you own, you don't need approval. Just keep the rest of us informed. For joint decisions, we align as a team before moving. This only works if we all respect both columns.
+  </p>
+
+  <hr class="divider">
+
+  <h2>Quarterly check-in</h2>
+  <p>
+    Every quarter we step back and look at the bigger picture as a team. This is not a daily or weekly conversation. It's the moment where we ask the harder questions: Is the brand still sharp or are we drifting? Are we in the right channels or are we spreading thin? Does our strategy still match what we're learning from users? Do we need to shift? These are joint conversations between all four of us, and they should feel different from the daily standup. Bigger, more honest, more strategic.
+  </p>
+
+  <hr class="divider">
+
+  <h2>What it actually takes</h2>
+  <p>
+    I want to be honest about this part because I think it's the most important thing in this entire document.
+  </p>
+  <p>
+    None of us are getting paid right now. We're all building this on conviction. That's the reality of where we are. And I think that's fine, as long as we're all clear-eyed about what it means.
+  </p>
+  <p>
+    It means that the work we put in now is the foundation for everything that comes later. The systems you build now, the audience you grow now, the brand you establish now, the relationships with press and influencers you start building now. All of that is what creates the conditions for Sola to take off. There are no shortcuts here. There is no version of this where we do the work half-heartedly and still win.
+  </p>
+  <p>
+    I've always believed that the way we build Sola should eventually buy us back our time. But that only happens if we do the hard groundwork right now. Build the automation, build the systems, build the audience. So that in six months, the machine is running and we're steering it, not pushing it uphill every day.
+  </p>
+
+  <div class="callout">
+    <strong>The commitment expectation is straightforward.</strong> If you believe in what we're building, then this is the moment that matters most. Early stage is when everything is hardest and when the work has the most leverage. A single press placement right now is worth more than ten when we're already established. An email list of a thousand built with intention now will outperform a list of ten thousand bought later. The people who build companies are the people who show up consistently when there's no external validation yet. That's where we are.
+  </div>
+
+  <p>
+    This doesn't mean working unsustainably or burning out. It means being deliberate, being consistent, and treating this like the real thing, because it is. It means when you sit down to work on Sola, you're fully in it. Not half-thinking about it. Not doing the minimum. Actually pushing, actually building, actually creating momentum.
+  </p>
+  <p>
+    I hold myself to the same standard. I'm not asking anything of you that I'm not already doing on the product and technology side. And I expect the same energy from every cofounder at this table.
+  </p>
+
+  <hr class="divider">
+
+  <div class="dark-box">
+    <h3>The bottom line</h3>
+    <p>
+      The CMO of Sola is not managing a marketing function. You're building a growth engine from zero, alongside a product cofounder, a tech cofounder, and an ops cofounder. Each of us owns a real piece of this.
+    </p>
+    <p>
+      The job is half strategic and half operational. What story do we tell, to whom, where? And then: did we actually ship this week, are the numbers moving, did we close that partnership, did we build a system that makes next week easier?
+    </p>
+    <p>
+      The measure of success is simple: <span class="hl">are more of the right women finding Sola every week than the week before, and are they staying?</span>
+    </p>
+    <p>
+      Everything else is a means to that end. Let's build this.
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>

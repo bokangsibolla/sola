@@ -188,6 +188,7 @@ export async function fetchPersonalizedCities(
       soloLevel: (row.solo_level as string) || null,
       avgDailyBudgetUsd: (row.avg_daily_budget_usd as number) || null,
       bestFor: (row.best_for as string) || null,
+      tagLabel: null,
     }));
   } else {
     // Fallback: popular cities
@@ -204,17 +205,25 @@ export async function fetchPersonalizedCities(
       soloLevel: c.soloLevel ?? null,
       avgDailyBudgetUsd: c.avgDailyBudgetUsd ?? null,
       bestFor: c.bestFor ?? null,
+      tagLabel: null,
     }));
   }
 
   if (cities.length === 0) return [];
 
-  // Enrich with planning + community counts
+  // Enrich with planning + community counts + destination tags
   const cityIds = cities.map((c) => c.cityId);
 
-  const [planningRes, activityRes] = await Promise.allSettled([
+  const [planningRes, activityRes, tagsRes] = await Promise.allSettled([
     supabase.rpc('get_city_planning_count', { p_city_ids: cityIds }),
     supabase.rpc('get_city_community_activity', { p_city_ids: cityIds }),
+    supabase
+      .from('destination_tags')
+      .select('entity_id, tag_label')
+      .eq('entity_type', 'city')
+      .in('entity_id', cityIds)
+      .in('tag_category', ['vibe', 'energy_level', 'safety', 'social_comfort', 'environment'])
+      .order('order_index'),
   ]);
 
   const planningMap = new Map<string, number>();
@@ -231,11 +240,30 @@ export async function fetchPersonalizedCities(
     }
   }
 
-  return cities.map((c) => ({
-    ...c,
-    planningCount: planningMap.get(c.cityId) ?? 0,
-    activityCount: activityMap.get(c.cityId) ?? 0,
-  }));
+  // Group tags by city, then assign one UNIQUE tag per city (no repeats)
+  const tagsByCityMap = new Map<string, string[]>();
+  if (tagsRes.status === 'fulfilled' && tagsRes.value.data) {
+    for (const row of tagsRes.value.data) {
+      const existing = tagsByCityMap.get(row.entity_id) ?? [];
+      existing.push(row.tag_label);
+      tagsByCityMap.set(row.entity_id, existing);
+    }
+  }
+
+  const usedLabels = new Set<string>();
+
+  return cities.map((c) => {
+    const tags = tagsByCityMap.get(c.cityId) ?? [];
+    const uniqueTag = tags.find((t) => !usedLabels.has(t)) ?? null;
+    if (uniqueTag) usedLabels.add(uniqueTag);
+
+    return {
+      ...c,
+      planningCount: planningMap.get(c.cityId) ?? 0,
+      activityCount: activityMap.get(c.cityId) ?? 0,
+      tagLabel: uniqueTag,
+    };
+  });
 }
 
 // ── Travel Updates ──────────────────────────────────────────────────────
@@ -321,6 +349,7 @@ export async function fetchCommunityHighlightsVisual(
     topicLabel: t.topicLabel,
     cityName: t.cityName,
     cityImageUrl: t.cityImageUrl ?? null,
+    createdAt: t.createdAt,
     author: {
       firstName: t.author.firstName,
       avatarUrl: t.author.avatarUrl,

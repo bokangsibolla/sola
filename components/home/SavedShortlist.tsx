@@ -3,61 +3,43 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import {
-  colors,
-  elevation,
-  fonts,
-  radius,
-  spacing,
-  pressedState,
-} from '@/constants/design';
+import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 import type { SavedPlacePreview } from '@/data/home/types';
 
 interface SavedShortlistProps {
   places: SavedPlacePreview[];
+  totalCount?: number;
 }
 
-export function SavedShortlist({ places }: SavedShortlistProps) {
+const THUMB_SIZE = 32;
+const OVERLAP = 8;
+
+export function SavedShortlist({ places, totalCount }: SavedShortlistProps) {
   const router = useRouter();
 
   if (places.length === 0) return null;
 
-  const totalCount = places.length;
-  const visiblePlaces = places.slice(0, 3);
-  const overflowCount = totalCount - 3;
-
-  // Count unique cities
-  const citySet = new Set<string>();
-  places.forEach((p) => {
-    if (p.cityName) citySet.add(p.cityName);
-  });
-  const cityCount = citySet.size;
-
-  const summaryParts: string[] = [];
-  summaryParts.push(`${totalCount} ${totalCount === 1 ? 'place' : 'places'}`);
-  if (cityCount > 0) {
-    summaryParts.push(`${cityCount} ${cityCount === 1 ? 'city' : 'cities'}`);
-  }
-  const summaryText = summaryParts.join(' \u00B7 ');
+  const visiblePlaces = places.slice(0, 4);
 
   return (
     <Pressable
       style={({ pressed }) => [
-        styles.module,
+        styles.strip,
         pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
       ]}
       onPress={() => router.push('/home/saved')}
       accessibilityRole="button"
       accessibilityLabel="View saved places"
     >
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>Your Shortlist</Text>
-        <Feather name="chevron-right" size={18} color={colors.textSecondary} />
-      </View>
-
-      <View style={styles.thumbRow}>
-        {visiblePlaces.map((place) => (
-          <View key={place.placeId} style={styles.thumbWrap}>
+      <View style={styles.thumbStack}>
+        {visiblePlaces.map((place, index) => (
+          <View
+            key={place.placeId}
+            style={[
+              styles.thumbWrap,
+              { marginLeft: index === 0 ? 0 : -OVERLAP, zIndex: visiblePlaces.length - index },
+            ]}
+          >
             {place.imageUrl ? (
               <Image
                 source={{ uri: place.imageUrl }}
@@ -70,49 +52,35 @@ export function SavedShortlist({ places }: SavedShortlistProps) {
             )}
           </View>
         ))}
-        {overflowCount > 0 && (
-          <View style={[styles.thumbWrap, styles.overflowThumb]}>
-            <Text style={styles.overflowText}>+{overflowCount}</Text>
-          </View>
-        )}
       </View>
-
-      <Text style={styles.summary}>{summaryText}</Text>
+      <Text style={styles.label}>
+        {totalCount != null
+          ? `${totalCount} saved ${totalCount === 1 ? 'place' : 'places'}`
+          : 'Saved places waiting'}
+      </Text>
+      <Feather name="chevron-right" size={16} color={colors.textMuted} />
     </Pressable>
   );
 }
 
-const THUMB_SIZE = 56;
-
 const styles = StyleSheet.create({
-  module: {
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.xl,
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.module,
-    padding: spacing.moduleInset,
-    ...elevation.md,
-  },
-  titleRow: {
+  strip: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: spacing.screenX,
+    marginBottom: spacing.xxl,
+    gap: spacing.md,
   },
-  title: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.textPrimary,
-  },
-  thumbRow: {
+  thumbStack: {
     flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
+    alignItems: 'center',
   },
   thumbWrap: {
     width: THUMB_SIZE,
     height: THUMB_SIZE,
-    borderRadius: radius.cardLg,
+    borderRadius: THUMB_SIZE / 2,
+    borderWidth: 2,
+    borderColor: colors.background,
     overflow: 'hidden',
   },
   thumbImage: {
@@ -123,21 +91,11 @@ const styles = StyleSheet.create({
   thumbPlaceholder: {
     backgroundColor: colors.borderDefault,
   },
-  overflowThumb: {
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overflowText: {
-    fontFamily: fonts.semiBold,
+  label: {
+    flex: 1,
+    fontFamily: fonts.medium,
     fontSize: 14,
-    color: colors.textSecondary,
-  },
-  summary: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
+    lineHeight: 20,
+    color: colors.textPrimary,
   },
 });

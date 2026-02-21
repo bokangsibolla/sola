@@ -23,6 +23,7 @@ export interface PersonalizedCity {
   soloLevel: string | null;
   avgDailyBudgetUsd: number | null;
   bestFor: string | null;
+  tagLabel: string | null;
 }
 
 // ── Trip block state ────────────────────────────────────────────────────
@@ -56,6 +57,7 @@ export interface CommunityHighlightThread {
 
 export interface CommunityHighlightThreadVisual extends CommunityHighlightThread {
   cityImageUrl: string | null;
+  createdAt: string;
 }
 
 // ── Featured city (hero fallback) ───────────────────────────────────────

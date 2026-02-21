@@ -17,11 +17,12 @@ import {
 
 interface CountryShowcaseCardProps {
   country: Country;
+  reasonSignal?: string;
 }
 
 const ASPECT_RATIO = 4 / 5;
 
-export function CountryShowcaseCard({ country }: CountryShowcaseCardProps) {
+export function CountryShowcaseCard({ country, reasonSignal }: CountryShowcaseCardProps) {
   const router = useRouter();
   const continentLabel = country.continent
     ? CONTINENT_LABELS[country.continent as ContinentKey]
@@ -46,9 +47,11 @@ export function CountryShowcaseCard({ country }: CountryShowcaseCardProps) {
         style={StyleSheet.absoluteFillObject}
       />
       <View style={styles.content}>
-        {country.badgeLabel && (
+        {(country.badgeLabel || reasonSignal) && (
           <View style={styles.pillContainer}>
-            <Text style={styles.pillText}>{country.badgeLabel}</Text>
+            <Text style={styles.pillText}>
+              {country.badgeLabel ?? reasonSignal}
+            </Text>
           </View>
         )}
         <Text style={styles.title} numberOfLines={1}>

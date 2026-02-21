@@ -14,19 +14,19 @@ interface TripEmptyStateProps {
 
 const FEATURES = [
   {
-    icon: 'book-outline' as const,
-    title: 'Private journal',
-    body: 'Log moments, moods, and tips only you can see',
+    icon: 'calendar-outline' as const,
+    title: 'Day-by-day itinerary',
+    body: 'Build a visual timeline with timed stops, places, and notes',
   },
   {
-    icon: 'map-outline' as const,
-    title: 'Light planning',
-    body: 'Save places, notes, and emergency numbers',
+    icon: 'sparkles-outline' as const,
+    title: 'Smart suggestions',
+    body: 'Get alerts for gaps, overlaps, and missing meals',
   },
   {
-    icon: 'people-outline' as const,
-    title: 'Meet travelers',
-    body: 'Find women on your route — safely, on your terms',
+    icon: 'shield-checkmark-outline' as const,
+    title: 'Solo safety built in',
+    body: 'Emergency numbers, local tips, and safe transport options',
   },
 ];
 
@@ -45,12 +45,14 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
           transition={300}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.55)']}
+          colors={['transparent', 'rgba(0,0,0,0.6)']}
           style={styles.gradient}
         />
         <View style={styles.heroContent}>
-          <Text style={styles.heroHeading}>Your next journey{'\n'}starts here</Text>
-          <Text style={styles.heroSub}>Plan trips, journal along the way, and connect with solo travelers worldwide.</Text>
+          <Text style={styles.heroHeading}>Plan your next{'\n'}solo adventure</Text>
+          <Text style={styles.heroSub}>
+            Build a day-by-day itinerary, track your stops, and travel with confidence.
+          </Text>
         </View>
       </View>
 
@@ -76,11 +78,11 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
           onPress={onPress}
         >
           <Ionicons name="add" size={20} color="#FFFFFF" />
-          <Text style={styles.ctaText}>Plan your first trip</Text>
+          <Text style={styles.ctaText}>Start planning a trip</Text>
         </Pressable>
       </View>
 
-      {/* Destination pills — entry points to discovery */}
+      {/* Destination pills */}
       {(popularCities ?? []).length > 0 && (
         <>
           <Text style={styles.orText}>Or explore destinations</Text>

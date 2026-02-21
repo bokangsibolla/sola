@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import {
@@ -8,6 +9,8 @@ import {
   fetchUserFirstName,
   fetchSavedPlacesPreview,
 } from './homeApi';
+import { fetchHomeSections, fetchSearchChips } from './sectionApi';
+import { buildHomeSections } from './buildHomeSections';
 import type {
   HeroState,
   PersonalizedCity,
@@ -15,6 +18,7 @@ import type {
   CommunityHighlightThreadVisual,
   SavedPlacePreview,
 } from './types';
+import type { HomeSectionRow, SearchChip, HomeSection } from './sectionTypes';
 
 interface HomeData {
   firstName: string | null;
@@ -23,6 +27,7 @@ interface HomeData {
   travelUpdate: TravelUpdate | null;
   communityHighlights: CommunityHighlightThreadVisual[];
   savedPlaces: SavedPlacePreview[];
+  homeSections: HomeSection[];
   loading: boolean;
   refetch: () => void;
 }
@@ -104,7 +109,25 @@ export function useHomeData(): HomeData {
     ['home-saved-preview', userId ?? ''],
   );
 
-  const loading = heroLoading || citiesLoading || updateLoading || communityLoading;
+  // Section builder data
+  const {
+    data: sectionRows,
+    loading: sectionsLoading,
+    refetch: refetchSections,
+  } = useData<HomeSectionRow[]>(
+    () => fetchHomeSections(),
+    ['home-sections'],
+  );
+
+  const {
+    data: searchChips,
+    refetch: refetchChips,
+  } = useData<SearchChip[]>(
+    () => fetchSearchChips('home'),
+    ['home-chips'],
+  );
+
+  const loading = heroLoading || citiesLoading || updateLoading || communityLoading || sectionsLoading;
 
   const refetch = () => {
     refetchHero();
@@ -112,7 +135,24 @@ export function useHomeData(): HomeData {
     refetchUpdate();
     refetchCommunity();
     refetchSaved();
+    refetchSections();
+    refetchChips();
   };
+
+  // Build ordered sections from DB rows + data
+  const homeSections = useMemo(
+    () =>
+      buildHomeSections({
+        rows: sectionRows ?? [],
+        chips: searchChips ?? [],
+        heroState: heroState ?? DEFAULT_HERO,
+        travelUpdate: travelUpdate ?? null,
+        savedPlaces: savedPlaces ?? [],
+        personalizedCities: personalizedCities ?? [],
+        communityHighlights: communityHighlights ?? [],
+      }),
+    [sectionRows, searchChips, heroState, travelUpdate, savedPlaces, personalizedCities, communityHighlights],
+  );
 
   return {
     firstName: firstName ?? null,
@@ -121,6 +161,7 @@ export function useHomeData(): HomeData {
     travelUpdate: travelUpdate ?? null,
     communityHighlights: communityHighlights ?? [],
     savedPlaces: savedPlaces ?? [],
+    homeSections,
     loading,
     refetch,
   };
