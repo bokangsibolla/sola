@@ -1,5 +1,6 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import type { Tag } from '@/data/types';
@@ -36,12 +37,21 @@ function placeRoute(place: PlaceWithImage): string {
   return `/discover/place-detail/${place.id}`;
 }
 
+const TYPE_LABELS: Record<string, string> = {
+  hotel: 'Hotel',
+  hostel: 'Hostel',
+  homestay: 'Homestay',
+};
+
 export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
   const router = useRouter();
 
-  const priceLabel = place.priceLevel && place.priceLevel > 0
-    ? '$'.repeat(place.priceLevel)
-    : null;
+  const isAccommodation = ACCOMMODATION_TYPES.includes(place.placeType);
+  const typeLabel = TYPE_LABELS[place.placeType] ?? null;
+  const isVerified =
+    place.verificationStatus === 'sola_checked' ||
+    place.verificationStatus === 'baseline_passed';
+  const isSolaVisited = place.verificationStatus === 'sola_checked';
 
   return (
     <Pressable
@@ -49,26 +59,60 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       {/* Image */}
-      {place.imageUrl ? (
-        <Image
-          source={{ uri: place.imageUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={[styles.image, styles.imagePlaceholder]} />
-      )}
+      <View style={styles.imageWrap}>
+        {place.imageUrl ? (
+          <Image
+            source={{ uri: place.imageUrl }}
+            style={styles.image}
+            contentFit="cover"
+            transition={200}
+          />
+        ) : (
+          <View style={[styles.image, styles.imagePlaceholder]}>
+            <Ionicons name="image-outline" size={24} color={colors.textMuted} />
+          </View>
+        )}
+
+        {/* Badges overlay */}
+        <View style={styles.badgeOverlay}>
+          {place.womenOnly && (
+            <View style={[styles.overlayBadge, { backgroundColor: colors.greenFill }]}>
+              <Ionicons name="shield-checkmark" size={10} color={colors.greenSoft} />
+              <Text style={[styles.overlayBadgeText, { color: colors.greenSoft }]}>
+                Women Only
+              </Text>
+            </View>
+          )}
+          {isSolaVisited && (
+            <View style={[styles.overlayBadge, { backgroundColor: colors.orangeFill }]}>
+              <Ionicons name="checkmark-circle" size={10} color={colors.orange} />
+              <Text style={[styles.overlayBadgeText, { color: colors.orange }]}>
+                Visited
+              </Text>
+            </View>
+          )}
+          {!isSolaVisited && isVerified && (
+            <View style={[styles.overlayBadge, { backgroundColor: colors.blueFill }]}>
+              <Ionicons name="checkmark-circle-outline" size={10} color={colors.blueSoft} />
+              <Text style={[styles.overlayBadgeText, { color: colors.blueSoft }]}>
+                Checked
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Type pill */}
+        {isAccommodation && typeLabel && (
+          <View style={styles.typePill}>
+            <Text style={styles.typePillText}>{typeLabel}</Text>
+          </View>
+        )}
+      </View>
 
       {/* Body */}
       <View style={styles.body}>
-        {/* Top row: name + price */}
-        <View style={styles.topRow}>
-          <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
-          {priceLabel && <Text style={styles.price}>{priceLabel}</Text>}
-        </View>
+        <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
 
-        {/* Area name */}
         {place.areaName && (
           <Text style={styles.areaName} numberOfLines={1}>{place.areaName}</Text>
         )}
@@ -91,48 +135,84 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
   );
 }
 
+const IMAGE_HEIGHT = 140;
+
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    borderRadius: radius.card,
+    borderRadius: radius.cardLg,
     overflow: 'hidden',
     backgroundColor: colors.background,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
   },
   cardPressed: {
     opacity: pressedState.opacity,
     transform: pressedState.transform as any,
   },
+
+  // Image
+  imageWrap: {
+    height: IMAGE_HEIGHT,
+    position: 'relative',
+  },
   image: {
-    width: 88,
-    minHeight: 88,
+    width: '100%',
+    height: IMAGE_HEIGHT,
   },
   imagePlaceholder: {
     backgroundColor: colors.neutralFill,
-  },
-  body: {
-    flex: 1,
-    padding: spacing.md,
+    alignItems: 'center',
     justifyContent: 'center',
   },
-  topRow: {
+
+  // Overlay badges (top-left)
+  badgeOverlay: {
+    position: 'absolute',
+    top: spacing.sm,
+    left: spacing.sm,
+    flexDirection: 'row',
+    gap: spacing.xs,
+  },
+  overlayBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: 3,
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+  },
+  overlayBadgeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 10,
+  },
+
+  // Type pill (bottom-right)
+  typePill: {
+    position: 'absolute',
+    bottom: spacing.sm,
+    right: spacing.sm,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  typePillText: {
+    fontFamily: fonts.medium,
+    fontSize: 10,
+    color: '#FFFFFF',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+
+  // Body
+  body: {
+    padding: spacing.md,
   },
   name: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.textPrimary,
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  price: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
   },
   areaName: {
     fontFamily: fonts.regular,

@@ -40,18 +40,24 @@ const STAY_FILTERS: StayFilter[] = [
     test: (p) => p.womenOnly === true,
   },
   {
-    key: 'verified',
-    label: 'Sola Verified',
+    key: 'sola_visited',
+    label: 'Sola Visited',
     icon: 'checkmark-circle',
     color: colors.orange,
     bg: colors.orangeFill,
-    test: (p) =>
-      p.verificationStatus === 'sola_checked' ||
-      p.verificationStatus === 'baseline_passed',
+    test: (p) => p.verificationStatus === 'sola_checked',
+  },
+  {
+    key: 'cross_checked',
+    label: 'Cross-checked',
+    icon: 'checkmark-circle-outline',
+    color: colors.blueSoft,
+    bg: colors.blueFill,
+    test: (p) => p.verificationStatus === 'baseline_passed',
   },
   {
     key: 'solo_reviewed',
-    label: 'Reviewed by Solo Women',
+    label: 'Solo Reviews',
     icon: 'chatbubble-ellipses',
     color: colors.blueSoft,
     bg: colors.blueFill,
@@ -59,7 +65,7 @@ const STAY_FILTERS: StayFilter[] = [
   },
   {
     key: 'budget',
-    label: 'Budget Friendly',
+    label: 'Budget',
     icon: 'wallet-outline',
     color: colors.textSecondary,
     bg: colors.neutralFill,
@@ -408,50 +414,40 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
         </View>
       )}
 
-      {/* ── Stay filter chips — only when accommodation is active ── */}
+      {/* ── Stay filters — compact inline pills ── */}
       {isStayCategory && (
-        <View style={styles.stayFilterSection}>
-          <Text style={styles.stayFilterLabel}>Filter stays</Text>
-          <View style={styles.stayFilterWrap}>
-            {STAY_FILTERS.map((f) => {
-              const count = stayFilterCounts[f.key] ?? 0;
-              const isActive = activeStayFilters.has(f.key);
-              const isEmpty = count === 0;
-              return (
-                <Pressable
-                  key={f.key}
-                  onPress={() => toggleStayFilter(f.key)}
+        <View style={styles.stayFilterRow}>
+          {STAY_FILTERS.map((f) => {
+            const count = stayFilterCounts[f.key] ?? 0;
+            const isActive = activeStayFilters.has(f.key);
+            const isEmpty = count === 0;
+            return (
+              <Pressable
+                key={f.key}
+                onPress={() => toggleStayFilter(f.key)}
+                style={[
+                  styles.stayChip,
+                  isActive && { backgroundColor: f.bg, borderColor: f.color },
+                  isEmpty && !isActive && styles.stayChipEmpty,
+                ]}
+              >
+                <Ionicons
+                  name={f.icon as any}
+                  size={12}
+                  color={isActive ? f.color : isEmpty ? colors.textMuted : colors.textSecondary}
+                />
+                <Text
                   style={[
-                    styles.stayChip,
-                    isActive && { backgroundColor: f.bg, borderColor: f.color },
-                    isEmpty && !isActive && styles.stayChipEmpty,
+                    styles.stayChipText,
+                    isActive && { color: f.color, fontFamily: fonts.semiBold },
+                    isEmpty && !isActive && { color: colors.textMuted },
                   ]}
                 >
-                  <Ionicons
-                    name={f.icon as any}
-                    size={15}
-                    color={isActive ? f.color : isEmpty ? colors.textMuted : colors.textSecondary}
-                  />
-                  <Text
-                    style={[
-                      styles.stayChipText,
-                      isActive && { color: f.color, fontFamily: fonts.semiBold },
-                      isEmpty && !isActive && { color: colors.textMuted },
-                    ]}
-                  >
-                    {f.label}
-                  </Text>
-                  {count > 0 && (
-                    <View style={[styles.stayChipBadge, isActive && { backgroundColor: f.color }]}>
-                      <Text style={[styles.stayChipBadgeText, isActive && { color: '#FFFFFF' }]}>
-                        {count}
-                      </Text>
-                    </View>
-                  )}
-                </Pressable>
-              );
-            })}
-          </View>
+                  {f.label}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -611,56 +607,32 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // ── Stay filter chips ──
-  stayFilterSection: {
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.lg,
-  },
-  stayFilterLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: spacing.sm,
-  },
-  stayFilterWrap: {
+  // ── Stay filter pills ──
+  stayFilterRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: spacing.sm,
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.sm,
+    gap: 6,
   },
   stayChip: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: 10,
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     backgroundColor: colors.background,
   },
   stayChipEmpty: {
-    opacity: 0.5,
+    opacity: 0.4,
   },
   stayChipText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
-  },
-  stayChipBadge: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: 10,
-    minWidth: 20,
-    height: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 6,
-  },
-  stayChipBadgeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    color: colors.textMuted,
   },
 
   // ── Result count ──
