@@ -1,7 +1,6 @@
 // app/(tabs)/discover/index.tsx
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  Dimensions,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -9,8 +8,6 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
@@ -18,21 +15,18 @@ import NavigationHeader from '@/components/NavigationHeader';
 import AvatarButton from '@/components/AvatarButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import SectionHeader from '@/components/explore/SectionHeader';
-import { useDiscoverData } from '@/data/discover/useDiscoverData';
-import type { RecommendedCity } from '@/data/discover/types';
-import type { ExploreCollectionWithItems } from '@/data/types';
+import { EditorialHero } from '@/components/explore/EditorialHero';
+import { ContinentFilter } from '@/components/explore/ContinentFilter';
+import { CountryShowcaseCard } from '@/components/explore/CountryShowcaseCard';
+import { useExploreData } from '@/data/discover/useExploreData';
+import type { ContinentKey } from '@/data/discover/types';
+import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
-const CITY_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2.3;
-const CITY_CARD_HEIGHT = CITY_CARD_WIDTH * 1.3;
-// No longer need explicit card width — grid cards use flex: 1 in row containers
+// ── Inline: search trigger ─────────────────────────────────
 
-// ── Inline components ──────────────────────────────────────
-
-function CompactSearchBar({ onPress }: { onPress: () => void }) {
+function SearchTrigger({ onPress }: { onPress: () => void }) {
   return (
     <Pressable
       style={({ pressed }) => [styles.searchBar, pressed && { opacity: pressedState.opacity }]}
@@ -40,174 +34,41 @@ function CompactSearchBar({ onPress }: { onPress: () => void }) {
       accessibilityRole="button"
       accessibilityLabel="Search destinations"
     >
-      <Feather name="search" size={16} color={colors.textMuted} />
+      <Feather name="search" size={18} color={colors.textMuted} />
       <Text style={styles.searchText}>Find a destination</Text>
     </Pressable>
   );
 }
 
-// Rotate cover image daily — all bundled locally, zero network cost
-const BROWSE_IMAGES = [
-  require('@/assets/images/solo-canyon-mist.jpg'),
-  require('@/assets/images/solo-cliff-fjord.jpg'),
-  require('@/assets/images/solo-sand-dunes.jpg'),
-];
-
-function BrowseDestinationsCard({ onPress }: { onPress: () => void }) {
-  const imageIndex = new Date().getDate() % BROWSE_IMAGES.length;
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.browseCard, pressed && styles.pressed]}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel="Browse destinations"
-    >
-      <Image
-        source={BROWSE_IMAGES[imageIndex]}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.55)']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.browseOverlay}>
-        <View>
-          <Text style={styles.browseTitle}>Browse destinations</Text>
-          <Text style={styles.browseSubtitle}>Explore by continent</Text>
-        </View>
-        <View style={styles.browseArrow}>
-          <Feather name="arrow-right" size={16} color="#FFFFFF" />
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-function RecommendedCityCard({
-  city,
-  onPress,
-}: {
-  city: RecommendedCity;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.cityCard, pressed && styles.pressed]}
-    >
-      <Image
-        source={{ uri: city.heroImageUrl }}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.55)']}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.cityCardContent}>
-        <Text style={styles.cityCardName} numberOfLines={1}>
-          {city.cityName}
-        </Text>
-        <Text style={styles.cityCardCountry} numberOfLines={1}>
-          {city.countryName}
-        </Text>
-        {city.planningCount > 0 && (
-          <Text style={styles.cityCardSignal}>
-            {city.planningCount} women planning
-          </Text>
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
-function CollectionHeroCard({
-  collection,
-  onPress,
-}: {
-  collection: ExploreCollectionWithItems;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.collectionHero, pressed && styles.pressed]}
-    >
-      <Image
-        source={{ uri: collection.heroImageUrl ?? undefined }}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
-        locations={[0, 0.3, 1]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.collectionCardContent}>
-        <Text style={styles.collectionHeroTitle} numberOfLines={2}>
-          {collection.title}
-        </Text>
-        <Text style={styles.collectionCardCount}>
-          {collection.items.length}{' '}
-          {collection.items.length === 1 ? 'destination' : 'destinations'}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
-
-function CollectionGridCard({
-  collection,
-  onPress,
-}: {
-  collection: ExploreCollectionWithItems;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.collectionGridItem, pressed && styles.pressed]}
-    >
-      <Image
-        source={{ uri: collection.heroImageUrl ?? undefined }}
-        style={StyleSheet.absoluteFillObject}
-        contentFit="cover"
-        transition={200}
-      />
-      <LinearGradient
-        colors={['transparent', 'transparent', 'rgba(0,0,0,0.6)']}
-        locations={[0, 0.3, 1]}
-        style={StyleSheet.absoluteFillObject}
-      />
-      <View style={styles.collectionGridContent}>
-        <Text style={styles.collectionGridTitle} numberOfLines={1}>
-          {collection.title}
-        </Text>
-        <Text style={styles.collectionCardCount} numberOfLines={1}>
-          {collection.items.length}{' '}
-          {collection.items.length === 1 ? 'destination' : 'destinations'}
-        </Text>
-      </View>
-    </Pressable>
-  );
-}
-
-// ── Main screen ──────────────────────────────────────────────
+// ── Main screen ─────────────────────────────────────────────
 
 export default function DiscoverScreen() {
-  const { recommended, isPersonalized, collections, isLoading, error, refresh } =
-    useDiscoverData();
+  const { featuredCountry, countries, continents, isLoading, error, refresh } =
+    useExploreData();
   const router = useRouter();
+  const [selectedContinent, setSelectedContinent] = useState<ContinentKey | null>(null);
+
+  const filteredCountries = useMemo(
+    () =>
+      selectedContinent
+        ? countries.filter((c) => c.continent === selectedContinent)
+        : countries,
+    [countries, selectedContinent],
+  );
+
+  // Pair countries into rows of 2
+  const gridRows = useMemo(() => {
+    const rows: Country[][] = [];
+    for (let i = 0; i < filteredCountries.length; i += 2) {
+      rows.push(filteredCountries.slice(i, i + 2));
+    }
+    return rows;
+  }, [filteredCountries]);
 
   const headerActions = <AvatarButton />;
 
-  // Loading state
-  if (isLoading && recommended.length === 0) {
+  // Loading
+  if (isLoading && countries.length === 0) {
     return (
       <AppScreen>
         <NavigationHeader title="Discover" rightActions={headerActions} />
@@ -216,25 +77,14 @@ export default function DiscoverScreen() {
     );
   }
 
-  // Error state
-  if (error && recommended.length === 0) {
+  // Error
+  if (error && countries.length === 0) {
     return (
       <AppScreen>
         <NavigationHeader title="Discover" rightActions={headerActions} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
       </AppScreen>
     );
-  }
-
-  // Determine featured collection (first isFeatured or index 0)
-  const featuredCollection =
-    collections.find((c) => c.isFeatured) ?? collections[0] ?? null;
-  const gridCollections = collections.filter((c) => c !== featuredCollection);
-
-  // Pair grid collections into rows of 2 (avoids flexWrap issues in RN)
-  const gridRows: ExploreCollectionWithItems[][] = [];
-  for (let i = 0; i < gridCollections.length; i += 2) {
-    gridRows.push(gridCollections.slice(i, i + 2));
   }
 
   return (
@@ -247,86 +97,48 @@ export default function DiscoverScreen() {
           <RefreshControl refreshing={isLoading} onRefresh={refresh} />
         }
       >
-        {/* Section 1: Search bar */}
-        <View style={styles.searchBarWrap}>
-          <CompactSearchBar
+        {/* Search trigger */}
+        <View style={styles.searchWrap}>
+          <SearchTrigger
             onPress={() => router.push('/(tabs)/discover/search')}
           />
         </View>
 
-        {/* Section 2: Browse destinations entry point */}
-        <View style={styles.sectionPadded}>
-          <BrowseDestinationsCard
-            onPress={() => router.push('/(tabs)/discover/all-destinations')}
-          />
-        </View>
-
-        {/* Section 3: Recommended cities carousel */}
-        {recommended.length > 0 && (
-          <View style={styles.sectionWide}>
-            <View style={styles.sectionPaddedHeader}>
-              <SectionHeader
-                title={
-                  isPersonalized
-                    ? 'Recommended for you'
-                    : 'Popular with solo women'
-                }
-              />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.citiesScroll}
-              snapToInterval={CITY_CARD_WIDTH + spacing.md}
-              decelerationRate="fast"
-            >
-              {recommended.map((city) => (
-                <RecommendedCityCard
-                  key={city.cityId}
-                  city={city}
-                  onPress={() =>
-                    router.push(`/(tabs)/discover/city/${city.citySlug}`)
-                  }
-                />
-              ))}
-            </ScrollView>
+        {/* Editorial hero */}
+        {featuredCountry && (
+          <View style={styles.heroWrap}>
+            <EditorialHero country={featuredCountry} />
           </View>
         )}
 
-        {/* Section 4: Collections — featured hero + 2-col grid */}
-        {collections.length > 0 && (
-          <View style={styles.sectionPadded}>
-            <SectionHeader title="Ways to travel solo" />
+        {/* Continent filter */}
+        {continents.length > 0 && (
+          <View style={styles.filterWrap}>
+            <ContinentFilter
+              continents={continents}
+              selected={selectedContinent}
+              onSelect={setSelectedContinent}
+            />
+          </View>
+        )}
 
-            {featuredCollection && (
-              <CollectionHeroCard
-                collection={featuredCollection}
-                onPress={() =>
-                  router.push(
-                    `/(tabs)/discover/collection/${featuredCollection.slug}`,
-                  )
-                }
-              />
-            )}
-
-            {gridRows.length > 0 &&
-              gridRows.map((row, rowIdx) => (
-                <View key={rowIdx} style={styles.gridRow}>
-                  {row.map((collection) => (
-                    <CollectionGridCard
-                      key={collection.id}
-                      collection={collection}
-                      onPress={() =>
-                        router.push(
-                          `/(tabs)/discover/collection/${collection.slug}`,
-                        )
-                      }
-                    />
-                  ))}
-                  {/* Fill empty slot if odd number */}
-                  {row.length === 1 && <View style={styles.gridSpacer} />}
-                </View>
-              ))}
+        {/* Country grid */}
+        {filteredCountries.length > 0 ? (
+          <View style={styles.gridWrap}>
+            {gridRows.map((row, idx) => (
+              <View key={idx} style={styles.gridRow}>
+                {row.map((country) => (
+                  <CountryShowcaseCard key={country.id} country={country} />
+                ))}
+                {row.length === 1 && <View style={styles.gridSpacer} />}
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={styles.emptyWrap}>
+            <Text style={styles.emptyText}>
+              No countries yet
+            </Text>
           </View>
         )}
       </ScrollView>
@@ -334,15 +146,15 @@ export default function DiscoverScreen() {
   );
 }
 
-// ── Styles ───────────────────────────────────────────────────
+// ── Styles ──────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
   },
 
-  // Search bar
-  searchBarWrap: {
+  // Search
+  searchWrap: {
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.sm,
   },
@@ -350,167 +162,51 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
+    borderRadius: radius.card,
     paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm + 2,
+    height: 48,
     gap: spacing.sm,
   },
   searchText: {
     fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 15,
     color: colors.textMuted,
   },
 
-  // Shared
-  pressed: {
-    opacity: pressedState.opacity,
-    transform: pressedState.transform,
-  },
-
-  // Section wrappers
-  sectionPadded: {
+  // Hero
+  heroWrap: {
     paddingHorizontal: spacing.screenX,
-    marginTop: spacing.xxxl,
+    marginTop: spacing.moduleInset,
   },
-  sectionWide: {
-    marginTop: spacing.xxxl,
+
+  // Filter
+  filterWrap: {
+    marginTop: spacing.moduleInset,
   },
-  sectionPaddedHeader: {
+
+  // Grid
+  gridWrap: {
     paddingHorizontal: spacing.screenX,
+    marginTop: spacing.moduleInset,
+    gap: spacing.lg,
   },
-
-  // Browse destinations card — full-width hero with image overlay
-  browseCard: {
-    height: 180,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
-  },
-  browseOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    justifyContent: 'space-between',
-    padding: spacing.lg,
-  },
-  browseTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: '#FFFFFF',
-  },
-  browseSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: spacing.xs,
-  },
-  browseArrow: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  // Recommended cities carousel
-  citiesScroll: {
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  cityCard: {
-    width: CITY_CARD_WIDTH,
-    height: CITY_CARD_HEIGHT,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
-  },
-  cityCardContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.md,
-  },
-  cityCardName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: '#FFFFFF',
-  },
-  cityCardCountry: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.8)',
-    marginTop: 2,
-  },
-  cityCardSignal: {
-    fontFamily: fonts.regular,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: spacing.xs,
-  },
-
-  // Collections — hero
-  collectionHero: {
-    width: '100%',
-    height: 200,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
-    marginTop: spacing.md,
-  },
-  collectionCardContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.lg,
-  },
-  collectionHeroTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: '#FFFFFF',
-  },
-  collectionCardCount: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: spacing.xs,
-  },
-
-  // Collections — 2-col grid (explicit rows, no flexWrap)
   gridRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginTop: spacing.md,
   },
   gridSpacer: {
     flex: 1,
   },
-  collectionGridItem: {
-    flex: 1,
-    height: 160,
-    borderRadius: 12,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
+
+  // Empty
+  emptyWrap: {
+    paddingHorizontal: spacing.screenX,
+    marginTop: spacing.xxxxl,
+    alignItems: 'center',
   },
-  collectionGridContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: spacing.md,
-  },
-  collectionGridTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: '#FFFFFF',
+  emptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
   },
 });
