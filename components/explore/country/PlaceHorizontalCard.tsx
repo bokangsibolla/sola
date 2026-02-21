@@ -16,6 +16,19 @@ interface Props {
   compact?: boolean;
 }
 
+const ACCOMMODATION_TYPES = ['hotel', 'hostel', 'homestay'];
+const ACTIVITY_TYPES = ['activity', 'tour'];
+
+function placeRoute(place: PlaceWithCity): string {
+  if (ACCOMMODATION_TYPES.includes(place.placeType)) {
+    return `/(tabs)/discover/accommodation/${place.slug}`;
+  }
+  if (ACTIVITY_TYPES.includes(place.placeType)) {
+    return `/(tabs)/discover/activity/${place.slug}`;
+  }
+  return `/(tabs)/discover/place-detail/${place.id}`;
+}
+
 export function PlaceHorizontalCard({ place, compact }: Props) {
   const router = useRouter();
   const posthog = usePostHog();
@@ -24,7 +37,7 @@ export function PlaceHorizontalCard({ place, compact }: Props) {
     <Pressable
       onPress={() => {
         posthog.capture('place_tapped', { place_id: place.id, place_name: place.name });
-        router.push(`/(tabs)/discover/place-detail/${place.id}` as any);
+        router.push(placeRoute(place) as any);
       }}
       style={({ pressed }) => [
         styles.card,

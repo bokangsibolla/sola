@@ -27,12 +27,25 @@ const CATEGORY_TYPES: Record<Exclude<CategoryKey, 'all'>, string[]> = {
   wellness: ['wellness', 'spa', 'salon', 'gym'],
 };
 
+const ACCOMMODATION_TYPES = ['hotel', 'hostel', 'homestay'];
+const ACTIVITY_TYPES = ['activity', 'tour'];
+
+function placeDetailRoute(place: PlaceWithCity): string {
+  if (ACCOMMODATION_TYPES.includes(place.placeType)) {
+    return `/(tabs)/discover/accommodation/${place.slug}`;
+  }
+  if (ACTIVITY_TYPES.includes(place.placeType)) {
+    return `/(tabs)/discover/activity/${place.slug}`;
+  }
+  return `/(tabs)/discover/place-detail/${place.id}`;
+}
+
 function PlaceListCard({ place }: { place: PlaceWithCity }) {
   const router = useRouter();
 
   return (
     <Pressable
-      onPress={() => router.push(`/(tabs)/discover/place-detail/${place.id}` as any)}
+      onPress={() => router.push(placeDetailRoute(place) as any)}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       {place.imageUrl ? (

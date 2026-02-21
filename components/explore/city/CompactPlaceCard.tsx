@@ -23,6 +23,19 @@ interface CompactPlaceCardProps {
   tags?: Tag[];
 }
 
+const ACCOMMODATION_TYPES = ['hotel', 'hostel', 'homestay'];
+const ACTIVITY_TYPES = ['activity', 'tour'];
+
+function placeRoute(place: PlaceWithImage): string {
+  if (ACCOMMODATION_TYPES.includes(place.placeType)) {
+    return `/discover/accommodation/${place.slug}`;
+  }
+  if (ACTIVITY_TYPES.includes(place.placeType)) {
+    return `/discover/activity/${place.slug}`;
+  }
+  return `/discover/place-detail/${place.id}`;
+}
+
 export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
   const router = useRouter();
 
@@ -32,7 +45,7 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
 
   return (
     <Pressable
-      onPress={() => router.push(`/discover/place-detail/${place.id}`)}
+      onPress={() => router.push(placeRoute(place) as any)}
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
     >
       {/* Image */}
@@ -117,9 +130,9 @@ const styles = StyleSheet.create({
     marginRight: spacing.sm,
   },
   price: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.greenSoft,
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   areaName: {
     fontFamily: fonts.regular,
