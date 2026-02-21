@@ -1,0 +1,61 @@
+name: Sola Intel Digest
+
+on:
+  schedule:
+    # Daily at 9am Manila time (UTC+8) = 1:00 UTC
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+    inputs:
+      period:
+        description: 'Digest period'
+        required: false
+        default: 'daily'
+        type: choice
+        options:
+          - daily
+          - weekly
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: agent
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: agent/package-lock.json
+
+      - run: npm ci
+
+      - name: Determine period
+        id: period
+        run: |
+          if [ "${{ github.event.inputs.period }}" != "" ]; then
+            echo "value=${{ github.event.inputs.period }}" >> $GITHUB_OUTPUT
+          elif [ "$(date +%u)" = "1" ]; then
+            echo "value=weekly" >> $GITHUB_OUTPUT
+          else
+            echo "value=daily" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Intel Agent
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          DIGEST_RECIPIENTS: ${{ secrets.DIGEST_RECIPIENTS }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+        run: npx tsx src/main.ts --period ${{ steps.period.outputs.value }}
+
+      - name: Upload digest DB (artifact)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: intel-db-${{ github.run_number }}
+          path: agent/data/intel.db
+          retention-days: 30
