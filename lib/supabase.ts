@@ -52,6 +52,61 @@ const AsyncStorageAdapter = {
   },
 };
 
+// ── Android header fix ──────────────────────────────────────────────────────
+// React Native 0.81 New Architecture TurboModule networking on Android has a
+// bug where requests with the non-standard `apikey` header fail instantly
+// (~150ms, before leaving the device). Supabase's Kong gateway accepts the
+// API key as either a header or a query parameter. On Android, we move
+// `apikey` from header to query param to bypass the TurboModule bug.
+
+/** Normalize any HeadersInit shape to a mutable Record. */
+function normalizeHeaders(
+  raw: HeadersInit | undefined,
+): Record<string, string> {
+  if (!raw) return {};
+  if (raw instanceof Headers) {
+    const out: Record<string, string> = {};
+    raw.forEach((v, k) => {
+      out[k] = v;
+    });
+    return out;
+  }
+  if (Array.isArray(raw)) {
+    const out: Record<string, string> = {};
+    for (const [k, v] of raw) {
+      out[k] = v;
+    }
+    return out;
+  }
+  return { ...(raw as Record<string, string>) };
+}
+
+/**
+ * On Android, move the `apikey` header to a query parameter.
+ * Returns { url, headers } with the apikey stripped from headers and
+ * appended to the URL. No-op on non-Android platforms.
+ */
+function apikeyToQueryParam(
+  url: string,
+  headers: Record<string, string>,
+): { url: string; headers: Record<string, string> } {
+  if (Platform.OS !== 'android') return { url, headers };
+
+  const apikey = headers['apikey'] || headers['Apikey'] || headers['APIKEY'];
+  if (!apikey) return { url, headers };
+
+  const cleaned = { ...headers };
+  delete cleaned['apikey'];
+  delete cleaned['Apikey'];
+  delete cleaned['APIKEY'];
+
+  const separator = url.includes('?') ? '&' : '?';
+  return {
+    url: `${url}${separator}apikey=${encodeURIComponent(apikey)}`,
+    headers: cleaned,
+  };
+}
+
 // ── XHR-based fetch fallback ────────────────────────────────────────────────
 // On Android, React Native's native `fetch` (TurboModule in New Arch) has
 // known issues with OkHttp connection pool cold starts. XMLHttpRequest uses
@@ -60,37 +115,21 @@ function xhrFetch(
   input: string | Request,
   init?: RequestInit,
 ): Promise<Response> {
-  const url = typeof input === 'string' ? input : input.url;
+  let url = typeof input === 'string' ? input : input.url;
   const method = init?.method ?? 'GET';
   const body = init?.body;
 
-  // Normalize headers: RequestInit.headers can be Headers, Record, or string[][]
-  let headers: Record<string, string> | undefined;
-  if (init?.headers) {
-    if (init.headers instanceof Headers) {
-      headers = {};
-      init.headers.forEach((v, k) => {
-        headers![k] = v;
-      });
-    } else if (Array.isArray(init.headers)) {
-      headers = {};
-      for (const [k, v] of init.headers) {
-        headers[k] = v;
-      }
-    } else {
-      headers = init.headers as Record<string, string>;
-    }
-  }
+  let headers = normalizeHeaders(init?.headers);
+  // Move apikey to query param on Android
+  ({ url, headers } = apikeyToQueryParam(url, headers));
 
   return new Promise<Response>((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open(method, url);
     xhr.timeout = 30_000;
 
-    if (headers) {
-      for (const [k, v] of Object.entries(headers)) {
-        xhr.setRequestHeader(k, v);
-      }
+    for (const [k, v] of Object.entries(headers)) {
+      xhr.setRequestHeader(k, v);
     }
 
     xhr.onload = () => {
@@ -143,15 +182,25 @@ export function warmupConnection(): Promise<boolean> {
   }
 
   _warmupPromise = (async () => {
-    const url = `${supabaseUrl}/auth/v1/health`;
-    const headers = { apikey: supabaseAnonKey };
+    // On Android, apikey goes in query param to bypass New Arch header bug
+    const baseUrl = `${supabaseUrl}/auth/v1/health`;
+    const url =
+      Platform.OS === 'android'
+        ? `${baseUrl}?apikey=${encodeURIComponent(supabaseAnonKey)}`
+        : baseUrl;
+    const headers =
+      Platform.OS === 'android' ? undefined : { apikey: supabaseAnonKey };
 
     // Attempt 1: native fetch with generous timeout
     for (let i = 0; i < 3; i++) {
       try {
         const controller = new AbortController();
         const timer = setTimeout(() => controller.abort(), 8_000);
-        await fetch(url, { method: 'GET', headers, signal: controller.signal });
+        await fetch(url, {
+          method: 'GET',
+          ...(headers && { headers }),
+          signal: controller.signal,
+        });
         clearTimeout(timer);
         _warmupDone = true;
         return true;
@@ -161,9 +210,12 @@ export function warmupConnection(): Promise<boolean> {
       }
     }
 
-    // Attempt 2: XHR fallback
+    // Attempt 2: XHR fallback (also uses query param on Android via xhrFetch)
     try {
-      await xhrFetch(url, { method: 'GET', headers: headers as any });
+      await xhrFetch(baseUrl, {
+        method: 'GET',
+        headers: { apikey: supabaseAnonKey } as any,
+      });
       _warmupDone = true;
       return true;
     } catch {
@@ -191,14 +243,20 @@ const supabaseFetch: typeof fetch = async (input, init) => {
     return fetch(input, init);
   }
 
-  const url = typeof input === 'string' ? input : (input as Request).url;
+  // On Android: move `apikey` from header to query param to bypass
+  // New Architecture TurboModule networking bug with custom headers.
+  let url = typeof input === 'string' ? input : (input as Request).url;
+  let headers = normalizeHeaders(init?.headers);
+  ({ url, headers } = apikeyToQueryParam(url, headers));
+
+  const patchedInit: RequestInit = { ...init, headers };
   const maxNativeRetries = 3;
   let lastError: any;
 
   // Phase 1: Native fetch with escalating delays
   for (let attempt = 0; attempt <= maxNativeRetries; attempt++) {
     try {
-      const response = await fetch(input, init);
+      const response = await fetch(url, patchedInit);
       return response;
     } catch (error: any) {
       lastError = error;
@@ -210,8 +268,9 @@ const supabaseFetch: typeof fetch = async (input, init) => {
   }
 
   // Phase 2: XHR fallback — different native module code path
+  // (xhrFetch also applies apikeyToQueryParam internally)
   try {
-    const response = await xhrFetch(url, init as any);
+    const response = await xhrFetch(url, patchedInit as any);
     return response;
   } catch (xhrError: any) {
     // Both native fetch and XHR failed — throw with comprehensive context
@@ -321,7 +380,7 @@ export async function diagnoseNetwork(): Promise<{
     );
   }
 
-  // Test 4: GET to Supabase health endpoint with apikey
+  // Test 4: GET with apikey as HEADER (known to fail on Android New Arch)
   const t4Start = Date.now();
   try {
     const r = await fetch(`${supabaseUrl}/auth/v1/health`, {
@@ -330,65 +389,52 @@ export async function diagnoseNetwork(): Promise<{
     });
     result.supabaseReachable = true;
     result.ok = true;
-    lines.push(`Supabase health (fetch): ${r.status} (${Date.now() - t4Start}ms)`);
+    lines.push(`apikey header: ${r.status} (${Date.now() - t4Start}ms)`);
   } catch (e: any) {
     lines.push(
-      `Supabase health (fetch): FAIL (${Date.now() - t4Start}ms, ${e.name}: ${e.message})`,
+      `apikey header: FAIL (${Date.now() - t4Start}ms, ${e.name}: ${e.message})`,
     );
   }
 
-  // Test 5: XHR to Supabase health endpoint — different native code path
+  // Test 5: GET with apikey as QUERY PARAM (the fix for Android New Arch)
   const t5Start = Date.now();
   try {
-    const xhrResult = await new Promise<string>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open('GET', `${supabaseUrl}/auth/v1/health`);
-      xhr.setRequestHeader('apikey', supabaseAnonKey);
-      xhr.timeout = 10000;
-      xhr.onload = () => resolve(`XHR: ${xhr.status} (${Date.now() - t5Start}ms)`);
-      xhr.onerror = () =>
-        reject(new Error(`XHR error: ${xhr.status} ${xhr.statusText}`));
-      xhr.ontimeout = () => reject(new Error('XHR timeout after 10s'));
-      xhr.send();
-    });
-    lines.push(xhrResult);
+    const r = await fetch(
+      `${supabaseUrl}/auth/v1/health?apikey=${encodeURIComponent(supabaseAnonKey)}`,
+      { method: 'GET' },
+    );
+    lines.push(`apikey query: ${r.status} (${Date.now() - t5Start}ms)`);
     if (!result.supabaseReachable) {
       result.supabaseReachable = true;
       result.ok = true;
     }
   } catch (e: any) {
-    lines.push(`XHR: FAIL (${Date.now() - t5Start}ms, ${e.message})`);
+    lines.push(
+      `apikey query: FAIL (${Date.now() - t5Start}ms, ${e.name}: ${e.message})`,
+    );
   }
 
-  // Test 6: Cloudflare endpoint to rule out device-wide TLS issue
+  // Test 6: GET with Authorization header (standard header — should work)
   const t6Start = Date.now();
   try {
-    await fetch('https://cloudflare.com/cdn-cgi/trace', { method: 'HEAD' });
-    lines.push(`Cloudflare: OK (${Date.now() - t6Start}ms)`);
+    const r = await fetch(`${supabaseUrl}/auth/v1/health?apikey=${encodeURIComponent(supabaseAnonKey)}`, {
+      method: 'GET',
+      headers: { Authorization: `Bearer ${supabaseAnonKey}` },
+    });
+    lines.push(`Auth header + query: ${r.status} (${Date.now() - t6Start}ms)`);
   } catch (e: any) {
-    lines.push(`Cloudflare: FAIL (${Date.now() - t6Start}ms, ${e.message})`);
+    lines.push(
+      `Auth header + query: FAIL (${Date.now() - t6Start}ms, ${e.message})`,
+    );
   }
 
-  // Test 7: Try supabase with explicit long timeout via AbortController
-  if (!result.supabaseReachable) {
-    const t7Start = Date.now();
-    try {
-      const controller = new AbortController();
-      const timer = setTimeout(() => controller.abort(), 15_000);
-      const r = await fetch(`${supabaseUrl}/auth/v1/health`, {
-        method: 'GET',
-        headers: { apikey: supabaseAnonKey },
-        signal: controller.signal,
-      });
-      clearTimeout(timer);
-      result.supabaseReachable = true;
-      result.ok = true;
-      lines.push(`Supabase (15s timeout): ${r.status} (${Date.now() - t7Start}ms)`);
-    } catch (e: any) {
-      lines.push(
-        `Supabase (15s timeout): FAIL (${Date.now() - t7Start}ms, ${e.message})`,
-      );
-    }
+  // Test 7: Cloudflare endpoint to rule out device-wide TLS issue
+  const t7Start = Date.now();
+  try {
+    await fetch('https://cloudflare.com/cdn-cgi/trace', { method: 'HEAD' });
+    lines.push(`Cloudflare: OK (${Date.now() - t7Start}ms)`);
+  } catch (e: any) {
+    lines.push(`Cloudflare: FAIL (${Date.now() - t7Start}ms, ${e.message})`);
   }
 
   result.details = lines.join('\n');
