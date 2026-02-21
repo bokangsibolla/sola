@@ -19,10 +19,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import MenuButton from '@/components/MenuButton';
-import NotificationButton from '@/components/NotificationButton';
+import AvatarButton from '@/components/AvatarButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import LocationConsentBanner from '@/components/travelers/LocationConsentBanner';
@@ -885,12 +885,7 @@ export default function ConnectScreen() {
     <AppScreen>
       <NavigationHeader
         title="Connect"
-        rightActions={
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <NotificationButton />
-            <MenuButton />
-          </View>
-        }
+        rightActions={<AvatarButton />}
       />
 
       <SegmentControl
@@ -941,10 +936,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   feedContent: {
-    paddingBottom: 100,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
   travelerFeed: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
   pressed: {
     opacity: 0.9,
@@ -1252,7 +1247,7 @@ const styles = StyleSheet.create({
   // ---------------------------------------------------------------------------
   fab: {
     position: 'absolute',
-    bottom: 24,
+    bottom: FLOATING_TAB_BAR_HEIGHT,
     right: spacing.screenX,
     width: 52,
     height: 52,

@@ -4,8 +4,7 @@ import { usePostHog } from 'posthog-react-native';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import MenuButton from '@/components/MenuButton';
-import NotificationButton from '@/components/NotificationButton';
+import AvatarButton from '@/components/AvatarButton';
 import { HeroCard } from '@/components/home/HeroCard';
 import { SearchPill } from '@/components/home/SearchPill';
 import { TripCard } from '@/components/home/TripCard';
@@ -16,12 +15,10 @@ import { QuickUpdate } from '@/components/home/QuickUpdate';
 import { QuickLinksRow } from '@/components/home/QuickLinksRow';
 import { SavedPreview } from '@/components/home/SavedPreview';
 import { EndCard } from '@/components/home/EndCard';
-import { useData } from '@/hooks/useData';
-import { getConversations } from '@/data/api';
 import { useHomeData } from '@/data/home/useHomeData';
 import { useHomeMoodboard, VIBE_SECTIONS } from '@/data/home/useHomeMoodboard';
 import { colors, spacing } from '@/constants/design';
-import type { Conversation } from '@/data/types';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 // Pick 2 random vibe indices per mount — stable for the session
 function pickRandomVibes(): number[] {
@@ -43,17 +40,6 @@ export default function HomeScreen() {
   useEffect(() => {
     posthog.capture('home_viewed');
   }, [posthog]);
-
-  // Conversations for unread count (menu badge)
-  const { data: conversations } = useData<Conversation[]>(
-    () => getConversations(),
-    ['conversations-home'],
-  );
-
-  const unreadCount = useMemo(() => {
-    if (!conversations) return 0;
-    return conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
-  }, [conversations]);
 
   // Home data
   const {
@@ -102,12 +88,8 @@ export default function HomeScreen() {
     <AppScreen>
       <NavigationHeader
         title="Home"
-        rightActions={
-          <View style={styles.headerRight}>
-            <NotificationButton />
-            <MenuButton unreadCount={unreadCount} />
-          </View>
-        }
+        showLogo
+        rightActions={<AvatarButton />}
       />
 
       <ScrollView
@@ -176,7 +158,6 @@ export default function HomeScreen() {
         {/* 11. EndCard — image CTA */}
         <EndCard onExplore={() => router.push('/(tabs)/discover' as any)} />
 
-        <View style={styles.bottomSpacer} />
       </ScrollView>
     </AppScreen>
   );
@@ -184,12 +165,7 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.xxl,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
   searchWrap: {
     marginTop: spacing.sm,
@@ -197,8 +173,5 @@ const styles = StyleSheet.create({
   },
   sectionWrap: {
     marginBottom: spacing.xl,
-  },
-  bottomSpacer: {
-    height: spacing.xxl,
   },
 });

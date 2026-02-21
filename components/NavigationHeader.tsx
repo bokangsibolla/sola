@@ -9,15 +9,18 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { NavCrumb } from '@/hooks/useNavContext';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, spacing, typography } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 interface NavigationHeaderProps {
-  /** Page title — shown centered on push/modal screens, hidden on tab roots */
+  /** Page title — shown on tab roots (left-aligned) and push screens (centered) */
   title: string;
+
+  /** When true, show Sola logo instead of title on root screens (Home tab) */
+  showLogo?: boolean;
 
   /** Presence of parentTitle triggers back arrow. Omit for tab roots. */
   parentTitle?: string;
@@ -31,7 +34,7 @@ interface NavigationHeaderProps {
   /** 'standard' (default) | 'modal' (close button, no back arrow) */
   variant?: 'standard' | 'modal';
 
-  /** Right-side action buttons (notification bell, menu, etc.) */
+  /** Right-side action buttons (AvatarButton, etc.) */
   rightActions?: React.ReactNode;
 
   /** @deprecated No longer rendered — kept for API compat */
@@ -44,6 +47,7 @@ interface NavigationHeaderProps {
 
 const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   title,
+  showLogo,
   parentTitle,
   onBack,
   variant = 'standard',
@@ -62,16 +66,22 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
     }
   };
 
-  // ── Tab root: Logo ... [actions] ──────────────────────────────
+  // ── Tab root ────────────────────────────────────────────────────
+  // showLogo: [Logo] ........... [rightActions]
+  // no logo:  [Title]  ........  [rightActions]
   if (isRoot) {
     return (
       <View style={styles.container}>
-        <View style={styles.row}>
-          <Image
-            source={require('@/assets/images/sola-logo.png')}
-            style={styles.logo}
-            contentFit="contain"
-          />
+        <View style={styles.rootRow}>
+          {showLogo ? (
+            <Image
+              source={require('@/assets/images/sola-logo.png')}
+              style={styles.logo}
+              contentFit="contain"
+            />
+          ) : (
+            <Text style={styles.rootTitle}>{title}</Text>
+          )}
           <View style={styles.actionsRight}>{rightActions}</View>
         </View>
       </View>
@@ -81,33 +91,33 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   // ── Push / Modal: [←] ... centered title ... [actions] ────────
   return (
     <View style={styles.container}>
-      <View style={styles.row}>
+      <View style={styles.pushRow}>
         {/* Left: back or close */}
         {isModal ? (
           <Pressable
             onPress={handleBack}
             style={styles.navButton}
-            hitSlop={12}
+            hitSlop={spacing.md}
             accessibilityRole="button"
             accessibilityLabel="Close"
           >
-            <Ionicons name="close" size={22} color={colors.textPrimary} />
+            <Ionicons name="close" size={NAV_ICON_SM} color={colors.textPrimary} />
           </Pressable>
         ) : (
           <Pressable
             onPress={handleBack}
             style={styles.navButton}
-            hitSlop={8}
+            hitSlop={spacing.sm}
             accessibilityRole="button"
             accessibilityLabel="Go back"
           >
-            <Ionicons name="chevron-back" size={24} color={colors.textPrimary} />
+            <Ionicons name="chevron-back" size={NAV_ICON_MD} color={colors.textPrimary} />
           </Pressable>
         )}
 
         {/* Center: title (absolutely positioned for true centering) */}
         <View style={styles.titleContainer} pointerEvents="none">
-          <Text style={styles.title} numberOfLines={1}>
+          <Text style={styles.pushTitle} numberOfLines={1}>
             {title}
           </Text>
         </View>
@@ -125,51 +135,73 @@ export default React.memo(NavigationHeader);
 // Styles
 // ---------------------------------------------------------------------------
 
+const HEADER_HEIGHT = 48;
+const LOGO_HEIGHT = 22;
+const LOGO_WIDTH = 76;
+const NAV_BUTTON_WIDTH = 36;
+const TITLE_SIDE_CLEARANCE = 60;
+const NAV_ICON_SM = 22;
+const NAV_ICON_MD = 24;
+
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: spacing.screenX,
     backgroundColor: colors.background,
   },
-  row: {
+
+  // ── Tab root row ────────────────────────────────────────────────
+  rootRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    height: 44,
+    height: HEADER_HEIGHT,
   },
   logo: {
-    height: 22,
-    width: 76,
+    height: LOGO_HEIGHT,
+    width: LOGO_WIDTH,
+  },
+  rootTitle: {
+    ...typography.tabRootTitle,
+    color: colors.textPrimary,
   },
 
-  // ── Nav button (back / close) ──────────────────────────────
+  // ── Push / detail row ───────────────────────────────────────────
+  pushRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: HEADER_HEIGHT,
+  },
+
+  // ── Nav button (back / close) ──────────────────────────────────
   navButton: {
-    width: 36,
-    height: 44,
+    width: NAV_BUTTON_WIDTH,
+    height: HEADER_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 2,
   },
 
-  // ── Centered title ─────────────────────────────────────────
+  // ── Centered title (push screens) ──────────────────────────────
   titleContainer: {
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 56,
+    paddingHorizontal: TITLE_SIDE_CLEARANCE,
     zIndex: 1,
   },
-  title: {
+  pushTitle: {
     fontFamily: fonts.medium,
     fontSize: 17,
     lineHeight: 22,
     color: colors.textPrimary,
   },
 
-  // ── Right actions ──────────────────────────────────────────
+  // ── Right actions ──────────────────────────────────────────────
   actionsRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: spacing.sm,
     zIndex: 2,
   },
 });

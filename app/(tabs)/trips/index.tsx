@@ -6,8 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import MenuButton from '@/components/MenuButton';
-import NotificationButton from '@/components/NotificationButton';
+import AvatarButton from '@/components/AvatarButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -15,7 +14,8 @@ import TripListCard from '@/components/trips/TripListCard';
 import TripEmptyState from '@/components/trips/TripEmptyState';
 import { useTrips } from '@/data/trips/useTrips';
 import { useAppMode } from '@/state/AppModeContext';
-import { colors, fonts, spacing, radius } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 export default function TripsScreen() {
   const router = useRouter();
@@ -47,12 +47,7 @@ export default function TripsScreen() {
       <AppScreen>
         <NavigationHeader
           title="Trips"
-          rightActions={
-            <View style={styles.headerRight}>
-              <NotificationButton />
-              <MenuButton />
-            </View>
-          }
+          rightActions={<AvatarButton />}
         />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           <CurrentTripCard trip={trips.current} />
@@ -73,12 +68,7 @@ export default function TripsScreen() {
     <AppScreen>
       <NavigationHeader
         title="Trips"
-        rightActions={
-          <View style={styles.headerRight}>
-            <NotificationButton />
-            <MenuButton />
-          </View>
-        }
+        rightActions={<AvatarButton />}
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isEmpty ? (
@@ -126,22 +116,8 @@ export default function TripsScreen() {
 }
 
 const styles = StyleSheet.create({
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  addButton: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
   scroll: {
-    paddingBottom: spacing.xxl,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
   section: {
     marginBottom: spacing.lg,

@@ -15,8 +15,7 @@ import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import NotificationButton from '@/components/NotificationButton';
-import MenuButton from '@/components/MenuButton';
+import AvatarButton from '@/components/AvatarButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import SectionHeader from '@/components/explore/SectionHeader';
@@ -24,6 +23,7 @@ import { useDiscoverData } from '@/data/discover/useDiscoverData';
 import type { RecommendedCity } from '@/data/discover/types';
 import type { ExploreCollectionWithItems } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
 const CITY_CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - spacing.md) / 2.3;
@@ -204,12 +204,7 @@ export default function DiscoverScreen() {
     useDiscoverData();
   const router = useRouter();
 
-  const headerActions = (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <NotificationButton />
-      <MenuButton />
-    </View>
-  );
+  const headerActions = <AvatarButton />;
 
   // Loading state
   if (isLoading && recommended.length === 0) {
@@ -343,7 +338,7 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.xxxxl,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
 
   // Search bar

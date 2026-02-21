@@ -23,10 +23,14 @@ export const colors = {
   overlaySoft: 'rgba(0,0,0,0.35)',
   overlayMedium: 'rgba(0,0,0,0.55)',
   overlayStrong: 'rgba(0,0,0,0.7)',
-  // Tab bar
+  // Tab bar (legacy — kept for reference)
   tabBarBackground: '#FAF9F7',
   tabBarBorder: '#EBE7E3',
   tabBarInactive: '#B8B0AA',
+  // Floating navigation
+  floatingNavBg: '#FFFFFF',
+  floatingNavBorder: '#F0F0F0',
+  floatingNavIconInactive: '#9A9A9A',
 };
 
 export const spacing = {
@@ -81,4 +85,5 @@ export const typography = {
   button: { fontFamily: fonts.semiBold, fontSize: 16, lineHeight: 24 },
   tabLabel: { fontFamily: fonts.medium, fontSize: 10, lineHeight: 12 },
   screenTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
+  tabRootTitle: { fontFamily: fonts.semiBold, fontSize: 22, lineHeight: 28 },
 };
