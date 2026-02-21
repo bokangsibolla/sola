@@ -3,10 +3,12 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getPlacesByCity } from '@/data/api';
@@ -15,6 +17,56 @@ import { PLACE_CATEGORIES, PLACE_TYPE_TO_CATEGORY, PLACE_TYPE_LABELS } from '@/d
 import type { PlaceCategoryKey, CategoryCount } from '@/data/city/types';
 import type { Place, CityArea, Tag } from '@/data/types';
 import { CompactPlaceCard } from './CompactPlaceCard';
+
+// ---------------------------------------------------------------------------
+// Women-first Stay Filters
+// ---------------------------------------------------------------------------
+
+interface StayFilter {
+  key: string;
+  label: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  color: string;
+  bg: string;
+  test: (p: Place) => boolean;
+}
+
+const STAY_FILTERS: StayFilter[] = [
+  {
+    key: 'women_only',
+    label: 'Women Only',
+    icon: 'shield-checkmark',
+    color: colors.greenSoft,
+    bg: colors.greenFill,
+    test: (p) => p.womenOnly === true,
+  },
+  {
+    key: 'verified',
+    label: 'Sola Verified',
+    icon: 'checkmark-circle',
+    color: colors.orange,
+    bg: colors.orangeFill,
+    test: (p) =>
+      p.verificationStatus === 'sola_checked' ||
+      p.verificationStatus === 'baseline_passed',
+  },
+  {
+    key: 'solo_reviewed',
+    label: 'Solo Reviews',
+    icon: 'chatbubble-ellipses',
+    color: colors.blueSoft,
+    bg: colors.blueFill,
+    test: (p) => p.soloFemaleReviews != null && p.soloFemaleReviews.length > 0,
+  },
+  {
+    key: 'budget',
+    label: 'Budget',
+    icon: 'wallet-outline',
+    color: colors.textSecondary,
+    bg: colors.neutralFill,
+    test: (p) => p.priceLevel === 1,
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -74,11 +126,23 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
   const [activeSubType, setActiveSubType] = useState<Place['placeType'] | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<'type' | 'area' | null>(null);
+  const [activeStayFilters, setActiveStayFilters] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (categoryCounts.length > 0 && !activeCategory)
       setActiveCategory(categoryCounts[0].key);
   }, [categoryCounts, activeCategory]);
+
+  const isStayCategory = activeCategory === 'accommodation';
+
+  const toggleStayFilter = (key: string) => {
+    setActiveStayFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const activePlaceTypes = useMemo(() => {
     if (!activeCategory) return [];
@@ -90,6 +154,16 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     if (!allPlaces || activePlaceTypes.length === 0) return [];
     return allPlaces.filter((p) => activePlaceTypes.includes(p.placeType));
   }, [allPlaces, activePlaceTypes]);
+
+  // Count how many accommodation places match each stay filter
+  const stayFilterCounts = useMemo(() => {
+    if (!isStayCategory) return {};
+    const counts: Record<string, number> = {};
+    for (const f of STAY_FILTERS) {
+      counts[f.key] = categoryPlaces.filter(f.test).length;
+    }
+    return counts;
+  }, [isStayCategory, categoryPlaces]);
 
   // Sub-type counts cross-filtered by area
   const subTypeCounts = useMemo(() => {
@@ -131,12 +205,17 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     const types = activeSubType ? [activeSubType] : activePlaceTypes;
     let result = categoryPlaces.filter((p) => types.includes(p.placeType));
     if (selectedAreaId) result = result.filter((p) => p.cityAreaId === selectedAreaId);
+    // Apply stay filters (AND logic — place must match ALL active filters)
+    if (isStayCategory && activeStayFilters.size > 0) {
+      const activeFilterDefs = STAY_FILTERS.filter((f) => activeStayFilters.has(f.key));
+      result = result.filter((p) => activeFilterDefs.every((f) => f.test(p)));
+    }
     return [...result].sort((a, b) => {
       if (a.isFeatured && !b.isFeatured) return -1;
       if (!a.isFeatured && b.isFeatured) return 1;
       return a.name.localeCompare(b.name);
     });
-  }, [categoryPlaces, activePlaceTypes, activeSubType, selectedAreaId]);
+  }, [categoryPlaces, activePlaceTypes, activeSubType, selectedAreaId, isStayCategory, activeStayFilters]);
 
   const placeIds = useMemo(() => filteredPlaces.map((p) => p.id), [filteredPlaces]);
   const tagCacheKey = placeIds.length > 0 ? placeIds.slice(0, 3).join(',') : 'none';
@@ -200,6 +279,7 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                 setActiveSubType(null);
                 setSelectedAreaId(null);
                 setOpenDropdown(null);
+                if (cat.key !== 'accommodation') setActiveStayFilters(new Set());
               }}
               style={styles.catItem}
             >
@@ -329,6 +409,54 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
         </View>
       )}
 
+      {/* ── Stay filter pills — only when accommodation is active ── */}
+      {isStayCategory && (
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.stayFilterRow}
+          style={styles.stayFilterScroll}
+        >
+          {STAY_FILTERS.map((f) => {
+            const count = stayFilterCounts[f.key] ?? 0;
+            if (count === 0) return null;
+            const isActive = activeStayFilters.has(f.key);
+            return (
+              <Pressable
+                key={f.key}
+                onPress={() => toggleStayFilter(f.key)}
+                style={[
+                  styles.stayPill,
+                  isActive && { backgroundColor: f.bg, borderColor: f.color },
+                ]}
+              >
+                <Ionicons
+                  name={f.icon as any}
+                  size={14}
+                  color={isActive ? f.color : colors.textMuted}
+                />
+                <Text
+                  style={[
+                    styles.stayPillText,
+                    isActive && { color: f.color },
+                  ]}
+                >
+                  {f.label}
+                </Text>
+                <Text
+                  style={[
+                    styles.stayPillCount,
+                    isActive && { color: f.color },
+                  ]}
+                >
+                  {count}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
       {/* ── Result count ── */}
       <View style={styles.resultRow}>
         <Text style={styles.resultCount}>
@@ -348,7 +476,21 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
       showsVerticalScrollIndicator={false}
       ListEmptyComponent={
         <View style={styles.centered}>
-          <Text style={styles.emptyText}>No places match your filters</Text>
+          <Ionicons
+            name={isStayCategory ? 'bed-outline' : 'search-outline'}
+            size={28}
+            color={colors.textMuted}
+          />
+          <Text style={styles.emptyText}>
+            {activeStayFilters.size > 0
+              ? 'No stays match these filters'
+              : 'No places match your filters'}
+          </Text>
+          {activeStayFilters.size > 0 && (
+            <Pressable onPress={() => setActiveStayFilters(new Set())}>
+              <Text style={styles.clearFiltersText}>Clear filters</Text>
+            </Pressable>
+          )}
         </View>
       }
     />
@@ -471,6 +613,37 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
+  // ── Stay filter pills ──
+  stayFilterScroll: {
+    flexGrow: 0,
+    marginTop: spacing.md,
+  },
+  stayFilterRow: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+  },
+  stayPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
+  },
+  stayPillText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  stayPillCount: {
+    fontFamily: fonts.regular,
+    fontSize: 11,
+    color: colors.textMuted,
+  },
+
   // ── Result count ──
   resultRow: {
     paddingHorizontal: spacing.screenX,
@@ -495,7 +668,14 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontFamily: fonts.regular,
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textMuted,
+    marginTop: spacing.sm,
+  },
+  clearFiltersText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+    marginTop: spacing.sm,
   },
 });
