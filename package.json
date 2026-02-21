@@ -18,6 +18,7 @@
     "seed:accommodations": "tsx scripts/seed-accommodations.ts",
     "verify:place": "tsx scripts/verify-place.ts",
     "verify:accommodations": "tsx scripts/verify-accommodations.ts",
+    "enrich:women-only": "tsx scripts/enrich-women-only.ts",
     "test": "jest"
   },
   "jest": {
