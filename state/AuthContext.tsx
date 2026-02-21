@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
-import { supabase } from '@/lib/supabase';
+import { supabase, warmupConnection } from '@/lib/supabase';
 
 interface AuthContextValue {
   /** Current authenticated user ID, or null if not signed in. */
@@ -10,7 +10,7 @@ interface AuthContextValue {
   user: User | null;
   /** Supabase session. */
   session: Session | null;
-  /** True while restoring session from SecureStore. */
+  /** True while restoring session from storage. */
   loading: boolean;
   /** Sign out and clear session. */
   signOut: () => Promise<void>;
@@ -23,21 +23,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Failsafe: never stay loading for more than 5 seconds
-    const timeout = setTimeout(() => setLoading(false), 5_000);
+    // Failsafe: never stay loading for more than 8 seconds
+    // (increased from 5s to allow for connection warmup on Android)
+    const timeout = setTimeout(() => setLoading(false), 8_000);
 
-    // Restore session on mount
-    supabase.auth
-      .getSession()
-      .then(({ data: { session: s } }) => {
-        setSession(s);
+    // On Android, warm up the OkHttp connection pool BEFORE making auth calls.
+    // This prevents "Network request failed" errors caused by cold-start failures.
+    warmupConnection()
+      .then((connected) => {
+        if (!connected) {
+          console.warn(
+            '[Sola] Connection warmup failed — Supabase may be unreachable. Continuing anyway.',
+          );
+        }
       })
       .catch(() => {
-        // Network or storage error — continue as signed out
+        // Non-fatal: warmup is best-effort
       })
       .finally(() => {
-        clearTimeout(timeout);
-        setLoading(false);
+        // Now restore session — the connection pool should be primed
+        supabase.auth
+          .getSession()
+          .then(({ data: { session: s } }) => {
+            setSession(s);
+          })
+          .catch((err) => {
+            // Network or storage error — continue as signed out
+            console.warn('[Sola] getSession failed:', err?.message);
+          })
+          .finally(() => {
+            clearTimeout(timeout);
+            setLoading(false);
+          });
       });
 
     // Listen for auth changes (sign in, sign out, token refresh)

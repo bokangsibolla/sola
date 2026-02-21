@@ -1,69 +1,67 @@
-import { Platform } from 'react-native';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
-import * as Google from 'expo-auth-session/providers/google';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
+import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '@/lib/supabase';
 
-const GOOGLE_IOS_CLIENT_ID =
-  '234937383727-41lbcel6j3nrn4t58huag5ig11582bca.apps.googleusercontent.com';
 const GOOGLE_WEB_CLIENT_ID =
   '234937383727-2oj58631smi815k534jn2k5lfdvlup06.apps.googleusercontent.com';
+const GOOGLE_IOS_CLIENT_ID =
+  '234937383727-41lbcel6j3nrn4t58huag5ig11582bca.apps.googleusercontent.com';
+
+// Configure at module level — must use the **web** client ID for signInWithIdToken
+GoogleSignin.configure({
+  webClientId: GOOGLE_WEB_CLIENT_ID,
+  iosClientId: GOOGLE_IOS_CLIENT_ID,
+});
 
 // ─── Google ──────────────────────────────────────────────────────────────────
-// iOS: expo-auth-session ID token flow (works reliably with iosClientId)
-// Android: Supabase OAuth redirect flow (avoids expo-auth-session redirect issues)
+// Uses the native OS credential picker on both platforms.
+// Returns an idToken which is exchanged with Supabase via signInWithIdToken.
 
-export function useGoogleAuth() {
-  // Hook must be called unconditionally; only used on iOS
-  const [request, _response, promptAsync] = Google.useIdTokenAuthRequest({
-    iosClientId: GOOGLE_IOS_CLIENT_ID,
-    androidClientId: GOOGLE_WEB_CLIENT_ID,
-    webClientId: GOOGLE_WEB_CLIENT_ID,
-  });
-
-  const signInWithGoogle = async (): Promise<{ isNewUser: boolean; userId: string }> => {
-    if (Platform.OS === 'android') {
-      return signInWithGoogleAndroid();
-    }
-    return signInWithGoogleIOS(promptAsync);
-  };
-
-  // On Android, the button should always be enabled (doesn't use expo-auth-session request).
-  // On iOS, it depends on the auth request being ready.
-  const isReady = Platform.OS === 'android' ? true : !!request;
-
-  return { request, signInWithGoogle, isReady };
-}
-
-// iOS: ID token flow via expo-auth-session
-async function signInWithGoogleIOS(
-  promptAsync: () => Promise<any>,
-): Promise<{ isNewUser: boolean; userId: string }> {
+export async function signInWithGoogle(): Promise<{
+  isNewUser: boolean;
+  userId: string;
+}> {
+  // Phase 1: Native Google Sign-In (Play Services / Credential Manager)
+  let idToken: string;
   try {
-    const result = await promptAsync();
+    await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
 
-    if (result.type === 'cancel' || result.type === 'dismiss') {
-      throw new Error('Sign-in was cancelled');
-    }
+    const response = await GoogleSignin.signIn();
 
-    if (result.type !== 'success') {
-      throw new Error('Google sign-in failed. Please try again.');
-    }
-
-    const idToken = result.params.id_token;
-    if (!idToken) {
+    if (!response.data?.idToken) {
       throw new Error('No ID token returned from Google');
     }
+    idToken = response.data.idToken;
+  } catch (err: any) {
+    // User cancelled the native picker
+    if (
+      err.code === 'SIGN_IN_CANCELLED' ||
+      err.code === '12501' ||
+      err.message?.includes('cancel')
+    ) {
+      throw new Error('Sign-in was cancelled');
+    }
+    // Play Services not available
+    if (err.code === 'PLAY_SERVICES_NOT_AVAILABLE') {
+      throw new Error(
+        'Google Play Services is required for Google sign-in. Please update or enable it.',
+      );
+    }
+    // Other Google-specific error
+    throw new Error(`Google sign-in failed: ${err.message ?? 'Unknown error'}`);
+  }
 
+  // Phase 2: Exchange ID token with Supabase
+  try {
     const { data, error } = await supabase.auth.signInWithIdToken({
       provider: 'google',
       token: idToken,
     });
 
     if (error) {
-      throw new Error(error.message || 'Failed to authenticate with Google');
+      // Supabase auth error (invalid token, provider not configured, etc.)
+      throw new Error(error.message || 'Supabase could not verify the Google token');
     }
 
     const { data: profile } = await supabase
@@ -74,105 +72,14 @@ async function signInWithGoogleIOS(
 
     return { isNewUser: !profile, userId: data.user.id };
   } catch (err: any) {
-    if (err.message?.includes('cancel')) {
-      throw new Error('Sign-in was cancelled');
-    }
-    throw err;
-  }
-}
-
-// Android: Supabase OAuth redirect flow
-async function signInWithGoogleAndroid(): Promise<{ isNewUser: boolean; userId: string }> {
-  try {
-    const redirectTo = 'sola://auth/callback';
-
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo,
-        skipBrowserRedirect: true,
-      },
-    });
-
-    if (error || !data.url) {
-      throw new Error(error?.message || 'Failed to start Google sign-in');
-    }
-
-    // Set up a Linking listener as a fallback — if Chrome Custom Tabs don't
-    // return the URL via openAuthSessionAsync, the deep link will fire here.
-    let linkingResolved = false;
-    const linkingPromise = new Promise<string>((resolve, reject) => {
-      const sub = Linking.addEventListener('url', ({ url }) => {
-        if (url.startsWith(redirectTo)) {
-          linkingResolved = true;
-          sub.remove();
-          resolve(url);
-        }
-      });
-      // Auto-cleanup after 120s to prevent memory leaks and dangling promises
-      setTimeout(() => {
-        sub.remove();
-        if (!linkingResolved) reject(new Error('Sign-in timed out'));
-      }, 120_000);
-    });
-
-    const result = await WebBrowser.openAuthSessionAsync(
-      data.url,
-      redirectTo,
-    );
-
-    let callbackUrl: string | null = null;
-
-    if (result.type === 'success' && result.url) {
-      callbackUrl = result.url;
-    } else if (result.type === 'cancel' || result.type === 'dismiss') {
-      // Check if the Linking listener already captured the URL
-      // (race condition: deep link fired before Custom Tab closed)
-      if (linkingResolved) {
-        callbackUrl = await linkingPromise;
-      } else {
-        throw new Error('Sign-in was cancelled');
-      }
-    }
-
-    if (!callbackUrl) {
-      throw new Error('Sign-in was cancelled');
-    }
-
-    // Extract tokens from the redirect URL fragment
-    const fragment = callbackUrl.split('#')[1] || '';
-    const params = new URLSearchParams(fragment);
-    const accessToken = params.get('access_token');
-    const refreshToken = params.get('refresh_token');
-
-    if (!accessToken || !refreshToken) {
-      // Check for error in redirect
-      const errorDesc = params.get('error_description') || params.get('error');
-      if (errorDesc) {
-        throw new Error(decodeURIComponent(errorDesc));
-      }
-      throw new Error('No session returned from Google sign-in');
-    }
-
-    const { data: sessionData, error: sessionError } = await supabase.auth.setSession({
-      access_token: accessToken,
-      refresh_token: refreshToken,
-    });
-
-    if (sessionError || !sessionData.user) {
-      throw new Error(sessionError?.message || 'Failed to establish session');
-    }
-
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id')
-      .eq('id', sessionData.user.id)
-      .maybeSingle();
-
-    return { isNewUser: !profile, userId: sessionData.user.id };
-  } catch (err: any) {
-    if (err.message?.includes('cancel')) {
-      throw new Error('Sign-in was cancelled');
+    // If it's already our error (from the `if (error)` above), rethrow
+    if (err.message?.includes('Supabase could not verify')) throw err;
+    // Network error reaching Supabase
+    const msg = err.message?.toLowerCase() ?? '';
+    if (msg.includes('network') || msg.includes('fetch') || msg.includes('unreachable')) {
+      throw new Error(
+        `Unable to connect to server after Google sign-in. Please check your connection and try again. (${err.message})`,
+      );
     }
     throw err;
   }
@@ -180,7 +87,10 @@ async function signInWithGoogleAndroid(): Promise<{ isNewUser: boolean; userId: 
 
 // ─── Apple ────────────────────────────────────────────────────────────────────
 
-export async function signInWithApple(): Promise<{ isNewUser: boolean; userId: string }> {
+export async function signInWithApple(): Promise<{
+  isNewUser: boolean;
+  userId: string;
+}> {
   try {
     const rawNonce = Crypto.randomUUID();
     const hashedNonce = await Crypto.digestStringAsync(

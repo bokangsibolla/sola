@@ -14,8 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
-import { supabase, diagnoseNetwork } from '@/lib/supabase';
-import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
+import { supabase, diagnoseNetwork, warmupConnection } from '@/lib/supabase';
+import { signInWithGoogle, signInWithApple } from '@/lib/oauth';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const MIN_PASSWORD_LENGTH = 8;
@@ -49,8 +49,6 @@ export default function CreateAccountScreen() {
   const [loading, setLoading] = useState(false);
   const [fieldError, setFieldError] = useState<string | null>(null);
 
-  const { signInWithGoogle, isReady: googleReady } = useGoogleAuth();
-
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   const isValidPassword = password.length >= MIN_PASSWORD_LENGTH;
   const canContinue = isValidEmail && isValidPassword && !loading;
@@ -59,6 +57,7 @@ export default function CreateAccountScreen() {
     setLoading(true);
     setFieldError(null);
     try {
+      await warmupConnection();
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
@@ -75,13 +74,7 @@ export default function CreateAccountScreen() {
       if (msg.includes('network') || msg.includes('fetch')) {
         try {
           const diag = await diagnoseNetwork();
-          Alert.alert(
-            'Connection failed',
-            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
-            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
-            `Details: ${diag.details}\n` +
-            `Error: ${e.message}`,
-          );
+          Alert.alert('Network Diagnostic', diag.details + `\n\nError: ${e.message}`);
         } catch {
           Alert.alert('Sign in failed', e.message);
         }
@@ -107,6 +100,7 @@ export default function CreateAccountScreen() {
 
     setLoading(true);
     try {
+      await warmupConnection();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -146,13 +140,7 @@ export default function CreateAccountScreen() {
         // Run diagnostics to get more detail
         try {
           const diag = await diagnoseNetwork();
-          Alert.alert(
-            'Connection failed',
-            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
-            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
-            `Details: ${diag.details}\n` +
-            `Error: ${e.message}`,
-          );
+          Alert.alert('Network Diagnostic', diag.details + `\n\nError: ${e.message}`);
         } catch {
           setFieldError(`Network error: ${e.message}`);
         }
@@ -177,7 +165,7 @@ export default function CreateAccountScreen() {
       <View style={styles.socialButtons}>
         <Pressable
           style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-          disabled={!googleReady || loading}
+          disabled={loading}
           onPress={() => handleOAuth('google')}
         >
           {loading ? (

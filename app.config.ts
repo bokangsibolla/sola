@@ -32,6 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: 'app.solatravel.sola',
+    permissions: ['android.permission.ACCESS_NETWORK_STATE'],
     adaptiveIcon: {
       backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -47,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    '@react-native-google-signin/google-signin',
     [
       'expo-splash-screen',
       {

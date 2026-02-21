@@ -14,8 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { supabase, diagnoseNetwork } from '@/lib/supabase';
-import { useGoogleAuth, signInWithApple } from '@/lib/oauth';
+import { supabase, diagnoseNetwork, warmupConnection } from '@/lib/supabase';
+import { signInWithGoogle, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
@@ -53,13 +53,13 @@ export default function LoginScreen() {
     posthog.capture('login_screen_viewed');
   }, [posthog]);
 
-  const { signInWithGoogle, isReady: googleReady } = useGoogleAuth();
-
   const handleOAuth = async (provider: 'google' | 'apple') => {
     posthog.capture('oauth_login_tapped', { provider });
     setLoading(true);
     setFieldError(null);
     try {
+      // Prime the connection pool on Android before auth
+      await warmupConnection();
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
@@ -77,13 +77,7 @@ export default function LoginScreen() {
       if (msg.includes('network') || msg.includes('fetch')) {
         try {
           const diag = await diagnoseNetwork();
-          Alert.alert(
-            'Connection failed',
-            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
-            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
-            `Details: ${diag.details}\n` +
-            `Error: ${e.message}`,
-          );
+          Alert.alert('Network Diagnostic', diag.details + `\n\nError: ${e.message}`);
         } catch {
           Alert.alert('Sign in failed', e.message);
         }
@@ -114,6 +108,8 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
+      // Prime the connection pool on Android before auth
+      await warmupConnection();
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -153,13 +149,7 @@ export default function LoginScreen() {
       if (msg.includes('network') || msg.includes('fetch')) {
         try {
           const diag = await diagnoseNetwork();
-          Alert.alert(
-            'Connection failed',
-            `fetch: ${diag.fetchWorks ? 'OK' : 'FAIL'}\n` +
-            `Supabase: ${diag.supabaseReachable ? 'OK' : 'FAIL'}\n` +
-            `Details: ${diag.details}\n` +
-            `Error: ${e.message}`,
-          );
+          Alert.alert('Network Diagnostic', diag.details + `\n\nError: ${e.message}`);
         } catch {
           setFieldError(`Network error: ${e.message}`);
         }
@@ -217,7 +207,7 @@ export default function LoginScreen() {
         <View style={styles.socialButtons}>
           <Pressable
             style={({ pressed }) => [styles.socialButton, pressed && styles.socialPressed]}
-            disabled={!googleReady || loading}
+            disabled={loading}
             onPress={() => handleOAuth('google')}
           >
             {loading ? (
