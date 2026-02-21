@@ -1,67 +1,60 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useState } from 'react';
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import { usePostHog } from 'posthog-react-native';
+
 import { getCityById } from '@/data/api';
 import { useTripDetail } from '@/data/trips/useTripDetail';
-import { updateTrip, deleteTrip } from '@/data/trips/tripApi';
+import { useTripItinerary } from '@/data/trips/useItinerary';
+import { deleteTrip } from '@/data/trips/tripApi';
+import { generateDaysFromTrip } from '@/data/trips/itineraryApi';
 import { formatDateShort, getFlag, tripDayNumber, STATUS_COLORS } from '@/data/trips/helpers';
 import { useData } from '@/hooks/useData';
+import type { TripDayWithBlocks } from '@/data/trips/itineraryTypes';
+
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import SegmentedControl from '@/components/trips/SegmentedControl';
-import JourneyTimeline from '@/components/trips/JourneyTimeline';
-import AddEntrySheet from '@/components/trips/AddEntrySheet';
-import PlanTab from '@/components/trips/PlanTab';
-import PeopleTab from '@/components/trips/PeopleTab';
-import { colors, fonts, spacing, radius } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
+import { TripMetaPills } from '@/components/trips/TripMetaPills';
+import { DayOverviewCard } from '@/components/trips/DayOverviewCard';
 
-const TABS = ['Journey', 'Plan', 'People'];
+import { colors, fonts, spacing, radius } from '@/constants/design';
 
 export default function TripDetailScreen() {
-  const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
+  const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const posthog = usePostHog();
 
-  const { trip, entries, savedItems, loading, error, refetchAll, refetchEntries, refetchSaved } =
-    useTripDetail(id);
+  // Existing trip data
+  const { trip, loading: tripLoading, error: tripError, refetchAll } = useTripDetail(id);
 
-  const [activeTab, setActiveTab] = useState(tab ? parseInt(tab, 10) || 0 : 0);
-  const [showAddEntry, setShowAddEntry] = useState(false);
+  // Itinerary data
+  const { itinerary, loading: itinLoading, refetch: refetchItinerary } = useTripItinerary(id);
+
   const [showMenu, setShowMenu] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
+  // City for hero image
   const tripStops = trip?.stops ?? [];
   const firstStop = tripStops[0];
   const { data: city } = useData(
     () => (firstStop?.cityId ? getCityById(firstStop.cityId) : Promise.resolve(null)),
-    [firstStop?.cityId]
+    [firstStop?.cityId],
   );
   const heroUrl = city?.heroImageUrl ?? trip?.coverImageUrl ?? null;
-
-  useEffect(() => {
-    if (id) posthog.capture('trip_detail_viewed', { trip_id: id, tab: TABS[activeTab] });
-  }, [id, posthog]);
 
   useFocusEffect(
     useCallback(() => {
       refetchAll();
-    }, [refetchAll]),
+      refetchItinerary();
+    }, [refetchAll, refetchItinerary]),
   );
 
-  const handleToggleMatching = async () => {
-    if (!trip) return;
-    const newValue = !trip.matchingOptIn;
-    await updateTrip(trip.id, { matchingOptIn: newValue });
-    refetchAll();
-  };
-
+  // Delete handler
   const handleDelete = () => {
     Alert.alert(
       'Delete trip',
@@ -77,12 +70,24 @@ export default function TripDetailScreen() {
             router.back();
           },
         },
-      ]
+      ],
     );
   };
 
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetchAll} />;
+  // Generate days handler
+  const handleGenerateDays = async () => {
+    if (!trip) return;
+    setGenerating(true);
+    try {
+      await generateDaysFromTrip(trip.id);
+      refetchItinerary();
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  if (tripLoading || itinLoading) return <LoadingScreen />;
+  if (tripError) return <ErrorScreen message={tripError.message} onRetry={refetchAll} />;
 
   if (!trip) {
     return (
@@ -93,20 +98,27 @@ export default function TripDetailScreen() {
     );
   }
 
+  // Computed values
   const flag = getFlag(trip.countryIso2);
   const dayNum = tripDayNumber(trip);
   const stops = trip.stops ?? [];
-  const stopsText = stops.length > 1
-    ? stops.map((s) => s.cityName || s.countryIso2).join(' → ')
-    : trip.destinationName;
-  const dateText = trip.arriving && trip.leaving
-    ? `${formatDateShort(trip.arriving)} — ${formatDateShort(trip.leaving)}`
-    : 'Flexible dates';
+  const stopsText =
+    stops.length > 1
+      ? stops.map((s) => s.cityName || s.countryIso2).join(' \u2192 ')
+      : trip.destinationName;
+  const dateText =
+    trip.arriving && trip.leaving
+      ? `${formatDateShort(trip.arriving)} \u2014 ${formatDateShort(trip.leaving)}`
+      : 'Flexible dates';
   const statusStyle = STATUS_COLORS[trip.status] ?? STATUS_COLORS.draft;
+
+  const days: TripDayWithBlocks[] = itinerary?.days ?? [];
+  const hasDays = days.length > 0;
+  const hasDates = !!(trip.arriving && trip.leaving);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      {/* Nav bar */}
+      {/* Navigation */}
       <NavigationHeader
         title="Trip"
         parentTitle="Trips"
@@ -133,81 +145,93 @@ export default function TripDetailScreen() {
         </View>
       )}
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Hero header */}
-        <View style={styles.heroContainer}>
-          {heroUrl ? (
-            <Image source={{ uri: heroUrl }} style={styles.heroImage} contentFit="cover" transition={200} />
-          ) : (
-            <View style={[styles.heroImage, styles.heroPlaceholder]} />
-          )}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.65)']}
-            style={styles.gradient}
-          />
-          <View style={styles.overlay}>
-            <View style={styles.statusRow}>
-              <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-                <Text style={[styles.statusText, { color: statusStyle.text }]}>
-                  {statusStyle.label}{dayNum ? ` · Day ${dayNum}` : ''}
+      <FlatList
+        data={days}
+        keyExtractor={(item) => item.id}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + spacing.xxxxl }}
+        ListHeaderComponent={
+          <>
+            {/* Hero header */}
+            <View style={styles.heroContainer}>
+              {heroUrl ? (
+                <Image
+                  source={{ uri: heroUrl }}
+                  style={styles.heroImage}
+                  contentFit="cover"
+                  transition={200}
+                />
+              ) : (
+                <View style={[styles.heroImage, styles.heroPlaceholder]} />
+              )}
+              <LinearGradient
+                colors={['transparent', 'rgba(0,0,0,0.65)']}
+                style={styles.gradient}
+              />
+              <View style={styles.overlay}>
+                <View style={styles.statusRow}>
+                  <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
+                    <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                      {statusStyle.label}
+                      {dayNum ? ` \u00B7 Day ${dayNum}` : ''}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.heroTitle} numberOfLines={1}>
+                  {trip.title || trip.destinationName}
+                </Text>
+                <Text style={styles.heroSubtitle} numberOfLines={1}>
+                  {flag} {stopsText} \u00B7 {trip.nights} {trip.nights === 1 ? 'night' : 'nights'}
                 </Text>
               </View>
             </View>
-            <Text style={styles.heroTitle} numberOfLines={1}>
-              {trip.title || trip.destinationName}
-            </Text>
-            <Text style={styles.heroSubtitle} numberOfLines={1}>
-              {flag} {stopsText} · {trip.nights} {trip.nights === 1 ? 'night' : 'nights'}
-            </Text>
-            <Text style={styles.heroDates}>{dateText}</Text>
-          </View>
-        </View>
 
-        {/* Segmented control */}
-        <SegmentedControl
-          tabs={TABS}
-          activeIndex={activeTab}
-          onTabPress={setActiveTab}
-        />
-
-        {/* Tab content */}
-        <View style={styles.tabContent}>
-          {activeTab === 0 && (
-            <JourneyTimeline entries={entries} />
-          )}
-          {activeTab === 1 && (
-            <PlanTab
-              trip={trip}
-              savedItems={savedItems}
-              onRefresh={refetchSaved}
+            {/* Meta pills */}
+            <TripMetaPills
+              dateRange={dateText}
+              dayCount={days.length}
+              placeCount={itinerary?.totalPlaces ?? 0}
+              budget={trip.budgetTotal ?? null}
+              currency={trip.currency ?? 'USD'}
             />
-          )}
-          {activeTab === 2 && (
-            <PeopleTab
-              tripId={trip.id}
-              matchingOptIn={trip.matchingOptIn}
-              onToggleMatching={handleToggleMatching}
-            />
-          )}
-        </View>
-      </ScrollView>
 
-      {/* Floating add entry button (Journey tab only) */}
-      {activeTab === 0 && (
-        <Pressable
-          style={[styles.fab, { bottom: insets.bottom + spacing.lg }]}
-          onPress={() => setShowAddEntry(true)}
-        >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
-        </Pressable>
-      )}
+            {/* Itinerary section header */}
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>ITINERARY</Text>
+            </View>
 
-      {/* Add entry sheet */}
-      <AddEntrySheet
-        tripId={trip.id}
-        visible={showAddEntry}
-        onClose={() => setShowAddEntry(false)}
-        onSaved={refetchEntries}
+            {/* Generate days CTA (when no days and trip has dates) */}
+            {!hasDays && hasDates && (
+              <Pressable
+                style={styles.generateButton}
+                onPress={handleGenerateDays}
+                disabled={generating}
+              >
+                <Ionicons name="calendar-outline" size={20} color={colors.orange} />
+                <Text style={styles.generateButtonText}>
+                  {generating ? 'Generating...' : 'Generate itinerary from dates'}
+                </Text>
+              </Pressable>
+            )}
+
+            {/* Empty state when no days and no dates */}
+            {!hasDays && !hasDates && (
+              <View style={styles.emptyState}>
+                <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
+                <Text style={styles.emptyTitle}>No itinerary yet</Text>
+                <Text style={styles.emptySubtitle}>
+                  Add trip dates to generate your day-by-day plan
+                </Text>
+              </View>
+            )}
+          </>
+        }
+        renderItem={({ item }) => (
+          <DayOverviewCard
+            day={item}
+            onPress={() => router.push(`/(tabs)/trips/day/${item.id}`)}
+          />
+        )}
       />
     </View>
   );
@@ -225,6 +249,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
+
+  // Menu
   menu: {
     position: 'absolute',
     top: 80,
@@ -252,6 +278,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
   },
+
   // Hero header
   heroContainer: {
     height: 220,
@@ -297,31 +324,57 @@ const styles = StyleSheet.create({
     color: 'rgba(255,255,255,0.85)',
     marginTop: 2,
   },
-  heroDates: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.7)',
-    marginTop: 2,
+
+  // Section header
+  sectionHeader: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.sm,
   },
-  // Tab content
-  tabContent: {
-    paddingHorizontal: spacing.lg,
-    minHeight: 400,
+  sectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
   },
-  // FAB
-  fab: {
-    position: 'absolute',
-    right: spacing.lg,
-    width: 56,
-    height: 56,
-    borderRadius: radius.full,
-    backgroundColor: colors.orange,
+
+  // Generate button
+  generateButton: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 6,
+    gap: spacing.sm,
+    marginHorizontal: spacing.screenX,
+    paddingVertical: spacing.lg,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    borderWidth: 1,
+    borderColor: colors.orange,
+  },
+  generateButtonText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.orange,
+  },
+
+  // Empty state
+  emptyState: {
+    alignItems: 'center',
+    paddingVertical: spacing.xxxxl,
+    paddingHorizontal: spacing.screenX,
+  },
+  emptyTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+    marginTop: spacing.md,
+  },
+  emptySubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });
