@@ -240,6 +240,15 @@ export interface Place {
   bookAheadText: string | null;
   ourTakeBullets: string[];
   imageUrlCached: string | null;
+  // Accommodation detail fields
+  womenOnly: boolean;
+  positioningSummary: string | null;
+  whyWomenChoose: string | null;
+  checkInTime: string | null;
+  checkOutTime: string | null;
+  paymentTypes: string[];
+  nearestTransport: string | null;
+  locationContext: string | null;
   createdAt: string;
   updatedAt: string;
 }

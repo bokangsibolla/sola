@@ -642,6 +642,50 @@ export async function getActivityWithDetails(slug: string): Promise<{
   return { activity, media, tags, city, country };
 }
 
+// ---------------------------------------------------------------------------
+// Accommodation Detail
+// ---------------------------------------------------------------------------
+
+/**
+ * Get an accommodation (hotel/hostel/homestay) by slug
+ */
+export async function getAccommodationBySlug(slug: string): Promise<Place | undefined> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*')
+    .eq('slug', slug)
+    .in('place_type', ['hotel', 'hostel', 'homestay'])
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<Place>(data) : undefined;
+}
+
+/**
+ * Get accommodation with its media, tags, and breadcrumb context (city + country)
+ */
+export async function getAccommodationWithDetails(slug: string): Promise<{
+  accommodation: Place;
+  media: PlaceMedia[];
+  tags: Tag[];
+  city?: City;
+  country?: Country;
+} | undefined> {
+  const accommodation = await getAccommodationBySlug(slug);
+  if (!accommodation) return undefined;
+
+  const [media, tags, city] = await Promise.all([
+    getPlaceMedia(accommodation.id),
+    getPlaceTags(accommodation.id),
+    accommodation.cityId ? getCityById(accommodation.cityId) : Promise.resolve(undefined),
+  ]);
+
+  const country = city?.countryId
+    ? await getCountryById(city.countryId)
+    : undefined;
+
+  return { accommodation, media, tags, city, country };
+}
+
 export async function getPlaceMedia(placeId: string): Promise<PlaceMedia[]> {
   const { data, error } = await supabase
     .from('place_media')
