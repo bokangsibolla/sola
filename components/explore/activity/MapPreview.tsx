@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
@@ -14,27 +15,45 @@ interface MapPreviewProps {
 const MAP_HEIGHT = 180;
 
 const MapPreview: React.FC<MapPreviewProps> = ({
+  lat,
+  lng,
   name,
   address,
   onPress,
 }) => {
+  const hasCoords = lat != null && lng != null;
+
   return (
     <Pressable style={styles.container} onPress={onPress}>
-      {/* Styled placeholder that evokes a map */}
-      <View style={styles.mapPlaceholder}>
-        <View style={styles.gridOverlay}>
-          <View style={styles.gridH} />
-          <View style={[styles.gridH, { top: '50%' }]} />
-          <View style={[styles.gridH, { top: '66%' }]} />
-          <View style={styles.gridV} />
-          <View style={[styles.gridV, { left: '50%' }]} />
-          <View style={[styles.gridV, { left: '66%' }]} />
+      {hasCoords ? (
+        <View style={styles.mapWrapper}>
+          <MapView
+            style={styles.map}
+            initialRegion={{
+              latitude: lat,
+              longitude: lng,
+              latitudeDelta: 0.008,
+              longitudeDelta: 0.008,
+            }}
+            scrollEnabled={false}
+            zoomEnabled={false}
+            rotateEnabled={false}
+            pitchEnabled={false}
+            pointerEvents="none"
+          >
+            <Marker
+              coordinate={{ latitude: lat, longitude: lng }}
+              title={name}
+            />
+          </MapView>
+          {/* Tap overlay — ensures the Pressable captures all taps */}
+          <View style={styles.tapOverlay} />
         </View>
-        <View style={styles.pinContainer}>
-          <View style={styles.pin} />
-          <View style={styles.pinShadow} />
+      ) : (
+        <View style={styles.placeholder}>
+          <Ionicons name="map-outline" size={32} color={colors.textMuted} />
         </View>
-      </View>
+      )}
 
       {/* Label bar at bottom */}
       <View style={styles.labelBar}>
@@ -57,49 +76,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.borderSubtle,
   },
-  mapPlaceholder: {
+  mapWrapper: {
+    width: '100%',
+    height: MAP_HEIGHT,
+    position: 'relative',
+  },
+  map: {
+    width: '100%',
+    height: MAP_HEIGHT,
+  },
+  tapOverlay: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  placeholder: {
     width: '100%',
     height: MAP_HEIGHT,
     backgroundColor: colors.neutralFill,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  gridOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  gridH: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: '33%',
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-  },
-  gridV: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: '33%',
-    width: 1,
-    backgroundColor: colors.borderSubtle,
-  },
-  pinContainer: {
-    alignItems: 'center',
-  },
-  pin: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: colors.orange,
-    borderWidth: 3,
-    borderColor: colors.background,
-  },
-  pinShadow: {
-    width: 8,
-    height: 4,
-    borderRadius: 4,
-    backgroundColor: 'rgba(0,0,0,0.1)',
-    marginTop: 2,
   },
   labelBar: {
     flexDirection: 'row',
