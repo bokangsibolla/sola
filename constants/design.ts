@@ -34,6 +34,13 @@ export const colors = {
   // Dashboard surfaces
   surfacePage: '#FAFAF8',
   surfaceCard: '#FFFFFF',
+  // Editorial overlay system
+  heroGradientEnd: 'rgba(0,0,0,0.55)',
+  cardGradientEnd: 'rgba(0,0,0,0.5)',
+  frostedPillBg: 'rgba(255,255,255,0.15)',
+  frostedPillBorder: 'rgba(255,255,255,0.25)',
+  textOnImage: '#FFFFFF',
+  textOnImageMuted: 'rgba(255,255,255,0.7)',
 };
 
 export const spacing = {
@@ -67,6 +74,7 @@ export const cardHeight = {
   sm: 160,
   md: 220,
   lg: 300,
+  hero: 280,
 };
 
 export const pressedState = {
@@ -126,4 +134,10 @@ export const typography = {
   tabRootTitle: { fontFamily: fonts.semiBold, fontSize: 22, lineHeight: 28 },
   greeting: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 32 },
   sectionTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 24 },
+  heroTitle: { fontFamily: fonts.semiBold, fontSize: 28, lineHeight: 34 },
+  heroSubtitle: { fontFamily: fonts.regular, fontSize: 14, lineHeight: 20 },
+  cardTitle: { fontFamily: fonts.semiBold, fontSize: 17, lineHeight: 22 },
+  cardSubtitle: { fontFamily: fonts.regular, fontSize: 13, lineHeight: 18 },
+  filterLabel: { fontFamily: fonts.medium, fontSize: 15, lineHeight: 20 },
+  pillLabel: { fontFamily: fonts.medium, fontSize: 11, lineHeight: 14 },
 };
