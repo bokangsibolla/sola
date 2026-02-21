@@ -1,21 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { View, Pressable, StyleSheet, Platform } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  Easing,
-} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import { colors, spacing, radius } from '@/constants/design';
+import { colors, spacing } from '@/constants/design';
 import { useAuth } from '@/state/AuthContext';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
 
 // ─── Icon mapping ────────────────────────────────────────────────────────────
-// All Ionicons — consistent stroke weight, clear silhouettes, equal visual density
 
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   home: 'home-outline',
@@ -31,12 +24,12 @@ const TAB_ICONS_ACTIVE: Record<string, keyof typeof Ionicons.glyphMap> = {
   trips: 'airplane',
 };
 
-const ICON_SIZE = 22;
-const ACTIVE_CIRCLE_SIZE = spacing.xxxxl; // 48 — meets 44pt minimum touch target
-const ANIMATION_DURATION = 250;
+const ICON_SIZE = 26;
+const TAB_HIT_SIZE = 48; // meets 44pt minimum touch target
+const BAR_HEIGHT = 50;
 
 /** Height to reserve at bottom of scrollable content so items aren't hidden behind the bar. */
-export const FLOATING_TAB_BAR_HEIGHT = ACTIVE_CIRCLE_SIZE + spacing.xxl + spacing.xxl;
+export const FLOATING_TAB_BAR_HEIGHT = BAR_HEIGHT + spacing.xxl;
 
 // ─── Individual Tab Item ─────────────────────────────────────────────────────
 
@@ -50,20 +43,6 @@ interface TabItemProps {
 }
 
 function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge }: TabItemProps) {
-  const active = useSharedValue(isFocused ? 1 : 0);
-
-  useEffect(() => {
-    active.value = withTiming(isFocused ? 1 : 0, {
-      duration: ANIMATION_DURATION,
-      easing: Easing.out(Easing.cubic),
-    });
-  }, [isFocused, active]);
-
-  const circleStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: active.value }],
-    opacity: active.value,
-  }));
-
   const iconName = isFocused
     ? TAB_ICONS_ACTIVE[routeName]
     : TAB_ICONS[routeName];
@@ -80,7 +59,6 @@ function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge 
       style={styles.tab}
     >
       <View style={styles.iconContainer}>
-        <Animated.View style={[styles.activeCircle, circleStyle]} />
         <Ionicons
           name={iconName}
           size={ICON_SIZE}
@@ -92,11 +70,11 @@ function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge 
   );
 }
 
-// ─── Floating Tab Bar ────────────────────────────────────────────────────────
+// ─── Tab Bar ─────────────────────────────────────────────────────────────────
 
 export default function TabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const bottomPadding = Math.max(insets.bottom, spacing.sm) + spacing.lg;
+  const bottomInset = Math.max(insets.bottom, spacing.xs);
   const { userId } = useAuth();
   const [connectHasNew, setConnectHasNew] = useState(false);
 
@@ -128,11 +106,8 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
   }, [state.index]);
 
   return (
-    <View
-      style={[styles.wrapper, { paddingBottom: bottomPadding }]}
-      pointerEvents="box-none"
-    >
-      <View style={styles.floatingBar}>
+    <View style={[styles.wrapper, { paddingBottom: bottomInset }]}>
+      <View style={styles.bar}>
         {state.routes.map((route, index) => {
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
@@ -178,54 +153,45 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-  },
-  floatingBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.floatingNavBg,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.floatingNavBorder,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    gap: spacing.sm,
-    // Exception to flat-design rule: floating elements need subtle depth
-    // to separate from scrollable content beneath them
+    backgroundColor: colors.background,
+    // Subtle upward shadow for separation from content
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
+        shadowOffset: { width: 0, height: -3 },
         shadowOpacity: 0.06,
-        shadowRadius: spacing.lg,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 4,
+        elevation: 8,
       },
     }),
   },
+  bar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-around',
+    height: BAR_HEIGHT,
+  },
   tab: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    height: TAB_HIT_SIZE,
   },
   iconContainer: {
-    width: ACTIVE_CIRCLE_SIZE,
-    height: ACTIVE_CIRCLE_SIZE,
+    width: TAB_HIT_SIZE,
+    height: TAB_HIT_SIZE,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  activeCircle: {
-    ...StyleSheet.absoluteFillObject,
-    borderRadius: ACTIVE_CIRCLE_SIZE / 2,
-    backgroundColor: colors.orangeFill,
   },
   badge: {
     position: 'absolute',
-    top: spacing.xs,
-    right: spacing.xs,
-    width: spacing.sm,
-    height: spacing.sm,
-    borderRadius: spacing.xs,
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 3.5,
     backgroundColor: colors.orange,
   },
 });
