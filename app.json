@@ -13,7 +13,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "sola",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "app.solatravel.sola",
