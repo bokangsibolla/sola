@@ -2005,10 +2005,9 @@ export interface TravelerSearchResult {
 export async function searchTravelersByUsername(
   query: string,
   currentUserId: string,
-  limit: number = 20,
 ): Promise<TravelerSearchResult[]> {
-  const normalized = query.toLowerCase().trim();
-  if (normalized.length < 2) return [];
+  const normalized = query.toLowerCase().trim().replace(/^@/, '');
+  if (normalized.length < 1) return [];
 
   const blockedIds = await getBlockedUserIds(currentUserId);
 
@@ -2017,9 +2016,9 @@ export async function searchTravelersByUsername(
     .select('id, username, first_name, avatar_url, home_country_name, home_country_iso2, verification_status')
     .neq('id', currentUserId)
     .not('username', 'is', null)
-    .ilike('username', `%${normalized}%`)
+    .eq('username', normalized)
     .eq('is_discoverable', true)
-    .limit(limit);
+    .limit(1);
 
   if (blockedIds.length > 0) {
     dbQuery = dbQuery.not('id', 'in', `(${blockedIds.join(',')})`);

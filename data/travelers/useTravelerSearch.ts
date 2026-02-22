@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import * as Sentry from '@sentry/react-native';
 import { searchTravelersByUsername } from '@/data/api';
 import type { TravelerSearchResult } from '@/data/api';
@@ -8,6 +8,8 @@ interface UseTravelerSearchReturn {
   setQuery: (q: string) => void;
   results: TravelerSearchResult[];
   isSearching: boolean;
+  search: () => void;
+  clear: () => void;
 }
 
 export function useTravelerSearch(currentUserId: string | undefined): UseTravelerSearchReturn {
@@ -15,27 +17,28 @@ export function useTravelerSearch(currentUserId: string | undefined): UseTravele
   const [results, setResults] = useState<TravelerSearchResult[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  useEffect(() => {
+  const search = useCallback(async () => {
     if (!query.trim() || !currentUserId) {
       setResults([]);
       return;
     }
 
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const data = await searchTravelersByUsername(query, currentUserId);
-        setResults(data);
-      } catch (err) {
-        Sentry.captureException(err);
-        setResults([]);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(timer);
+    setIsSearching(true);
+    try {
+      const data = await searchTravelersByUsername(query, currentUserId);
+      setResults(data);
+    } catch (err) {
+      Sentry.captureException(err);
+      setResults([]);
+    } finally {
+      setIsSearching(false);
+    }
   }, [query, currentUserId]);
 
-  return { query, setQuery, results, isSearching };
+  const clear = useCallback(() => {
+    setQuery('');
+    setResults([]);
+  }, []);
+
+  return { query, setQuery, results, isSearching, search, clear };
 }
