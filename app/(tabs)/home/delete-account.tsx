@@ -12,9 +12,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import { useAuth } from '@/state/AuthContext';
-import { onboardingStore } from '@/state/onboardingStore';
+import { clearLocalData } from '@/lib/clearLocalData';
 import { deleteAccount } from '@/data/api';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
@@ -28,6 +29,7 @@ export default function DeleteAccountScreen() {
   const insets = useSafeAreaInsets();
   const { userId, user, signOut } = useAuth();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
 
   const [confirmation, setConfirmation] = useState('');
   const [loading, setLoading] = useState(false);
@@ -55,9 +57,10 @@ export default function DeleteAccountScreen() {
               posthog.capture('account_deletion_completed');
               posthog.reset();
 
-              // Sign out and clear local state
+              // Sign out and clear all local state
               await signOut();
-              onboardingStore.reset();
+              queryClient.clear();
+              await clearLocalData('delete');
 
               // Navigate to welcome screen
               router.replace('/(onboarding)/welcome' as any);

@@ -15,8 +15,10 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import { onboardingStore } from '@/state/onboardingStore';
+import { clearLocalData } from '@/lib/clearLocalData';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { getProfileById, updateProfile } from '@/data/api';
@@ -91,6 +93,7 @@ export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
   const { userId, signOut } = useAuth();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
 
   const { data: profile, refetch: refetchProfile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
@@ -232,7 +235,8 @@ export default function SettingsScreen() {
           posthog.capture('logout');
           posthog.reset();
           await signOut();
-          onboardingStore.reset();
+          queryClient.clear();
+          await clearLocalData('logout');
           router.replace('/(onboarding)/welcome' as any);
         },
       },
