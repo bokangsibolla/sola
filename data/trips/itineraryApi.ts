@@ -39,7 +39,7 @@ function assembleBlocksWithTags(
 
   return rawBlocks.map((raw) => {
     // Extract nested place data before toCamel
-    const placeData = raw.places as { name: string; place_type: string; address: string | null; city_area_id: string | null } | null;
+    const placeData = raw.places as { name: string; place_type: string; address: string | null; city_area_id: string | null; image_url_cached: string | null } | null;
     const block = toCamel<ItineraryBlock>(raw);
     const tags = tagsByBlock.get(block.id) || [];
     const place = placeData
@@ -48,6 +48,7 @@ function assembleBlocksWithTags(
           placeType: placeData.place_type,
           address: placeData.address,
           cityAreaId: placeData.city_area_id,
+          imageUrlCached: placeData.image_url_cached,
         }
       : null;
     return { ...block, tags, place };
@@ -80,7 +81,7 @@ export async function getDayWithBlocks(dayId: string): Promise<TripDayWithBlocks
   // 2. Fetch blocks with place join
   const { data: blocksData, error: blocksError } = await supabase
     .from('itinerary_blocks')
-    .select('*, places(name, place_type, address, city_area_id)')
+    .select('*, places(name, place_type, address, city_area_id, image_url_cached)')
     .eq('trip_day_id', dayId);
   if (blocksError) throw blocksError;
 
@@ -120,7 +121,7 @@ export async function getTripItinerary(tripId: string): Promise<TripItinerary> {
   // 2. Fetch all blocks with place join
   const { data: blocksData, error: blocksError } = await supabase
     .from('itinerary_blocks')
-    .select('*, places(name, place_type, address, city_area_id)')
+    .select('*, places(name, place_type, address, city_area_id, image_url_cached)')
     .eq('trip_id', tripId);
   if (blocksError) throw blocksError;
 

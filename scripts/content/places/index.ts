@@ -11,6 +11,11 @@ import { myanmarPlaces } from './myanmar';
 import { japanPlaces } from './japan';
 import { portugalPlaces } from './portugal';
 import { moroccoPlaces } from './morocco';
+import { southAfricaPlaces } from './south-africa';
+import { zimbabwePlaces } from './zimbabwe';
+import { namibiaPlaces } from './namibia';
+import { mozambiquePlaces } from './mozambique';
+import { lesothoPlaces } from './lesotho';
 
 export const allPlaces = [
   ...thailandPlaces,
@@ -25,6 +30,11 @@ export const allPlaces = [
   ...japanPlaces,
   ...portugalPlaces,
   ...moroccoPlaces,
+  ...southAfricaPlaces,
+  ...zimbabwePlaces,
+  ...namibiaPlaces,
+  ...mozambiquePlaces,
+  ...lesothoPlaces,
 ];
 
 export async function seedPlaces() {

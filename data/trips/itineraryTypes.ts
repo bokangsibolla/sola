@@ -67,6 +67,7 @@ export interface ItineraryBlockWithTags extends ItineraryBlock {
     placeType: string;
     address: string | null;
     cityAreaId: string | null;
+    imageUrlCached: string | null;
   } | null;
 }
 

@@ -1,0 +1,183 @@
+{
+  "examples": [
+    {
+      "_comment": "COUNTRY example — Thailand",
+      "destinationId": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+      "destinationType": "country",
+      "name": "Thailand",
+      "heroImage": {
+        "url": "https://yourproject.supabase.co/storage/v1/object/public/images/countries/thailand.jpg",
+        "source": "custom_search",
+        "width": 4000,
+        "height": 2667,
+        "title": "Thailand cinematic landscape - Krabi coastline at golden hour",
+        "contextLink": "https://www.lonelyplanet.com/thailand",
+        "attribution": "lonelyplanet.com",
+        "qualityScore": 82,
+        "licenseHint": "likely_restricted",
+        "domainTrust": 0.6,
+        "visualCategory": "landscape"
+      },
+      "galleryImages": [
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/countries/thailand-gallery-0.jpg",
+          "source": "places_photos",
+          "width": 4032,
+          "height": 3024,
+          "attribution": "Google Maps User",
+          "qualityScore": 68,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "iconic"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/countries/thailand-gallery-1.jpg",
+          "source": "places_photos",
+          "width": 3840,
+          "height": 2160,
+          "attribution": "Travel Photographer",
+          "qualityScore": 65,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "landscape"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/countries/thailand-gallery-2.jpg",
+          "source": "custom_search",
+          "width": 3200,
+          "height": 2133,
+          "title": "Bangkok street market at night",
+          "attribution": "afar.com",
+          "qualityScore": 61,
+          "licenseHint": "likely_restricted",
+          "domainTrust": 0.5,
+          "visualCategory": "street"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/countries/thailand-gallery-3.jpg",
+          "source": "places_photos",
+          "width": 4000,
+          "height": 3000,
+          "attribution": "Google Maps User",
+          "qualityScore": 58,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "nature"
+        }
+      ],
+      "imageSource": "custom_search",
+      "canonicalQuery": "Thailand Country in Southeast Asia",
+      "status": "enriched"
+    },
+    {
+      "_comment": "CITY example — Cape Town",
+      "destinationId": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "destinationType": "city",
+      "name": "Cape Town",
+      "heroImage": {
+        "url": "https://yourproject.supabase.co/storage/v1/object/public/images/cities/cape-town.jpg",
+        "source": "places_photos",
+        "width": 4032,
+        "height": 3024,
+        "attribution": "Cape Town Tourism",
+        "qualityScore": 76,
+        "licenseHint": "unknown",
+        "domainTrust": 0.85,
+        "visualCategory": "landscape"
+      },
+      "galleryImages": [
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/cities/cape-town-gallery-0.jpg",
+          "source": "places_photos",
+          "width": 3840,
+          "height": 2560,
+          "attribution": "Google Maps User",
+          "qualityScore": 71,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "iconic"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/cities/cape-town-gallery-1.jpg",
+          "source": "places_photos",
+          "width": 3200,
+          "height": 2400,
+          "attribution": "Local Photographer",
+          "qualityScore": 64,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "coastal"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/cities/cape-town-gallery-2.jpg",
+          "source": "places_photos",
+          "width": 4000,
+          "height": 3000,
+          "attribution": "Google Maps User",
+          "qualityScore": 59,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "street"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/cities/cape-town-gallery-3.jpg",
+          "source": "places_photos",
+          "width": 3600,
+          "height": 2400,
+          "attribution": "Google Maps User",
+          "qualityScore": 55,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "vibe"
+        }
+      ],
+      "imageSource": "places_photos",
+      "canonicalQuery": "Cape Town Legislative capital of South Africa",
+      "status": "enriched"
+    },
+    {
+      "_comment": "NEIGHBORHOOD example — Bo-Kaap, Cape Town",
+      "destinationId": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "destinationType": "neighborhood",
+      "name": "Bo-Kaap",
+      "heroImage": {
+        "url": "https://yourproject.supabase.co/storage/v1/object/public/images/areas/cape-town-bo-kaap.jpg",
+        "source": "places_photos",
+        "width": 4032,
+        "height": 3024,
+        "attribution": "Cape Town Visitor",
+        "qualityScore": 72,
+        "licenseHint": "unknown",
+        "domainTrust": 0.85,
+        "visualCategory": "street"
+      },
+      "galleryImages": [
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/areas/cape-town-bo-kaap-gallery-0.jpg",
+          "source": "places_photos",
+          "width": 3840,
+          "height": 2880,
+          "attribution": "Google Maps User",
+          "qualityScore": 65,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "iconic"
+        },
+        {
+          "url": "https://yourproject.supabase.co/storage/v1/object/public/images/areas/cape-town-bo-kaap-gallery-1.jpg",
+          "source": "places_photos",
+          "width": 3200,
+          "height": 2400,
+          "attribution": "Photographer Name",
+          "qualityScore": 58,
+          "licenseHint": "unknown",
+          "domainTrust": 0.85,
+          "visualCategory": "vibe"
+        }
+      ],
+      "imageSource": "places_photos",
+      "canonicalQuery": "Bo-Kaap Neighbourhood in Cape Town, South Africa",
+      "status": "enriched"
+    }
+  ]
+}

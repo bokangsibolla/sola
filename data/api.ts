@@ -1571,6 +1571,8 @@ export interface DestinationResult {
   slug: string;
   parentName: string | null;
   countryIso2: string | null;
+  /** For areas: the parent city's ID so a trip stop can reference the city. */
+  cityId?: string;
 }
 
 export async function searchDestinations(query: string): Promise<DestinationResult[]> {
@@ -1617,19 +1619,21 @@ export async function searchDestinations(query: string): Promise<DestinationResu
 
   const { data: areas } = await supabase
     .from('city_areas')
-    .select('id, name, slug, city_id, cities(name, slug)')
+    .select('id, name, slug, city_id, cities(id, name, slug, countries(iso2))')
     .eq('is_active', true)
     .ilike('name', `%${q}%`)
     .limit(5);
 
   for (const a of areas ?? []) {
+    const city = (a as any).cities;
     results.push({
       type: 'area',
       id: a.id,
       name: a.name,
-      slug: (a as any).cities?.slug ?? a.slug,
-      parentName: (a as any).cities?.name ?? null,
-      countryIso2: null,
+      slug: city?.slug ?? a.slug,
+      parentName: city?.name ?? null,
+      countryIso2: city?.countries?.iso2 ?? null,
+      cityId: city?.id ?? a.city_id,
     });
   }
 

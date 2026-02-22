@@ -1,5 +1,6 @@
 import { colors } from '@/constants/design';
-import type { EntryType, MoodTag, TripStatus, TripFull } from './types';
+import type { EntryType, MoodTag, TripStatus, TripFull, TripStop } from './types';
+import type { TripDayWithBlocks } from './itineraryTypes';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 const DAY_MS = 86_400_000;
@@ -98,6 +99,28 @@ export const TRAVEL_STYLE_OPTIONS = [
   { key: 'adventure', label: 'Adventure' },
   { key: 'budget', label: 'Budget' },
 ] as const;
+
+/** Resolve the city for a given day based on which stop's date range it falls within. */
+export function getCityIdForDay(day: TripDayWithBlocks, stops: TripStop[]): string | null {
+  if (stops.length <= 1) return stops[0]?.cityId ?? null;
+  if (!day.date) return stops[0]?.cityId ?? null;
+  const stop = stops.find(
+    (s) => s.startDate && s.endDate && s.startDate <= day.date! && day.date! <= s.endDate,
+  );
+  return stop?.cityId ?? stops[0]?.cityId ?? null;
+}
+
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+/** Format "YYYY-MM-DD" → "Mon, 24 Feb" */
+export function formatDayDate(dateStr: string | null): string | null {
+  if (!dateStr) return null;
+  const [y, m, d] = dateStr.split('-').map(Number);
+  const date = new Date(y, m - 1, d);
+  const weekday = SHORT_DAYS[date.getDay()];
+  const month = MONTHS[date.getMonth()];
+  return `${weekday}, ${d} ${month}`;
+}
 
 export function groupEntriesByDate(entries: { createdAt: string }[]): [string, typeof entries][] {
   const groupMap = new Map<string, typeof entries>();

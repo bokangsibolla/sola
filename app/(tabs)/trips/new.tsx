@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useMemo } from 'react';
 import {
   Alert,
   Modal,
@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons, Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -20,59 +20,49 @@ import * as ImagePicker from 'expo-image-picker';
 import { usePostHog } from 'posthog-react-native';
 import { searchDestinations } from '@/data/api';
 import type { DestinationResult } from '@/data/api';
-import type { Profile } from '@/data/types';
-import { createTrip, getConnectedProfiles } from '@/data/trips/tripApi';
+import { createTrip } from '@/data/trips/tripApi';
 import { getFlag } from '@/data/trips/helpers';
-import type { TripKind, PrivacyLevel } from '@/data/trips/types';
+import type { TripKind } from '@/data/trips/types';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
-import { useLocationConsent } from '@/hooks/useLocationConsent';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
+import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 const DAY_MS = 86_400_000;
 const NAME_MAX = 50;
-const SUMMARY_MAX = 80;
-const MAX_BUDDIES = 5;
 
 interface SelectedStop {
   countryIso2: string;
   cityId?: string;
   cityName: string;
-  type: 'city' | 'country';
+  type: 'city' | 'country' | 'area';
+  startDate: Date | null;
+  endDate: Date | null;
 }
 
-interface BuddyProfile {
-  id: string;
-  firstName: string;
-  avatarUrl: string | null;
+/** Which date field the picker is editing. */
+interface PickerTarget {
+  stopIndex: number;
+  field: 'start' | 'end';
 }
 
-const TRIP_KINDS: { key: TripKind; icon: string; title: string; subtitle: string }[] = [
+const TRIP_KINDS: { key: TripKind; title: string; detail: string }[] = [
   {
     key: 'plan_future',
-    icon: 'calendar-outline',
     title: 'Plan a future trip',
-    subtitle: 'Set dates and destinations ahead of time',
+    detail: 'Set dates and build your itinerary',
   },
   {
     key: 'currently_traveling',
-    icon: 'navigate-outline',
     title: 'Currently traveling',
-    subtitle: 'Start tracking your trip right now',
+    detail: 'Track your trip in real time',
   },
   {
     key: 'past_trip',
-    icon: 'time-outline',
     title: 'Log a past trip',
-    subtitle: 'Record a trip you already took',
+    detail: 'Record a trip you already took',
   },
-];
-
-const PRIVACY_OPTIONS: { key: PrivacyLevel; label: string; description: string; icon: string }[] = [
-  { key: 'private', label: 'Only me', description: 'Your trip is completely private', icon: 'lock-closed-outline' },
-  { key: 'friends', label: 'Connections', description: 'Visible to your connections', icon: 'people-outline' },
-  { key: 'public', label: 'Everyone', description: 'Anyone on Sola can see this trip', icon: 'earth-outline' },
 ];
 
 const KIND_LABELS: Record<TripKind, string> = {
@@ -96,7 +86,6 @@ export default function NewTripScreen() {
   const { userId } = useAuth();
   const posthog = usePostHog();
   const scrollRef = useRef<ScrollView>(null);
-  const { requestLocation } = useLocationConsent(userId);
 
   // Trip kind bottom sheet
   const [showKindSheet, setShowKindSheet] = useState(true);
@@ -105,49 +94,57 @@ export default function NewTripScreen() {
   // Cover photo
   const [coverUri, setCoverUri] = useState<string | null>(null);
 
-  // Destinations
+  // Destinations (each stop carries its own dates)
   const [stops, setStops] = useState<SelectedStop[]>([]);
   const [search, setSearch] = useState('');
 
-  // Dates
+  // Flexible dates — user doesn't have exact dates yet
+  const [flexibleDates, setFlexibleDates] = useState(false);
+
+  // Date picker target
   const today = new Date();
   const tomorrow = new Date(Date.now() + DAY_MS);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
-  const [showPicker, setShowPicker] = useState<'start' | 'end' | null>(null);
-  const nights = startDate && endDate ? nightsBetween(startDate, endDate) : 0;
+  const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
 
-  // Name & Summary
+  // Trip name
   const [tripName, setTripName] = useState('');
-  const [summary, setSummary] = useState('');
-
-  // Travel Buddies
-  const [buddies, setBuddies] = useState<BuddyProfile[]>([]);
-  const [buddySearch, setBuddySearch] = useState('');
-  const [showBuddySearch, setShowBuddySearch] = useState(false);
-
-  // Travel Tracker
-  const [trackerEnabled, setTrackerEnabled] = useState(false);
-
-  // Privacy
-  const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>('private');
 
   // Save state
   const [saving, setSaving] = useState(false);
 
-  // Search destinations
+  // Search destinations — cities, countries, and neighborhoods only
+  const DESTINATION_TYPES = new Set(['city', 'country', 'area']);
   const { data: destResults } = useData(
-    () => search.length < 2 ? Promise.resolve([]) : searchDestinations(search).then((r) => r.slice(0, 6)),
+    () => search.length < 2
+      ? Promise.resolve([])
+      : searchDestinations(search).then((r) =>
+          r.filter((d) => DESTINATION_TYPES.has(d.type)).slice(0, 6),
+        ),
     [search],
   );
 
-  // Search connected profiles for buddies
-  const { data: buddyResults } = useData(
-    () => !userId || buddySearch.length < 2
-      ? Promise.resolve([])
-      : getConnectedProfiles(userId, buddySearch),
-    [buddySearch, userId],
-  );
+  // Derived trip-level dates from stops
+  const tripDates = useMemo(() => {
+    let earliest: Date | null = null;
+    let latest: Date | null = null;
+    let totalNights = 0;
+    for (const stop of stops) {
+      if (stop.startDate && (!earliest || stop.startDate < earliest)) {
+        earliest = stop.startDate;
+      }
+      if (stop.endDate && (!latest || stop.endDate > latest)) {
+        latest = stop.endDate;
+      }
+      if (stop.startDate && stop.endDate) {
+        totalNights += nightsBetween(stop.startDate, stop.endDate);
+      }
+    }
+    return { arriving: earliest, leaving: latest, totalNights };
+  }, [stops]);
+
+  const isMultiStop = stops.length > 1;
+
+  // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const handleSelectKind = (kind: TripKind) => {
     setTripKind(kind);
@@ -173,62 +170,42 @@ export default function NewTripScreen() {
 
   const handleSelectStop = (result: DestinationResult) => {
     if (stops.length >= 5 || !result.countryIso2) return;
+    // Auto-chain: new stop starts when previous stop ends (or after its start if no end)
+    const prevStop = stops[stops.length - 1];
+    const prevDate = prevStop?.endDate ?? prevStop?.startDate ?? null;
+    const autoStart = !flexibleDates && prevDate ? prevDate : null;
+    // For areas (neighborhoods), use the parent city's ID
+    const cityId = result.type === 'area'
+      ? result.cityId
+      : result.type === 'city'
+        ? result.id
+        : undefined;
     setStops([...stops, {
       countryIso2: result.countryIso2,
-      cityId: result.type === 'city' ? result.id : undefined,
+      cityId,
       cityName: result.name,
-      type: result.type as 'city' | 'country',
+      type: result.type as 'city' | 'country' | 'area',
+      startDate: autoStart,
+      endDate: null,
     }]);
     setSearch('');
   };
 
   const handleRemoveStop = (index: number) => {
     setStops(stops.filter((_, i) => i !== index));
+    // Close picker if it was targeting the removed stop
+    if (pickerTarget && pickerTarget.stopIndex === index) {
+      setPickerTarget(null);
+    }
   };
 
-  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
-    if (Platform.OS === 'android') setShowPicker(null);
-    if (event.type === 'dismissed') {
-      setShowPicker(null);
+  const openPicker = (stopIndex: number, field: 'start' | 'end') => {
+    // For single-stop end date: ensure start is set first
+    if (field === 'end' && !stops[stopIndex]?.startDate) {
+      setPickerTarget({ stopIndex, field: 'start' });
       return;
     }
-    if (!date) return;
-
-    if (showPicker === 'start') {
-      setStartDate(date);
-      if (endDate && date >= endDate) setEndDate(null);
-      if (Platform.OS === 'android') setTimeout(() => setShowPicker('end'), 300);
-    } else {
-      setEndDate(date);
-      if (Platform.OS === 'android') setShowPicker(null);
-    }
-  };
-
-  const handleAddBuddy = (profile: Profile) => {
-    if (buddies.length >= MAX_BUDDIES) return;
-    if (buddies.some((b) => b.id === profile.id)) return;
-    setBuddies([...buddies, {
-      id: profile.id,
-      firstName: profile.firstName,
-      avatarUrl: profile.avatarUrl,
-    }]);
-    setBuddySearch('');
-    setShowBuddySearch(false);
-  };
-
-  const handleRemoveBuddy = (id: string) => {
-    setBuddies(buddies.filter((b) => b.id !== id));
-  };
-
-  const handleToggleTracker = async () => {
-    if (!trackerEnabled) {
-      const result = await requestLocation();
-      if (result) {
-        setTrackerEnabled(true);
-      }
-    } else {
-      setTrackerEnabled(false);
-    }
+    setPickerTarget({ stopIndex, field });
   };
 
   const getMinDate = useCallback(() => {
@@ -237,38 +214,88 @@ export default function NewTripScreen() {
     return tomorrow;
   }, [tripKind, tomorrow]);
 
+  const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
+    if (Platform.OS === 'android') setPickerTarget(null);
+    if (event.type === 'dismissed') {
+      setPickerTarget(null);
+      return;
+    }
+    if (!date || !pickerTarget) return;
+
+    const { stopIndex, field } = pickerTarget;
+    const updated = [...stops];
+    const stop = { ...updated[stopIndex] };
+
+    if (field === 'start') {
+      stop.startDate = date;
+      // If end is now before start, clear it
+      if (stop.endDate && date >= stop.endDate) stop.endDate = null;
+      updated[stopIndex] = stop;
+      setStops(updated);
+      // Auto-advance to end picker on Android
+      if (Platform.OS === 'android') {
+        setTimeout(() => setPickerTarget({ stopIndex, field: 'end' }), 300);
+      }
+    } else {
+      stop.endDate = date;
+      updated[stopIndex] = stop;
+      // Auto-chain: set next stop's start date to this end date
+      if (stopIndex + 1 < updated.length) {
+        const nextStop = { ...updated[stopIndex + 1] };
+        nextStop.startDate = date;
+        // Clear next stop's end date if it's now before the new start
+        if (nextStop.endDate && date >= nextStop.endDate) nextStop.endDate = null;
+        updated[stopIndex + 1] = nextStop;
+      }
+      setStops(updated);
+      if (Platform.OS === 'android') setPickerTarget(null);
+    }
+  };
+
+  const handlePickerDone = () => {
+    if (!pickerTarget) return;
+    const { stopIndex, field } = pickerTarget;
+    const stop = stops[stopIndex];
+    // Auto-advance from start → end if end not set
+    if (field === 'start' && stop?.startDate && !stop?.endDate) {
+      setPickerTarget({ stopIndex, field: 'end' });
+    } else {
+      setPickerTarget(null);
+    }
+  };
+
   const handleCreate = async () => {
     if (!userId || stops.length === 0) return;
     if (!tripKind) return;
 
     setSaving(true);
     try {
-      await createTrip(userId, {
+      const tripId = await createTrip(userId, {
         title: tripName.trim() || undefined,
-        summary: summary.trim() || undefined,
         tripKind,
         stops: stops.map((s) => ({
           countryIso2: s.countryIso2,
           cityId: s.cityId,
           cityName: s.cityName,
+          startDate: !flexibleDates && s.startDate ? s.startDate.toISOString().split('T')[0] : undefined,
+          endDate: !flexibleDates && s.endDate ? s.endDate.toISOString().split('T')[0] : undefined,
         })),
-        arriving: startDate ? startDate.toISOString().split('T')[0] : undefined,
-        leaving: endDate ? endDate.toISOString().split('T')[0] : undefined,
-        privacyLevel,
-        matchingOptIn: trackerEnabled,
-        buddyUserIds: buddies.map((b) => b.id),
+        arriving: !flexibleDates && tripDates.arriving ? tripDates.arriving.toISOString().split('T')[0] : undefined,
+        leaving: !flexibleDates && tripDates.leaving ? tripDates.leaving.toISOString().split('T')[0] : undefined,
+        privacyLevel: 'private',
+        matchingOptIn: false,
+        buddyUserIds: [],
       });
       posthog.capture('create_trip_completed', {
         kind: tripKind,
         stops_count: stops.length,
-        has_dates: !!startDate,
-        has_buddies: buddies.length > 0,
-        tracker_enabled: trackerEnabled,
-        privacy: privacyLevel,
+        has_dates: !flexibleDates && !!tripDates.arriving,
+        flexible_dates: flexibleDates,
       });
-      router.back();
-    } catch (err: any) {
-      Alert.alert('Save failed', err?.message || 'Something went wrong');
+      router.replace(`/(tabs)/trips/${tripId}`);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Something went wrong';
+      Alert.alert('Save failed', message);
     } finally {
       setSaving(false);
     }
@@ -276,7 +303,85 @@ export default function NewTripScreen() {
 
   const canCreate = stops.length > 0 && tripKind !== null;
 
-  // ── ALWAYS render the main screen structure ─────────────────────
+  // Current picker values
+  const pickerStop = pickerTarget ? stops[pickerTarget.stopIndex] : null;
+  const pickerValue = (() => {
+    if (!pickerTarget || !pickerStop) return tomorrow;
+    if (pickerTarget.field === 'start') {
+      if (pickerStop.startDate) return pickerStop.startDate;
+      // Default to previous stop's end/start date for chained stops
+      if (pickerTarget.stopIndex > 0) {
+        const prev = stops[pickerTarget.stopIndex - 1];
+        const prevDate = prev?.endDate ?? prev?.startDate;
+        if (prevDate) return prevDate;
+      }
+      return tripKind === 'past_trip' ? today : tomorrow;
+    }
+    return pickerStop.endDate || new Date((pickerStop.startDate?.getTime() || Date.now()) + DAY_MS);
+  })();
+  const pickerMinDate = (() => {
+    if (!pickerTarget || !pickerStop) return undefined;
+    if (pickerTarget.field === 'start') {
+      const baseMin = getMinDate();
+      // Chain: start date of stop N must be >= end date (or start date) of stop N-1
+      if (pickerTarget.stopIndex > 0) {
+        const prev = stops[pickerTarget.stopIndex - 1];
+        const prevDate = prev?.endDate ?? prev?.startDate;
+        if (prevDate && (!baseMin || prevDate > baseMin)) return prevDate;
+      }
+      return baseMin;
+    }
+    return pickerStop.startDate ? new Date(pickerStop.startDate.getTime() + DAY_MS) : undefined;
+  })();
+
+  // ── Render ───────────────────────────────────────────────────────────────────
+
+  /** Render a start/end date row for a stop. */
+  const renderDateRow = (stopIndex: number) => {
+    const stop = stops[stopIndex];
+    const stopNights = stop.startDate && stop.endDate ? nightsBetween(stop.startDate, stop.endDate) : 0;
+
+    return (
+      <View key={`dates-${stopIndex}`}>
+        {isMultiStop && (
+          <View style={styles.stopDateLabel}>
+            <Text style={styles.stopDateLabelFlag}>{getFlag(stop.countryIso2)}</Text>
+            <Text style={styles.stopDateLabelText}>{stop.cityName}</Text>
+          </View>
+        )}
+        <View style={styles.dateRow}>
+          <Pressable
+            style={[styles.dateCard, stop.startDate && styles.dateCardFilled]}
+            onPress={() => openPicker(stopIndex, 'start')}
+          >
+            <Text style={styles.dateLabel}>Start date</Text>
+            <Text style={[styles.dateValue, stop.startDate && styles.dateValueFilled]}>
+              {stop.startDate ? formatDate(stop.startDate) : 'Select'}
+            </Text>
+          </Pressable>
+
+          <Pressable
+            style={[styles.dateCard, stop.endDate && styles.dateCardFilled]}
+            onPress={() => openPicker(stopIndex, 'end')}
+          >
+            <Text style={styles.dateLabel}>End date</Text>
+            <Text style={[styles.dateValue, stop.endDate && styles.dateValueFilled]}>
+              {stop.endDate ? formatDate(stop.endDate) : 'Open'}
+            </Text>
+          </Pressable>
+        </View>
+
+        {stopNights > 0 && (
+          <View style={styles.stopNightsBadge}>
+            <Text style={styles.nightsText}>
+              {stopNights} {stopNights === 1 ? 'night' : 'nights'}
+            </Text>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Nav bar */}
@@ -309,7 +414,6 @@ export default function NewTripScreen() {
           <View style={styles.coverOptionalRow}>
             {tripKind && (
               <View style={styles.kindBadgeInline}>
-                <Ionicons name={TRIP_KINDS.find((k) => k.key === tripKind)?.icon as any ?? 'airplane-outline'} size={14} color={colors.orange} />
                 <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
               </View>
             )}
@@ -323,15 +427,12 @@ export default function NewTripScreen() {
         {/* ── Destinations ────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="location-outline" size={18} color={colors.orange} />
-              <Text style={styles.sectionTitle}>Where are you going?</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Where are you going?</Text>
             <View style={styles.inputRow}>
               <Ionicons name="search-outline" size={18} color={colors.textMuted} />
               <TextInput
                 style={styles.input}
-                placeholder="Search cities or countries..."
+                placeholder="Search a city or country..."
                 placeholderTextColor={colors.textMuted}
                 value={search}
                 onChangeText={setSearch}
@@ -353,7 +454,11 @@ export default function NewTripScreen() {
                   >
                     <Text style={styles.resultName}>{r.name}</Text>
                     <Text style={styles.resultDetail}>
-                      {r.type === 'city' && r.parentName ? r.parentName : r.type === 'country' ? 'Country' : ''}
+                      {r.type === 'area'
+                        ? r.parentName ?? 'Neighborhood'
+                        : r.type === 'city'
+                          ? r.parentName ?? 'City'
+                          : 'Country'}
                     </Text>
                   </Pressable>
                 ))}
@@ -376,7 +481,6 @@ export default function NewTripScreen() {
 
             {stops.length === 0 && search.length === 0 && (
               <View style={styles.emptyHint}>
-                <Ionicons name="airplane-outline" size={16} color={colors.textMuted} />
                 <Text style={styles.emptyHintText}>Add up to 5 destinations</Text>
               </View>
             )}
@@ -384,99 +488,89 @@ export default function NewTripScreen() {
         </View>
 
         {/* ── Trip Dates ──────────────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="calendar-outline" size={18} color={colors.orange} />
-              <Text style={styles.sectionTitle}>Trip dates</Text>
-            </View>
-            <View style={styles.dateRow}>
-              <Pressable
-                style={[styles.dateCard, startDate && styles.dateCardFilled]}
-                onPress={() => setShowPicker('start')}
-              >
-                <Text style={styles.dateLabel}>Start date</Text>
-                <Text style={[styles.dateValue, startDate && styles.dateValueFilled]}>
-                  {startDate ? formatDate(startDate) : 'Select'}
+        {stops.length > 0 && (
+          <View style={styles.section}>
+            <View style={styles.sectionCard}>
+              <View style={styles.datesSectionHeader}>
+                <Text style={styles.datesSectionTitle}>
+                  {isMultiStop ? 'Dates per destination' : 'Trip dates'}
                 </Text>
-              </Pressable>
-
-              <Pressable
-                style={[styles.dateCard, endDate && styles.dateCardFilled]}
-                onPress={() => {
-                  if (!startDate) { setShowPicker('start'); return; }
-                  setShowPicker('end');
-                }}
-              >
-                <Text style={styles.dateLabel}>End date (optional)</Text>
-                <Text style={[styles.dateValue, endDate && styles.dateValueFilled]}>
-                  {endDate ? formatDate(endDate) : 'Open'}
-                </Text>
-              </Pressable>
-            </View>
-
-            {nights > 0 && (
-              <View style={styles.nightsBadge}>
-                <Text style={styles.nightsText}>
-                  {nights} {nights === 1 ? 'night' : 'nights'}
-                </Text>
-              </View>
-            )}
-
-            {/* iOS inline picker */}
-            {Platform.OS === 'ios' && showPicker && (
-              <View style={styles.pickerContainer}>
-                <View style={styles.pickerHeader}>
-                  <Text style={styles.pickerTitle}>
-                    {showPicker === 'start' ? 'Start date' : 'End date'}
+                <Pressable
+                  style={[styles.flexibleToggle, flexibleDates && styles.flexibleToggleActive]}
+                  onPress={() => {
+                    setFlexibleDates(!flexibleDates);
+                    if (!flexibleDates) setPickerTarget(null);
+                  }}
+                >
+                  <Text style={[styles.flexibleToggleText, flexibleDates && styles.flexibleToggleTextActive]}>
+                    {flexibleDates ? 'Flexible' : 'Set dates'}
                   </Text>
-                  <Pressable
-                    onPress={() => {
-                      if (showPicker === 'start' && startDate && !endDate) {
-                        setShowPicker('end');
-                      } else {
-                        setShowPicker(null);
-                      }
-                    }}
-                  >
-                    <Text style={styles.pickerDone}>
-                      {showPicker === 'start' && startDate && !endDate ? 'Next' : 'Done'}
-                    </Text>
-                  </Pressable>
-                </View>
-                <DateTimePicker
-                  value={
-                    showPicker === 'start'
-                      ? startDate || (tripKind === 'past_trip' ? today : tomorrow)
-                      : endDate || new Date((startDate?.getTime() || Date.now()) + DAY_MS)
-                  }
-                  mode="date"
-                  display="inline"
-                  minimumDate={
-                    showPicker === 'start'
-                      ? getMinDate()
-                      : startDate ? new Date(startDate.getTime() + DAY_MS) : undefined
-                  }
-                  maximumDate={tripKind === 'past_trip' ? today : undefined}
-                  onChange={handleDateChange}
-                  accentColor={colors.orange}
-                />
+                </Pressable>
               </View>
-            )}
-          </View>
-        </View>
 
-        {/* ── Trip Name & Summary ─────────────────────────────── */}
+              {flexibleDates ? (
+                <View style={styles.flexibleHint}>
+                  <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
+                  <Text style={styles.flexibleHintText}>No fixed dates — you can add them later</Text>
+                </View>
+              ) : (
+                <>
+                  {stops.map((_, index) => renderDateRow(index))}
+
+                  {/* Total nights for multi-stop */}
+                  {isMultiStop && tripDates.totalNights > 0 && (
+                    <View style={styles.totalNightsBadge}>
+                      <Text style={styles.nightsText}>
+                        {tripDates.totalNights} {tripDates.totalNights === 1 ? 'night' : 'nights'} total
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* iOS inline picker */}
+                  {Platform.OS === 'ios' && pickerTarget && (
+                    <View style={styles.pickerContainer}>
+                      <View style={styles.pickerHeader}>
+                        <Text style={styles.pickerTitle}>
+                          {pickerTarget.field === 'start' ? 'Start date' : 'End date'}
+                          {isMultiStop && pickerStop
+                            ? ` — ${pickerStop.cityName}`
+                            : ''}
+                        </Text>
+                        <Pressable onPress={handlePickerDone}>
+                          <Text style={styles.pickerDone}>
+                            {pickerTarget.field === 'start' &&
+                              pickerStop?.startDate &&
+                              !pickerStop?.endDate
+                              ? 'Next'
+                              : 'Done'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                      <DateTimePicker
+                        value={pickerValue}
+                        mode="date"
+                        display="inline"
+                        minimumDate={pickerMinDate}
+                        maximumDate={tripKind === 'past_trip' ? today : undefined}
+                        onChange={handleDateChange}
+                        accentColor={colors.orange}
+                      />
+                    </View>
+                  )}
+                </>
+              )}
+            </View>
+          </View>
+        )}
+
+        {/* ── Trip Name ──────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="create-outline" size={18} color={colors.orange} />
-              <Text style={styles.sectionTitle}>About this trip</Text>
-            </View>
+            <Text style={styles.sectionTitle}>Trip name</Text>
 
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
-                <Text style={styles.fieldLabel}>Trip name</Text>
+                <Text style={styles.fieldLabel}>Name (optional)</Text>
                 <Text style={styles.charCount}>{tripName.length}/{NAME_MAX}</Text>
               </View>
               <TextInput
@@ -488,173 +582,17 @@ export default function NewTripScreen() {
                 maxLength={NAME_MAX}
               />
             </View>
-
-            <View style={styles.fieldGroup}>
-              <View style={styles.labelRow}>
-                <Text style={styles.fieldLabel}>Short summary</Text>
-                <Text style={styles.charCount}>{summary.length}/{SUMMARY_MAX}</Text>
-              </View>
-              <TextInput
-                style={[styles.textInput, styles.summaryInput]}
-                placeholder="What's this trip about?"
-                placeholderTextColor={colors.textMuted}
-                value={summary}
-                onChangeText={(text) => setSummary(text.slice(0, SUMMARY_MAX))}
-                maxLength={SUMMARY_MAX}
-                multiline
-              />
-            </View>
-          </View>
-        </View>
-
-        {/* ── Travel Buddies ──────────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="people-outline" size={18} color={colors.orange} />
-              <Text style={styles.sectionTitle}>Travel buddies</Text>
-            </View>
-            <Text style={styles.sectionHint}>
-              Invite connections to join your trip (up to {MAX_BUDDIES})
-            </Text>
-
-            {buddies.length > 0 && (
-              <View style={styles.buddyList}>
-                {buddies.map((buddy) => (
-                  <View key={buddy.id} style={styles.buddyChip}>
-                    <View style={styles.buddyAvatar}>
-                      {buddy.avatarUrl ? (
-                        <Image source={{ uri: buddy.avatarUrl }} style={styles.buddyAvatarImg} contentFit="cover" />
-                      ) : (
-                        <Feather name="user" size={12} color={colors.textMuted} />
-                      )}
-                    </View>
-                    <Text style={styles.buddyName}>{buddy.firstName}</Text>
-                    <Pressable onPress={() => handleRemoveBuddy(buddy.id)} hitSlop={8}>
-                      <Ionicons name="close" size={14} color={colors.textMuted} />
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            {buddies.length < MAX_BUDDIES && (
-              <>
-                {showBuddySearch ? (
-                  <View style={styles.buddySearchContainer}>
-                    <View style={styles.inputRow}>
-                      <Ionicons name="search-outline" size={16} color={colors.textMuted} />
-                      <TextInput
-                        style={styles.input}
-                        placeholder="Search your connections..."
-                        placeholderTextColor={colors.textMuted}
-                        value={buddySearch}
-                        onChangeText={setBuddySearch}
-                        autoFocus
-                      />
-                      <Pressable onPress={() => { setBuddySearch(''); setShowBuddySearch(false); }} hitSlop={8}>
-                        <Ionicons name="close-circle" size={16} color={colors.textMuted} />
-                      </Pressable>
-                    </View>
-                    {(buddyResults ?? []).length > 0 && buddySearch.length >= 2 && (
-                      <View style={styles.results}>
-                        {(buddyResults ?? []).filter((p) => !buddies.some((b) => b.id === p.id)).map((p) => (
-                          <Pressable
-                            key={p.id}
-                            style={styles.resultRow}
-                            onPress={() => handleAddBuddy(p)}
-                          >
-                            <Text style={styles.resultName}>{p.firstName}</Text>
-                            <Ionicons name="add-circle-outline" size={18} color={colors.orange} />
-                          </Pressable>
-                        ))}
-                      </View>
-                    )}
-                    {(buddyResults ?? []).length === 0 && buddySearch.length >= 2 && (
-                      <Text style={styles.noResults}>No connections found</Text>
-                    )}
-                  </View>
-                ) : (
-                  <Pressable
-                    style={styles.addBuddyBtn}
-                    onPress={() => setShowBuddySearch(true)}
-                  >
-                    <View style={styles.addBuddyIcon}>
-                      <Ionicons name="person-add-outline" size={16} color={colors.orange} />
-                    </View>
-                    <Text style={styles.addBuddyText}>Add a travel buddy</Text>
-                  </Pressable>
-                )}
-              </>
-            )}
-          </View>
-        </View>
-
-        {/* ── Travel Tracker ──────────────────────────────────── */}
-        <View style={styles.section}>
-          <Pressable
-            style={[styles.sectionCard, styles.trackerCard, trackerEnabled && styles.trackerCardActive]}
-            onPress={handleToggleTracker}
-          >
-            <View style={styles.trackerRow}>
-              <View style={[styles.trackerIcon, trackerEnabled && styles.trackerIconActive]}>
-                <Ionicons
-                  name={trackerEnabled ? 'navigate' : 'navigate-outline'}
-                  size={20}
-                  color={trackerEnabled ? colors.orange : colors.textMuted}
-                />
-              </View>
-              <View style={styles.trackerText}>
-                <Text style={styles.trackerTitle}>Travel Tracker</Text>
-                <Text style={styles.trackerDesc}>
-                  {trackerEnabled
-                    ? 'Location tracking is on (city-level only)'
-                    : 'Track your route automatically'}
-                </Text>
-              </View>
-              <View style={[styles.toggle, trackerEnabled && styles.toggleActive]}>
-                <View style={[styles.toggleDot, trackerEnabled && styles.toggleDotActive]} />
-              </View>
-            </View>
-            {!trackerEnabled && (
-              <Text style={styles.trackerConsent}>
-                Sola only uses city-level location. Your exact position is never stored or shared.
-              </Text>
-            )}
-          </Pressable>
-        </View>
-
-        {/* ── Privacy / Visibility ────────────────────────────── */}
-        <View style={styles.section}>
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeader}>
-              <Ionicons name="shield-outline" size={18} color={colors.orange} />
-              <Text style={styles.sectionTitle}>Who can see this trip?</Text>
-            </View>
-            {PRIVACY_OPTIONS.map((option) => (
-              <Pressable
-                key={option.key}
-                style={[styles.privacyOption, privacyLevel === option.key && styles.privacyOptionSelected]}
-                onPress={() => setPrivacyLevel(option.key)}
-              >
-                <View style={[styles.radioOuter, privacyLevel === option.key && styles.radioOuterSelected]}>
-                  {privacyLevel === option.key && <View style={styles.radioInner} />}
-                </View>
-                <Ionicons name={option.icon as any} size={16} color={privacyLevel === option.key ? colors.orange : colors.textMuted} />
-                <View style={styles.privacyText}>
-                  <Text style={[styles.privacyLabel, privacyLevel === option.key && styles.privacyLabelSelected]}>
-                    {option.label}
-                  </Text>
-                  <Text style={styles.privacyDesc}>{option.description}</Text>
-                </View>
-              </Pressable>
-            ))}
           </View>
         </View>
       </ScrollView>
 
       {/* ── Fixed Create Button ───────────────────────────────── */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + spacing.sm }]}>
+      <View
+        style={[
+          styles.bottomBar,
+          { paddingBottom: insets.bottom + FLOATING_TAB_BAR_HEIGHT + spacing.sm },
+        ]}
+      >
         <Pressable
           style={[styles.createButton, (!canCreate || saving) && styles.createButtonDisabled]}
           onPress={handleCreate}
@@ -666,7 +604,7 @@ export default function NewTripScreen() {
         </Pressable>
       </View>
 
-      {/* ── Trip Kind Bottom Sheet (OVERLAY, not sole return) ── */}
+      {/* ── Trip Kind Bottom Sheet ─────────────────────────── */}
       <Modal visible={showKindSheet} transparent animationType="slide">
         <View style={styles.sheetOverlay}>
           <Pressable style={styles.sheetBackdrop} onPress={() => router.back()} />
@@ -674,25 +612,23 @@ export default function NewTripScreen() {
             <View style={styles.sheetHandle} />
             <Text style={styles.sheetTitle}>What kind of trip?</Text>
 
-            {TRIP_KINDS.map((kind) => (
+            {TRIP_KINDS.map((kind, idx) => (
               <Pressable
                 key={kind.key}
-                style={({ pressed }) => [styles.kindOption, pressed && styles.pressed]}
+                style={({ pressed }) => [
+                  styles.kindOption,
+                  idx === TRIP_KINDS.length - 1 && styles.kindOptionLast,
+                  pressed && styles.kindOptionPressed,
+                ]}
                 onPress={() => handleSelectKind(kind.key)}
               >
-                <View style={styles.kindIcon}>
-                  <Ionicons name={kind.icon as any} size={22} color={colors.orange} />
-                </View>
-                <View style={styles.kindTextContainer}>
-                  <Text style={styles.kindTitle}>{kind.title}</Text>
-                  <Text style={styles.kindSubtitle}>{kind.subtitle}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+                <Text style={styles.kindTitle}>{kind.title}</Text>
+                <Text style={styles.kindDetail}>{kind.detail}</Text>
               </Pressable>
             ))}
 
             <Pressable
-              style={styles.sheetCancel}
+              style={({ pressed }) => [styles.sheetCancel, pressed && { opacity: 0.6 }]}
               onPress={() => router.back()}
             >
               <Text style={styles.sheetCancelText}>Cancel</Text>
@@ -702,20 +638,12 @@ export default function NewTripScreen() {
       </Modal>
 
       {/* Android date picker modal */}
-      {Platform.OS === 'android' && showPicker && (
+      {Platform.OS === 'android' && pickerTarget && (
         <DateTimePicker
-          value={
-            showPicker === 'start'
-              ? startDate || (tripKind === 'past_trip' ? today : tomorrow)
-              : endDate || new Date((startDate?.getTime() || Date.now()) + DAY_MS)
-          }
+          value={pickerValue}
           mode="date"
           display="default"
-          minimumDate={
-            showPicker === 'start'
-              ? getMinDate()
-              : startDate ? new Date(startDate.getTime() + DAY_MS) : undefined
-          }
+          minimumDate={pickerMinDate}
           maximumDate={tripKind === 'past_trip' ? today : undefined}
           onChange={handleDateChange}
         />
@@ -731,10 +659,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-  pressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
   },
 
   // ── Cover Photo ──
@@ -818,21 +742,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     padding: spacing.lg,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
   sectionTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.textPrimary,
-  },
-  sectionHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
     marginBottom: spacing.md,
   },
   fieldGroup: {
@@ -869,14 +782,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textMuted,
   },
-  noResults: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    textAlign: 'center',
-    paddingVertical: spacing.md,
-  },
-
   // ── Inputs ──
   inputRow: {
     flexDirection: 'row',
@@ -904,12 +809,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
   },
-  summaryInput: {
-    height: 72,
-    paddingTop: spacing.md,
-    textAlignVertical: 'top',
-  },
-
   // ── Search results ──
   results: {
     marginTop: spacing.sm,
@@ -966,6 +865,66 @@ const styles = StyleSheet.create({
   },
 
   // ── Dates ──
+  datesSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  datesSectionTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  flexibleToggle: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
+  },
+  flexibleToggleActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orangeFill,
+  },
+  flexibleToggleText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  flexibleToggleTextActive: {
+    color: colors.orange,
+  },
+  flexibleHint: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.xl,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.sm,
+  },
+  flexibleHintText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  stopDateLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
+  },
+  stopDateLabelFlag: {
+    fontSize: 14,
+  },
+  stopDateLabelText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
+  },
   dateRow: {
     flexDirection: 'row',
     gap: spacing.md,
@@ -998,13 +957,21 @@ const styles = StyleSheet.create({
   dateValueFilled: {
     color: colors.textPrimary,
   },
-  nightsBadge: {
+  stopNightsBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.button,
+    marginTop: spacing.sm,
+  },
+  totalNightsBadge: {
     alignSelf: 'center',
     backgroundColor: colors.orangeFill,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.xs,
     borderRadius: radius.button,
-    marginTop: spacing.md,
+    marginTop: spacing.lg,
   },
   nightsText: {
     fontFamily: fonts.semiBold,
@@ -1028,193 +995,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.textPrimary,
+    flex: 1,
   },
   pickerDone: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.orange,
-  },
-
-  // ── Buddies ──
-  buddyList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-  },
-  buddyChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-  },
-  buddyAvatar: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.full,
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    overflow: 'hidden',
-  },
-  buddyAvatarImg: {
-    width: 24,
-    height: 24,
-    borderRadius: radius.full,
-  },
-  buddyName: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  buddySearchContainer: {
-    marginTop: spacing.sm,
-  },
-  addBuddyBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  addBuddyIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  addBuddyText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.orange,
-  },
-
-  // ── Travel Tracker ──
-  trackerCard: {
-    borderColor: colors.borderDefault,
-  },
-  trackerCardActive: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orangeFill,
-  },
-  trackerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  trackerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.full,
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
-  },
-  trackerIconActive: {
-    backgroundColor: 'rgba(229, 101, 58, 0.15)',
-  },
-  trackerText: {
-    flex: 1,
-    marginRight: spacing.md,
-  },
-  trackerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  trackerDesc: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  trackerConsent: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textSecondary,
-    lineHeight: 18,
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderDefault,
-  },
-  toggle: {
-    width: 44,
-    height: 26,
-    borderRadius: radius.full,
-    backgroundColor: colors.borderDefault,
-    padding: 2,
-    justifyContent: 'center',
-  },
-  toggleActive: {
-    backgroundColor: colors.orange,
-  },
-  toggleDot: {
-    width: 22,
-    height: 22,
-    borderRadius: radius.full,
-    backgroundColor: '#FFFFFF',
-  },
-  toggleDotActive: {
-    alignSelf: 'flex-end',
-  },
-
-  // ── Privacy ──
-  privacyOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.md,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.sm,
-    marginBottom: spacing.sm,
-  },
-  privacyOptionSelected: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orangeFill,
-  },
-  radioOuter: {
-    width: 20,
-    height: 20,
-    borderRadius: radius.full,
-    borderWidth: 2,
-    borderColor: colors.borderDefault,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  radioOuterSelected: {
-    borderColor: colors.orange,
-  },
-  radioInner: {
-    width: 10,
-    height: 10,
-    borderRadius: radius.full,
-    backgroundColor: colors.orange,
-  },
-  privacyText: {
-    flex: 1,
-  },
-  privacyLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  privacyLabelSelected: {
-    color: colors.orange,
-  },
-  privacyDesc: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 1,
   },
 
   // ── Bottom Bar ──
@@ -1247,62 +1033,55 @@ const styles = StyleSheet.create({
   },
   sheetBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
   },
   sheetContainer: {
     backgroundColor: colors.background,
-    borderTopLeftRadius: radius.card,
-    borderTopRightRadius: radius.card,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
     paddingTop: spacing.md,
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
   },
   sheetHandle: {
     width: 36,
     height: 4,
-    borderRadius: radius.xs,
+    borderRadius: 2,
     backgroundColor: colors.borderDefault,
     alignSelf: 'center',
     marginBottom: spacing.xl,
   },
   sheetTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 22,
     color: colors.textPrimary,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   kindOption: {
-    flexDirection: 'row',
-    alignItems: 'center',
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+    borderBottomColor: colors.borderSubtle,
   },
-  kindIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.full,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.md,
+  kindOptionLast: {
+    borderBottomWidth: 0,
   },
-  kindTextContainer: {
-    flex: 1,
+  kindOptionPressed: {
+    opacity: 0.6,
   },
   kindTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: colors.textPrimary,
   },
-  kindSubtitle: {
+  kindDetail: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: 3,
   },
   sheetCancel: {
     alignItems: 'center',
     paddingVertical: spacing.xl,
+    marginTop: spacing.sm,
   },
   sheetCancelText: {
     fontFamily: fonts.medium,

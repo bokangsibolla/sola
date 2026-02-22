@@ -13,8 +13,9 @@ import CurrentTripCard from '@/components/trips/CurrentTripCard';
 import TripListCard from '@/components/trips/TripListCard';
 import TripEmptyState from '@/components/trips/TripEmptyState';
 import { useTrips } from '@/data/trips/useTrips';
+import { deleteTrip } from '@/data/trips/tripApi';
 import { useAppMode } from '@/state/AppModeContext';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 export default function TripsScreen() {
@@ -33,6 +34,11 @@ export default function TripsScreen() {
       refetch();
     }, [refetch]),
   );
+
+  const handleDelete = async (tripId: string) => {
+    await deleteTrip(tripId);
+    refetch();
+  };
 
   if (loading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -55,10 +61,17 @@ export default function TripsScreen() {
             <View style={styles.section}>
               <Text style={styles.sectionLabel}>UPCOMING</Text>
               {upcoming.map((trip) => (
-                <TripListCard key={trip.id} trip={trip} />
+                <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
               ))}
             </View>
           )}
+          <Pressable
+            style={({ pressed }) => [styles.newTripButton, pressed && styles.newTripPressed]}
+            onPress={() => router.push('/trips/new')}
+          >
+            <Ionicons name="add" size={20} color={colors.orange} />
+            <Text style={styles.newTripText}>Plan a new trip</Text>
+          </Pressable>
         </ScrollView>
       </AppScreen>
     );
@@ -83,7 +96,7 @@ export default function TripsScreen() {
               <View style={styles.section}>
                 <Text style={styles.sectionLabel}>UPCOMING</Text>
                 {upcoming.map((trip) => (
-                  <TripListCard key={trip.id} trip={trip} />
+                  <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
                 ))}
               </View>
             )}
@@ -104,10 +117,19 @@ export default function TripsScreen() {
                 </Pressable>
                 {showPast &&
                   past.map((trip) => (
-                    <TripListCard key={trip.id} trip={trip} />
+                    <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
                   ))}
               </View>
             )}
+
+            {/* New trip button */}
+            <Pressable
+              style={({ pressed }) => [styles.newTripButton, pressed && styles.newTripPressed]}
+              onPress={() => router.push('/trips/new')}
+            >
+              <Ionicons name="add" size={20} color={colors.orange} />
+              <Text style={styles.newTripText}>Plan a new trip</Text>
+            </Pressable>
           </>
         )}
       </ScrollView>
@@ -120,6 +142,7 @@ const styles = StyleSheet.create({
     paddingBottom: FLOATING_TAB_BAR_HEIGHT,
   },
   section: {
+    paddingHorizontal: spacing.screenX,
     marginBottom: spacing.lg,
   },
   sectionLabel: {
@@ -134,5 +157,27 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
+  },
+  newTripButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    marginHorizontal: spacing.screenX,
+    marginTop: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.card,
+    borderStyle: 'dashed',
+  },
+  newTripPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
+  newTripText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.orange,
   },
 });
