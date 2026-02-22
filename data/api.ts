@@ -2927,6 +2927,110 @@ export async function getSuggestedTravelers(
   return rowsToCamel<Profile>(data ?? []);
 }
 
+// ---------------------------------------------------------------------------
+// Trip-Aware Matching (Connect Policy)
+// ---------------------------------------------------------------------------
+
+/** Check if user has qualifying trips for Connect discovery */
+export async function getQualifyingTrips(userId: string): Promise<{
+  trips: Array<{ id: string; status: string; title: string | null; destinationName: string | null }>;
+  isDiscoverable: boolean;
+}> {
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('is_discoverable')
+    .eq('id', userId)
+    .single();
+
+  if (!profile?.is_discoverable) {
+    return { trips: [], isDiscoverable: false };
+  }
+
+  const { data: trips } = await supabase
+    .from('trips')
+    .select('id, status, matching_opt_in, title, destination_name')
+    .eq('user_id', userId)
+    .eq('matching_opt_in', true)
+    .in('status', ['active', 'planned'])
+    .order('arriving', { ascending: true });
+
+  return {
+    trips: (trips ?? []).map((t: any) => ({
+      id: t.id,
+      status: t.status,
+      title: t.title,
+      destinationName: t.destination_name,
+    })),
+    isDiscoverable: true,
+  };
+}
+
+/** Tier 1: Travelers heading to the same CITY with overlapping dates */
+export async function getTripCityMatches(
+  userId: string,
+  blockedIds: string[],
+): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from('trip_overlap_matches')
+    .select('*')
+    .eq('my_user_id', userId)
+    .not('overlap_city', 'is', null);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  const excluded = new Set([userId, ...blockedIds]);
+  const uniqueUserIds = Array.from(
+    new Set(
+      (data as any[])
+        .filter((m) => !excluded.has(m.their_user_id))
+        .map((m) => m.their_user_id)
+    )
+  );
+  if (uniqueUserIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', uniqueUserIds)
+    .eq('is_discoverable', true);
+
+  return rowsToCamel<Profile>(profiles ?? []);
+}
+
+/** Tier 2: Travelers in the same COUNTRY with overlapping dates (excludes city-matched) */
+export async function getTripCountryMatches(
+  userId: string,
+  cityMatchUserIds: string[],
+  blockedIds: string[],
+): Promise<Profile[]> {
+  const { data, error } = await supabase
+    .from('trip_overlap_matches')
+    .select('*')
+    .eq('my_user_id', userId);
+
+  if (error) throw error;
+  if (!data || data.length === 0) return [];
+
+  const excluded = new Set([userId, ...blockedIds, ...cityMatchUserIds]);
+  const uniqueUserIds = Array.from(
+    new Set(
+      (data as any[])
+        .filter((m) => !excluded.has(m.their_user_id))
+        .map((m) => m.their_user_id)
+    )
+  );
+  if (uniqueUserIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', uniqueUserIds)
+    .eq('is_discoverable', true);
+
+  return rowsToCamel<Profile>(profiles ?? []);
+}
+
 export async function updateUserLocation(
   userId: string,
   location: {
