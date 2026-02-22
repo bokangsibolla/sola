@@ -191,6 +191,7 @@ export async function createThread(
       country_id: input.countryId ?? null,
       city_id: input.cityId ?? null,
       topic_id: input.topicId ?? null,
+      post_type: input.postType ?? null,
     })
     .select('id')
     .single();

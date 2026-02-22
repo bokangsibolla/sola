@@ -127,6 +127,7 @@ export interface CreateThreadInput {
   countryId?: string;
   cityId?: string;
   topicId?: string;
+  postType?: string;
 }
 
 /** Params for creating a reply. */
