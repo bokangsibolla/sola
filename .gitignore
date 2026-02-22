@@ -51,7 +51,11 @@ app-example
 # Temp files
 *.bak
 google-service-account.json
+google-services.json
 
 # Image pipeline cache
 .image-pipeline-cache/
 image-pipeline-review.csv
+
+# Database backups
+backups/

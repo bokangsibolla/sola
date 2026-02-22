@@ -2,7 +2,7 @@ import { ExpoConfig, ConfigContext } from 'expo/config';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: 'sola',
+  name: 'Sola',
   slug: 'sola',
   owner: 'bokangsibolla',
   extra: {
@@ -31,8 +31,17 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    googleServicesFile: './google-services.json',
     package: 'app.solatravel.sola',
     permissions: ['android.permission.ACCESS_NETWORK_STATE'],
+    blockedPermissions: [
+      'android.permission.RECORD_AUDIO',
+      'android.permission.READ_EXTERNAL_STORAGE',
+      'android.permission.WRITE_EXTERNAL_STORAGE',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.ACCESS_COARSE_LOCATION',
+      'android.permission.ACCESS_FINE_LOCATION',
+    ],
     adaptiveIcon: {
       backgroundColor: '#FFFFFF',
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -82,6 +91,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       },
     ],
     './plugins/withSplashBackstop',
+    './plugins/withProviderInstaller',
+    './plugins/withStripPermissions',
   ],
   experiments: {
     typedRoutes: true,
