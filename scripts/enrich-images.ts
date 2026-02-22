@@ -1,15 +1,12 @@
 /**
- * Enrich country and city hero images using Google Places API (New).
+ * Enrich country, city, and area hero images using Google Places API (New).
  *
- * Fetches landmark/city photos via Google Places Text Search (New),
- * resizes to 800x600 JPEG via Sharp, uploads to Supabase Storage `images/` bucket,
- * and updates the corresponding DB rows with image metadata.
+ * Fetches landmark/city/area photos via Google Places Text Search (New),
+ * scores candidates for quality, resizes via Sharp, uploads to Supabase Storage,
+ * and updates the corresponding DB rows.
  *
- * Prerequisites:
- *   1. Public `images` bucket exists in Supabase Storage
- *   2. countries/cities tables have columns: google_place_id, image_source,
- *      image_attribution, image_cached_at (run the matching migration first)
- *   3. GOOGLE_PLACES_API_KEY, SUPABASE_SERVICE_ROLE_KEY, EXPO_PUBLIC_SUPABASE_URL in .env
+ * Country/city: 1200x800 hero images
+ * Areas: 1000x667 hero images
  *
  * Usage:
  *   npm run enrich:images
@@ -17,42 +14,28 @@
  *   npm run enrich:images -- --refresh
  *   npm run enrich:images -- --only=countries
  *   npm run enrich:images -- --only=cities
+ *   npm run enrich:images -- --only=areas
  *   npm run enrich:images -- --delay=1000
  */
 
-import 'dotenv/config';
-import sharp from 'sharp';
-import { createClient } from '@supabase/supabase-js';
-
-// ---------------------------------------------------------------------------
-// Environment validation
-// ---------------------------------------------------------------------------
-
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-if (!GOOGLE_API_KEY) {
-  console.error('GOOGLE_PLACES_API_KEY is required in .env');
-  process.exit(1);
-}
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('EXPO_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in .env');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+import {
+  supabase,
+  BUCKET,
+  searchPlaceWithPhotos,
+  selectBestPhotos,
+  downloadAndResize,
+  uploadToStorage,
+  sleep,
+  slugify,
+  type ResizeConfig,
+} from './lib/image-utils';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const BUCKET = 'images';
-const WIDTH = 800;
-const HEIGHT = 600;
-const QUALITY = 80;
-const DEFAULT_DELAY_MS = 500;
+const HERO_CONFIG: ResizeConfig = { width: 1200, height: 800, fetchWidth: 2400 };
+const AREA_CONFIG: ResizeConfig = { width: 1000, height: 667, fetchWidth: 2000 };
 
 // ---------------------------------------------------------------------------
 // Country landmark mapping
@@ -71,6 +54,11 @@ const COUNTRY_LANDMARKS: Record<string, string> = {
   japan: 'Mount Fuji Japan',
   portugal: 'Belem Tower Lisbon',
   morocco: 'Chefchaouen Blue City Morocco',
+  'south-africa': 'Table Mountain Cape Town',
+  zimbabwe: 'Victoria Falls Zimbabwe',
+  namibia: 'Sossusvlei Dunes Namibia',
+  mozambique: 'Tofo Beach Mozambique',
+  lesotho: 'Maletsunyane Falls Lesotho',
 };
 
 // ---------------------------------------------------------------------------
@@ -80,7 +68,7 @@ const COUNTRY_LANDMARKS: Record<string, string> = {
 interface CliFlags {
   dryRun: boolean;
   refresh: boolean;
-  only: 'countries' | 'cities' | null;
+  only: 'countries' | 'cities' | 'areas' | null;
   delay: number;
 }
 
@@ -90,7 +78,7 @@ function parseFlags(): CliFlags {
     dryRun: false,
     refresh: false,
     only: null,
-    delay: DEFAULT_DELAY_MS,
+    delay: 500,
   };
 
   for (const arg of args) {
@@ -100,16 +88,16 @@ function parseFlags(): CliFlags {
       flags.refresh = true;
     } else if (arg.startsWith('--only=')) {
       const val = arg.split('=')[1];
-      if (val === 'countries' || val === 'cities') {
+      if (val === 'countries' || val === 'cities' || val === 'areas') {
         flags.only = val;
       } else {
-        console.error(`Invalid --only value: "${val}". Must be "countries" or "cities".`);
+        console.error(`Invalid --only value: "${val}". Must be "countries", "cities", or "areas".`);
         process.exit(1);
       }
     } else if (arg.startsWith('--delay=')) {
       const val = parseInt(arg.split('=')[1], 10);
       if (isNaN(val) || val < 0) {
-        console.error(`Invalid --delay value: "${arg.split('=')[1]}". Must be a non-negative integer.`);
+        console.error(`Invalid --delay value. Must be a non-negative integer.`);
         process.exit(1);
       }
       flags.delay = val;
@@ -123,110 +111,6 @@ function parseFlags(): CliFlags {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function publicUrl(path: string): string {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
-}
-
-// ---------------------------------------------------------------------------
-// Google Places API (New)
-// ---------------------------------------------------------------------------
-
-interface PlacePhoto {
-  name: string;
-  authorAttributions?: { displayName?: string }[];
-}
-
-interface TextSearchPlace {
-  id: string;
-  photos?: PlacePhoto[];
-}
-
-interface TextSearchResponse {
-  places?: TextSearchPlace[];
-}
-
-/**
- * Search for a place using Google Places Text Search (New).
- * Returns the first place result with its ID and first photo reference.
- */
-async function searchPlace(query: string): Promise<{
-  placeId: string;
-  photoName: string | null;
-  attribution: string | null;
-} | null> {
-  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': GOOGLE_API_KEY!,
-      'X-Goog-FieldMask': 'places.id,places.photos',
-    },
-    body: JSON.stringify({ textQuery: query, maxResultCount: 1, languageCode: 'en' }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Text Search failed (${res.status}): ${text}`);
-  }
-
-  const data: TextSearchResponse = await res.json();
-  const place = data.places?.[0];
-  if (!place) return null;
-
-  const firstPhoto = place.photos?.[0] ?? null;
-  const photoName = firstPhoto?.name ?? null;
-  const attribution = firstPhoto?.authorAttributions?.[0]?.displayName ?? null;
-
-  return {
-    placeId: place.id,
-    photoName,
-    attribution,
-  };
-}
-
-/**
- * Download photo bytes from Google Places Photo (New) endpoint.
- */
-async function fetchPhotoBytes(photoName: string): Promise<Buffer> {
-  const url = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=1200&key=${GOOGLE_API_KEY}`;
-  const res = await fetch(url);
-
-  if (!res.ok) {
-    throw new Error(`Photo download failed (${res.status}): ${await res.text()}`);
-  }
-
-  return Buffer.from(await res.arrayBuffer());
-}
-
-/**
- * Resize raw photo bytes to 800x600 JPEG at 80% quality.
- */
-async function resizeImage(input: Buffer): Promise<Buffer> {
-  return sharp(input)
-    .resize(WIDTH, HEIGHT, { fit: 'cover' })
-    .jpeg({ quality: QUALITY })
-    .toBuffer();
-}
-
-/**
- * Upload a JPEG buffer to Supabase Storage (upsert).
- */
-async function uploadToStorage(storagePath: string, data: Buffer): Promise<string> {
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(storagePath, data, { contentType: 'image/jpeg', upsert: true });
-  if (error) throw error;
-  return publicUrl(storagePath);
-}
-
-// ---------------------------------------------------------------------------
 // Result tracking
 // ---------------------------------------------------------------------------
 
@@ -237,7 +121,21 @@ interface EnrichResult {
 }
 
 // ---------------------------------------------------------------------------
-// Enrichment processors
+// Search with fallback queries
+// ---------------------------------------------------------------------------
+
+async function searchWithFallbacks(queries: string[]) {
+  for (const q of queries) {
+    const result = await searchPlaceWithPhotos(q);
+    if (result && result.candidates.length > 0) {
+      return result;
+    }
+  }
+  return null;
+}
+
+// ---------------------------------------------------------------------------
+// Enrichment: Countries
 // ---------------------------------------------------------------------------
 
 async function enrichCountries(flags: CliFlags): Promise<EnrichResult[]> {
@@ -259,14 +157,12 @@ async function enrichCountries(flags: CliFlags): Promise<EnrichResult[]> {
     const c = countries[i];
     const label = `[${i + 1}/${countries.length}] country: ${c.name}`;
 
-    // Skip if already cached (unless --refresh)
     if (c.image_cached_at && !flags.refresh) {
       console.log(`  ${label} -> SKIP (already cached)`);
       results.push({ name: c.name, status: 'skipped' });
       continue;
     }
 
-    // Build search query: use landmark mapping if available, otherwise fallback
     const query = COUNTRY_LANDMARKS[c.slug] ?? `${c.name} famous landmark`;
 
     if (flags.dryRun) {
@@ -276,29 +172,24 @@ async function enrichCountries(flags: CliFlags): Promise<EnrichResult[]> {
     }
 
     try {
-      // 1. Text Search -> get place_id, photo name, attribution
-      const searchResult = await searchPlace(query);
+      const searchResult = await searchPlaceWithPhotos(query);
       if (!searchResult) throw new Error('No place found');
-      if (!searchResult.photoName) throw new Error('Place has no photos');
+      if (searchResult.candidates.length === 0) throw new Error('Place has no photos');
 
-      // 2. Fetch photo bytes at 1200px
-      const rawBytes = await fetchPhotoBytes(searchResult.photoName);
+      const best = selectBestPhotos(searchResult.candidates, 1);
+      if (best.length === 0) throw new Error('No photos passed quality filter');
 
-      // 3. Resize with Sharp
-      const resized = await resizeImage(rawBytes);
-
-      // 4. Upload to Supabase Storage
+      const imageData = await downloadAndResize(best[0].photoName, HERO_CONFIG);
       const storagePath = `countries/${c.slug}.jpg`;
-      const imageUrl = await uploadToStorage(storagePath, resized);
+      const imageUrl = await uploadToStorage(storagePath, imageData);
 
-      // 5. Update DB row
       const { error: updateError } = await supabase
         .from('countries')
         .update({
           hero_image_url: imageUrl,
           google_place_id: searchResult.placeId,
           image_source: 'google',
-          image_attribution: searchResult.attribution,
+          image_attribution: best[0].attribution,
           image_cached_at: new Date().toISOString(),
         })
         .eq('id', c.id);
@@ -317,6 +208,10 @@ async function enrichCountries(flags: CliFlags): Promise<EnrichResult[]> {
 
   return results;
 }
+
+// ---------------------------------------------------------------------------
+// Enrichment: Cities
+// ---------------------------------------------------------------------------
 
 async function enrichCities(flags: CliFlags): Promise<EnrichResult[]> {
   const { data: cities, error } = await supabase
@@ -338,46 +233,43 @@ async function enrichCities(flags: CliFlags): Promise<EnrichResult[]> {
     const countryName = c.countries?.name ?? '';
     const label = `[${i + 1}/${cities.length}] city: ${c.name}`;
 
-    // Skip if already cached (unless --refresh)
     if (c.image_cached_at && !flags.refresh) {
       console.log(`  ${label} -> SKIP (already cached)`);
       results.push({ name: c.name, status: 'skipped' });
       continue;
     }
 
-    // Build search query: "CityName CountryName"
-    const query = `${c.name} ${countryName}`;
+    // Better search queries with fallbacks
+    const queries = [
+      `${c.name} skyline aerial view`,
+      `${c.name} ${countryName} cityscape`,
+      `${c.name} ${countryName}`,
+    ];
 
     if (flags.dryRun) {
-      console.log(`  ${label} -> DRY RUN (query: "${query}")`);
+      console.log(`  ${label} -> DRY RUN (queries: ${queries.map((q) => `"${q}"`).join(', ')})`);
       results.push({ name: c.name, status: 'skipped', reason: 'dry-run' });
       continue;
     }
 
     try {
-      // 1. Text Search -> get place_id, photo name, attribution
-      const searchResult = await searchPlace(query);
+      const searchResult = await searchWithFallbacks(queries);
       if (!searchResult) throw new Error('No place found');
-      if (!searchResult.photoName) throw new Error('Place has no photos');
 
-      // 2. Fetch photo bytes at 1200px
-      const rawBytes = await fetchPhotoBytes(searchResult.photoName);
+      const best = selectBestPhotos(searchResult.candidates, 1);
+      if (best.length === 0) throw new Error('No photos passed quality filter');
 
-      // 3. Resize with Sharp
-      const resized = await resizeImage(rawBytes);
-
-      // 4. Upload to Supabase Storage
+      const imageData = await downloadAndResize(best[0].photoName, HERO_CONFIG);
       const storagePath = `cities/${c.slug}.jpg`;
-      const imageUrl = await uploadToStorage(storagePath, resized);
+      const imageUrl = await uploadToStorage(storagePath, imageData);
 
-      // 5. Update DB row
       const { error: updateError } = await supabase
         .from('cities')
         .update({
           hero_image_url: imageUrl,
           google_place_id: searchResult.placeId,
           image_source: 'google',
-          image_attribution: searchResult.attribution,
+          image_attribution: best[0].attribution,
           image_cached_at: new Date().toISOString(),
         })
         .eq('id', c.id);
@@ -389,6 +281,83 @@ async function enrichCities(flags: CliFlags): Promise<EnrichResult[]> {
     } catch (err: any) {
       console.log(`  ${label} -> FAIL: ${err.message}`);
       results.push({ name: c.name, status: 'failed', reason: err.message });
+    }
+
+    await sleep(flags.delay);
+  }
+
+  return results;
+}
+
+// ---------------------------------------------------------------------------
+// Enrichment: Areas
+// ---------------------------------------------------------------------------
+
+async function enrichAreas(flags: CliFlags): Promise<EnrichResult[]> {
+  const { data: areas, error } = await supabase
+    .from('city_areas')
+    .select('id, name, slug, hero_image_url, cities(name, slug)')
+    .eq('is_active', true)
+    .order('name');
+
+  if (error) throw error;
+  if (!areas?.length) {
+    console.log('  No active areas found.');
+    return [];
+  }
+
+  const results: EnrichResult[] = [];
+
+  for (let i = 0; i < areas.length; i++) {
+    const a = areas[i] as any;
+    const cityName = a.cities?.name ?? '';
+    const citySlug = a.cities?.slug ?? '';
+    const areaSlug = a.slug ?? slugify(a.name);
+    const label = `[${i + 1}/${areas.length}] area: ${a.name} (${cityName})`;
+
+    // Skip if already has an image (unless --refresh)
+    if (a.hero_image_url && !flags.refresh) {
+      console.log(`  ${label} -> SKIP (already has image)`);
+      results.push({ name: a.name, status: 'skipped' });
+      continue;
+    }
+
+    // Fallback search queries
+    const queries = [
+      `${a.name} ${cityName} street`,
+      `${a.name} neighborhood ${cityName}`,
+      `${a.name} ${cityName}`,
+    ];
+
+    if (flags.dryRun) {
+      console.log(`  ${label} -> DRY RUN (queries: ${queries.map((q) => `"${q}"`).join(', ')})`);
+      results.push({ name: a.name, status: 'skipped', reason: 'dry-run' });
+      continue;
+    }
+
+    try {
+      const searchResult = await searchWithFallbacks(queries);
+      if (!searchResult) throw new Error('No place found');
+
+      const best = selectBestPhotos(searchResult.candidates, 1);
+      if (best.length === 0) throw new Error('No photos passed quality filter');
+
+      const imageData = await downloadAndResize(best[0].photoName, AREA_CONFIG);
+      const storagePath = `areas/${citySlug}-${areaSlug}.jpg`;
+      const imageUrl = await uploadToStorage(storagePath, imageData);
+
+      const { error: updateError } = await supabase
+        .from('city_areas')
+        .update({ hero_image_url: imageUrl })
+        .eq('id', a.id);
+
+      if (updateError) throw updateError;
+
+      console.log(`  ${label} -> OK`);
+      results.push({ name: a.name, status: 'enriched' });
+    } catch (err: any) {
+      console.log(`  ${label} -> FAIL: ${err.message}`);
+      results.push({ name: a.name, status: 'failed', reason: err.message });
     }
 
     await sleep(flags.delay);
@@ -411,11 +380,12 @@ async function main() {
   console.log(`  delay:   ${flags.delay}ms`);
   console.log('');
 
-  // Ensure bucket exists (will fail silently if it already exists)
+  // Ensure bucket exists
   await supabase.storage.createBucket(BUCKET, { public: true }).catch(() => {});
 
   let countryResults: EnrichResult[] = [];
   let cityResults: EnrichResult[] = [];
+  let areaResults: EnrichResult[] = [];
 
   if (!flags.only || flags.only === 'countries') {
     console.log('--- Countries ---');
@@ -429,8 +399,14 @@ async function main() {
     console.log('');
   }
 
+  if (!flags.only || flags.only === 'areas') {
+    console.log('--- Areas ---');
+    areaResults = await enrichAreas(flags);
+    console.log('');
+  }
+
   // Summary
-  const all = [...countryResults, ...cityResults];
+  const all = [...countryResults, ...cityResults, ...areaResults];
   const enriched = all.filter((r) => r.status === 'enriched');
   const skipped = all.filter((r) => r.status === 'skipped');
   const failed = all.filter((r) => r.status === 'failed');

@@ -1,8 +1,18 @@
 /**
+ * @deprecated Use `npx tsx scripts/enrich-images.ts --only=areas` instead.
+ *
+ * This script uses the legacy Maps API and stores expiring Google photo URLs
+ * directly in the DB. The new enrich-images.ts downloads, resizes with Sharp,
+ * and uploads to Supabase Storage for permanent URLs.
+ *
  * Fetch hero images for city_areas using Google Places API.
  *
- * Usage:
+ * Usage (old):
  *   npx tsx scripts/content/fetch-area-images.ts
+ *
+ * Usage (new):
+ *   npx tsx scripts/enrich-images.ts --only=areas
+ *   npx tsx scripts/enrich-images.ts --only=areas --refresh
  *
  * Requires:
  *   GOOGLE_PLACES_API_KEY in .env

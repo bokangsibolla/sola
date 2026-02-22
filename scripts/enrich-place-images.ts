@@ -1,59 +1,91 @@
 /**
  * Enrich place images using Google Places API (New).
  *
- * For each active place that has NO image in place_media:
- *   1. If the place has a google_place_id → fetch photos via Place Details
- *   2. If no google_place_id → search by "placeName cityName" via Text Search
- *   3. Download the first photo, resize to 600x400 JPEG
- *   4. Upload to Supabase Storage `images/places/` bucket
- *   5. Insert into place_media table
+ * For each active place:
+ *   1. Fetch photo candidates (via google_place_id or text search)
+ *   2. Score candidates by resolution, aspect ratio, width
+ *   3. Select top N photos based on place type
+ *   4. Download at 2x, resize with Sharp
+ *   5. Upload to Supabase Storage `images/places/`
+ *   6. Insert into place_media table
+ *   7. Auto-update image_url_cached on places table
  *
- * Prerequisites:
- *   1. Public `images` bucket in Supabase Storage
- *   2. GOOGLE_PLACES_API_KEY, SUPABASE_SERVICE_ROLE_KEY, EXPO_PUBLIC_SUPABASE_URL in .env
+ * Photo counts by place type:
+ *   restaurant/cafe/bar/hotel/hostel/homestay → 3 photos
+ *   landmark/activity/wellness                → 2 photos
+ *   tour/shop/coworking                       → 1 photo
  *
  * Usage:
  *   npx tsx scripts/enrich-place-images.ts
  *   npx tsx scripts/enrich-place-images.ts --dry-run
+ *   npx tsx scripts/enrich-place-images.ts --dry-run --limit=5
  *   npx tsx scripts/enrich-place-images.ts --refresh
- *   npx tsx scripts/enrich-place-images.ts --country=thailand
+ *   npx tsx scripts/enrich-place-images.ts --country=south-africa
  *   npx tsx scripts/enrich-place-images.ts --limit=50
  */
 
-import 'dotenv/config';
-import sharp from 'sharp';
-import { createClient } from '@supabase/supabase-js';
 import { randomUUID } from 'crypto';
-
-// ---------------------------------------------------------------------------
-// Environment
-// ---------------------------------------------------------------------------
-
-const GOOGLE_API_KEY = process.env.GOOGLE_PLACES_API_KEY;
-if (!GOOGLE_API_KEY) {
-  console.error('GOOGLE_PLACES_API_KEY is required in .env');
-  process.exit(1);
-}
-
-const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
-const SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!SUPABASE_URL || !SERVICE_ROLE_KEY) {
-  console.error('EXPO_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are required in .env');
-  process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+import {
+  supabase,
+  BUCKET,
+  fetchPhotoRefs,
+  getPlacePhotoRefs,
+  selectBestPhotos,
+  downloadAndResize,
+  uploadToStorage,
+  sleep,
+  slugify,
+  type PhotoCandidate,
+  type ResizeConfig,
+} from './lib/image-utils';
 
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-const BUCKET = 'images';
-const WIDTH = 600;
-const HEIGHT = 400;
-const QUALITY = 80;
+const PRIMARY_CONFIG: ResizeConfig = { width: 800, height: 600, fetchWidth: 1600 };
+const SECONDARY_CONFIG: ResizeConfig = { width: 600, height: 400, fetchWidth: 1200 };
 const DELAY_MS = 400;
+
+/** Number of photos to fetch per place type */
+const PHOTO_COUNT: Record<string, number> = {
+  hotel: 5,
+  hostel: 5,
+  homestay: 5,
+  activity: 4,
+  landmark: 3,
+  restaurant: 3,
+  cafe: 3,
+  bar: 3,
+  wellness: 3,
+  tour: 2,
+  shop: 2,
+  coworking: 2,
+};
+
+function photoCountForType(placeType: string): number {
+  return PHOTO_COUNT[placeType] ?? 2;
+}
+
+/** Query suffix per place type to bias toward exterior/architecture shots (no people) */
+const QUERY_HINT: Record<string, string> = {
+  hotel: 'exterior building',
+  hostel: 'exterior building',
+  homestay: 'exterior building',
+  restaurant: 'interior food',
+  cafe: 'interior',
+  bar: 'interior atmosphere',
+  landmark: 'landscape view',
+  activity: 'scenic landscape',
+  wellness: 'interior spa',
+  tour: 'scenic landscape',
+  shop: 'storefront exterior',
+  coworking: 'interior workspace',
+};
+
+function queryHintForType(placeType: string): string {
+  return QUERY_HINT[placeType] ?? '';
+}
 
 // ---------------------------------------------------------------------------
 // CLI flags
@@ -68,7 +100,7 @@ interface Flags {
 
 function parseFlags(): Flags {
   const args = process.argv.slice(2);
-  const flags: Flags = { dryRun: false, refresh: false, country: null, limit: 500 };
+  const flags: Flags = { dryRun: false, refresh: false, country: null, limit: 2000 };
 
   for (const arg of args) {
     if (arg === '--dry-run') flags.dryRun = true;
@@ -82,104 +114,6 @@ function parseFlags(): Flags {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
-}
-
-function publicUrl(path: string): string {
-  return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
-}
-
-function slugify(str: string): string {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
-}
-
-// ---------------------------------------------------------------------------
-// Google Places API
-// ---------------------------------------------------------------------------
-
-interface PhotoRef {
-  photoName: string;
-  attribution: string | null;
-}
-
-/**
- * Get photo references for a place by its Google Place ID.
- * Uses the Place Details (New) endpoint.
- */
-async function getPlacePhotos(googlePlaceId: string): Promise<PhotoRef | null> {
-  const url = `https://places.googleapis.com/v1/places/${googlePlaceId}`;
-  const res = await fetch(url, {
-    headers: {
-      'X-Goog-Api-Key': GOOGLE_API_KEY!,
-      'X-Goog-FieldMask': 'photos',
-    },
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Place Details failed (${res.status}): ${text}`);
-  }
-
-  const data = await res.json();
-  const photo = data.photos?.[0];
-  if (!photo?.name) return null;
-
-  return {
-    photoName: photo.name,
-    attribution: photo.authorAttributions?.[0]?.displayName ?? null,
-  };
-}
-
-/**
- * Search for a place by name and get its first photo.
- * Fallback when google_place_id is not available.
- */
-async function searchPlacePhoto(query: string): Promise<PhotoRef | null> {
-  const res = await fetch('https://places.googleapis.com/v1/places:searchText', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Goog-Api-Key': GOOGLE_API_KEY!,
-      'X-Goog-FieldMask': 'places.photos',
-    },
-    body: JSON.stringify({ textQuery: query, maxResultCount: 1, languageCode: 'en' }),
-  });
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Text Search failed (${res.status}): ${text}`);
-  }
-
-  const data = await res.json();
-  const photo = data.places?.[0]?.photos?.[0];
-  if (!photo?.name) return null;
-
-  return {
-    photoName: photo.name,
-    attribution: photo.authorAttributions?.[0]?.displayName ?? null,
-  };
-}
-
-/**
- * Download and resize a photo from Google Places.
- */
-async function fetchAndResize(photoName: string): Promise<Buffer> {
-  const url = `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=1200&key=${GOOGLE_API_KEY}`;
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`Photo download failed (${res.status})`);
-
-  const raw = Buffer.from(await res.arrayBuffer());
-  return sharp(raw)
-    .resize(WIDTH, HEIGHT, { fit: 'cover' })
-    .jpeg({ quality: QUALITY })
-    .toBuffer();
-}
-
-// ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
@@ -187,6 +121,7 @@ interface PlaceRow {
   id: string;
   name: string;
   slug: string;
+  place_type: string;
   google_place_id: string | null;
   city_name: string;
   country_slug: string;
@@ -210,7 +145,7 @@ async function main() {
   let query = supabase
     .from('places')
     .select(`
-      id, name, slug, google_place_id,
+      id, name, slug, place_type, google_place_id,
       cities!inner(name, countries!inner(slug))
     `)
     .eq('is_active', true)
@@ -229,7 +164,6 @@ async function main() {
   }
 
   // Get existing media to know which places already have images
-  // Batch the .in() query to avoid URL length limits with large ID lists
   const placeIds = rawPlaces.map((p: any) => p.id);
   const BATCH_SIZE = 100;
   const allExistingMedia: { place_id: string }[] = [];
@@ -248,6 +182,7 @@ async function main() {
     id: p.id,
     name: p.name,
     slug: p.slug,
+    place_type: p.place_type ?? 'activity',
     google_place_id: p.google_place_id,
     city_name: (p.cities as any)?.name ?? '',
     country_slug: (p.cities as any)?.countries?.slug ?? '',
@@ -267,65 +202,102 @@ async function main() {
 
   for (let i = 0; i < toProcess.length; i++) {
     const place = toProcess[i];
-    const label = `[${i + 1}/${toProcess.length}] ${place.name} (${place.city_name})`;
+    const wantedCount = photoCountForType(place.place_type);
+    const label = `[${i + 1}/${toProcess.length}] ${place.name} (${place.city_name}) [${place.place_type}, ${wantedCount} photos]`;
 
     if (flags.dryRun) {
       const searchQuery = place.google_place_id
         ? `[by ID: ${place.google_place_id}]`
-        : `"${place.name} ${place.city_name}"`;
+        : `"${place.name} ${place.place_type} ${place.city_name}"`;
       console.log(`  ${label} -> DRY RUN ${searchQuery}`);
       skipped++;
       continue;
     }
 
     try {
-      // 1. Get photo reference — prefer google_place_id, fallback to text search
-      let photoRef: PhotoRef | null = null;
+      // 1. Get all photo candidates — prefer google_place_id, fallback to text search
+      let candidates: PhotoCandidate[] = [];
 
       if (place.google_place_id) {
-        photoRef = await getPlacePhotos(place.google_place_id);
+        candidates = await getPlacePhotoRefs(place.google_place_id);
       }
 
-      if (!photoRef) {
-        // Fallback: search by name + city
-        photoRef = await searchPlacePhoto(`${place.name} ${place.city_name}`);
+      if (candidates.length === 0) {
+        // Better search: include place_type + hint for exterior/landscape bias
+        const hint = queryHintForType(place.place_type);
+        const searchQuery = `${place.name} ${place.place_type} ${place.city_name} ${hint}`.trim();
+        candidates = await fetchPhotoRefs(searchQuery);
       }
 
-      if (!photoRef) {
+      if (candidates.length === 0) {
+        // Fallback without hint
+        candidates = await fetchPhotoRefs(`${place.name} ${place.place_type} ${place.city_name}`);
+      }
+
+      if (candidates.length === 0) {
+        // Final fallback: simplest query
+        candidates = await fetchPhotoRefs(`${place.name} ${place.city_name}`);
+      }
+
+      if (candidates.length === 0) {
         console.log(`  ${label} -> SKIP (no photos found)`);
         skipped++;
         await sleep(DELAY_MS);
         continue;
       }
 
-      // 2. Download and resize
-      const imageData = await fetchAndResize(photoRef.photoName);
+      // 2. Score and select top N
+      const selected = selectBestPhotos(candidates, wantedCount);
+      if (selected.length === 0) {
+        console.log(`  ${label} -> SKIP (no photos passed quality filter)`);
+        skipped++;
+        await sleep(DELAY_MS);
+        continue;
+      }
 
-      // 3. Upload to Supabase Storage
-      const storagePath = `places/${place.country_slug}/${slugify(place.name)}-${place.id.slice(0, 8)}.jpg`;
-      const imageUrl = await uploadToStorage(storagePath, imageData);
-
-      // 4. If refreshing, delete existing media first
+      // 3. If refreshing, delete existing media first
       if (flags.refresh && place.has_media) {
         await supabase.from('place_media').delete().eq('place_id', place.id);
       }
 
-      // 5. Insert into place_media
-      const { error: insertError } = await supabase
-        .from('place_media')
-        .insert({
-          id: randomUUID(),
-          place_id: place.id,
-          url: imageUrl,
-          media_type: 'image',
-          caption: photoRef.attribution ? `Photo by ${photoRef.attribution}` : null,
-          source: 'google',
-          order_index: 0,
-        });
+      // 4. Download, resize, upload, and insert each selected photo
+      let primaryUrl: string | null = null;
 
-      if (insertError) throw insertError;
+      for (let idx = 0; idx < selected.length; idx++) {
+        const photo = selected[idx];
+        const config = idx === 0 ? PRIMARY_CONFIG : SECONDARY_CONFIG;
+        const suffix = idx === 0 ? '' : `-${idx + 1}`;
+        const storagePath = `places/${place.country_slug}/${slugify(place.name)}-${place.id.slice(0, 8)}${suffix}.jpg`;
 
-      console.log(`  ${label} -> OK`);
+        const imageData = await downloadAndResize(photo.photoName, config);
+        const imageUrl = await uploadToStorage(storagePath, imageData);
+
+        if (idx === 0) primaryUrl = imageUrl;
+
+        const { error: insertError } = await supabase
+          .from('place_media')
+          .insert({
+            id: randomUUID(),
+            place_id: place.id,
+            url: imageUrl,
+            media_type: 'image',
+            caption: photo.attribution ? `Photo by ${photo.attribution}` : null,
+            source: 'google',
+            order_index: idx,
+          });
+
+        if (insertError) throw insertError;
+      }
+
+      // 5. Auto-update image_url_cached on places table
+      if (primaryUrl) {
+        await supabase
+          .from('places')
+          .update({ image_url_cached: primaryUrl })
+          .eq('id', place.id);
+      }
+
+      console.log(`  ${label} -> OK (${selected.length} photos)`);
       enriched++;
     } catch (err: any) {
       console.log(`  ${label} -> FAIL: ${err.message}`);
@@ -339,14 +311,6 @@ async function main() {
   console.log('\n========================================');
   console.log(`Total: ${toProcess.length} | Enriched: ${enriched} | Skipped: ${skipped} | Failed: ${failed}`);
   console.log('Done!');
-}
-
-async function uploadToStorage(storagePath: string, data: Buffer): Promise<string> {
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(storagePath, data, { contentType: 'image/jpeg', upsert: true });
-  if (error) throw error;
-  return publicUrl(storagePath);
 }
 
 main().catch((e) => {
