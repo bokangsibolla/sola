@@ -83,7 +83,7 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
       {/* Daily total summary */}
       <View style={styles.summaryBar}>
         <Text style={styles.summaryLabel}>Daily budget</Text>
-        <Text style={styles.summaryAmount}>${total.low}\u2013${total.high}</Text>
+        <Text style={styles.summaryAmount}>{`$${total.low}\u2013$${total.high}`}</Text>
       </View>
 
       {/* Category rows */}
