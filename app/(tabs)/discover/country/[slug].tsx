@@ -1,7 +1,5 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -11,7 +9,6 @@ import { eventTracker } from '@/data/events/eventTracker';
 import {
   getCountryBySlug,
   getCitiesByCountry,
-  getExperiencesByCountry,
   getPlacesByCountryAndType,
 } from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
@@ -20,17 +17,17 @@ import { getCountryThreadPreviews } from '@/data/community/communityApi';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { SignalsRow } from '@/components/explore/country/SignalsRow';
-import { AtAGlanceGrid } from '@/components/explore/country/AtAGlanceGrid';
+import { CountryHeroCard } from '@/components/explore/country/CountryHeroCard';
+import { HighlightCards } from '@/components/explore/country/HighlightCards';
+import { CountryTabBar, CountryTab } from '@/components/explore/country/CountryTabBar';
 import { WhyWomenLoveIt } from '@/components/explore/country/WhyWomenLoveIt';
 import { TravelFitSection } from '@/components/explore/country/TravelFitSection';
 import { KnowBeforeYouGoAccordion } from '@/components/explore/country/KnowBeforeYouGoAccordion';
 import { BudgetBreakdown } from '@/components/explore/country/BudgetBreakdown';
+import { BudgetTips } from '@/components/explore/country/BudgetTips';
 import { QuickReference } from '@/components/explore/country/QuickReference';
 import { CommunityThreadRows } from '@/components/explore/country/CommunityThreadRows';
-import { FinalNote } from '@/components/explore/country/FinalNote';
 import { CityHorizontalCard } from '@/components/explore/country/CityHorizontalCard';
-import { PlaceHorizontalCard } from '@/components/explore/country/PlaceHorizontalCard';
 import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -76,6 +73,7 @@ export default function CountryGuideScreen() {
   }>();
   const router = useRouter();
   const posthog = usePostHog();
+  const [activeTab, setActiveTab] = useState<CountryTab>('overview');
 
   useEffect(() => {
     if (slug) {
@@ -101,12 +99,6 @@ export default function CountryGuideScreen() {
     ['citiesByCountry', country?.id],
   );
 
-  // Fetch experiences (tours, activities, landmarks — NEVER accommodations)
-  const { data: experiences } = useData(
-    () => country?.id ? getExperiencesByCountry(country.id, 10) : Promise.resolve([]),
-    ['experiencesByCountry', country?.id],
-  );
-
   // Fetch health facilities
   const { data: healthPlaces } = useData(
     () => country?.id ? getPlacesByCountryAndType(country.id, ['hospital', 'clinic', 'pharmacy']) : Promise.resolve([]),
@@ -119,7 +111,7 @@ export default function CountryGuideScreen() {
     ['countryThreads', country?.id],
   );
 
-  const { parentTitle, ancestors, handleBack, childNavParams } = useNavContext({
+  const { parentTitle, ancestors, handleBack } = useNavContext({
     title: country?.name ?? 'Country',
     path: `/(tabs)/discover/country/${slug}`,
     fallbackCrumbs: [
@@ -127,10 +119,17 @@ export default function CountryGuideScreen() {
     ],
   });
 
+  // Build image map for HighlightCards (city id -> hero image)
+  const imageMap = useMemo(() => {
+    const map: Record<string, string | null> = {};
+    (cities ?? []).forEach(c => { map[c.id] = c.heroImageUrl; });
+    return map;
+  }, [cities]);
+
   if (countryLoading || (country && citiesLoading)) {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <NavigationHeader title="Loading…" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
+        <NavigationHeader title="Loading\u2026" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <LoadingScreen />
       </SafeAreaView>
     );
@@ -154,14 +153,13 @@ export default function CountryGuideScreen() {
 
   const emergency = getEmergencyNumbers(country.iso2);
   const cityList = cities ?? [];
-  const experienceList = (experiences ?? []) as PlaceWithCity[];
   const healthList = (healthPlaces ?? []) as PlaceWithCity[];
 
-  // Derive intro text from introMd or summaryMd (first paragraph, cleaned)
+  // Show all paragraphs from introMd (strip markdown headings & bold markers)
   const introText = country.introMd
-    ? country.introMd.replace(/^#+\s.*/gm, '').replace(/\*\*/g, '').trim().split(/\n\n+/)[0]?.trim()
+    ? country.introMd.replace(/^#+\s.*/gm, '').replace(/\*\*/g, '').trim()
     : country.summaryMd
-      ? country.summaryMd.split(/\n\n+/)[0]?.trim()
+      ? country.summaryMd.trim()
       : null;
 
   return (
@@ -173,141 +171,136 @@ export default function CountryGuideScreen() {
         onBack={handleBack}
       />
 
-      <ScrollView showsVerticalScrollIndicator={false}>
+      {/* Tab bar — sticky between header and scroll content */}
+      <CountryTabBar activeTab={activeTab} onTabChange={setActiveTab} />
 
-        {/* 1. Hero (240px) */}
-        <View style={styles.heroContainer}>
-          {country.heroImageUrl ? (
-            <Image
-              source={{ uri: country.heroImageUrl }}
-              style={styles.heroImage}
-              contentFit="cover"
-              transition={200}
-              pointerEvents="none"
-            />
-          ) : (
-            <View style={[styles.heroImage, { backgroundColor: colors.neutralFill }]} pointerEvents="none" />
-          )}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.55)']}
-            style={styles.heroGradient}
-          />
-          <View style={styles.heroOverlay} pointerEvents="none">
-            <Text style={styles.heroName}>{country.name}</Text>
-            {country.subtitle && <Text style={styles.heroTagline}>{country.subtitle}</Text>}
-          </View>
-        </View>
+      <ScrollView key={activeTab} showsVerticalScrollIndicator={false}>
 
-        {/* 2. Signal chips */}
-        <SignalsRow country={country} />
-
-        {/* 3. Intro paragraph */}
-        {introText ? (
-          <View style={styles.content}>
-            <Text style={styles.introText}>{introText}</Text>
-          </View>
-        ) : null}
-
-        {/* 4. Explore cities */}
-        {cityList.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.content}>
-              <SectionHeader
-                title="Explore cities"
-                actionLabel={cityList.length > 3 ? `All ${cityList.length} cities` : undefined}
-                onAction={cityList.length > 3 ? () => {
-                  router.push({
-                    pathname: '/(tabs)/discover/country/cities' as any,
-                    params: { countryId: country.id, countryName: country.name, countrySlug: country.slug },
-                  });
-                } : undefined}
-              />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-              style={styles.horizontalScrollContainer}
-            >
-              {cityList.map((city) => (
-                <CityHorizontalCard key={city.slug} city={city} compact />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        {/* 5. At a Glance grid */}
-        <AtAGlanceGrid country={country} />
-
-        {/* 6. Things to do */}
-        {experienceList.length > 0 && (
-          <View style={styles.section}>
-            <View style={styles.content}>
-              <SectionHeader title="Things to do" />
-            </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.horizontalScroll}
-              style={styles.horizontalScrollContainer}
-            >
-              {experienceList.map((place) => (
-                <PlaceHorizontalCard key={place.id} place={place} compact />
-              ))}
-            </ScrollView>
-          </View>
-        )}
-
-        <Divider />
-
-        {/* 7. Budget breakdown (standalone) */}
-        {country.budgetBreakdown && (
+        {/* ============================================================= */}
+        {/* OVERVIEW TAB                                                   */}
+        {/* ============================================================= */}
+        {activeTab === 'overview' && (
           <>
-            <View style={styles.content}>
-              <BudgetBreakdown
-                budget={country.budgetBreakdown}
-                moneyMd={country.moneyMd}
-                cashVsCard={country.cashVsCard}
+            {/* Hero card */}
+            <View style={{ marginTop: spacing.lg }}>
+              <CountryHeroCard
+                name={country.name}
+                heroImageUrl={country.heroImageUrl}
+                soloLevel={country.soloLevel}
+                avgDailyBudgetUsd={country.avgDailyBudgetUsd}
+                bestMonths={country.bestMonths}
               />
             </View>
-            <Divider />
+
+            {/* Highlight cards */}
+            {country.destinationHighlights && country.destinationHighlights.length > 0 && (
+              <HighlightCards
+                highlights={country.destinationHighlights}
+                imageMap={imageMap}
+              />
+            )}
+
+            {/* Intro text */}
+            {introText ? (
+              <View style={[styles.content, { marginTop: spacing.xl }]}>
+                <Text style={styles.introText}>{introText}</Text>
+              </View>
+            ) : null}
+
+            {/* Explore cities */}
+            {cityList.length > 0 && (
+              <View style={styles.section}>
+                <View style={styles.content}>
+                  <SectionHeader
+                    title="Explore cities"
+                    actionLabel={cityList.length > 3 ? `All ${cityList.length} cities` : undefined}
+                    onAction={cityList.length > 3 ? () => {
+                      router.push({
+                        pathname: '/(tabs)/discover/country/cities' as any,
+                        params: { countryId: country.id, countryName: country.name, countrySlug: country.slug },
+                      });
+                    } : undefined}
+                  />
+                </View>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.horizontalScroll}
+                  style={styles.horizontalScrollContainer}
+                >
+                  {cityList.map((city) => (
+                    <CityHorizontalCard key={city.slug} city={city} compact />
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Community threads */}
+            {communityData && communityData.threads.length > 0 && (
+              <View style={styles.content}>
+                <Divider />
+                <CommunityThreadRows
+                  threads={communityData.threads}
+                  totalCount={communityData.totalCount}
+                  countryId={country.id}
+                  countryName={country.name}
+                />
+              </View>
+            )}
           </>
         )}
 
-        {/* 8. Why women love it */}
-        <WhyWomenLoveIt country={country} />
+        {/* ============================================================= */}
+        {/* GUIDE TAB                                                      */}
+        {/* ============================================================= */}
+        {activeTab === 'guide' && (
+          <>
+            {/* Why women love it */}
+            <WhyWomenLoveIt country={country} />
 
-        <Divider />
+            <Divider />
 
-        {/* 9. Travel fit */}
-        <TravelFitSection country={country} />
+            {/* Travel fit — both sections visible */}
+            <TravelFitSection country={country} />
 
-        <Divider />
+            <Divider />
 
-        {/* 10. Know before you go (3-4 items) */}
-        <KnowBeforeYouGoAccordion country={country} healthPlaces={healthList} />
-
-        <Divider />
-
-        {/* 11. Quick reference */}
-        <View style={styles.content}>
-          <QuickReference country={country} emergency={emergency} />
-        </View>
-
-        {/* 12. Community threads */}
-        {communityData && communityData.threads.length > 0 && (
-          <View style={styles.content}>
-            <CommunityThreadRows
-              threads={communityData.threads}
-              totalCount={communityData.totalCount}
-              countryId={country.id}
-              countryName={country.name}
-            />
-          </View>
+            {/* Know before you go */}
+            <KnowBeforeYouGoAccordion country={country} healthPlaces={healthList} />
+          </>
         )}
 
-        {/* 13. Final note */}
-        <FinalNote country={country} />
+        {/* ============================================================= */}
+        {/* BUDGET TAB                                                     */}
+        {/* ============================================================= */}
+        {activeTab === 'budget' && (
+          <>
+            {/* Budget breakdown */}
+            {country.budgetBreakdown && (
+              <View style={styles.content}>
+                <BudgetBreakdown
+                  budget={country.budgetBreakdown}
+                  moneyMd={country.moneyMd}
+                  cashVsCard={country.cashVsCard}
+                />
+              </View>
+            )}
+
+            {/* Budget tips */}
+            {country.budgetTips && country.budgetTips.length > 0 && (
+              <View style={styles.content}>
+                <BudgetTips tips={country.budgetTips} />
+              </View>
+            )}
+
+            <Divider />
+
+            {/* Quick reference */}
+            <View style={styles.content}>
+              <QuickReference country={country} emergency={emergency} />
+            </View>
+          </>
+        )}
 
         {/* Bottom spacing */}
         <View style={styles.bottomSpacer} />
@@ -331,41 +324,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxl,
-  },
-
-  // Hero (240px)
-  heroContainer: {
-    position: 'relative',
-    height: 240,
-  },
-  heroImage: {
-    width: '100%',
-    height: 240,
-  },
-  heroGradient: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 140,
-  },
-  heroOverlay: {
-    position: 'absolute',
-    bottom: spacing.xl,
-    left: spacing.screenX,
-    right: spacing.screenX,
-  },
-  heroName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 36,
-    color: '#FFFFFF',
-    lineHeight: 40,
-  },
-  heroTagline: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xs,
   },
 
   // Intro paragraph
