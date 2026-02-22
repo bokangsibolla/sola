@@ -343,6 +343,7 @@ export interface Profile {
   preferredCurrency: string;
   preferredLanguage: string;
   verificationStatus: 'unverified' | 'pending' | 'verified' | 'rejected';
+  isAdmin: boolean;
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   emergencyContactRelationship: string | null;
@@ -485,6 +486,14 @@ export interface Message {
 // ---------------------------------------------------------------------------
 // Verification System Types
 // ---------------------------------------------------------------------------
+
+export interface PendingVerification {
+  id: string;
+  firstName: string;
+  avatarUrl: string | null;
+  verificationSelfieUrl: string;
+  verificationSubmittedAt: string;
+}
 
 export interface PlaceVerification {
   id: string;

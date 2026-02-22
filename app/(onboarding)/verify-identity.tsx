@@ -83,7 +83,7 @@ export default function VerifyIdentityScreen() {
       stage={2}
       screenName="verify-identity"
       headline="Verify your identity"
-      subtitle="This helps keep our community safe. We'll review within 24\u201348 hours."
+      subtitle="This helps keep our community safe. We'll review within 24 hours."
       ctaLabel={selfieUri ? 'Continue' : 'Take Selfie'}
       ctaDisabled={false}
       onCtaPress={selfieUri ? handleContinue : takeSelfie}

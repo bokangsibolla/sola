@@ -250,6 +250,22 @@ export default function SettingsScreen() {
       <NavigationHeader title="Settings" parentTitle="Profile" />
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        {/* Admin */}
+        {profile?.isAdmin && (
+          <>
+            <Text style={styles.sectionTitle}>Admin</Text>
+            <Pressable
+              style={styles.settingRow}
+              onPress={() => router.push('/(tabs)/home/admin-verifications' as any)}
+            >
+              <Ionicons name="shield-checkmark-outline" size={18} color={colors.orange} />
+              <Text style={styles.settingLabel}>Review Verifications</Text>
+              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            </Pressable>
+            <View style={{ height: spacing.xxl }} />
+          </>
+        )}
+
         {/* Verification */}
         <Text style={styles.sectionTitle}>Verification</Text>
 

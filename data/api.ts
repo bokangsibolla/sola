@@ -29,6 +29,7 @@ import type {
   PlaceWithCity,
   ConnectionRequest,
   ConnectionStatus,
+  PendingVerification,
 } from './types';
 import type { CityWithCountry } from './explore/types';
 
@@ -2984,4 +2985,64 @@ export async function getVerificationStatus(
 
   if (error) throw error;
   return data.verification_status;
+}
+
+// ---------------------------------------------------------------------------
+// Admin Verification Review
+// ---------------------------------------------------------------------------
+
+export async function getPendingVerifications(): Promise<PendingVerification[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('id, first_name, avatar_url, verification_selfie_url, verification_submitted_at')
+    .eq('verification_status', 'pending')
+    .order('verification_submitted_at', { ascending: true });
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    firstName: row.first_name,
+    avatarUrl: row.avatar_url,
+    verificationSelfieUrl: row.verification_selfie_url,
+    verificationSubmittedAt: row.verification_submitted_at,
+  }));
+}
+
+export async function approveVerification(
+  userId: string,
+  adminId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      verification_status: 'verified',
+      verification_reviewed_at: new Date().toISOString(),
+      verification_reviewed_by: adminId,
+    })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+export async function rejectVerification(
+  userId: string,
+  adminId: string,
+): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      verification_status: 'rejected',
+      verification_reviewed_at: new Date().toISOString(),
+      verification_reviewed_by: adminId,
+    })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+export async function getVerificationSelfieSignedUrl(
+  path: string,
+): Promise<string | null> {
+  const { data, error } = await supabase.storage
+    .from('verification-selfies')
+    .createSignedUrl(path, 300);
+  if (error) return null;
+  return data.signedUrl;
 }
