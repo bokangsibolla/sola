@@ -20,10 +20,11 @@ import { useData } from '@/hooks/useData';
 import { getVerificationStatus, submitVerificationSelfie } from '@/data/api';
 
 const POSE_PROMPTS = [
+  'look slightly to your left',
   'look slightly to your right',
-  'hold up your hand beside your face',
-  'give a thumbs up',
-  'wave at the camera',
+  'tilt your head slightly',
+  'smile at the camera',
+  'look up briefly, then back at the camera',
 ];
 
 function getRandomPose(): string {

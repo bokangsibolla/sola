@@ -24,6 +24,7 @@ interface OnboardingData {
   stayPreference: string;
   spendingStyle: string;
   tripFlexibleDates: boolean;
+  verificationSelfieUri: string | null;
   privacyDefaults: {
     profileVisibility: 'private' | 'connections' | 'public';
     tripVisibility: 'private' | 'connections' | 'public';
@@ -60,6 +61,7 @@ const defaults: OnboardingData = {
   stayPreference: '',
   spendingStyle: '',
   tripFlexibleDates: false,
+  verificationSelfieUri: null,
   privacyDefaults: {
     profileVisibility: 'private',
     tripVisibility: 'private',
@@ -135,7 +137,7 @@ export const onboardingStore = {
     const screens = store.screensToShow;
     if (screens.length === 0) {
       // Fallback to default order if no A/B config
-      const defaultOrder = ['profile', 'youre-in'];
+      const defaultOrder = ['profile', 'verify-identity', 'youre-in'];
       const idx = defaultOrder.indexOf(currentScreen);
       return idx >= 0 && idx < defaultOrder.length - 1 ? defaultOrder[idx + 1] : null;
     }

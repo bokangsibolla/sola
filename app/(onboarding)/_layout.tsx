@@ -11,6 +11,7 @@ export default function OnboardingLayout() {
       <Stack.Screen name="create-account" />
       <Stack.Screen name="verify" />
       <Stack.Screen name="profile" />
+      <Stack.Screen name="verify-identity" />
       <Stack.Screen name="youre-in" />
     </Stack>
   );

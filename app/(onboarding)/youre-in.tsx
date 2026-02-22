@@ -9,6 +9,7 @@ import { onboardingStore } from '@/state/onboardingStore';
 import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
+import { submitVerificationSelfie } from '@/data/api';
 import { completeOnboardingSession } from '@/lib/onboardingConfig';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
@@ -52,6 +53,7 @@ export default function YoureInScreen() {
         avatar_url: avatarUrl,
         home_country_iso2: data.countryIso2 || null,
         home_country_name: data.countryName || null,
+        nationality: data.countryName || null,
         date_of_birth: data.dateOfBirth || null,
         onboarding_completed_at: new Date().toISOString(),
       });
@@ -60,6 +62,16 @@ export default function YoureInScreen() {
         setSaving(false);
         Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
         return;
+      }
+
+      // Upload verification selfie if taken during onboarding
+      const verificationSelfieUri = data.verificationSelfieUri;
+      if (verificationSelfieUri) {
+        try {
+          await submitVerificationSelfie(userId, verificationSelfieUri);
+        } catch {
+          // Don't block onboarding if selfie upload fails — they can retry from settings
+        }
       }
     }
 

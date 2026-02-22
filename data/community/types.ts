@@ -51,6 +51,7 @@ export interface ThreadWithAuthor extends CommunityThread {
     firstName: string;
     username: string | null;
     avatarUrl: string | null;
+    homeCountryIso2: string | null;
   };
   seedProfile: SeedProfile | null;
   countryName: string | null;
@@ -83,6 +84,7 @@ export interface ReplyWithAuthor extends CommunityReply {
     firstName: string;
     username: string | null;
     avatarUrl: string | null;
+    homeCountryIso2: string | null;
   };
   seedProfile: SeedProfile | null;
   userVote: VoteDirection;

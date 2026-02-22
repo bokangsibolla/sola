@@ -13,7 +13,7 @@ export function requireVerification(
 
   const message =
     verificationStatus === 'pending'
-      ? 'Your verification is being reviewed. You\u2019ll be able to access this feature once approved.'
+      ? 'Your verification is being reviewed. This usually takes 24\u201348 hours.'
       : `Verify your identity to ${featureName}. This helps keep our community safe.`;
 
   Alert.alert(

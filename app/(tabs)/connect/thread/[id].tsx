@@ -21,7 +21,11 @@ import NavigationHeader from '@/components/NavigationHeader';
 import { useThread } from '@/data/community/useThread';
 import { castVote, createReply, reportContent } from '@/data/community/communityApi';
 import { useAuth } from '@/state/AuthContext';
+import { useData } from '@/hooks/useData';
+import { getProfileById } from '@/data/api';
+import { requireVerification } from '@/lib/verification';
 import { formatTimeAgo } from '@/utils/timeAgo';
+import { getFlag } from '@/data/trips/helpers';
 import type { ReplyWithAuthor } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -85,6 +89,9 @@ function ReplyCard({
           >
             {authorAvatar}
             <Text style={styles.replyAuthorName}>{authorNameText}</Text>
+            {reply.author.homeCountryIso2 && (
+              <Text style={styles.authorFlag}>{getFlag(reply.author.homeCountryIso2)}</Text>
+            )}
           </Pressable>
         )}
         <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
@@ -130,6 +137,10 @@ export default function ThreadDetail() {
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
   const { thread, replies, loading, refresh } = useThread(id);
+  const { data: userProfile } = useData(
+    () => (userId ? getProfileById(userId) : Promise.resolve(undefined)),
+    ['profile', userId],
+  );
 
   useEffect(() => {
     if (id) {
@@ -142,6 +153,7 @@ export default function ThreadDetail() {
 
   const handleSubmitReply = useCallback(async () => {
     if (!userId || !replyText.trim() || !id) return;
+    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'reply to discussions')) return;
     setSubmitting(true);
     try {
       await createReply(userId, { threadId: id, body: replyText.trim() });
@@ -153,7 +165,7 @@ export default function ThreadDetail() {
     } finally {
       setSubmitting(false);
     }
-  }, [userId, replyText, id, refresh]);
+  }, [userId, replyText, id, refresh, userProfile]);
 
   const handleVoteThread = useCallback(async () => {
     if (!userId || !thread) return;
@@ -268,6 +280,9 @@ export default function ThreadDetail() {
               {thread.author.firstName}
               {thread.author.username ? ` @${thread.author.username}` : ''}
             </Text>
+            {thread.author.homeCountryIso2 && (
+              <Text style={styles.authorFlag}>{getFlag(thread.author.homeCountryIso2)}</Text>
+            )}
           </Pressable>
         )}
         <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
@@ -434,6 +449,7 @@ const styles = StyleSheet.create({
   },
   avatarInitial: { fontFamily: fonts.semiBold, fontSize: 12, color: colors.textSecondary },
   authorName: { fontFamily: fonts.medium, fontSize: 14, color: colors.textPrimary },
+  authorFlag: { fontSize: 13 },
   teamBadge: {
     fontFamily: fonts.semiBold,
     fontSize: 9,

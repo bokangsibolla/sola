@@ -42,6 +42,7 @@ import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { formatTimeAgo } from '@/utils/timeAgo';
+import { getFlag } from '@/data/trips/helpers';
 import type { ThreadWithAuthor } from '@/data/community/types';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
@@ -202,6 +203,9 @@ function ThreadCard({
               >
                 {avatarContent}
                 <Text style={styles.authorName}>{authorName}</Text>
+                {thread.author.homeCountryIso2 && (
+                  <Text style={styles.authorFlag}>{getFlag(thread.author.homeCountryIso2)}</Text>
+                )}
               </Pressable>
             )}
             <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
@@ -1149,6 +1153,9 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.textPrimary,
+  },
+  authorFlag: {
+    fontSize: 12,
   },
   teamBadge: {
     backgroundColor: colors.orangeFill,

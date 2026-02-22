@@ -65,7 +65,7 @@ export async function getThreadFeed(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url, home_country_iso2),
       community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
@@ -120,6 +120,7 @@ export async function getThreadFeed(
       firstName: row.profiles?.first_name ?? '',
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
+      homeCountryIso2: row.profiles?.home_country_iso2 ?? null,
     },
     seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,
@@ -142,7 +143,7 @@ export async function getThread(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url, home_country_iso2),
       community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
@@ -162,6 +163,7 @@ export async function getThread(
       firstName: data.profiles?.first_name ?? '',
       username: data.profiles?.username ?? null,
       avatarUrl: data.profiles?.avatar_url ?? null,
+      homeCountryIso2: data.profiles?.home_country_iso2 ?? null,
     },
     seedProfile: mapSeedProfile(data),
     countryName: data.countries?.name ?? null,
@@ -220,7 +222,7 @@ export async function getThreadReplies(
     .from('community_replies')
     .select(`
       *,
-      profiles!community_replies_author_profile_fkey(id, first_name, username, avatar_url),
+      profiles!community_replies_author_profile_fkey(id, first_name, username, avatar_url, home_country_iso2),
       community_seed_profiles!community_replies_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base)
     `)
     .eq('thread_id', threadId)
@@ -245,6 +247,7 @@ export async function getThreadReplies(
       firstName: row.profiles?.first_name ?? '',
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
+      homeCountryIso2: row.profiles?.home_country_iso2 ?? null,
     },
     seedProfile: mapSeedProfile(row),
     userVote: userVotes.get(row.id) ?? null,
@@ -390,7 +393,7 @@ export async function getCityThreadPreviews(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url, home_country_iso2),
       community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
@@ -412,6 +415,7 @@ export async function getCityThreadPreviews(
       firstName: row.profiles?.first_name ?? '',
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
+      homeCountryIso2: row.profiles?.home_country_iso2 ?? null,
     },
     seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,
@@ -451,7 +455,7 @@ export async function getCountryThreadPreviews(
     .from('community_threads')
     .select(`
       *,
-      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url),
+      profiles!community_threads_author_profile_fkey(id, first_name, username, avatar_url, home_country_iso2),
       community_seed_profiles!community_threads_seed_profile_id_fkey(id, display_name, avatar_url, bio, home_base),
       countries(name),
       cities(name, hero_image_url),
@@ -473,6 +477,7 @@ export async function getCountryThreadPreviews(
       firstName: row.profiles?.first_name ?? '',
       username: row.profiles?.username ?? null,
       avatarUrl: row.profiles?.avatar_url ?? null,
+      homeCountryIso2: row.profiles?.home_country_iso2 ?? null,
     },
     seedProfile: mapSeedProfile(row),
     countryName: row.countries?.name ?? null,

@@ -12,6 +12,7 @@ import { updateOnboardingSession } from '@/lib/onboardingConfig';
 
 type OnboardingScreen =
   | 'profile'
+  | 'verify-identity'
   | 'intent'
   | 'trip-details'
   | 'day-style'

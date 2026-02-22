@@ -17,13 +17,14 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker, { type DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { LinearGradient } from 'expo-linear-gradient';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { countries } from '@/data/geo';
 import { getCurrencyForCountry } from '@/lib/currency';
-import { colors, fonts, radius } from '@/constants/design';
+import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
 
@@ -48,7 +49,7 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { navigateToNextScreen, trackScreenView } = useOnboardingNavigation();
   const [photoUri, setPhotoUri] = useState<string | null>(null);
-  const [firstName, setFirstName] = useState('');
+  const [firstName, setFirstName] = useState(onboardingStore.get('firstName') || '');
   const [selectedCountry, setSelectedCountry] = useState('');
   const [search, setSearch] = useState('');
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
@@ -62,6 +63,8 @@ export default function ProfileScreen() {
   useEffect(() => {
     trackScreenView('profile');
   }, [trackScreenView]);
+
+  const isSearching = search.length >= 2;
 
   const displayedCountries = useMemo(() => {
     if (search.length < 2) {
@@ -132,9 +135,13 @@ export default function ProfileScreen() {
     onboardingStore.set('preferredCurrency', getCurrencyForCountry(iso2));
   };
 
-  const handleDateChange = (_event: DateTimePickerEvent, selectedDate?: Date) => {
+  const handleDateChange = (event: DateTimePickerEvent, selectedDate?: Date) => {
     if (Platform.OS === 'android') {
       setShowDatePicker(false);
+      if (event.type === 'set' && selectedDate) {
+        setDateOfBirth(selectedDate);
+      }
+      return;
     }
     if (selectedDate) {
       setDateOfBirth(selectedDate);
@@ -152,7 +159,6 @@ export default function ProfileScreen() {
       onboardingStore.set('dateOfBirth', dateOfBirth.toISOString().split('T')[0]);
     }
 
-    // Track which questions were answered vs skipped
     const answered: string[] = ['first_name', 'country', 'date_of_birth'];
     const skipped: string[] = [];
 
@@ -179,25 +185,9 @@ export default function ProfileScreen() {
       ctaDisabled={!canContinue}
       onCtaPress={handleContinue}
     >
-      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-        {/* Gender confirmation */}
-        <Pressable
-          style={[styles.confirmRow, confirmedWoman && styles.confirmRowActive]}
-          onPress={() => setConfirmedWoman(!confirmedWoman)}
-        >
-          <View style={[styles.checkbox, confirmedWoman && styles.checkboxActive]}>
-            {confirmedWoman && (
-              <Ionicons name="checkmark" size={14} color={colors.background} />
-            )}
-          </View>
-          <Text style={styles.confirmText}>I identify as a woman</Text>
-        </Pressable>
-        <Text style={styles.confirmHint}>
-          Sola is built for women travelers. This helps us keep the community safe.
-        </Text>
-
-        {/* Photo + name row */}
-        <View style={styles.topRow}>
+      <View style={styles.scrollContainer}>
+        <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+          {/* Photo — centered above name */}
           {showPhoto && (
             <Pressable onPress={handlePhotoPress} style={styles.photoWrapper}>
               <View style={styles.photoCircle}>
@@ -208,180 +198,185 @@ export default function ProfileScreen() {
                     style={styles.photoImage}
                   />
                 ) : (
-                  <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
+                  <Ionicons name="camera-outline" size={32} color={colors.textMuted} />
                 )}
               </View>
               <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</Text>
             </Pressable>
           )}
 
-          <View style={[styles.nameColumn, !showPhoto && styles.nameColumnFull]}>
-            <TextInput
-              style={styles.input}
-              placeholder="First name"
-              placeholderTextColor={colors.textMuted}
-              value={firstName}
-              onChangeText={setFirstName}
-              autoFocus={false}
-            />
-          </View>
-        </View>
-
-        {/* Country section */}
-        <Text style={styles.sectionLabel}>Where are you from?</Text>
-
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
+          {/* Name */}
+          <Text style={styles.sectionLabel}>What should we call you?</Text>
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search countries..."
+            style={styles.input}
+            placeholder="First name"
             placeholderTextColor={colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
+            value={firstName}
+            onChangeText={setFirstName}
             autoFocus={false}
           />
-          {search.length > 0 && (
-            <Pressable onPress={() => setSearch('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Country section */}
+          <Text style={styles.sectionLabel}>Where are you from?</Text>
+
+          <View style={styles.searchContainer}>
+            <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search countries..."
+              placeholderTextColor={colors.textMuted}
+              value={search}
+              onChangeText={setSearch}
+              autoFocus={false}
+            />
+            {search.length > 0 && (
+              <Pressable onPress={() => setSearch('')} hitSlop={8}>
+                <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+              </Pressable>
+            )}
+          </View>
+
+          {selectedCountryData && !selectedInList && (
+            <View style={styles.selectedBadge}>
+              <Pill
+                label={`${selectedCountryData.flag ?? ''} ${selectedCountryData.name}`}
+                selected={true}
+                onPress={() => setSelectedCountry('')}
+              />
+            </View>
+          )}
+
+          <Text style={styles.pillGroupLabel}>
+            {isSearching ? 'Results' : 'Popular'}
+          </Text>
+
+          <View style={styles.pillGrid}>
+            {displayedCountries.map((country) => (
+              <Pill
+                key={country.iso2}
+                label={`${country.flag ?? ''} ${country.name}`}
+                selected={selectedCountry === country.iso2}
+                onPress={() => handleCountrySelect(country.iso2)}
+              />
+            ))}
+            {isSearching && displayedCountries.length === 0 && (
+              <Text style={styles.noResults}>No countries found</Text>
+            )}
+          </View>
+
+          {/* Divider */}
+          <View style={styles.divider} />
+
+          {/* Birthday section */}
+          <Text style={styles.sectionLabel}>When were you born?</Text>
+          <Text style={styles.sectionHint}>Used to personalise your experience</Text>
+
+          <Pressable
+            style={[styles.dateButton, dateOfBirth && styles.dateButtonSelected]}
+            onPress={() => setShowDatePicker(true)}
+          >
+            <Ionicons
+              name="calendar-outline"
+              size={18}
+              color={dateOfBirth ? colors.textPrimary : colors.textMuted}
+            />
+            <Text style={[styles.dateText, !dateOfBirth && styles.datePlaceholder]}>
+              {dateOfBirth ? formatDate(dateOfBirth) : 'Select your birthday'}
+            </Text>
+          </Pressable>
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={dateOfBirth ?? MAX_DATE}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              maximumDate={MAX_DATE}
+              minimumDate={MIN_DATE}
+              onChange={handleDateChange}
+            />
+          )}
+
+          {Platform.OS === 'ios' && showDatePicker && (
+            <Pressable style={styles.doneButton} onPress={() => setShowDatePicker(false)}>
+              <Text style={styles.doneText}>Done</Text>
             </Pressable>
           )}
-        </View>
 
-        {selectedCountryData && !selectedInList && (
-          <View style={styles.selectedBadge}>
-            <Pill
-              label={`${selectedCountryData.flag ?? ''} ${selectedCountryData.name}`}
-              selected={true}
-              onPress={() => setSelectedCountry('')}
-            />
-          </View>
-        )}
+          {/* Divider */}
+          <View style={styles.divider} />
 
-        <View style={styles.pillGrid}>
-          {displayedCountries.map((country) => (
-            <Pill
-              key={country.iso2}
-              label={`${country.flag ?? ''} ${country.name}`}
-              selected={selectedCountry === country.iso2}
-              onPress={() => handleCountrySelect(country.iso2)}
-            />
-          ))}
-          {search.length >= 2 && displayedCountries.length === 0 && (
-            <Text style={styles.noResults}>No countries found</Text>
-          )}
-        </View>
-
-        {/* Birthday section */}
-        <Text style={[styles.sectionLabel, styles.birthdaySection]}>When were you born?</Text>
-        <Text style={styles.sectionHint}>Used to personalise your experience</Text>
-
-        <Pressable
-          style={[styles.dateButton, dateOfBirth && styles.dateButtonSelected]}
-          onPress={() => setShowDatePicker(true)}
-        >
-          <Ionicons
-            name="calendar-outline"
-            size={18}
-            color={dateOfBirth ? colors.textPrimary : colors.textMuted}
-          />
-          <Text style={[styles.dateText, !dateOfBirth && styles.datePlaceholder]}>
-            {dateOfBirth ? formatDate(dateOfBirth) : 'Select your birthday'}
-          </Text>
-        </Pressable>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={dateOfBirth ?? MAX_DATE}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-            maximumDate={MAX_DATE}
-            minimumDate={MIN_DATE}
-            onChange={handleDateChange}
-          />
-        )}
-
-        {Platform.OS === 'ios' && showDatePicker && (
-          <Pressable style={styles.doneButton} onPress={() => setShowDatePicker(false)}>
-            <Text style={styles.doneText}>Done</Text>
+          {/* Gender confirmation — last, least creative */}
+          <Pressable
+            style={[styles.confirmRow, confirmedWoman && styles.confirmRowActive]}
+            onPress={() => setConfirmedWoman(!confirmedWoman)}
+          >
+            <View style={[styles.checkbox, confirmedWoman && styles.checkboxActive]}>
+              {confirmedWoman && (
+                <Ionicons name="checkmark" size={14} color={colors.background} />
+              )}
+            </View>
+            <Text style={styles.confirmText}>I identify as a woman</Text>
           </Pressable>
-        )}
-      </ScrollView>
+          <Text style={styles.confirmHint}>
+            Sola is built for women travelers. This helps us keep the community safe.
+          </Text>
+
+          {/* Bottom padding for scroll */}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+
+        {/* Scroll hint gradient — fades out above the CTA */}
+        <LinearGradient
+          colors={['rgba(255,255,255,0)', 'rgba(255,255,255,1)']}
+          style={styles.scrollHint}
+          pointerEvents="none"
+        />
+      </View>
     </OnboardingScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  confirmRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    paddingVertical: 14,
-    paddingHorizontal: 16,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.input,
-    marginBottom: 8,
+  scrollContainer: {
+    flex: 1,
   },
-  confirmRowActive: {
-    borderColor: colors.orange,
-    backgroundColor: colors.orangeFill,
+  scrollHint: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 32,
   },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 1.5,
-    borderColor: colors.borderDefault,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxActive: {
-    backgroundColor: colors.orange,
-    borderColor: colors.orange,
-  },
-  confirmText: {
-    fontFamily: fonts.medium,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  confirmHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginBottom: 24,
-  },
-  topRow: {
-    flexDirection: 'row',
-    gap: 16,
-    marginBottom: 24,
-  },
+
+  // Photo
   photoWrapper: {
     alignItems: 'center',
     gap: 6,
+    marginBottom: spacing.xxl,
   },
   photoCircle: {
-    width: 80,
-    height: 80,
+    width: 96,
+    height: 96,
     borderRadius: radius.full,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   photoImage: {
-    width: 80,
-    height: 80,
+    width: 96,
+    height: 96,
   },
   photoLabel: {
     fontFamily: fonts.medium,
     fontSize: 12,
     color: colors.orange,
   },
-  nameColumn: {
-    flex: 1,
-    gap: 8,
-  },
-  nameColumnFull: {},
+
+  // Name
   input: {
     height: 48,
     borderRadius: radius.input,
@@ -392,6 +387,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
+
+  // Section divider
+  divider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderSubtle,
+    marginVertical: spacing.xxl,
+  },
+
+  // Section labels
   sectionLabel: {
     fontFamily: fonts.medium,
     fontSize: 15,
@@ -399,15 +403,21 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   sectionHint: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
+    ...typography.body,
     color: colors.textMuted,
     marginTop: -6,
     marginBottom: 12,
   },
-  birthdaySection: {
-    marginTop: 28,
+  pillGroupLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.textMuted,
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: spacing.sm,
   },
+
+  // Country search
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -444,6 +454,8 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     paddingVertical: 8,
   },
+
+  // Date
   dateButton: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -475,5 +487,44 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.orange,
+  },
+
+  // Gender confirmation
+  confirmRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.input,
+    marginBottom: 8,
+  },
+  confirmRowActive: {
+    borderColor: colors.orange,
+    backgroundColor: colors.orangeFill,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: colors.borderDefault,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxActive: {
+    backgroundColor: colors.orange,
+    borderColor: colors.orange,
+  },
+  confirmText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  confirmHint: {
+    ...typography.body,
+    color: colors.textMuted,
   },
 });

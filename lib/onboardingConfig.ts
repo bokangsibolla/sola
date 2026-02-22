@@ -51,7 +51,7 @@ const DEFAULT_CONFIG: OnboardingQuestionConfig[] = [
 ];
 
 // Screen order for navigation (after profile)
-const SCREEN_ORDER = ['profile', 'youre-in'];
+const SCREEN_ORDER = ['profile', 'verify-identity', 'youre-in'];
 
 // ---------------------------------------------------------------------------
 // Seeded Random Number Generator
@@ -174,8 +174,9 @@ function determineScreensToShow(
 ): string[] {
   const screenSet = new Set<string>();
 
-  // Profile and youre-in are always shown
+  // Profile, verify-identity and youre-in are always shown
   screenSet.add('profile');
+  screenSet.add('verify-identity');
   screenSet.add('youre-in');
 
   for (const questionKey of questionsToShow) {

@@ -106,6 +106,7 @@ export default function UserProfileScreen() {
 
   const handleMessage = useCallback(async () => {
     if (!userId || !id) return;
+    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'send messages')) return;
     posthog.capture('message_button_tapped', { recipient_id: id });
     setActionLoading(true);
     try {
@@ -117,7 +118,7 @@ export default function UserProfileScreen() {
     } finally {
       setActionLoading(false);
     }
-  }, [userId, id, posthog, router]);
+  }, [userId, id, posthog, router, userProfile]);
 
   const handleMoreMenu = useCallback(() => {
     if (!userId || !id) return;
