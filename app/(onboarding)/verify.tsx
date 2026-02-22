@@ -96,11 +96,11 @@ export default function VerifyScreen() {
           // Non-blocking
         }
 
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       } else {
         // Existing user — go straight home
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
       }
     } catch (e: any) {
       Alert.alert('Verification failed', e.message ?? 'Something went wrong');

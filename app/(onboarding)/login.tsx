@@ -65,10 +65,10 @@ export default function LoginScreen() {
 
       posthog.capture('auth_success', { provider, is_new_user: result.isNewUser });
       if (result.isNewUser) {
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
@@ -137,12 +137,12 @@ export default function LoginScreen() {
 
       if (!profile) {
         // User exists in auth but no profile — needs onboarding
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       } else if (!profile.onboarding_completed_at) {
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
       }
     } catch (e: any) {
       const msg = e.message?.toLowerCase() ?? '';

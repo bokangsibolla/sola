@@ -39,7 +39,7 @@ export default function ResetPasswordScreen() {
     Alert.alert('Password updated', 'Your password has been successfully reset.', [
       {
         text: 'OK',
-        onPress: () => router.replace('/(onboarding)/login'),
+        onPress: () => router.replace('/(onboarding)/login' as any),
       },
     ]);
   };

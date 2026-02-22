@@ -146,7 +146,7 @@ function AuthGate() {
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
-      router.replace('/(tabs)/home');
+      router.replace('/(tabs)/home' as any);
     } else if (currentGroup === '(onboarding)' && userId && !isOnboardingCompleted) {
       // Check DB in case onboarding was completed on another device
       supabase
@@ -157,11 +157,11 @@ function AuthGate() {
         .then(({ data }) => {
           if (data?.onboarding_completed_at) {
             onboardingStore.set('onboardingCompleted', true);
-            router.replace('/(tabs)/home');
+            router.replace('/(tabs)/home' as any);
           }
         });
     } else if (currentGroup === '(tabs)' && !userId) {
-      router.replace('/(onboarding)/welcome');
+      router.replace('/(onboarding)/welcome' as any);
     }
   }, [segments, router, userId, authLoading]);
 
@@ -177,6 +177,7 @@ function AuthGate() {
     <>
       <Stack initialRouteName="index">
         <Stack.Screen name="index" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
         <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       </Stack>

@@ -1,6 +1,5 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
-import { GoogleSignin } from '@react-native-google-signin/google-signin';
 import { supabase } from '@/lib/supabase';
 
 const GOOGLE_WEB_CLIENT_ID =
@@ -8,11 +7,31 @@ const GOOGLE_WEB_CLIENT_ID =
 const GOOGLE_IOS_CLIENT_ID =
   '234937383727-41lbcel6j3nrn4t58huag5ig11582bca.apps.googleusercontent.com';
 
-// Configure at module level — must use the **web** client ID for signInWithIdToken
-GoogleSignin.configure({
-  webClientId: GOOGLE_WEB_CLIENT_ID,
-  iosClientId: GOOGLE_IOS_CLIENT_ID,
-});
+// Lazy-load GoogleSignin so it doesn't crash Expo Go at import time
+let _googleSignin: typeof import('@react-native-google-signin/google-signin').GoogleSignin | null = null;
+let _googleConfigured = false;
+
+function getGoogleSignin() {
+  if (!_googleSignin) {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const mod = require('@react-native-google-signin/google-signin');
+      _googleSignin = mod.GoogleSignin;
+    } catch {
+      throw new Error(
+        'Google Sign-In is not available in Expo Go. Please use a development build.',
+      );
+    }
+  }
+  if (!_googleConfigured && _googleSignin) {
+    _googleSignin.configure({
+      webClientId: GOOGLE_WEB_CLIENT_ID,
+      iosClientId: GOOGLE_IOS_CLIENT_ID,
+    });
+    _googleConfigured = true;
+  }
+  return _googleSignin!;
+}
 
 // ─── Google ──────────────────────────────────────────────────────────────────
 // Uses the native OS credential picker on both platforms.
@@ -22,6 +41,8 @@ export async function signInWithGoogle(): Promise<{
   isNewUser: boolean;
   userId: string;
 }> {
+  const GoogleSignin = getGoogleSignin();
+
   // Phase 1: Native Google Sign-In (Play Services / Credential Manager)
   let idToken: string;
   try {
@@ -34,6 +55,16 @@ export async function signInWithGoogle(): Promise<{
     }
     idToken = response.data.idToken;
   } catch (err: any) {
+    // Native module not available (Expo Go)
+    if (
+      err.message?.includes('TurboModuleRegistry') ||
+      err.message?.includes('could not be found') ||
+      err.message?.includes('native binary')
+    ) {
+      throw new Error(
+        'Google Sign-In requires a development build. It is not available in Expo Go.',
+      );
+    }
     // User cancelled the native picker
     if (
       err.code === 'SIGN_IN_CANCELLED' ||

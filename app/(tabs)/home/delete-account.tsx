@@ -60,7 +60,7 @@ export default function DeleteAccountScreen() {
               onboardingStore.reset();
 
               // Navigate to welcome screen
-              router.replace('/(onboarding)/welcome');
+              router.replace('/(onboarding)/welcome' as any);
             } catch (error) {
               setLoading(false);
               Sentry.captureException(error);

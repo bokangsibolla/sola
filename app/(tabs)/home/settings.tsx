@@ -233,7 +233,7 @@ export default function SettingsScreen() {
           posthog.reset();
           await signOut();
           onboardingStore.reset();
-          router.replace('/(onboarding)/welcome');
+          router.replace('/(onboarding)/welcome' as any);
         },
       },
     ]);

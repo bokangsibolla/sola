@@ -63,10 +63,10 @@ export default function CreateAccountScreen() {
 
       posthog.capture('auth_success', { provider, is_new_user: result.isNewUser });
       if (result.isNewUser) {
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home');
+        router.replace('/(tabs)/home' as any);
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
@@ -126,13 +126,13 @@ export default function CreateAccountScreen() {
       if (needsConfirmation) {
         posthog.capture('signup_initiated', { provider: 'email', needs_confirmation: true });
         router.push({
-          pathname: '/(onboarding)/verify',
+          pathname: '/(onboarding)/verify' as any,
           params: { email, mode: 'signup' },
         });
       } else {
         // Auto-confirmed — go to profile setup
         posthog.capture('auth_success', { provider: 'email', is_new_user: true });
-        router.push('/(onboarding)/profile');
+        router.push('/(onboarding)/profile' as any);
       }
     } catch (e: any) {
       const msg = e.message?.toLowerCase() ?? '';
@@ -251,7 +251,7 @@ export default function CreateAccountScreen() {
 
       <View style={styles.loginRow}>
         <Text style={styles.loginLabel}>Already have an account? </Text>
-        <Pressable onPress={() => router.push('/(onboarding)/login')}>
+        <Pressable onPress={() => router.push('/(onboarding)/login' as any)}>
           <Text style={styles.loginLink}>Log in</Text>
         </Pressable>
       </View>
