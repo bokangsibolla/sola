@@ -1,57 +1,50 @@
-import { StyleSheet, Text, TextProps, TextStyle } from 'react-native';
-import { colors, fonts, typography } from '@/constants/design';
+import React from 'react';
+import { Platform, Text, TextProps } from 'react-native';
+import { colors, typography } from '@/constants/design';
 
-interface SolaTextProps extends Omit<TextProps, 'style'> {
-  style?: TextStyle | TextStyle[];
+type TypographyVariant = keyof typeof typography;
+
+interface SolaTextProps extends TextProps {
+  variant?: TypographyVariant;
+  color?: string;
+  uppercase?: boolean;
+  letterSpacing?: number;
+  children: React.ReactNode;
 }
 
-export function Title({ children, style, ...props }: SolaTextProps) {
+export function SolaText({
+  variant,
+  color,
+  uppercase,
+  letterSpacing,
+  style,
+  maxFontSizeMultiplier = 1.3,
+  children,
+  ...rest
+}: SolaTextProps) {
+  const variantStyle = variant ? typography[variant] : undefined;
+
+  // Resolve color: explicit prop > variant built-in > textPrimary fallback
+  const resolvedColor =
+    color ??
+    (variantStyle && 'color' in variantStyle
+      ? (variantStyle as Record<string, unknown>).color as string
+      : colors.textPrimary);
+
   return (
-    <Text style={[styles.title, style]} {...props}>
+    <Text
+      maxFontSizeMultiplier={maxFontSizeMultiplier}
+      style={[
+        variantStyle,
+        { color: resolvedColor },
+        Platform.OS === 'android' && { includeFontPadding: false },
+        uppercase !== undefined && { textTransform: uppercase ? 'uppercase' as const : 'none' as const },
+        letterSpacing !== undefined && { letterSpacing },
+        style,
+      ]}
+      {...rest}
+    >
       {children}
     </Text>
   );
 }
-
-export function Subtitle({ children, style, ...props }: SolaTextProps) {
-  return (
-    <Text style={[styles.subtitle, style]} {...props}>
-      {children}
-    </Text>
-  );
-}
-
-export function Body({ children, style, ...props }: SolaTextProps) {
-  return (
-    <Text style={[styles.body, style]} {...props}>
-      {children}
-    </Text>
-  );
-}
-
-export function Label({ children, style, ...props }: SolaTextProps) {
-  return (
-    <Text style={[styles.label, style]} {...props}>
-      {children}
-    </Text>
-  );
-}
-
-const styles = StyleSheet.create({
-  title: {
-    ...typography.h1,
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  body: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  label: {
-    ...typography.caption,
-    fontFamily: fonts.medium,
-  },
-});

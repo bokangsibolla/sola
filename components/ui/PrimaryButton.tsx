@@ -1,6 +1,7 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle } from 'react-native';
 import { colors, fonts, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface PrimaryButtonProps {
   label: string;
@@ -29,14 +30,14 @@ export default function PrimaryButton({
       accessibilityLabel={label}
       accessibilityState={{ disabled }}
     >
-      <Text
+      <SolaText
         style={[styles.buttonText, disabled && styles.buttonTextDisabled]}
         numberOfLines={1}
         adjustsFontSizeToFit
         minimumFontScale={0.8}
       >
         {label}
-      </Text>
+      </SolaText>
     </Pressable>
   );
 }
@@ -64,7 +65,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: colors.background,
-    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
   buttonTextDisabled: {
     opacity: 0.9,
