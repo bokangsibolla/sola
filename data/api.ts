@@ -881,16 +881,19 @@ export async function getSocialSpotsByCountry(
   return getPlacesByCountryAndType(countryId, socialTypes, limit);
 }
 
-export async function getAllActivities(limit = 50): Promise<Place[]> {
+export async function getAllActivities(limit = 50): Promise<(Place & { imageUrl: string | null })[]> {
   const { data, error } = await supabase
     .from('places')
-    .select('*')
+    .select('*, place_media(url)')
     .eq('is_active', true)
     .in('place_type', ['tour', 'activity', 'landmark'])
     .order('curation_score', { ascending: false, nullsFirst: false })
     .limit(limit);
   if (error) throw error;
-  return rowsToCamel<Place>(data ?? []);
+  return (data ?? []).map((row: any) => ({
+    ...rowsToCamel<Place>([row])[0],
+    imageUrl: row.image_url_cached ?? row.place_media?.[0]?.url ?? null,
+  }));
 }
 
 /**
@@ -1469,6 +1472,16 @@ export async function sendMessage(
   return toCamel<Message>(data);
 }
 
+/** Soft-delete own message. Shows "[Message deleted]" placeholder. */
+export async function deleteOwnMessage(messageId: string, userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('messages')
+    .update({ is_deleted: true })
+    .eq('id', messageId)
+    .eq('sender_id', userId);
+  if (error) throw error;
+}
+
 // ---------------------------------------------------------------------------
 // Block & Report
 // ---------------------------------------------------------------------------
@@ -1478,6 +1491,15 @@ export async function blockUser(blockerId: string, blockedId: string): Promise<v
     .from('blocked_users')
     .insert({ blocker_id: blockerId, blocked_id: blockedId });
   if (error && error.code !== '23505') throw error; // ignore duplicate
+}
+
+/** Block user + delete conversation + remove connection atomically via DB function */
+export async function blockUserFull(blockerId: string, blockedId: string): Promise<void> {
+  const { error } = await supabase.rpc('block_user_full', {
+    p_blocker_id: blockerId,
+    p_blocked_id: blockedId,
+  });
+  if (error) throw error;
 }
 
 export async function unblockUser(blockerId: string, blockedId: string): Promise<void> {
@@ -2716,10 +2738,11 @@ export async function sendConnectionRequest(
   senderId: string,
   receiverId: string,
   context?: string,
+  message?: string,
 ): Promise<ConnectionRequest> {
   const { data, error } = await supabase
     .from('connection_requests')
-    .insert({ sender_id: senderId, receiver_id: receiverId, context })
+    .insert({ sender_id: senderId, receiver_id: receiverId, context, message: message ?? null })
     .select()
     .single();
   if (error) throw error;
@@ -2742,6 +2765,15 @@ export async function withdrawConnectionRequest(requestId: string): Promise<void
     .from('connection_requests')
     .delete()
     .eq('id', requestId);
+  if (error) throw error;
+}
+
+/** Silently remove an accepted connection. No notification to other user. */
+export async function removeConnection(userId: string, otherId: string): Promise<void> {
+  const { error } = await supabase.rpc('remove_connection', {
+    p_user_id: userId,
+    p_other_id: otherId,
+  });
   if (error) throw error;
 }
 
