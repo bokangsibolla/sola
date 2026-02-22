@@ -71,13 +71,8 @@ function buildForYouItems(
   }));
 }
 
-function getSeeAllRoute(heroState: HeroState, savedPlaces: SavedPlacePreview[]): string {
-  if (heroState.kind === 'active' || heroState.kind === 'upcoming') {
-    const stops = heroState.trip.stops ?? [];
-    if (stops.length >= 3) return `/trips/${heroState.trip.id}`;
-  }
-  if (savedPlaces.length >= 3) return '/(tabs)/home/saved';
-  return '/discover/browse';
+function getSeeAllRoute(): string {
+  return '/(tabs)/discover';
 }
 
 export function ForYouRow({ heroState, savedPlaces, personalizedCities }: ForYouRowProps) {
@@ -86,7 +81,7 @@ export function ForYouRow({ heroState, savedPlaces, personalizedCities }: ForYou
 
   if (items.length === 0) return null;
 
-  const seeAllRoute = getSeeAllRoute(heroState, savedPlaces);
+  const seeAllRoute = getSeeAllRoute();
 
   return (
     <View style={styles.container}>
