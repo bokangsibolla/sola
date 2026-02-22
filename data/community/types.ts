@@ -40,6 +40,7 @@ export interface CommunityThread {
   authorType: AuthorType;
   isSeed: boolean;
   seedProfileId: string | null;
+  postType: string | null;
   createdAt: string;
   updatedAt: string;
 }

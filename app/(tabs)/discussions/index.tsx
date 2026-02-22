@@ -19,7 +19,7 @@ import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
@@ -33,6 +33,17 @@ import { getImageUrl } from '@/lib/image';
 import { formatTimeAgo } from '@/utils/timeAgo';
 import { getFlag } from '@/data/trips/helpers';
 import type { ThreadWithAuthor, CommunityTopic } from '@/data/community/types';
+
+// ---------------------------------------------------------------------------
+// Post Type Badge Labels
+// ---------------------------------------------------------------------------
+
+const POST_TYPE_LABELS: Record<string, string> = {
+  question: 'Question',
+  tip: 'Tip',
+  experience: 'Experience',
+  safety_alert: 'Safety Alert',
+};
 
 // ---------------------------------------------------------------------------
 // Featured Hero Card — visual header for top Sola Team thread
@@ -198,11 +209,28 @@ function ThreadCard({
             {thread.title}
           </Text>
 
-          {/* Subtitle: topic · place */}
-          {subtitle.length > 0 && (
-            <Text style={styles.threadSubtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
+          {/* Subtitle: post type pill + topic · place */}
+          {(subtitle.length > 0 || (thread.postType && POST_TYPE_LABELS[thread.postType])) && (
+            <View style={styles.threadSubtitleRow}>
+              {thread.postType && POST_TYPE_LABELS[thread.postType] && (
+                <View style={[
+                  styles.postTypePill,
+                  thread.postType === 'safety_alert' && styles.safetyAlertPill,
+                ]}>
+                  <Text style={[
+                    styles.postTypePillText,
+                    thread.postType === 'safety_alert' && styles.safetyAlertPillText,
+                  ]}>
+                    {POST_TYPE_LABELS[thread.postType]}
+                  </Text>
+                </View>
+              )}
+              {subtitle.length > 0 && (
+                <Text style={styles.threadSubtitle} numberOfLines={1}>
+                  {subtitle}
+                </Text>
+              )}
+            </View>
           )}
 
           {/* Footer: helpful + answers */}
@@ -796,7 +824,7 @@ export default function DiscussionsScreen() {
     <AppScreen>
       <NavigationHeader
         title="Discussions"
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
 
       <FlatList
@@ -1125,11 +1153,37 @@ const styles = StyleSheet.create({
     lineHeight: 23,
     marginBottom: spacing.xs,
   },
+  threadSubtitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+    flexWrap: 'wrap',
+  },
   threadSubtitle: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textSecondary,
-    marginBottom: spacing.md,
+    flexShrink: 1,
+  },
+  postTypePill: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    backgroundColor: colors.neutralFill,
+  },
+  postTypePillText: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  safetyAlertPill: {
+    backgroundColor: colors.warningFill,
+  },
+  safetyAlertPillText: {
+    color: colors.warning,
   },
   threadThumbnail: {
     width: THUMBNAIL_SIZE,
