@@ -1,354 +1,159 @@
-# Homepage Dashboard Redesign — Implementation Plan
+# Homepage Dashboard Redesign v2 — Implementation Plan
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Transform Sola's homepage from an 11-section content feed into a 6-module premium travel dashboard with soft elevation, warm off-white background, and focused content hierarchy.
+**Goal:** Replace the current section-builder home screen with a clean, visual dashboard inspired by the warm travel app reference: large hero trip card, 3 personalized "For you" cards, a community image banner, and a creative hamburger menu icon.
 
-**Architecture:** Replace the existing ScrollView of flat components with elevated white modules on a `#FAFAF8` page background. Introduce an elevation system (4 shadow levels), new radius tokens, and a `surfacePage` color. Reduce from 11 sections to 6 focused modules: DashboardHeader, HeroModule, SavedShortlist, DestinationCarousel, CommunityPeek, QuickActionsGrid. Each module is a self-contained component. No data layer changes — existing `useHomeData()` provides all data.
+**Architecture:** Replace the dynamic section renderer with a fixed 4-block layout. Keep `useHomeData` for data fetching but render components directly. Create 3 new components (`HamburgerButton`, `ForYouRow`, `CommunityBannerCard`), restyle `HeroModule`, and simplify the home screen render.
 
-**Tech Stack:** React Native, Expo Router, expo-image, expo-linear-gradient, Feather/Ionicons, existing Supabase hooks
+**Tech Stack:** React Native, Expo Image, expo-linear-gradient, Expo Router, existing design tokens from `constants/design.ts`
 
 **Key files to understand before starting:**
 - `constants/design.ts` — design tokens (colors, spacing, radius, typography, fonts)
 - `app/(tabs)/home/index.tsx` — current homepage screen
-- `data/home/useHomeData.ts` — data hook (unchanged)
-- `data/home/types.ts` — TypeScript types (unchanged)
-- `components/AppScreen.tsx` — screen wrapper
-- All files in `components/home/` — existing components being replaced
+- `data/home/useHomeData.ts` — data hook (provides heroState, personalizedCities, savedPlaces, etc.)
+- `data/home/types.ts` — HeroState, PersonalizedCity, SavedPlacePreview, etc.
+- `components/home/HeroModule.tsx` — current hero card (being restyled)
+- `components/NavigationHeader.tsx` — header component (accepts rightActions prop)
+- `components/AvatarButton.tsx` — current right-side header button (being replaced on home only)
+- `data/trips/types.ts` — TripWithStops type (needed for ForYouRow stop fields)
 
 ---
 
-## Task 1: Update Design Tokens
+### Task 1: Create HamburgerButton component
+
+Creative 3-line hamburger icon: top line (20px, black), middle line (14px, orange, shorter), bottom line (20px, black). Opens the existing MenuSheet. Shows unread dot when new activity exists.
 
 **Files:**
-- Modify: `constants/design.ts`
-
-**Step 1: Add new color tokens**
-
-Add after the existing `floatingNavIconInactive` line (~line 33) in the `colors` object:
-
-```typescript
-// Dashboard surfaces
-surfacePage: '#FAFAF8',
-surfaceCard: '#FFFFFF',
-```
-
-**Step 2: Add elevation system**
-
-Add after the `pressedState` export (~line 69):
-
-```typescript
-export const elevation = {
-  none: {},
-  sm: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowRadius: 3,
-    shadowOpacity: 0.06,
-    elevation: 1,
-  },
-  md: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowRadius: 8,
-    shadowOpacity: 0.08,
-    elevation: 3,
-  },
-  lg: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 16,
-    shadowOpacity: 0.10,
-    elevation: 6,
-  },
-  xl: {
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowRadius: 24,
-    shadowOpacity: 0.12,
-    elevation: 10,
-  },
-} as const;
-```
-
-**Step 3: Add new radius tokens**
-
-Add to the `radius` object:
-
-```typescript
-module: 16,
-cardLg: 12,
-```
-
-**Step 4: Add new spacing token**
-
-Add to the `spacing` object:
-
-```typescript
-moduleInset: 20,
-```
-
-**Step 5: Add new typography tokens**
-
-Add to the `typography` object:
-
-```typescript
-greeting: { fontFamily: fonts.semiBold, fontSize: 24, lineHeight: 32 },
-sectionTitle: { fontFamily: fonts.semiBold, fontSize: 18, lineHeight: 24 },
-```
-
-**Step 6: Verify types compile**
-
-Run: `npx tsc --noEmit 2>&1 | grep -E '(constants/design)' | head -20`
-Expected: No errors from design.ts
-
-**Step 7: Commit**
-
-```bash
-git add constants/design.ts
-git commit -m "feat(design): add elevation system, surface colors, and dashboard tokens"
-```
-
----
-
-## Task 2: Create SectionHeader Component
-
-**Files:**
-- Create: `components/home/SectionHeader.tsx`
+- Create: `components/home/HamburgerButton.tsx`
 
 **Step 1: Create the component**
 
-This is a reusable row: left-aligned title + optional right "See all" link.
+```tsx
+import React, { useState } from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { colors, spacing } from '@/constants/design';
+import { useUnreadIndicator } from '@/data/notifications/useUnreadIndicator';
+import { MenuSheet } from '@/components/MenuSheet';
 
-```typescript
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, spacing, typography } from '@/constants/design';
+const TOUCH_TARGET = 44;
 
-interface SectionHeaderProps {
-  title: string;
-  onSeeAll?: () => void;
-}
-
-export function SectionHeader({ title, onSeeAll }: SectionHeaderProps) {
-  return (
-    <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {onSeeAll && (
-        <Pressable onPress={onSeeAll} hitSlop={8}>
-          <Text style={styles.seeAll}>See all</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.screenX,
-    marginBottom: spacing.lg,
-  },
-  title: {
-    ...typography.sectionTitle,
-    color: colors.textPrimary,
-  },
-  seeAll: {
-    fontFamily: typography.caption.fontFamily,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.orange,
-  },
-});
-```
-
-**Step 2: Verify types compile**
-
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/SectionHeader)' | head -10`
-Expected: No errors
-
-**Step 3: Commit**
-
-```bash
-git add components/home/SectionHeader.tsx
-git commit -m "feat(home): add SectionHeader reusable component"
-```
-
----
-
-## Task 3: Create DashboardHeader Component
-
-**Files:**
-- Create: `components/home/DashboardHeader.tsx`
-
-**Context:** This replaces SearchPill. It renders a time-aware greeting, a contextual subtitle, and an elevated search input. It lives on `surfacePage` (no card container).
-
-**Step 1: Create the component**
-
-```typescript
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import {
-  colors,
-  elevation,
-  fonts,
-  radius,
-  spacing,
-  typography,
-  pressedState,
-} from '@/constants/design';
-import type { HeroState } from '@/data/home/types';
-
-interface DashboardHeaderProps {
-  firstName: string | null;
-  heroState: HeroState;
-  savedCount: number;
-}
-
-function getGreeting(): string {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
-}
-
-function getContextualLine(hero: HeroState, savedCount: number): string {
-  if (hero.kind === 'active') {
-    const city = hero.trip.destinationName;
-    const arriving = hero.trip.arriving;
-    const leaving = hero.trip.leaving;
-    if (arriving && leaving) {
-      const now = new Date();
-      const start = new Date(arriving);
-      const end = new Date(leaving);
-      const totalDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
-      const currentDay = Math.min(totalDays, Math.max(1, Math.ceil((now.getTime() - start.getTime()) / (1000 * 60 * 60 * 24))));
-      return `You're in ${city} \u2014 Day ${currentDay} of ${totalDays}`;
-    }
-    return `You're in ${city}`;
-  }
-
-  if (hero.kind === 'upcoming') {
-    const city = hero.trip.destinationName;
-    const arriving = hero.trip.arriving;
-    if (arriving) {
-      const days = Math.ceil((new Date(arriving).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-      if (days > 0) return `Your trip to ${city} starts in ${days} ${days === 1 ? 'day' : 'days'}`;
-    }
-    return `Your trip to ${city} is coming up`;
-  }
-
-  if (savedCount > 0) {
-    return `${savedCount} ${savedCount === 1 ? 'place' : 'places'} on your shortlist`;
-  }
-
-  return 'Ready to plan your next escape?';
-}
-
-export function DashboardHeader({ firstName, heroState, savedCount }: DashboardHeaderProps) {
-  const router = useRouter();
-  const greeting = getGreeting();
-  const greetingText = firstName ? `${greeting}, ${firstName}` : greeting;
-  const contextual = getContextualLine(heroState, savedCount);
+export function HamburgerButton() {
+  const [menuVisible, setMenuVisible] = useState(false);
+  const hasUnread = useUnreadIndicator();
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.greeting}>{greetingText}</Text>
-      <Text style={styles.contextual}>{contextual}</Text>
-
+    <>
       <Pressable
-        style={({ pressed }) => [
-          styles.searchInput,
-          pressed && styles.searchPressed,
-        ]}
-        onPress={() => router.push('/discover/search')}
+        onPress={() => setMenuVisible(true)}
+        hitSlop={spacing.sm}
+        style={styles.button}
         accessibilityRole="button"
-        accessibilityLabel="Search destinations"
+        accessibilityLabel={hasUnread ? 'Menu, new activity' : 'Menu'}
       >
-        <Feather name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.searchPlaceholder}>Where to next?</Text>
+        <View style={styles.lines}>
+          <View style={styles.lineTop} />
+          <View style={styles.lineMiddle} />
+          <View style={styles.lineBottom} />
+        </View>
+        {hasUnread && <View style={styles.dot} />}
       </Pressable>
-    </View>
+
+      <MenuSheet visible={menuVisible} onClose={() => setMenuVisible(false)} />
+    </>
   );
 }
 
+const LINE_THICKNESS = 2;
+const LINE_GAP = 5;
+
 const styles = StyleSheet.create({
-  container: {
-    paddingHorizontal: spacing.screenX,
-    marginTop: spacing.lg,
-    marginBottom: spacing.xl,
-  },
-  greeting: {
-    ...typography.greeting,
-    color: colors.textPrimary,
-  },
-  contextual: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  searchInput: {
-    flexDirection: 'row',
+  button: {
+    width: TOUCH_TARGET,
+    height: TOUCH_TARGET,
     alignItems: 'center',
-    height: 48,
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.xl,
-    gap: spacing.sm,
-    ...elevation.md,
+    justifyContent: 'center',
   },
-  searchPlaceholder: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
+  lines: {
+    width: 22,
+    gap: LINE_GAP,
   },
-  searchPressed: {
-    opacity: pressedState.opacity,
-    transform: pressedState.transform,
+  lineTop: {
+    width: 20,
+    height: LINE_THICKNESS,
+    borderRadius: 1,
+    backgroundColor: colors.textPrimary,
+  },
+  lineMiddle: {
+    width: 14,
+    height: LINE_THICKNESS,
+    borderRadius: 1,
+    backgroundColor: colors.orange,
+  },
+  lineBottom: {
+    width: 20,
+    height: LINE_THICKNESS,
+    borderRadius: 1,
+    backgroundColor: colors.textPrimary,
+  },
+  dot: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: spacing.sm,
+    height: spacing.sm,
+    borderRadius: spacing.xs,
+    backgroundColor: colors.orange,
+    borderWidth: 2,
+    borderColor: colors.background,
   },
 });
 ```
 
-**Step 2: Verify types compile**
+**Step 2: Verify**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/DashboardHeader)' | head -10`
+Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/HamburgerButton)'`
 Expected: No errors
 
 **Step 3: Commit**
 
 ```bash
-git add components/home/DashboardHeader.tsx
-git commit -m "feat(home): add DashboardHeader with greeting, context line, and elevated search"
+git add components/home/HamburgerButton.tsx
+git commit -m "feat(home): add HamburgerButton — creative 3-line icon with orange accent"
 ```
 
 ---
 
-## Task 4: Create HeroModule Component
+### Task 2: Restyle HeroModule for dashboard layout
+
+Restyle from full-bleed edge-to-edge card to a padded, rounded card within `spacing.screenX` (24px) margins. 220px tall, `borderRadius: 16` on all corners, seasonal subtitle for no-trip state, white action circle top-right.
 
 **Files:**
-- Create: `components/home/HeroModule.tsx`
+- Modify: `components/home/HeroModule.tsx` (full rewrite)
 
-**Context:** Replaces HeroCard. A white elevated container holding a full-width image card with structured data below. Three states: active, upcoming, featured. Travel advisory folded into active state.
+**Step 1: Replace the entire file**
 
-**Step 1: Create the component**
+Key changes from current:
+- Remove `wrapper.marginHorizontal: -spacing.lg` (was breaking out of AppScreen padding for full-bleed)
+- Add `wrapper.paddingHorizontal: spacing.screenX` (card within screen padding)
+- Card height: 220px fixed
+- All corners rounded with `radius.module` (16px)
+- Add white circle action button (top-right): arrow-forward for trips, bookmark for featured
+- Simplify pill styling (keep frosted glass)
+- Add `getSeasonalSubtitle()` helper for featured state (e.g., "Perfect for February")
+- Remove travel advisory overlay (simplify — advisory was cluttering the card)
+- Remove below-image belowImage area (keep it purely an image card)
+- Title: 24px semiBold (down from 28px for better fit in padded card)
 
-```typescript
+```tsx
 import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   colors,
-  elevation,
   fonts,
   radius,
   spacing,
@@ -357,13 +162,12 @@ import {
 import type { HeroState, TravelUpdate } from '@/data/home/types';
 
 const FALLBACK_IMAGE = require('@/assets/images/solo-bali-palms.jpg');
+const HERO_HEIGHT = 220;
 
 interface HeroModuleProps {
   hero: HeroState;
-  travelUpdate: TravelUpdate | null;
+  travelUpdate?: TravelUpdate | null;
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getImageSource(hero: HeroState) {
   let uri: string | null = null;
@@ -373,19 +177,6 @@ function getImageSource(hero: HeroState) {
     uri = hero.city.heroImageUrl || null;
   }
   return uri ? { uri } : FALLBACK_IMAGE;
-}
-
-function formatLocalTime(timezone: string | null): string | null {
-  if (!timezone) return null;
-  try {
-    return new Intl.DateTimeFormat('en-US', {
-      hour: 'numeric',
-      minute: '2-digit',
-      timeZone: timezone,
-    }).format(new Date());
-  } catch {
-    return null;
-  }
 }
 
 function formatDateRange(arriving: string | null, leaving: string | null): string | null {
@@ -398,40 +189,18 @@ function formatDateRange(arriving: string | null, leaving: string | null): strin
   return fmt(arriving);
 }
 
-function getDayProgress(arriving: string | null, leaving: string | null): string | null {
-  if (!arriving || !leaving) return null;
-  const now = new Date();
-  const start = new Date(arriving);
-  const end = new Date(leaving);
-  const totalMs = end.getTime() - start.getTime();
-  const elapsedMs = now.getTime() - start.getTime();
-  if (totalMs <= 0) return null;
-  const totalDays = Math.max(1, Math.ceil(totalMs / (1000 * 60 * 60 * 24)));
-  const currentDay = Math.min(totalDays, Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24))));
-  return `Day ${currentDay} of ${totalDays}`;
+function getSeasonalSubtitle(): string {
+  const month = new Date().getMonth();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return `Perfect for ${monthNames[month]}`;
 }
 
-function getDaysUntil(arriving: string | null): string | null {
-  if (!arriving) return null;
-  const days = Math.ceil((new Date(arriving).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
-  if (days <= 0) return null;
-  return `In ${days} ${days === 1 ? 'day' : 'days'}`;
-}
-
-// ── Severity styling ──────────────────────────────────────────────────────
-
-const SEVERITY_STYLES = {
-  info: { bg: colors.blueFill, color: colors.blueSoft, icon: 'info' as const },
-  advisory: { bg: colors.warningFill, color: colors.warning, icon: 'alert-triangle' as const },
-  alert: { bg: colors.emergencyFill, color: colors.emergency, icon: 'alert-circle' as const },
-};
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
+export function HeroModule({ hero }: HeroModuleProps) {
   const router = useRouter();
 
-  // Tick local time every minute for active trip
   const [, setTick] = useState(0);
   useEffect(() => {
     if (hero.kind !== 'active') return;
@@ -449,785 +218,302 @@ export function HeroModule({ hero, travelUpdate }: HeroModuleProps) {
 
   const imageSource = getImageSource(hero);
 
+  let pillText = 'RECOMMENDED';
+  if (hero.kind === 'active') pillText = 'NOW TRAVELING';
+  else if (hero.kind === 'upcoming') pillText = 'UPCOMING';
+
+  let title = '';
+  let subtitle: string | null = null;
+  if (hero.kind === 'active') {
+    title = hero.trip.destinationName;
+    subtitle = formatDateRange(hero.trip.arriving, hero.trip.leaving);
+  } else if (hero.kind === 'upcoming') {
+    title = hero.trip.destinationName;
+    subtitle = formatDateRange(hero.trip.arriving, hero.trip.leaving);
+  } else {
+    title = `${hero.city.name}, ${hero.city.countryName}`;
+    subtitle = getSeasonalSubtitle();
+  }
+
   return (
-    <View style={styles.module}>
-      {/* Image card */}
+    <View style={styles.wrapper}>
       <Pressable
         style={({ pressed }) => [
-          styles.imageContainer,
+          styles.card,
           pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
         ]}
         onPress={handlePress}
       >
         <Image
           source={imageSource}
-          style={styles.image}
+          style={StyleSheet.absoluteFillObject}
           contentFit="cover"
           transition={200}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.6)']}
-          style={styles.gradient}
+          colors={['transparent', 'rgba(0,0,0,0.05)', colors.overlayMedium]}
+          locations={[0, 0.4, 1]}
+          style={StyleSheet.absoluteFillObject}
         />
 
-        {/* Status pill */}
+        {/* Status pill — top left */}
         <View style={styles.pillContainer}>
-          {hero.kind === 'active' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={[styles.pillText, { color: colors.greenFill }]}>
-                CURRENTLY TRAVELING
-              </Text>
-            </View>
-          )}
-          {hero.kind === 'upcoming' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(255,255,255,0.2)' }]}>
-              <Text style={[styles.pillText, { color: colors.orangeFill }]}>UPCOMING</Text>
-            </View>
-          )}
-          {hero.kind === 'featured' && (
-            <View style={[styles.pill, { backgroundColor: 'rgba(0,0,0,0.35)' }]}>
-              <Text style={[styles.pillText, { color: '#FFFFFF' }]}>FEATURED</Text>
-            </View>
-          )}
+          <View style={styles.pill}>
+            {hero.kind === 'active' && <View style={styles.liveDot} />}
+            <Text style={styles.pillText}>{pillText}</Text>
+          </View>
         </View>
 
-        {/* Overlay text */}
+        {/* Action circle — top right */}
+        <View style={styles.actionContainer}>
+          <View style={styles.actionCircle}>
+            <Ionicons
+              name={hero.kind === 'featured' ? 'bookmark-outline' : 'arrow-forward'}
+              size={16}
+              color={colors.textPrimary}
+            />
+          </View>
+        </View>
+
+        {/* Bottom content */}
         <View style={styles.overlay}>
-          {hero.kind === 'active' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.trip.destinationName}
-              </Text>
-              {(() => {
-                const progress = getDayProgress(hero.trip.arriving, hero.trip.leaving);
-                return progress ? <Text style={styles.metaText}>{progress}</Text> : null;
-              })()}
-            </>
-          )}
-          {hero.kind === 'upcoming' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.trip.destinationName}
-              </Text>
-              {(() => {
-                const countdown = getDaysUntil(hero.trip.arriving);
-                return countdown ? <Text style={styles.metaText}>{countdown}</Text> : null;
-              })()}
-            </>
-          )}
-          {hero.kind === 'featured' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.city.name}, {hero.city.countryName}
-              </Text>
-              {hero.city.shortBlurb && (
-                <Text style={styles.blurbText} numberOfLines={2}>
-                  {hero.city.shortBlurb}
-                </Text>
-              )}
-            </>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          {subtitle && (
+            <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
           )}
         </View>
       </Pressable>
-
-      {/* Below-image content */}
-      <View style={styles.belowImage}>
-        {/* Active: data chips */}
-        {hero.kind === 'active' && (
-          <View style={styles.chipRow}>
-            {(() => {
-              const localTime = formatLocalTime(hero.cityTimezone);
-              return localTime ? (
-                <View style={styles.dataChip}>
-                  <Feather name="clock" size={12} color={colors.textSecondary} />
-                  <Text style={styles.chipText}>{localTime}</Text>
-                </View>
-              ) : null;
-            })()}
-          </View>
-        )}
-
-        {/* Upcoming: meta row + CTA */}
-        {hero.kind === 'upcoming' && (
-          <>
-            <Text style={styles.dateRange}>
-              {formatDateRange(hero.trip.arriving, hero.trip.leaving)}
-              {hero.savedItemCount > 0 &&
-                `  \u00B7  ${hero.savedItemCount} ${hero.savedItemCount === 1 ? 'place' : 'places'} saved`}
-            </Text>
-            <Pressable
-              onPress={handlePress}
-              hitSlop={8}
-              style={styles.ctaRow}
-            >
-              <Text style={styles.ctaText}>Continue planning</Text>
-              <Feather name="arrow-right" size={14} color={colors.orange} />
-            </Pressable>
-          </>
-        )}
-
-        {/* Featured: signal chips + CTA */}
-        {hero.kind === 'featured' && (
-          <>
-            <View style={styles.chipRow}>
-              <View style={styles.signalChip}>
-                <Text style={styles.signalChipText}>Solo-friendly</Text>
-              </View>
-            </View>
-            <Pressable
-              onPress={handlePress}
-              hitSlop={8}
-              style={styles.ctaRow}
-            >
-              <Text style={styles.ctaText}>Start planning</Text>
-              <Feather name="arrow-right" size={14} color={colors.orange} />
-            </Pressable>
-          </>
-        )}
-
-        {/* Travel advisory (active trip only) */}
-        {hero.kind === 'active' && travelUpdate && (
-          <View
-            style={[
-              styles.advisory,
-              { backgroundColor: SEVERITY_STYLES[travelUpdate.severity].bg },
-            ]}
-          >
-            <Feather
-              name={SEVERITY_STYLES[travelUpdate.severity].icon}
-              size={14}
-              color={SEVERITY_STYLES[travelUpdate.severity].color}
-            />
-            <Text
-              style={[
-                styles.advisoryText,
-                { color: SEVERITY_STYLES[travelUpdate.severity].color },
-              ]}
-              numberOfLines={1}
-            >
-              {travelUpdate.title}
-            </Text>
-          </View>
-        )}
-      </View>
     </View>
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────────────────────
-
-const IMAGE_HEIGHT_TRIP = 200;
-const IMAGE_HEIGHT_FEATURED = 220;
-
 const styles = StyleSheet.create({
-  module: {
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.xl,
-    backgroundColor: colors.surfaceCard,
+  wrapper: {
+    paddingHorizontal: spacing.screenX,
+  },
+  card: {
+    height: HERO_HEIGHT,
     borderRadius: radius.module,
     overflow: 'hidden',
-    ...elevation.lg,
   },
-  imageContainer: {
-    // Height is set dynamically per state, but we use a default
-    // The image fills the container, so height comes from the image style
-  },
-  image: {
-    width: '100%',
-    height: IMAGE_HEIGHT_TRIP,
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  // Status pill
   pillContainer: {
     position: 'absolute',
-    top: spacing.md,
+    top: spacing.lg,
     left: spacing.lg,
   },
   pill: {
-    paddingHorizontal: spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.frostedPillBg,
+    borderWidth: 1,
+    borderColor: colors.frostedPillBorder,
+    paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.full,
+  },
+  liveDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.greenSoft,
   },
   pillText: {
     fontFamily: fonts.semiBold,
     fontSize: 10,
     lineHeight: 14,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    color: colors.textOnImage,
   },
-
-  // Overlay text
+  actionContainer: {
+    position: 'absolute',
+    top: spacing.lg,
+    right: spacing.lg,
+  },
+  actionCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   overlay: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  cityName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 22,
-    lineHeight: 28,
-    color: '#FFFFFF',
-  },
-  metaText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    lineHeight: 20,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xs,
-  },
-  blurbText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
-    color: 'rgba(255,255,255,0.85)',
-    marginTop: spacing.xs,
-  },
-
-  // Below image area
-  belowImage: {
-    padding: spacing.moduleInset,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  dataChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  chipText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textPrimary,
-  },
-  signalChip: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  signalChipText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
-  },
-  dateRange: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textSecondary,
-  },
-  ctaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    marginTop: spacing.md,
-  },
-  ctaText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.orange,
-  },
-
-  // Advisory
-  advisory: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    borderRadius: radius.cardLg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    marginTop: spacing.md,
-  },
-  advisoryText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    flex: 1,
-  },
-});
-```
-
-**Step 2: Handle featured image height**
-
-The featured state needs a taller image (220px). The cleanest approach: make image height dynamic. In the image style, override height inline:
-
-In the `<Image>` component, change the style to:
-```typescript
-style={[
-  styles.image,
-  hero.kind === 'featured' && { height: IMAGE_HEIGHT_FEATURED },
-]}
-```
-
-This is already handled in the code above — the `IMAGE_HEIGHT_FEATURED` constant exists. Just add the conditional style to the Image component in the JSX.
-
-**Step 3: Verify types compile**
-
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/HeroModule)' | head -10`
-Expected: No errors
-
-**Step 4: Commit**
-
-```bash
-git add components/home/HeroModule.tsx
-git commit -m "feat(home): add HeroModule with elevation, 3 states, and inline advisory"
-```
-
----
-
-## Task 5: Create SavedShortlist Component
-
-**Files:**
-- Create: `components/home/SavedShortlist.tsx`
-
-**Context:** Replaces SavedPreview. Elevated white card with square thumbnails (not circular). Only renders if user has saved places.
-
-**Step 1: Create the component**
-
-```typescript
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Image } from 'expo-image';
-import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import {
-  colors,
-  elevation,
-  fonts,
-  radius,
-  spacing,
-  pressedState,
-} from '@/constants/design';
-import type { SavedPlacePreview } from '@/data/home/types';
-
-interface SavedShortlistProps {
-  places: SavedPlacePreview[];
-}
-
-export function SavedShortlist({ places }: SavedShortlistProps) {
-  const router = useRouter();
-
-  if (places.length === 0) return null;
-
-  const totalCount = places.length;
-  const visiblePlaces = places.slice(0, 3);
-  const overflowCount = totalCount - 3;
-
-  // Count unique cities
-  const cityNames = new Set<string>();
-  places.forEach((p) => {
-    if (p.cityName) cityNames.add(p.cityName);
-  });
-  const cityCount = cityNames.size;
-
-  const summaryParts: string[] = [];
-  summaryParts.push(`${totalCount} ${totalCount === 1 ? 'place' : 'places'}`);
-  if (cityCount > 0) summaryParts.push(`${cityCount} ${cityCount === 1 ? 'city' : 'cities'}`);
-  const summaryText = summaryParts.join(' \u00B7 ');
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.module,
-        pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
-      ]}
-      onPress={() => router.push('/home/saved')}
-      accessibilityRole="button"
-      accessibilityLabel="View saved places"
-    >
-      <View style={styles.titleRow}>
-        <Text style={styles.title}>Your Shortlist</Text>
-        <Feather name="chevron-right" size={18} color={colors.textSecondary} />
-      </View>
-
-      <View style={styles.thumbRow}>
-        {visiblePlaces.map((place) => (
-          <View key={place.placeId} style={styles.thumbWrap}>
-            {place.imageUrl ? (
-              <Image
-                source={{ uri: place.imageUrl }}
-                style={styles.thumbImage}
-                contentFit="cover"
-                transition={200}
-              />
-            ) : (
-              <View style={[styles.thumbImage, styles.thumbPlaceholder]} />
-            )}
-          </View>
-        ))}
-        {overflowCount > 0 && (
-          <View style={[styles.thumbWrap, styles.overflowThumb]}>
-            <Text style={styles.overflowText}>+{overflowCount}</Text>
-          </View>
-        )}
-      </View>
-
-      <Text style={styles.summary}>{summaryText}</Text>
-    </Pressable>
-  );
-}
-
-const THUMB_SIZE = 56;
-
-const styles = StyleSheet.create({
-  module: {
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.xl,
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.module,
-    padding: spacing.moduleInset,
-    ...elevation.md,
-  },
-  titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingBottom: spacing.xl,
   },
   title: {
     fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.textPrimary,
+    fontSize: 24,
+    lineHeight: 30,
+    color: colors.textOnImage,
   },
-  thumbRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.lg,
-  },
-  thumbWrap: {
-    width: THUMB_SIZE,
-    height: THUMB_SIZE,
-    borderRadius: radius.cardLg,
-    overflow: 'hidden',
-  },
-  thumbImage: {
-    width: '100%',
-    height: '100%',
-    backgroundColor: colors.neutralFill,
-  },
-  thumbPlaceholder: {
-    backgroundColor: colors.borderDefault,
-  },
-  overflowThumb: {
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  overflowText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  summary: {
+  subtitle: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: spacing.md,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textOnImageMuted,
+    marginTop: spacing.xs,
   },
 });
 ```
 
-**Step 2: Verify types compile**
+**Step 2: Verify**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/SavedShortlist)' | head -10`
+Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/HeroModule)'`
 Expected: No errors
 
 **Step 3: Commit**
 
 ```bash
-git add components/home/SavedShortlist.tsx
-git commit -m "feat(home): add SavedShortlist elevated card with square thumbnails"
+git add components/home/HeroModule.tsx
+git commit -m "feat(home): restyle HeroModule — 220px rounded card with seasonal subtitle"
 ```
 
 ---
 
-## Task 6: Create DestinationCard and DestinationCarousel Components
+### Task 3: Create ForYouRow component
+
+3 equal-width mini image cards. Content waterfall: trip stops > saved places > personalized cities > trending.
 
 **Files:**
-- Create: `components/home/DestinationCard.tsx`
-- Create: `components/home/DestinationCarousel.tsx`
+- Create: `components/home/ForYouRow.tsx`
+- Read first: `data/trips/types.ts` to check `TripWithStops.stops` field names
 
-**Context:** Replaces PersonalizedCarousel. White cards with image on top, text below — no dark gradient overlay. Individual cards are elevated.
+**Step 1: Check TripWithStops type**
 
-**Step 1: Create DestinationCard**
+Read `data/trips/types.ts` and find the stop type fields. We need: an ID, a display name, an image URL, and a navigation slug. The field names may be camelCase or snake_case. Adjust the mapping in step 2 accordingly.
 
-```typescript
+**Step 2: Create the component**
+
+```tsx
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   colors,
-  elevation,
   fonts,
   radius,
   spacing,
   pressedState,
 } from '@/constants/design';
-import type { PersonalizedCity } from '@/data/home/types';
-
-interface DestinationCardProps {
-  city: PersonalizedCity;
-  width: number;
-}
-
-function getSignalText(city: PersonalizedCity): string | null {
-  if (city.soloLevel === 'beginner') return 'Great for first-timers';
-  if (city.bestFor) return city.bestFor;
-  return 'Solo-friendly';
-}
-
-export function DestinationCard({ city, width }: DestinationCardProps) {
-  const router = useRouter();
-  const signal = getSignalText(city);
-
-  return (
-    <Pressable
-      style={({ pressed }) => [
-        styles.card,
-        { width },
-        pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
-      ]}
-      onPress={() => router.push(`/discover/city/${city.slug}` as any)}
-    >
-      {city.heroImageUrl ? (
-        <Image
-          source={{ uri: city.heroImageUrl }}
-          style={styles.image}
-          contentFit="cover"
-          transition={200}
-        />
-      ) : (
-        <View style={[styles.image, styles.placeholder]} />
-      )}
-      <View style={styles.textArea}>
-        <Text style={styles.cityName} numberOfLines={1}>
-          {city.cityName}
-        </Text>
-        <Text style={styles.countryName} numberOfLines={1}>
-          {city.countryName}
-        </Text>
-        {signal && (
-          <View style={styles.signalChip}>
-            <Text style={styles.signalText} numberOfLines={1}>
-              {signal}
-            </Text>
-          </View>
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
-const IMAGE_HEIGHT = 130;
-
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.module,
-    overflow: 'hidden',
-    ...elevation.md,
-  },
-  image: {
-    width: '100%',
-    height: IMAGE_HEIGHT,
-    backgroundColor: colors.neutralFill,
-  },
-  placeholder: {
-    backgroundColor: colors.neutralFill,
-  },
-  textArea: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing.lg,
-  },
-  cityName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    lineHeight: 22,
-    color: colors.textPrimary,
-  },
-  countryName: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-    marginTop: spacing.xs,
-  },
-  signalChip: {
-    alignSelf: 'flex-start',
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    marginTop: spacing.md,
-  },
-  signalText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    lineHeight: 14,
-    color: colors.textSecondary,
-  },
-});
-```
-
-**Step 2: Create DestinationCarousel**
-
-```typescript
-import React from 'react';
-import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { spacing } from '@/constants/design';
 import { SectionHeader } from './SectionHeader';
-import { DestinationCard } from './DestinationCard';
-import type { PersonalizedCity } from '@/data/home/types';
+import type { PersonalizedCity, SavedPlacePreview, HeroState } from '@/data/home/types';
 
-interface DestinationCarouselProps {
-  cities: PersonalizedCity[];
-  isPersonalized?: boolean;
+interface ForYouItem {
+  id: string;
+  name: string;
+  imageUrl: string | null;
+  route: string;
+}
+
+interface ForYouRowProps {
+  heroState: HeroState;
+  savedPlaces: SavedPlacePreview[];
+  personalizedCities: PersonalizedCity[];
 }
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
-const CARD_GAP = spacing.md;
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.screenX * 2 - CARD_GAP) / 2;
+const CARD_GAP = spacing.sm;
+const HORIZONTAL_PADDING = spacing.screenX * 2;
+const CARD_WIDTH = Math.floor((SCREEN_WIDTH - HORIZONTAL_PADDING - CARD_GAP * 2) / 3);
+const CARD_HEIGHT = 130;
 
-export function DestinationCarousel({ cities, isPersonalized = false }: DestinationCarouselProps) {
+function buildForYouItems(
+  heroState: HeroState,
+  savedPlaces: SavedPlacePreview[],
+  personalizedCities: PersonalizedCity[],
+): ForYouItem[] {
+  // Priority 1: Trip stops (if active or upcoming trip with enough stops)
+  // NOTE: Adjust field names below based on actual TripWithStops.stops type
+  if (heroState.kind === 'active' || heroState.kind === 'upcoming') {
+    const stops = (heroState.trip as any).stops ?? [];
+    if (stops.length >= 3) {
+      return stops.slice(0, 3).map((stop: any) => ({
+        id: stop.cityId ?? stop.city_id ?? stop.id,
+        name: stop.cityName ?? stop.city_name ?? stop.name ?? 'Stop',
+        imageUrl: stop.cityImageUrl ?? stop.city_image_url ?? stop.heroImageUrl ?? null,
+        route: stop.citySlug ?? stop.slug
+          ? `/discover/city/${stop.citySlug ?? stop.slug}`
+          : `/trips/${heroState.trip.id}`,
+      }));
+    }
+  }
+
+  // Priority 2: Saved places (if 3+)
+  if (savedPlaces.length >= 3) {
+    return savedPlaces.slice(0, 3).map((place) => ({
+      id: place.placeId,
+      name: place.placeName,
+      imageUrl: place.imageUrl,
+      route: `/discover/place/${place.placeId}`,
+    }));
+  }
+
+  // Priority 3: Personalized cities
+  return personalizedCities.slice(0, 3).map((city) => ({
+    id: city.cityId,
+    name: city.cityName,
+    imageUrl: city.heroImageUrl,
+    route: `/discover/city/${city.slug}`,
+  }));
+}
+
+function getSeeAllRoute(heroState: HeroState, savedPlaces: SavedPlacePreview[]): string {
+  if (heroState.kind === 'active' || heroState.kind === 'upcoming') {
+    const stops = (heroState.trip as any).stops ?? [];
+    if (stops.length >= 3) return `/trips/${heroState.trip.id}`;
+  }
+  if (savedPlaces.length >= 3) return '/(tabs)/home/saved';
+  return '/discover/browse';
+}
+
+export function ForYouRow({ heroState, savedPlaces, personalizedCities }: ForYouRowProps) {
   const router = useRouter();
+  const items = buildForYouItems(heroState, savedPlaces, personalizedCities);
 
-  if (cities.length === 0) return null;
+  if (items.length === 0) return null;
 
-  const title = isPersonalized ? 'Recommended for you' : 'Popular with Solo Women';
+  const seeAllRoute = getSeeAllRoute(heroState, savedPlaces);
 
   return (
     <View style={styles.container}>
       <SectionHeader
-        title={title}
-        onSeeAll={() => router.push('/discover/browse' as any)}
+        title="For you"
+        onSeeAll={() => router.push(seeAllRoute as any)}
       />
-      <FlatList
-        data={cities}
-        keyExtractor={(item) => item.cityId}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.listContent}
-        renderItem={({ item }) => (
-          <DestinationCard city={item} width={CARD_WIDTH} />
-        )}
-      />
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.xl,
-  },
-  listContent: {
-    paddingHorizontal: spacing.screenX,
-    gap: CARD_GAP,
-  },
-});
-```
-
-**Step 3: Verify types compile**
-
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/Destination)' | head -10`
-Expected: No errors
-
-**Step 4: Commit**
-
-```bash
-git add components/home/DestinationCard.tsx components/home/DestinationCarousel.tsx
-git commit -m "feat(home): add DestinationCard and DestinationCarousel with structured layout"
-```
-
----
-
-## Task 7: Create CommunityPeek Component
-
-**Files:**
-- Create: `components/home/CommunityPeek.tsx`
-
-**Context:** Replaces CommunityCards. 1-2 text-only stacked cards. No images, no carousel. Uses `CommunityHighlightThreadVisual` type but ignores `cityImageUrl`.
-
-**Step 1: Create the component**
-
-```typescript
-import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import {
-  colors,
-  elevation,
-  fonts,
-  radius,
-  spacing,
-  pressedState,
-} from '@/constants/design';
-import { SectionHeader } from './SectionHeader';
-import type { CommunityHighlightThreadVisual } from '@/data/home/types';
-
-interface CommunityPeekProps {
-  threads: CommunityHighlightThreadVisual[];
-}
-
-export function CommunityPeek({ threads }: CommunityPeekProps) {
-  const router = useRouter();
-
-  if (threads.length === 0) return null;
-
-  // Show max 2 threads
-  const visibleThreads = threads.slice(0, 2);
-
-  return (
-    <View style={styles.container}>
-      <SectionHeader
-        title="From the Community"
-        onSeeAll={() => router.push('/(tabs)/connect' as any)}
-      />
-
-      <View style={styles.cards}>
-        {visibleThreads.map((thread) => (
+      <View style={styles.row}>
+        {items.map((item) => (
           <Pressable
-            key={thread.id}
+            key={item.id}
             style={({ pressed }) => [
               styles.card,
               pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
             ]}
-            onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
+            onPress={() => router.push(item.route as any)}
           >
-            <Text style={styles.threadTitle} numberOfLines={2}>
-              {thread.title}
-            </Text>
-            <View style={styles.metaRow}>
-              {thread.cityName && (
-                <>
-                  <View style={styles.destinationTag}>
-                    <Text style={styles.destinationTagText}>{thread.cityName}</Text>
-                  </View>
-                  <Text style={styles.dot}>&middot;</Text>
-                </>
-              )}
-              <Text style={styles.replyCount}>
-                {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
-              </Text>
+            {item.imageUrl ? (
+              <Image
+                source={{ uri: item.imageUrl }}
+                style={StyleSheet.absoluteFillObject}
+                contentFit="cover"
+                transition={200}
+              />
+            ) : (
+              <View style={[StyleSheet.absoluteFillObject, styles.placeholder]} />
+            )}
+            <LinearGradient
+              colors={['transparent', colors.cardGradientEnd]}
+              style={StyleSheet.absoluteFillObject}
+            />
+            <View style={styles.textOverlay}>
+              <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
             </View>
           </Pressable>
         ))}
@@ -1238,481 +524,355 @@ export function CommunityPeek({ threads }: CommunityPeekProps) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.xl,
+    marginTop: spacing.xl,
   },
-  cards: {
+  row: {
+    flexDirection: 'row',
     paddingHorizontal: spacing.screenX,
-    gap: spacing.md,
+    gap: CARD_GAP,
   },
   card: {
-    backgroundColor: colors.surfaceCard,
-    borderRadius: radius.module,
-    padding: spacing.moduleInset,
-    ...elevation.sm,
+    width: CARD_WIDTH,
+    height: CARD_HEIGHT,
+    borderRadius: radius.cardLg,
+    overflow: 'hidden',
   },
-  threadTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textPrimary,
-  },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    gap: spacing.sm,
-  },
-  destinationTag: {
+  placeholder: {
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
   },
-  destinationTagText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
+  textOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.md,
   },
-  dot: {
-    fontFamily: fonts.regular,
+  name: {
+    fontFamily: fonts.semiBold,
     fontSize: 13,
-    color: colors.textMuted,
-  },
-  replyCount: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
+    lineHeight: 17,
+    color: colors.textOnImage,
   },
 });
 ```
 
-**Step 2: Verify types compile**
+**Step 3: Verify**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/CommunityPeek)' | head -10`
-Expected: No errors
+Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/ForYouRow)'`
+Expected: No errors (the `as any` casts on trip.stops handle type mismatches gracefully)
 
-**Step 3: Commit**
+**Step 4: Commit**
 
 ```bash
-git add components/home/CommunityPeek.tsx
-git commit -m "feat(home): add CommunityPeek with text-only stacked thread cards"
+git add components/home/ForYouRow.tsx
+git commit -m "feat(home): add ForYouRow — contextual 3-card grid with waterfall logic"
 ```
 
 ---
 
-## Task 8: Create QuickActionsGrid Component
+### Task 4: Create CommunityBannerCard component
+
+Single full-width image card (160px tall) with centered text, navigates to community tab.
 
 **Files:**
-- Create: `components/home/QuickActionsGrid.tsx`
-
-**Context:** Replaces QuickLinksRow. 2x2 grid of tiles with icon circles.
+- Create: `components/home/CommunityBannerCard.tsx`
 
 **Step 1: Create the component**
 
-```typescript
+```tsx
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import {
   colors,
-  elevation,
   fonts,
   radius,
   spacing,
   pressedState,
 } from '@/constants/design';
 
-interface QuickActionsGridProps {
-  activeTripId?: string | null;
-}
+const COMMUNITY_IMAGE = require('@/assets/images/pexels-paddleboarding.png');
+const CARD_HEIGHT = 160;
 
-interface ActionItem {
-  label: string;
-  subtitle: string;
-  route: string;
-  iconName: keyof typeof Ionicons.glyphMap;
-  iconColor: string;
-  iconBg: string;
-}
-
-export function QuickActionsGrid({ activeTripId }: QuickActionsGridProps) {
+export function CommunityBannerCard() {
   const router = useRouter();
 
-  const items: ActionItem[] = [
-    {
-      label: 'Safety Info',
-      subtitle: 'Emergency help\n& local numbers',
-      route: activeTripId
-        ? `/(tabs)/home/trips/${activeTripId}`
-        : '/(tabs)/trips',
-      iconName: 'shield-checkmark-outline',
-      iconColor: colors.greenSoft,
-      iconBg: colors.greenFill,
-    },
-    {
-      label: 'Browse',
-      subtitle: 'Explore cities\n& destinations',
-      route: '/(tabs)/discover',
-      iconName: 'compass-outline',
-      iconColor: colors.blueSoft,
-      iconBg: colors.blueFill,
-    },
-    {
-      label: 'Community',
-      subtitle: 'Questions from\nsolo travelers',
-      route: '/(tabs)/connect',
-      iconName: 'chatbubbles-outline',
-      iconColor: colors.orange,
-      iconBg: colors.orangeFill,
-    },
-    {
-      label: 'My Trips',
-      subtitle: 'Plan & organize\nyour travels',
-      route: '/(tabs)/trips',
-      iconName: 'airplane-outline',
-      iconColor: colors.textSecondary,
-      iconBg: colors.neutralFill,
-    },
-  ];
-
   return (
-    <View style={styles.grid}>
-      {items.map((item) => (
-        <Pressable
-          key={item.label}
-          style={({ pressed }) => [
-            styles.tile,
-            pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
-          ]}
-          onPress={() => router.push(item.route as any)}
-        >
-          <View style={[styles.iconCircle, { backgroundColor: item.iconBg }]}>
-            <Ionicons name={item.iconName} size={18} color={item.iconColor} />
-          </View>
-          <Text style={styles.label}>{item.label}</Text>
-          <Text style={styles.subtitle}>{item.subtitle}</Text>
-        </Pressable>
-      ))}
+    <View style={styles.wrapper}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.card,
+          pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
+        ]}
+        onPress={() => router.push('/(tabs)/connect' as any)}
+        accessibilityRole="button"
+        accessibilityLabel="Go to community"
+      >
+        <Image
+          source={COMMUNITY_IMAGE}
+          style={StyleSheet.absoluteFillObject}
+          contentFit="cover"
+          transition={200}
+        />
+        <LinearGradient
+          colors={['transparent', colors.overlaySoft]}
+          style={StyleSheet.absoluteFillObject}
+        />
+        <View style={styles.content}>
+          <Text style={styles.title}>Real stories from solo women</Text>
+          <Text style={styles.subtitle}>{'Join the conversation  \u2192'}</Text>
+        </View>
+      </Pressable>
     </View>
   );
 }
 
-const ICON_SIZE = 32;
-
 const styles = StyleSheet.create({
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+  wrapper: {
     paddingHorizontal: spacing.screenX,
-    gap: spacing.md,
-    marginBottom: spacing.xxl,
+    marginTop: spacing.xxl,
   },
-  tile: {
-    width: '48%',
-    flexGrow: 1,
-    backgroundColor: colors.surfaceCard,
+  card: {
+    height: CARD_HEIGHT,
     borderRadius: radius.module,
-    padding: spacing.moduleInset,
-    minHeight: 100,
-    ...elevation.sm,
+    overflow: 'hidden',
   },
-  iconCircle: {
-    width: ICON_SIZE,
-    height: ICON_SIZE,
-    borderRadius: ICON_SIZE / 2,
+  content: {
+    ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: {
+  title: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
-    lineHeight: 20,
-    color: colors.textPrimary,
-    marginTop: spacing.md,
+    fontSize: 18,
+    lineHeight: 24,
+    color: colors.textOnImage,
+    textAlign: 'center',
   },
   subtitle: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textOnImageMuted,
     marginTop: spacing.xs,
+    textAlign: 'center',
   },
 });
 ```
 
-**Step 2: Verify types compile**
+**Step 2: Verify**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/QuickActionsGrid)' | head -10`
+Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/CommunityBannerCard)'`
 Expected: No errors
 
 **Step 3: Commit**
 
 ```bash
-git add components/home/QuickActionsGrid.tsx
-git commit -m "feat(home): add QuickActionsGrid 2x2 dashboard tiles"
+git add components/home/CommunityBannerCard.tsx
+git commit -m "feat(home): add CommunityBannerCard — full-width image card linking to community"
 ```
 
 ---
 
-## Task 9: Assemble New Homepage
+### Task 5: Rewrite HomeScreen with new layout
+
+Replace the section-builder render loop with the new fixed layout: Header (logo + hamburger) → Hero card → For You row → Community banner.
 
 **Files:**
 - Modify: `app/(tabs)/home/index.tsx`
 
-**Context:** Replace the current 11-section ScrollView with the new 6-module layout. Wire up all new components. Use `surfacePage` background.
+**Step 1: Replace the entire file**
 
-**Step 1: Rewrite index.tsx**
-
-Replace the entire file content with:
-
-```typescript
+```tsx
 import { useEffect } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { usePostHog } from 'posthog-react-native';
-import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
-import { DashboardHeader } from '@/components/home/DashboardHeader';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import { HeroModule } from '@/components/home/HeroModule';
-import { SavedShortlist } from '@/components/home/SavedShortlist';
-import { DestinationCarousel } from '@/components/home/DestinationCarousel';
-import { CommunityPeek } from '@/components/home/CommunityPeek';
-import { QuickActionsGrid } from '@/components/home/QuickActionsGrid';
+import { ForYouRow } from '@/components/home/ForYouRow';
+import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
+import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { useHomeData } from '@/data/home/useHomeData';
 import { colors, spacing } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 export default function HomeScreen() {
   const posthog = usePostHog();
-  const router = useRouter();
 
   useEffect(() => {
     posthog.capture('home_viewed');
   }, [posthog]);
 
   const {
-    firstName,
     heroState,
-    personalizedCities,
-    travelUpdate,
-    communityHighlights,
     savedPlaces,
+    personalizedCities,
     loading,
     refetch,
   } = useHomeData();
 
-  const activeTripId =
-    heroState.kind === 'active' || heroState.kind === 'upcoming'
-      ? heroState.trip.id
-      : null;
-
   return (
-    <AppScreen style={styles.screen}>
+    <AppScreen>
       <NavigationHeader
         title="Home"
         showLogo
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
 
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={loading}
-            onRefresh={refetch}
-            tintColor={colors.orange}
+      {loading && !heroState ? (
+        <HomeSkeleton />
+      ) : (
+        <ScrollView
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.scrollContent}
+          refreshControl={
+            <RefreshControl
+              refreshing={loading}
+              onRefresh={refetch}
+              tintColor={colors.orange}
+            />
+          }
+        >
+          <View style={styles.heroSection}>
+            <HeroModule hero={heroState} />
+          </View>
+
+          <ForYouRow
+            heroState={heroState}
+            savedPlaces={savedPlaces}
+            personalizedCities={personalizedCities}
           />
-        }
-      >
-        {/* 1. Dashboard Header — greeting + search */}
-        <DashboardHeader
-          firstName={firstName}
-          heroState={heroState}
-          savedCount={savedPlaces.length}
-        />
 
-        {/* 2. Hero Module — trip/featured */}
-        <HeroModule hero={heroState} travelUpdate={travelUpdate} />
+          <CommunityBannerCard />
 
-        {/* 3. Saved Shortlist — conditional */}
-        <SavedShortlist places={savedPlaces} />
-
-        {/* 4. Destinations */}
-        <DestinationCarousel cities={personalizedCities} />
-
-        {/* 5. Community Peek */}
-        <CommunityPeek threads={communityHighlights} />
-
-        {/* 6. Quick Actions */}
-        <QuickActionsGrid activeTripId={activeTripId} />
-
-        {/* Bottom spacing for floating tab bar */}
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+          <View style={styles.bottomSpacer} />
+        </ScrollView>
+      )}
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
-    backgroundColor: colors.surfacePage,
-  },
   scrollContent: {
-    paddingBottom: spacing.xl,
+    paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
+  },
+  heroSection: {
+    marginTop: spacing.lg,
   },
   bottomSpacer: {
-    height: FLOATING_TAB_BAR_HEIGHT,
+    height: spacing.xl,
   },
 });
 ```
 
-**Step 2: Verify types compile**
+**Step 2: Verify types**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(app/|components/home/)' | head -30`
-Expected: No errors from home-related files
+Run: `npx tsc --noEmit 2>&1 | grep -E '(app/|components/|data/)' | head -20`
+Expected: No new errors. `useHomeData` returns `heroState: HeroState` (defaults to `DEFAULT_HERO`), so the `!heroState` check is always false after first render, but it's a safe guard for the loading state.
 
-**Step 3: Visual check**
-
-Run: `npx expo start` and check the homepage in the simulator. Verify:
-- Off-white background visible behind white modules
-- Hero card has soft shadow
-- Destination cards are white with image on top
-- Community cards are text-only, stacked
-- Quick actions are a 2x2 grid
-- Greeting shows time-aware text
-- Search input is elevated
-
-**Step 4: Commit**
+**Step 3: Commit**
 
 ```bash
 git add app/(tabs)/home/index.tsx
-git commit -m "feat(home): assemble new dashboard homepage with 6 focused modules"
+git commit -m "feat(home): rewrite HomeScreen — hero card + for-you row + community banner"
 ```
 
 ---
 
-## Task 10: Update AppScreen Background
+### Task 6: Type-check ForYouRow against TripWithStops
+
+The `ForYouRow` uses `(heroState.trip as any).stops` to avoid type errors. We should verify this works at runtime and clean up if possible.
 
 **Files:**
-- Modify: `components/AppScreen.tsx`
+- Read: `data/trips/types.ts` — find TripWithStops.stops field structure
+- Possibly modify: `components/home/ForYouRow.tsx` — replace `as any` with proper field names
 
-**Context:** AppScreen sets `backgroundColor: colors.background` (#FFFFFF). The homepage overrides this via the `style` prop, but the AppScreen's `content` View also has `paddingHorizontal: spacing.lg` (16px). Since homepage components manage their own horizontal padding via `spacing.screenX` (24px), we need to ensure the content padding doesn't double up. Check if removing AppScreen content padding or passing `backgroundColor` via style works correctly.
+**Step 1: Read the trips types**
 
-**Step 1: Verify the style override works**
+Check `data/trips/types.ts` for the `TripWithStops` interface and its `stops` array item type. Look for fields like:
+- ID: `id` or `cityId` or `city_id`
+- Name: `cityName` or `city_name` or `name`
+- Image: `cityImageUrl` or `city_image_url` or `heroImageUrl`
+- Slug: `citySlug` or `city_slug` or `slug`
 
-The homepage passes `style={{ backgroundColor: colors.surfacePage }}` which merges into `[styles.container, style]` on the SafeAreaView. This overrides the container background. The content View's `paddingHorizontal: spacing.lg` is separate and won't cause issues because homepage components use `marginHorizontal: spacing.screenX` which is relative to the content View.
+**Step 2: Update field mappings**
 
-However, `spacing.lg` is 16px and `spacing.screenX` is 24px. Total effective padding would be 40px from screen edge. This is wrong.
+Replace the `as any` casts in `buildForYouItems` with the correct typed field names from step 1. If the stops type doesn't have image URLs, the placeholder View handles this gracefully.
 
-**Fix:** The homepage needs `paddingHorizontal: 0` on the content wrapper, OR use `screenX - lg = 8px` for margins. Looking at the existing code, the current components already use `marginHorizontal: spacing.screenX` or `paddingHorizontal: spacing.screenX` and the page looks fine — which means AppScreen's `paddingHorizontal: spacing.lg` is **already being counteracted** by the components using the full screenX value.
+**Step 3: Verify**
 
-Wait — looking at AppScreen more carefully, `paddingHorizontal: spacing.lg` is 16px. And HeroCard uses `marginHorizontal: spacing.screenX` which is 24px. So the total from screen edge would be 16 + 24 = 40px? That can't be right — the current app would look broken.
+Run: `npx tsc --noEmit 2>&1 | grep -E '(components/home/ForYouRow)'`
+Expected: No errors
 
-Let me check: `spacing.lg = 16`. The components' `marginHorizontal: 24` plus AppScreen content's `paddingHorizontal: 16` = effective 40px from edge. But the app looks fine currently, which means the components are accounting for AppScreen's padding, OR the math works differently.
-
-Actually — `paddingHorizontal` on the content View creates internal padding. `marginHorizontal` on the child creates additional offset. So yes, total edge distance is `16 + 24 = 40px`. If the existing app doesn't look broken, then the margin values in the components must already account for this. Let me check — perhaps the components actually use a smaller margin, or AppScreen's padding serves as the base.
-
-**Resolution:** Check how the actual rendered UI looks. If 40px is too much, we may need to either:
-1. Remove `paddingHorizontal` from AppScreen's content View (risky — affects all screens)
-2. Adjust homepage components to use `marginHorizontal: spacing.sm` (8px) to get 16+8=24px total
-
-The safest path: keep AppScreen as-is and reduce homepage component margins to `spacing.sm` so the total is `16 + 8 = 24px`.
-
-BUT — looking at existing SearchPill, it uses `marginHorizontal: spacing.screenX` (24px), and it looks fine in the current app. So either AppScreen's padding is being overridden, or the total 40px is intentional.
-
-**Action:** Don't change AppScreen. Test visually in Task 9's step 3. If padding looks wrong, adjust component margins. This is a visual tuning step, not an architecture change.
-
-**Step 2: No changes needed — skip this task**
-
-If the visual check in Task 9 reveals padding issues, adjust then.
-
----
-
-## Task 11: Cleanup Deprecated Components
-
-**Files:**
-- Delete: `components/home/IntentHeader.tsx` (already unused)
-- Delete: `components/home/TripBlock.tsx` (already unused)
-- Delete: `components/home/CommunityHighlight.tsx` (already unused)
-
-**Do NOT delete yet** (other screens may import):
-- `components/home/SearchPill.tsx`
-- `components/home/HeroCard.tsx`
-- `components/home/TripCard.tsx`
-- `components/home/SavedPreview.tsx`
-- `components/home/PersonalizedCarousel.tsx`
-- `components/home/CommunityCards.tsx`
-- `components/home/QuickLinksRow.tsx`
-- `components/home/QuickUpdate.tsx`
-- `components/home/VibeSection.tsx`
-- `components/home/EndCard.tsx`
-
-**Step 1: Check for imports of unused components**
-
-Run:
-```bash
-grep -r "IntentHeader\|TripBlock\|CommunityHighlight" app/ components/ --include="*.tsx" --include="*.ts" -l
-```
-
-If only the component files themselves show up, safe to delete.
-
-**Step 2: Delete unused files**
+**Step 4: Commit (if changes made)**
 
 ```bash
-rm components/home/IntentHeader.tsx components/home/TripBlock.tsx components/home/CommunityHighlight.tsx
-```
-
-**Step 3: Verify build**
-
-Run: `npx tsc --noEmit 2>&1 | grep -E '(app/|components/)' | head -20`
-Expected: No new errors
-
-**Step 4: Commit**
-
-```bash
-git add -u components/home/
-git commit -m "chore(home): remove unused IntentHeader, TripBlock, CommunityHighlight"
+git add components/home/ForYouRow.tsx
+git commit -m "fix(home): align ForYouRow stop field names with TripWithStops type"
 ```
 
 ---
 
-## Task 12: Final Type Check and Visual Verification
+### Task 7: Final verification and cleanup
 
-**Step 1: Full type check**
+**Step 1: Run full type check**
 
-Run: `npx tsc --noEmit 2>&1 | grep -E '(app/|components/|data/|constants/)' | head -40`
-Expected: No new errors (only pre-existing ones from scripts/ and supabase/functions/)
+Run: `npx tsc --noEmit 2>&1 | grep -E '(app/|components/|data/)' | head -30`
+Expected: No new errors introduced by our changes.
 
-**Step 2: Visual verification checklist**
+**Step 2: Visual review checklist**
 
-Open the app in iOS simulator and verify each module:
-
-- [ ] Page background is warm off-white (#FAFAF8), not pure white
-- [ ] NavigationHeader shows Sola logo + AvatarButton (unchanged)
-- [ ] Greeting is time-aware ("Good morning/afternoon/evening, Name")
-- [ ] Contextual subtitle matches user state
-- [ ] Search input is white pill with soft shadow
-- [ ] Hero module has white card container with shadow
-- [ ] Hero image has rounded corners, gradient, text overlay
-- [ ] Below-image area shows appropriate content per state
-- [ ] Saved Shortlist card appears (if saved places exist)
-- [ ] Saved thumbnails are square with rounded corners (not circular)
-- [ ] Destination cards are white with image top, text bottom
-- [ ] Destination cards have no dark gradient overlay
-- [ ] Community cards are text-only, stacked vertically
-- [ ] Quick actions are 2x2 grid with icon circles
-- [ ] Floating tab bar is visible and not overlapped
+Verify in Expo Go or simulator:
+- [ ] Header shows Sola logo left, hamburger icon right
+- [ ] Hamburger has 3 lines: top (20px black), middle (14px orange), bottom (20px black)
+- [ ] Hamburger opens MenuSheet with all menu items
+- [ ] Unread dot appears on hamburger when new activity
+- [ ] Hero card is 220px tall, rounded corners, within 24px screen padding
+- [ ] Hero shows trip pill (UPCOMING/NOW TRAVELING) when trip exists
+- [ ] Hero shows "RECOMMENDED" pill + seasonal subtitle when no trip
+- [ ] White action circle in top-right of hero (arrow or bookmark)
+- [ ] "For you" section header with "See all" link
+- [ ] 3 equal-width cards with images + city/place names
+- [ ] Community banner card shows travel image with centered white text
+- [ ] Community card navigates to connect tab on tap
 - [ ] Pull-to-refresh works
-- [ ] All pressable elements have press state feedback
-- [ ] No visual glitches on scroll
+- [ ] Bottom padding clears the floating tab bar
+- [ ] Press states (scale 0.98, opacity 0.9) on all tappable elements
 
-**Step 3: Commit any fixes from visual QA**
+**Step 3: Commit any visual QA fixes**
 
 ```bash
-git add -A && git commit -m "fix(home): visual QA adjustments for dashboard redesign"
+git add -A
+git commit -m "fix(home): visual QA adjustments for homepage dashboard redesign"
 ```
+
+---
+
+## Files Changed Summary
+
+| Action | File | Description |
+|--------|------|-------------|
+| Create | `components/home/HamburgerButton.tsx` | Creative 3-line menu icon with orange accent |
+| Rewrite | `components/home/HeroModule.tsx` | 220px rounded card with seasonal subtitle |
+| Create | `components/home/ForYouRow.tsx` | 3-card contextual grid with waterfall logic |
+| Create | `components/home/CommunityBannerCard.tsx` | Full-width image card for community |
+| Rewrite | `app/(tabs)/home/index.tsx` | Simplified 4-block dashboard layout |
+| Possibly modify | `components/home/ForYouRow.tsx` | Type alignment (Task 6) |
+
+## Files NOT Modified
+
+- `constants/design.ts` — existing tokens sufficient (already has `module`, `cardLg`, `overlayMedium`, etc.)
+- `data/home/useHomeData.ts` — still provides all needed data
+- `data/home/homeApi.ts` — no new API calls needed
+- `data/home/types.ts` — existing `HeroState` types sufficient (featured state already has city info)
+- `data/home/buildHomeSections.ts` — still exists and used by `useHomeData`, just not rendered via section switch in HomeScreen
+- `components/NavigationHeader.tsx` — no changes needed, already accepts `rightActions` ReactNode
+- `components/home/HomeSearchInput.tsx` — no longer imported but kept (not deleted)
+- `components/home/SavedShortlist.tsx` — kept
+- `components/home/DestinationCarousel.tsx` — kept
+- `components/home/CommunityPeek.tsx` — kept

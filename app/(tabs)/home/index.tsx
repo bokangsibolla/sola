@@ -3,12 +3,10 @@ import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
-import { HomeSearchInput } from '@/components/home/HomeSearchInput';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import { HeroModule } from '@/components/home/HeroModule';
-import { SavedShortlist } from '@/components/home/SavedShortlist';
-import { DestinationCarousel } from '@/components/home/DestinationCarousel';
-import { CommunityPeek } from '@/components/home/CommunityPeek';
+import { ForYouRow } from '@/components/home/ForYouRow';
+import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
 import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { useHomeData } from '@/data/home/useHomeData';
 import { colors, spacing } from '@/constants/design';
@@ -22,9 +20,9 @@ export default function HomeScreen() {
   }, [posthog]);
 
   const {
-    firstName,
     heroState,
-    homeSections,
+    savedPlaces,
+    personalizedCities,
     loading,
     refetch,
   } = useHomeData();
@@ -34,10 +32,10 @@ export default function HomeScreen() {
       <NavigationHeader
         title="Home"
         showLogo
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
 
-      {loading && homeSections.length === 0 ? (
+      {loading && !heroState ? (
         <HomeSkeleton />
       ) : (
         <ScrollView
@@ -51,54 +49,18 @@ export default function HomeScreen() {
             />
           }
         >
-          {homeSections.map((section) => {
-            switch (section.type) {
-              case 'search':
-                return (
-                  <HomeSearchInput
-                    key="search"
-                    chips={section.chips}
-                    firstName={firstName}
-                    heroState={heroState}
-                  />
-                );
-              case 'saved':
-                return (
-                  <SavedShortlist
-                    key="saved"
-                    places={section.places}
-                    totalCount={section.totalCount}
-                  />
-                );
-              case 'hero':
-                return (
-                  <HeroModule
-                    key="hero"
-                    hero={section.hero}
-                    travelUpdate={section.travelUpdate}
-                    height={section.height}
-                  />
-                );
-              case 'destinations':
-                return (
-                  <DestinationCarousel
-                    key="destinations"
-                    cities={section.cities}
-                    title={section.title}
-                  />
-                );
-              case 'community':
-                return (
-                  <CommunityPeek
-                    key="community"
-                    threads={section.threads}
-                    title={section.title}
-                  />
-                );
-              default:
-                return null;
-            }
-          })}
+          <View style={styles.heroSection}>
+            <HeroModule hero={heroState} />
+          </View>
+
+          <ForYouRow
+            heroState={heroState}
+            savedPlaces={savedPlaces}
+            personalizedCities={personalizedCities}
+          />
+
+          <CommunityBannerCard />
+
           <View style={styles.bottomSpacer} />
         </ScrollView>
       )}
@@ -109,6 +71,9 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   scrollContent: {
     paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
+  },
+  heroSection: {
+    marginTop: spacing.lg,
   },
   bottomSpacer: {
     height: spacing.xl,

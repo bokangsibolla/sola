@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
   colors,
@@ -14,14 +14,12 @@ import {
 import type { HeroState, TravelUpdate } from '@/data/home/types';
 
 const FALLBACK_IMAGE = require('@/assets/images/solo-bali-palms.jpg');
+const HERO_HEIGHT = 220;
 
 interface HeroModuleProps {
   hero: HeroState;
-  travelUpdate: TravelUpdate | null;
-  height?: number;
+  travelUpdate?: TravelUpdate | null;
 }
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
 
 function getImageSource(hero: HeroState) {
   let uri: string | null = null;
@@ -31,31 +29,6 @@ function getImageSource(hero: HeroState) {
     uri = hero.city.heroImageUrl || null;
   }
   return uri ? { uri } : FALLBACK_IMAGE;
-}
-
-function getDayProgress(arriving: string | null, leaving: string | null): string | null {
-  if (!arriving || !leaving) return null;
-  const now = new Date();
-  const start = new Date(arriving);
-  const end = new Date(leaving);
-  const totalMs = end.getTime() - start.getTime();
-  const elapsedMs = now.getTime() - start.getTime();
-  if (totalMs <= 0) return null;
-  const totalDays = Math.max(1, Math.ceil(totalMs / (1000 * 60 * 60 * 24)));
-  const currentDay = Math.min(
-    totalDays,
-    Math.max(1, Math.ceil(elapsedMs / (1000 * 60 * 60 * 24))),
-  );
-  return `Day ${currentDay} of ${totalDays}`;
-}
-
-function getDaysUntil(arriving: string | null): string | null {
-  if (!arriving) return null;
-  const days = Math.ceil(
-    (new Date(arriving).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-  );
-  if (days <= 0) return null;
-  return `In ${days} ${days === 1 ? 'day' : 'days'}`;
 }
 
 function formatDateRange(arriving: string | null, leaving: string | null): string | null {
@@ -68,18 +41,16 @@ function formatDateRange(arriving: string | null, leaving: string | null): strin
   return fmt(arriving);
 }
 
-const SEVERITY_STYLES = {
-  info: { bg: colors.blueFill, color: colors.blueSoft, icon: 'info' as const },
-  advisory: { bg: colors.warningFill, color: colors.warning, icon: 'alert-triangle' as const },
-  alert: { bg: colors.emergencyFill, color: colors.emergency, icon: 'alert-circle' as const },
-};
+function getSeasonalSubtitle(): string {
+  const month = new Date().getMonth();
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December',
+  ];
+  return `Perfect for ${monthNames[month]}`;
+}
 
-const DEFAULT_IMAGE_HEIGHT = 240;
-
-// ── Component ────────────────────────────────────────────────────────────────
-
-export function HeroModule({ hero, travelUpdate, height }: HeroModuleProps) {
-  const IMAGE_HEIGHT = height ?? DEFAULT_IMAGE_HEIGHT;
+export function HeroModule({ hero }: HeroModuleProps) {
   const router = useRouter();
 
   // Tick local time every minute for active trip
@@ -90,6 +61,9 @@ export function HeroModule({ hero, travelUpdate, height }: HeroModuleProps) {
     return () => clearInterval(interval);
   }, [hero.kind]);
 
+  // Fall back to local image if remote URL fails to load
+  const [useFallback, setUseFallback] = useState(false);
+
   const handlePress = () => {
     if (hero.kind === 'active' || hero.kind === 'upcoming') {
       router.push(`/trips/${hero.trip.id}` as any);
@@ -98,112 +72,75 @@ export function HeroModule({ hero, travelUpdate, height }: HeroModuleProps) {
     }
   };
 
-  const imageSource = getImageSource(hero);
+  const remoteSource = getImageSource(hero);
+  const imageSource = useFallback ? FALLBACK_IMAGE : remoteSource;
+
+  // Determine pill text
+  let pillText = 'RECOMMENDED';
+  if (hero.kind === 'active') pillText = 'NOW TRAVELING';
+  else if (hero.kind === 'upcoming') pillText = 'UPCOMING';
+
+  // Determine title and subtitle
+  let title = '';
+  let subtitle: string | null = null;
+  if (hero.kind === 'active') {
+    title = hero.trip.destinationName;
+    subtitle = formatDateRange(hero.trip.arriving, hero.trip.leaving);
+  } else if (hero.kind === 'upcoming') {
+    title = hero.trip.destinationName;
+    subtitle = formatDateRange(hero.trip.arriving, hero.trip.leaving);
+  } else {
+    title = `${hero.city.name}, ${hero.city.countryName}`;
+    subtitle = getSeasonalSubtitle();
+  }
 
   return (
     <View style={styles.wrapper}>
       <Pressable
         style={({ pressed }) => [
-          styles.container,
-          { height: IMAGE_HEIGHT },
+          styles.card,
           pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
         ]}
         onPress={handlePress}
       >
         <Image
           source={imageSource}
-          style={styles.image}
+          placeholder={FALLBACK_IMAGE}
+          style={StyleSheet.absoluteFillObject}
           contentFit="cover"
           transition={200}
+          onError={() => setUseFallback(true)}
         />
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.05)', colors.heroGradientEnd]}
+          colors={['transparent', 'rgba(0,0,0,0.05)', colors.overlayMedium]}
           locations={[0, 0.4, 1]}
-          style={styles.gradient}
+          style={StyleSheet.absoluteFillObject}
         />
 
-        {/* Status pill — frosted glass */}
+        {/* Status pill — top left */}
         <View style={styles.pillContainer}>
-          {hero.kind === 'active' && (
-            <View style={styles.pill}>
-              <View style={styles.liveDot} />
-              <Text style={styles.pillText}>TRAVELING NOW</Text>
-            </View>
-          )}
-          {hero.kind === 'upcoming' && (
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>
-                {getDaysUntil(hero.trip.arriving) ?? 'UPCOMING'}
-              </Text>
-            </View>
-          )}
-          {hero.kind === 'featured' && (
-            <View style={styles.pill}>
-              <Text style={styles.pillText}>FEATURED</Text>
-            </View>
-          )}
+          <View style={styles.pill}>
+            {hero.kind === 'active' && <View style={styles.liveDot} />}
+            <Text style={styles.pillText}>{pillText}</Text>
+          </View>
         </View>
 
-        {/* Travel advisory overlay (active trip only) */}
-        {hero.kind === 'active' && travelUpdate && (
-          <View
-            style={[
-              styles.advisoryOverlay,
-              { backgroundColor: SEVERITY_STYLES[travelUpdate.severity].bg },
-            ]}
-          >
-            <Feather
-              name={SEVERITY_STYLES[travelUpdate.severity].icon}
-              size={12}
-              color={SEVERITY_STYLES[travelUpdate.severity].color}
+        {/* Action circle — top right */}
+        <View style={styles.actionContainer}>
+          <View style={styles.actionCircle}>
+            <Ionicons
+              name={hero.kind === 'featured' ? 'bookmark-outline' : 'arrow-forward'}
+              size={16}
+              color={colors.textPrimary}
             />
-            <Text
-              style={[styles.advisoryText, { color: SEVERITY_STYLES[travelUpdate.severity].color }]}
-              numberOfLines={1}
-            >
-              {travelUpdate.title}
-            </Text>
           </View>
-        )}
+        </View>
 
-        {/* Overlay text at bottom */}
+        {/* Bottom content */}
         <View style={styles.overlay}>
-          {hero.kind === 'active' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.trip.destinationName}
-              </Text>
-              <Text style={styles.metaText}>
-                {[
-                  getDayProgress(hero.trip.arriving, hero.trip.leaving),
-                  formatDateRange(hero.trip.arriving, hero.trip.leaving),
-                ]
-                  .filter(Boolean)
-                  .join(' \u00B7 ')}
-              </Text>
-            </>
-          )}
-          {hero.kind === 'upcoming' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.trip.destinationName}
-              </Text>
-              <Text style={styles.metaText}>
-                {formatDateRange(hero.trip.arriving, hero.trip.leaving)}
-              </Text>
-            </>
-          )}
-          {hero.kind === 'featured' && (
-            <>
-              <Text style={styles.cityName} numberOfLines={1}>
-                {hero.city.name}, {hero.city.countryName}
-              </Text>
-              {hero.city.shortBlurb && (
-                <Text style={styles.blurbText} numberOfLines={2}>
-                  {hero.city.shortBlurb}
-                </Text>
-              )}
-            </>
+          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          {subtitle && (
+            <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
           )}
         </View>
       </Pressable>
@@ -211,36 +148,25 @@ export function HeroModule({ hero, travelUpdate, height }: HeroModuleProps) {
   );
 }
 
-// ── Styles ──────────────────────────────────────────────────────────────────
-
 const styles = StyleSheet.create({
   wrapper: {
-    marginHorizontal: -spacing.lg, // break out of AppScreen padding for full-bleed
-    marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.screenX,
   },
-  container: {
-    borderBottomLeftRadius: radius.module,
-    borderBottomRightRadius: radius.module,
+  card: {
+    height: HERO_HEIGHT,
+    borderRadius: radius.module,
     overflow: 'hidden',
+    backgroundColor: colors.neutralFill,
   },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  gradient: {
-    ...StyleSheet.absoluteFillObject,
-  },
-
-  // Status pill — frosted glass
   pillContainer: {
     position: 'absolute',
     top: spacing.lg,
-    left: spacing.xl,
+    left: spacing.lg,
   },
   pill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.xs,
     backgroundColor: colors.frostedPillBg,
     borderWidth: 1,
     borderColor: colors.frostedPillBorder,
@@ -261,28 +187,19 @@ const styles = StyleSheet.create({
     letterSpacing: 0.8,
     color: colors.textOnImage,
   },
-
-  // Advisory overlay
-  advisoryOverlay: {
+  actionContainer: {
     position: 'absolute',
     top: spacing.lg,
-    right: spacing.xl,
-    flexDirection: 'row',
+    right: spacing.lg,
+  },
+  actionCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
     alignItems: 'center',
-    gap: spacing.xs,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    maxWidth: '50%',
+    justifyContent: 'center',
   },
-  advisoryText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    lineHeight: 14,
-    flex: 1,
-  },
-
-  // Bottom overlay text
   overlay: {
     position: 'absolute',
     bottom: 0,
@@ -291,23 +208,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingBottom: spacing.xl,
   },
-  cityName: {
+  title: {
     fontFamily: fonts.semiBold,
-    fontSize: 28,
-    lineHeight: 34,
+    fontSize: 24,
+    lineHeight: 30,
     color: colors.textOnImage,
   },
-  metaText: {
-    fontFamily: fonts.medium,
+  subtitle: {
+    fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textOnImageMuted,
-    marginTop: spacing.xs,
-  },
-  blurbText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    lineHeight: 22,
     color: colors.textOnImageMuted,
     marginTop: spacing.xs,
   },

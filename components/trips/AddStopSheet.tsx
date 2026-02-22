@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import { rowsToCamel } from '@/data/api';
 import { createBlock } from '@/data/trips/itineraryApi';
 import type { BlockType, CreateBlockInput } from '@/data/trips/itineraryTypes';
+import { TimePickerField, dateToTimeString } from '@/components/trips/TimePickerField';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -85,8 +86,8 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
   const [selectedPlaceId, setSelectedPlaceId] = useState<string | null>(null);
   const [selectedPlaceName, setSelectedPlaceName] = useState<string | null>(null);
   const [titleText, setTitleText] = useState('');
-  const [startTimeText, setStartTimeText] = useState('');
-  const [endTimeText, setEndTimeText] = useState('');
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [endTime, setEndTime] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -100,8 +101,8 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
       setSelectedPlaceId(null);
       setSelectedPlaceName(null);
       setTitleText('');
-      setStartTimeText('');
-      setEndTimeText('');
+      setStartTime(null);
+      setEndTime(null);
       setSubmitting(false);
     }
   }, [visible]);
@@ -167,6 +168,10 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
     setSelectedPlaceId(null);
     setSelectedPlaceName(null);
     setTitleText('');
+    if (type === 'accommodation') {
+      setStartTime(null);
+      setEndTime(null);
+    }
   };
 
   const handlePlaceSelect = (place: PlaceResult) => {
@@ -186,6 +191,7 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
     setSubmitting(true);
 
     try {
+      const isAccommodation = selectedType === 'accommodation';
       const input: CreateBlockInput = {
         tripId,
         tripDayId: dayId,
@@ -193,8 +199,8 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
         orderIndex: insertAfterIndex + 1,
         ...(selectedPlaceId && { placeId: selectedPlaceId }),
         ...(titleText.trim() && { titleOverride: titleText.trim() }),
-        ...(startTimeText.trim() && { startTime: `${startTimeText.trim()}:00` }),
-        ...(endTimeText.trim() && { endTime: `${endTimeText.trim()}:00` }),
+        ...(!isAccommodation && startTime && { startTime: dateToTimeString(startTime) }),
+        ...(!isAccommodation && endTime && { endTime: dateToTimeString(endTime) }),
       };
       await createBlock(input);
       onAdded();
@@ -311,26 +317,29 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
             />
           )}
 
-          {/* ── Time fields ─────────────────────────────────────────── */}
-          <Text style={styles.timeLabel}>Time (optional)</Text>
-          <View style={styles.timeRow}>
-            <TextInput
-              style={[styles.searchInput, styles.timeInput]}
-              placeholder="Start (e.g. 09:00)"
-              placeholderTextColor={colors.textMuted}
-              value={startTimeText}
-              onChangeText={setStartTimeText}
-              keyboardType="numbers-and-punctuation"
-            />
-            <TextInput
-              style={[styles.searchInput, styles.timeInput]}
-              placeholder="End (e.g. 11:00)"
-              placeholderTextColor={colors.textMuted}
-              value={endTimeText}
-              onChangeText={setEndTimeText}
-              keyboardType="numbers-and-punctuation"
-            />
-          </View>
+          {/* ── Time fields (hidden for accommodation) ────────────── */}
+          {selectedType !== 'accommodation' && (
+            <>
+              <Text style={styles.timeLabel}>Time (optional)</Text>
+              <View style={styles.timeRow}>
+                <TimePickerField
+                  label="Start"
+                  value={startTime}
+                  placeholder="Start time"
+                  onChange={setStartTime}
+                  onClear={() => setStartTime(null)}
+                />
+                <TimePickerField
+                  label="End"
+                  value={endTime}
+                  placeholder="End time"
+                  onChange={setEndTime}
+                  onClear={() => setEndTime(null)}
+                  minimumDate={startTime ?? undefined}
+                />
+              </View>
+            </>
+          )}
 
           {/* ── Submit button ───────────────────────────────────────── */}
           <Pressable
@@ -476,11 +485,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginHorizontal: spacing.screenX,
     marginTop: spacing.sm,
-  },
-  timeInput: {
-    flex: 1,
-    marginHorizontal: 0,
-    marginTop: 0,
   },
 
   // ── Submit button ────────────────────────────────────────────────────────

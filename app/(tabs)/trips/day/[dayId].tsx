@@ -1,15 +1,26 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useFocusEffect } from '@react-navigation/native';
 import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { ItineraryBlock } from '@/components/trips/ItineraryBlock';
+import { TimelineBlockCard } from '@/components/trips/TimelineBlockCard';
 import { SuggestionCard } from '@/components/trips/SuggestionCard';
 import { AddStopSheet } from '@/components/trips/AddStopSheet';
-import { useDayTimeline, useDaySuggestions } from '@/data/trips/useItinerary';
+import { TripDaySuggestions, ACCOMMODATION_TYPES, placeRoute } from '@/components/trips/TripDaySuggestions';
+import { PlacePreviewSheet } from '@/components/trips/PlacePreviewSheet';
+import { AccommodationBanner } from '@/components/trips/AccommodationBanner';
+import { AddToDaysSheet } from '@/components/trips/AddToDaysSheet';
+import type { DayOption } from '@/components/trips/AddToDaysSheet';
+import { useDayTimeline, useDaySuggestions, useTripItinerary } from '@/data/trips/useItinerary';
+import { getTripWithStops } from '@/data/trips/tripApi';
+import { useData } from '@/hooks/useData';
+import { getCityIdForDay, formatDayDate as formatDayDateShort } from '@/data/trips/helpers';
+import type { TripStop } from '@/data/trips/types';
+import type { Place } from '@/data/types';
 import {
   applySuggestion,
   dismissSuggestion,
@@ -56,8 +67,66 @@ export default function DayTimelineScreen() {
   const { day, loading, error, refetch } = useDayTimeline(dayId);
   const { suggestions, refetch: refetchSuggestions } = useDaySuggestions(dayId);
 
+  // Fetch trip to get destination city for filtering AddStopSheet
+  const { data: trip } = useData(
+    () => (day?.tripId ? getTripWithStops(day.tripId) : Promise.resolve(null)),
+    ['tripForDay', day?.tripId],
+  );
+
+  // Fetch full itinerary for multi-day accommodation add
+  const { itinerary, refetch: refetchItinerary } = useTripItinerary(day?.tripId);
+  const allDays = itinerary?.days ?? [];
+
   const [showAddStop, setShowAddStop] = useState(false);
   const [insertAfterIndex, setInsertAfterIndex] = useState(0);
+  const [previewPlace, setPreviewPlace] = useState<Place | null>(null);
+  const [addDaysPlace, setAddDaysPlace] = useState<Place | null>(null);
+  const [addDaysVisible, setAddDaysVisible] = useState(false);
+
+  // Refetch on screen focus (returning from elsewhere)
+  useFocusEffect(
+    useCallback(() => { refetch(); }, [refetch]),
+  );
+
+  // Resolve city for this day (for suggestions + multi-day add)
+  const tripStops: TripStop[] = trip?.stops ?? [];
+  const dayCityId = day ? getCityIdForDay(day, tripStops) : null;
+
+  // Place IDs already added to this day
+  const addedPlaceIds = useMemo(
+    () => new Set(day?.blocks.filter((b) => b.placeId).map((b) => b.placeId!) ?? []),
+    [day?.blocks],
+  );
+
+  // Split blocks: accommodation (banner) vs timeline (everything else)
+  const accommodationBlocks = useMemo(
+    () => day?.blocks.filter((b) => b.blockType === 'accommodation') ?? [],
+    [day?.blocks],
+  );
+  const timelineBlocks = useMemo(
+    () => day?.blocks.filter((b) => b.blockType !== 'accommodation') ?? [],
+    [day?.blocks],
+  );
+
+  // Days in the same city (for multi-day accommodation add)
+  const cityDayOptions = useMemo((): DayOption[] => {
+    if (!dayCityId) return [];
+    const opts: DayOption[] = [];
+    for (let i = 0; i < allDays.length; i++) {
+      const d = allDays[i];
+      if (getCityIdForDay(d, tripStops) === dayCityId) {
+        opts.push({
+          index: i,
+          id: d.id,
+          label: `Day ${d.dayIndex}`,
+          sublabel: formatDayDateShort(d.date) ?? undefined,
+        });
+      }
+    }
+    return opts;
+  }, [allDays, tripStops, dayCityId]);
+
+  const currentDayArrayIndex = allDays.findIndex((d) => d.id === dayId);
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
@@ -128,6 +197,55 @@ export default function DayTimelineScreen() {
     refetchSuggestions();
   };
 
+  // Open preview sheet instead of directly adding
+  const handlePreviewPlace = (place: Place) => {
+    setPreviewPlace(place);
+  };
+
+  // Called from PlacePreviewSheet "Add to day"
+  const handleConfirmAdd = async (place: Place) => {
+    setPreviewPlace(null);
+    if (ACCOMMODATION_TYPES.has(place.placeType)) {
+      setAddDaysPlace(place);
+      setAddDaysVisible(true);
+    } else {
+      if (!day) return;
+      await createBlock({
+        tripId: day.tripId,
+        tripDayId: day.id,
+        blockType: 'activity',
+        placeId: place.id,
+        orderIndex: Date.now(),
+      });
+      refetch();
+    }
+  };
+
+  // Called from PlacePreviewSheet "View details"
+  const handleViewDetails = (place: Place) => {
+    setPreviewPlace(null);
+    router.push(placeRoute(place) as any);
+  };
+
+  const handleAddToDaysConfirm = async (selectedIndices: number[]) => {
+    if (!addDaysPlace || !day) return;
+    setAddDaysVisible(false);
+    const place = addDaysPlace;
+    setAddDaysPlace(null);
+    for (const idx of selectedIndices) {
+      const targetDay = allDays[idx];
+      if (!targetDay) continue;
+      await createBlock({
+        tripId: day.tripId,
+        tripDayId: targetDay.id,
+        blockType: 'accommodation',
+        placeId: place.id,
+        orderIndex: Date.now(),
+      });
+    }
+    refetch();
+  };
+
   // ── Loading / Error states ────────────────────────────────────────────────
 
   if (loading) return <LoadingScreen />;
@@ -157,16 +275,23 @@ export default function DayTimelineScreen() {
           <View style={styles.headerDivider} />
         </View>
 
-        {/* ── Timeline blocks ────────────────────────────────────────── */}
-        {day.blocks.length > 0 ? (
+        {/* ── Accommodation banner ──────────────────────────────────── */}
+        {accommodationBlocks.length > 0 && (
+          <AccommodationBanner
+            blocks={accommodationBlocks}
+            onPress={(blockId) => handleBlockPress(blockId)}
+          />
+        )}
+
+        {/* ── Timeline blocks (non-accommodation) ─────────────────────── */}
+        {timelineBlocks.length > 0 ? (
           <View style={styles.timelineContainer}>
-            {day.blocks.map((block, index) => (
+            {timelineBlocks.map((block, index) => (
               <React.Fragment key={block.id}>
-                <ItineraryBlock
+                <TimelineBlockCard
                   block={block}
-                  isFirst={index === 0}
                   isLast={
-                    index === day.blocks.length - 1 && !topSuggestion
+                    index === timelineBlocks.length - 1 && !topSuggestion
                   }
                   onPress={() => handleBlockPress(block.id)}
                 />
@@ -199,6 +324,18 @@ export default function DayTimelineScreen() {
             onDismiss={() => handleDismissSuggestion(topSuggestion)}
           />
         )}
+
+        {/* ── Suggestions catalogue ───────────────────────────────────── */}
+        {dayCityId != null && (
+          <TripDaySuggestions
+            cityId={dayCityId}
+            tripId={day.tripId}
+            dayId={day.id}
+            addedPlaceIds={addedPlaceIds}
+            onAdded={() => refetch()}
+            onAddPlace={handlePreviewPlace}
+          />
+        )}
       </ScrollView>
 
       {/* ── FAB ──────────────────────────────────────────────────────── */}
@@ -220,12 +357,36 @@ export default function DayTimelineScreen() {
         tripId={day.tripId}
         dayId={dayId!}
         insertAfterIndex={insertAfterIndex}
-        destinationCityId={null}
+        destinationCityId={trip?.destinationCityId ?? null}
         onClose={() => setShowAddStop(false)}
         onAdded={() => {
           refetch();
           setShowAddStop(false);
         }}
+      />
+
+      {/* ── AddToDaysSheet for multi-day accommodation ────────────────── */}
+      <AddToDaysSheet
+        visible={addDaysVisible}
+        placeName={addDaysPlace?.name ?? ''}
+        placeType={addDaysPlace?.placeType ?? ''}
+        days={cityDayOptions}
+        currentDayIndex={currentDayArrayIndex}
+        isAccommodation={addDaysPlace ? ACCOMMODATION_TYPES.has(addDaysPlace.placeType) : false}
+        onConfirm={handleAddToDaysConfirm}
+        onClose={() => {
+          setAddDaysVisible(false);
+          setAddDaysPlace(null);
+        }}
+      />
+
+      {/* ── PlacePreviewSheet ───────────────────────────────────────── */}
+      <PlacePreviewSheet
+        visible={previewPlace !== null}
+        place={previewPlace}
+        onAddToDay={handleConfirmAdd}
+        onViewDetails={handleViewDetails}
+        onClose={() => setPreviewPlace(null)}
       />
     </View>
   );
