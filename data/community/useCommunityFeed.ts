@@ -5,8 +5,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useAuth } from '@/state/AuthContext';
+import { useData } from '@/hooks/useData';
 import { getThreadFeed } from './communityApi';
 import { getBlockedUserIds } from '@/data/api';
+import { getTripsGrouped } from '@/data/trips/tripApi';
+import { supabase } from '@/lib/supabase';
 import type { ThreadWithAuthor, ThreadFeedParams } from './types';
 
 interface UseCommunityFeedReturn {
@@ -42,6 +45,37 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
     getBlockedUserIds(userId).then(setBlockedIds).catch(() => setBlockedIds([]));
   }, [userId]);
 
+  // Fetch active trip context for trip-aware ranking
+  const { data: tripContext } = useData(
+    async () => {
+      if (!userId) return null;
+      const grouped = await getTripsGrouped(userId);
+      const activeTrip = grouped.current;
+      if (!activeTrip || activeTrip.stops.length === 0) return null;
+
+      // Collect city IDs directly (already UUIDs)
+      const cityIds = activeTrip.stops
+        .map((s) => s.cityId)
+        .filter(Boolean) as string[];
+
+      // Resolve country ISO2 codes to country UUIDs for matching against threads
+      const iso2Codes = Array.from(
+        new Set(activeTrip.stops.map((s) => s.countryIso2).filter(Boolean))
+      ) as string[];
+      let countryIds: string[] = [];
+      if (iso2Codes.length > 0) {
+        const { data: countries } = await supabase
+          .from('countries')
+          .select('id')
+          .in('iso2', iso2Codes);
+        countryIds = (countries ?? []).map((c: { id: string }) => c.id);
+      }
+
+      return { cityIds, countryIds };
+    },
+    [userId],
+  );
+
   const fetchThreads = useCallback(async (pageNum: number, isRefresh: boolean) => {
     if (!userId) return;
     try {
@@ -52,7 +86,10 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
         ...filters,
         page: pageNum,
         pageSize: PAGE_SIZE,
-      }, blockedIds);
+      }, blockedIds, {
+        tripCityIds: tripContext?.cityIds,
+        tripCountryIds: tripContext?.countryIds,
+      });
 
       if (pageNum === 0) {
         setThreads(result);
@@ -67,7 +104,7 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [userId, filters, blockedIds]);
+  }, [userId, filters, blockedIds, tripContext]);
 
   // Fetch on mount and when filters change
   useEffect(() => {

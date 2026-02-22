@@ -56,6 +56,7 @@ export async function getThreadFeed(
   userId: string,
   params: ThreadFeedParams,
   blockedIds: string[] = [],
+  options: { tripCityIds?: string[]; tripCountryIds?: string[] } = {},
 ): Promise<ThreadWithAuthor[]> {
   const { countryId, cityId, topicId, searchQuery, sort, page, pageSize } = params;
   const offset = page * pageSize;
@@ -113,7 +114,7 @@ export async function getThreadFeed(
   const threadIds = (data ?? []).map((t: any) => t.id);
   const userVotes = await getUserVotesForEntities(userId, 'thread', threadIds);
 
-  return (data ?? []).map((row: any) => ({
+  const result = (data ?? []).map((row: any) => ({
     ...toCamel<CommunityThread>(row),
     author: {
       id: row.profiles?.id ?? row.author_id,
@@ -129,6 +130,35 @@ export async function getThreadFeed(
     topicLabel: row.community_topics?.label ?? null,
     userVote: userVotes.get(row.id) ?? null,
   }));
+
+  // Trip-aware re-ranking for "relevant" sort: prioritize threads matching
+  // the user's active trip destinations (city match > country match > trending)
+  if (sort === 'relevant' && (options.tripCityIds?.length || options.tripCountryIds?.length)) {
+    const now = Date.now();
+    result.sort((a, b) => {
+      // Pinned always first
+      if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+
+      // Trip city match gets highest priority
+      const aCityMatch = options.tripCityIds?.includes(a.cityId ?? '') ? 1 : 0;
+      const bCityMatch = options.tripCityIds?.includes(b.cityId ?? '') ? 1 : 0;
+      if (aCityMatch !== bCityMatch) return bCityMatch - aCityMatch;
+
+      // Trip country match next
+      const aCountryMatch = options.tripCountryIds?.includes(a.countryId ?? '') ? 1 : 0;
+      const bCountryMatch = options.tripCountryIds?.includes(b.countryId ?? '') ? 1 : 0;
+      if (aCountryMatch !== bCountryMatch) return bCountryMatch - aCountryMatch;
+
+      // Trending score: vote_score / age in hours
+      const aAge = Math.max(1, (now - new Date(a.createdAt).getTime()) / 3600000);
+      const bAge = Math.max(1, (now - new Date(b.createdAt).getTime()) / 3600000);
+      const aScore = (a.voteScore ?? 0) / aAge;
+      const bScore = (b.voteScore ?? 0) / bAge;
+      return bScore - aScore;
+    });
+  }
+
+  return result;
 }
 
 // ---------------------------------------------------------------------------
