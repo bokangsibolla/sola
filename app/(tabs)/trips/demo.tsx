@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import NavigationHeader from '@/components/NavigationHeader';
@@ -11,33 +11,18 @@ import { TripDaySuggestions, ACCOMMODATION_TYPES } from '@/components/trips/Trip
 import { AddToDaysSheet } from '@/components/trips/AddToDaysSheet';
 import { TYPE_DOT_COLOR, TYPE_LABEL } from '@/components/trips/blockTypeColors';
 import { useData } from '@/hooks/useData';
-import { getPopularCitiesWithCountry } from '@/data/api';
+import { getCityWithCountryBySlug } from '@/data/api';
 import type { Place } from '@/data/types';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { DayOption } from '@/components/trips/AddToDaysSheet';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-const SLUG_TO_ISO: Record<string, string> = {
-  japan: 'JP', thailand: 'TH', indonesia: 'ID', vietnam: 'VN',
-  portugal: 'PT', spain: 'ES', italy: 'IT', france: 'FR', greece: 'GR',
-  morocco: 'MA', mexico: 'MX', colombia: 'CO', peru: 'PE', brazil: 'BR',
-  turkey: 'TR', india: 'IN', 'south-korea': 'KR', 'sri-lanka': 'LK',
-  australia: 'AU', 'new-zealand': 'NZ', croatia: 'HR', georgia: 'GE',
-  argentina: 'AR', chile: 'CL', 'costa-rica': 'CR', guatemala: 'GT',
-  kenya: 'KE', tanzania: 'TZ', 'south-africa': 'ZA', egypt: 'EG',
-  jordan: 'JO', oman: 'OM', 'united-kingdom': 'GB', germany: 'DE',
-  netherlands: 'NL', czech: 'CZ', hungary: 'HU', poland: 'PL',
-  romania: 'RO', montenegro: 'ME', albania: 'AL', cambodia: 'KH',
-  myanmar: 'MM', philippines: 'PH', malaysia: 'MY', nepal: 'NP',
-  namibia: 'NA', mozambique: 'MZ', zimbabwe: 'ZW', lesotho: 'LS',
-  singapore: 'SG',
-};
+const COUNTRY_ISO: Record<string, string> = { thailand: 'TH', japan: 'JP' };
 
 function getIso2(city: CityWithCountry): string {
-  return SLUG_TO_ISO[city.countrySlug] ?? city.countrySlug.slice(0, 2).toUpperCase();
+  return COUNTRY_ISO[city.countrySlug] ?? city.countrySlug.slice(0, 2).toUpperCase();
 }
 
 function getFlag(iso2: string): string {
@@ -56,25 +41,12 @@ function formatMockDate(dayOffset: number): string {
   return `${weekday}, ${month} ${d.getDate()}`;
 }
 
-function pickCities(allCities: CityWithCountry[], targetNames: string[]): CityWithCountry[] {
-  // If names passed from empty state, match those exact cities
-  if (targetNames.length > 0) {
-    const matched: CityWithCountry[] = [];
-    for (const name of targetNames) {
-      const city = allCities.find((c) => c.name === name);
-      if (city) matched.push(city);
-    }
-    if (matched.length > 0) return matched.slice(0, 2);
-  }
-
-  // Fallback: pick 2 popular cities with hero images from different countries
-  const withHero = allCities.filter((c) => c.heroImageUrl);
-  const pool = withHero.length >= 2 ? withHero : allCities;
-  if (pool.length === 0) return [];
-  if (pool.length === 1) return [pool[0]];
-  const first = pool[0];
-  const second = pool.find((c) => c.countryName !== first.countryName) ?? pool[1];
-  return [first, second];
+async function fetchDemoCities(): Promise<CityWithCountry[]> {
+  const [bangkok, kyoto] = await Promise.all([
+    getCityWithCountryBySlug('bangkok'),
+    getCityWithCountryBySlug('kyoto'),
+  ]);
+  return [bangkok, kyoto].filter(Boolean) as CityWithCountry[];
 }
 
 // ── Screen ───────────────────────────────────────────────────────────────────
@@ -82,22 +54,9 @@ function pickCities(allCities: CityWithCountry[], targetNames: string[]): CityWi
 export default function TripDemoScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { names } = useLocalSearchParams<{ names?: string }>();
+  const { data: fetchedCities, loading } = useData(fetchDemoCities, []);
 
-  const targetNames = useMemo(
-    () => (names ? decodeURIComponent(names).split(',') : []),
-    [names],
-  );
-
-  const { data: allCities, loading } = useData(
-    () => getPopularCitiesWithCountry(8),
-    [],
-  );
-
-  const cities = useMemo(
-    () => (allCities ? pickCities(allCities, targetNames) : []),
-    [allCities, targetNames],
-  );
+  const cities = fetchedCities ?? [];
 
   const totalDays = cities.length >= 2 ? 10 : 5;
   const midpoint = Math.ceil(totalDays / 2);
@@ -212,7 +171,7 @@ export default function TripDemoScreen() {
 
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: FLOATING_TAB_BAR_HEIGHT + 80 }}
+        contentContainerStyle={{ paddingBottom: 80 }}
       >
         {/* Example badge */}
         <View style={styles.badgeRow}>
@@ -348,7 +307,7 @@ export default function TripDemoScreen() {
       </ScrollView>
 
       {/* CTA */}
-      <View style={[styles.ctaContainer, { paddingBottom: insets.bottom + FLOATING_TAB_BAR_HEIGHT }]}>
+      <View style={[styles.ctaContainer, { paddingBottom: spacing.md }]}>
         <Pressable
           style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
           onPress={() => router.push('/trips/new')}

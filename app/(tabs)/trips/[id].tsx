@@ -20,7 +20,6 @@ import { TripDayRow } from '@/components/trips/TripDayRow';
 import { TripStopHeader } from '@/components/trips/TripStopHeader';
 
 import { colors, elevation, fonts, spacing } from '@/constants/design';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -265,7 +264,7 @@ export default function TripDetailScreen() {
           keyExtractor={(item) => item.key}
           ListHeaderComponent={ListHeader}
           renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xxl }}
+          contentContainerStyle={{ paddingBottom: spacing.md }}
           showsVerticalScrollIndicator={false}
           onScrollToIndexFailed={() => {}}
         />

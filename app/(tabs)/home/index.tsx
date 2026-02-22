@@ -10,7 +10,6 @@ import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
 import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { useHomeData } from '@/data/home/useHomeData';
 import { colors, spacing } from '@/constants/design';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 export default function HomeScreen() {
   const posthog = usePostHog();
@@ -60,8 +59,6 @@ export default function HomeScreen() {
           />
 
           <CommunityBannerCard />
-
-          <View style={styles.bottomSpacer} />
         </ScrollView>
       )}
     </AppScreen>
@@ -70,12 +67,9 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
+    paddingBottom: spacing.md,
   },
   heroSection: {
     marginTop: spacing.lg,
-  },
-  bottomSpacer: {
-    height: spacing.xl,
   },
 });

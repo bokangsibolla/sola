@@ -16,7 +16,6 @@ import { useTrips } from '@/data/trips/useTrips';
 import { deleteTrip } from '@/data/trips/tripApi';
 import { useAppMode } from '@/state/AppModeContext';
 import { colors, fonts, radius, spacing } from '@/constants/design';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 export default function TripsScreen() {
   const router = useRouter();
@@ -139,7 +138,7 @@ export default function TripsScreen() {
 
 const styles = StyleSheet.create({
   scroll: {
-    paddingBottom: FLOATING_TAB_BAR_HEIGHT,
+    paddingBottom: spacing.md,
   },
   section: {
     paddingHorizontal: spacing.screenX,

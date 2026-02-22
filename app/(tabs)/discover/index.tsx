@@ -8,21 +8,20 @@ import {
   Text,
   View,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import { EditorialHero } from '@/components/explore/EditorialHero';
 import { ContinentFilter } from '@/components/explore/ContinentFilter';
 import { CountryShowcaseCard } from '@/components/explore/CountryShowcaseCard';
 import { ExploreSkeleton } from '@/components/explore/ExploreSkeleton';
+import { MenuSheet } from '@/components/MenuSheet';
 import { useExploreData } from '@/data/discover/useExploreData';
 import type { ContinentKey } from '@/data/discover/types';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 // ── Main screen ─────────────────────────────────────────────
 
@@ -31,15 +30,13 @@ export default function DiscoverScreen() {
     featuredCountry,
     countries,
     continents,
-    filterChips,
-    selectedTags,
-    toggleTag,
     isLoading,
     error,
     refresh,
   } = useExploreData();
   const router = useRouter();
   const [selectedContinent, setSelectedContinent] = useState<ContinentKey | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
 
   const filteredCountries = useMemo(
     () =>
@@ -58,7 +55,17 @@ export default function DiscoverScreen() {
     return rows;
   }, [filteredCountries]);
 
-  const headerActions = <AvatarButton />;
+  const headerActions = (
+    <Pressable
+      onPress={() => setMenuVisible(true)}
+      hitSlop={spacing.sm}
+      style={styles.menuButton}
+      accessibilityRole="button"
+      accessibilityLabel="Menu"
+    >
+      <Ionicons name="menu" size={24} color={colors.textPrimary} />
+    </Pressable>
+  );
 
   // Loading
   if (isLoading && countries.length === 0) {
@@ -66,6 +73,7 @@ export default function DiscoverScreen() {
       <AppScreen>
         <NavigationHeader title="Discover" rightActions={headerActions} />
         <ExploreSkeleton />
+        <MenuSheet visible={menuVisible} onClose={() => setMenuVisible(false)} />
       </AppScreen>
     );
   }
@@ -76,6 +84,7 @@ export default function DiscoverScreen() {
       <AppScreen>
         <NavigationHeader title="Discover" rightActions={headerActions} />
         <ErrorScreen message="Something went wrong" onRetry={refresh} />
+        <MenuSheet visible={menuVisible} onClose={() => setMenuVisible(false)} />
       </AppScreen>
     );
   }
@@ -102,39 +111,6 @@ export default function DiscoverScreen() {
             <Text style={styles.searchText}>Where to next?</Text>
           </Pressable>
         </View>
-
-        {/* Filter chips */}
-        {filterChips.length > 0 && (
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterChipsContent}
-            style={styles.filterChipsRow}
-          >
-            {filterChips.map((chip) => {
-              const isActive = selectedTags.includes(chip.value);
-              return (
-                <Pressable
-                  key={chip.id}
-                  style={[
-                    styles.filterChip,
-                    isActive && styles.filterChipActive,
-                  ]}
-                  onPress={() => toggleTag(chip.value)}
-                >
-                  <Text
-                    style={[
-                      styles.filterChipText,
-                      isActive && styles.filterChipTextActive,
-                    ]}
-                  >
-                    {chip.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </ScrollView>
-        )}
 
         {/* Editorial hero */}
         {featuredCountry && (
@@ -174,6 +150,7 @@ export default function DiscoverScreen() {
           </View>
         )}
       </ScrollView>
+      <MenuSheet visible={menuVisible} onClose={() => setMenuVisible(false)} />
     </AppScreen>
   );
 }
@@ -182,7 +159,15 @@ export default function DiscoverScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: FLOATING_TAB_BAR_HEIGHT + spacing.xl,
+    paddingBottom: spacing.md,
+  },
+
+  // Menu button
+  menuButton: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // Search
@@ -203,33 +188,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.textMuted,
-  },
-
-  // Filter chips
-  filterChipsRow: {
-    marginTop: spacing.md,
-  },
-  filterChipsContent: {
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.sm,
-  },
-  filterChip: {
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-  },
-  filterChipActive: {
-    backgroundColor: colors.orangeFill,
-  },
-  filterChipText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
-  },
-  filterChipTextActive: {
-    color: colors.orange,
   },
 
   // Hero

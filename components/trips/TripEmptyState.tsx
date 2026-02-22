@@ -4,7 +4,7 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useData } from '@/hooks/useData';
-import { getPopularCitiesWithCountry } from '@/data/api';
+import { getCityWithCountryBySlug } from '@/data/api';
 import { getPlacesByCategoryForCity } from '@/data/city/cityApi';
 import type { CityWithCountry } from '@/data/explore/types';
 import type { PlaceWithImage } from '@/data/city/types';
@@ -45,12 +45,16 @@ interface ExampleCity {
 
 async function fetchExampleTrip(): Promise<ExampleCity[]> {
   try {
-    const cities = await getPopularCitiesWithCountry(6);
-    const picked = pickTwoCities(cities);
-    if (picked.length === 0) return [];
+    const [bangkok, kyoto] = await Promise.all([
+      getCityWithCountryBySlug('bangkok'),
+      getCityWithCountryBySlug('kyoto'),
+    ]);
+
+    const cities = [bangkok, kyoto].filter(Boolean) as CityWithCountry[];
+    if (cities.length === 0) return [];
 
     const results: ExampleCity[] = [];
-    for (const city of picked) {
+    for (const city of cities) {
       try {
         const [sights, stays, food] = await Promise.all([
           getPlacesByCategoryForCity(city.id, ['landmark', 'activity', 'tour']).catch(() => []),
@@ -70,7 +74,7 @@ async function fetchExampleTrip(): Promise<ExampleCity[]> {
         results.push({
           name: city.name,
           countryName: city.countryName,
-          iso2: getCountryIso2(city),
+          iso2: city.countrySlug === 'thailand' ? 'TH' : 'JP',
           heroImage: city.heroImageUrl,
           places: top,
         });
@@ -78,7 +82,7 @@ async function fetchExampleTrip(): Promise<ExampleCity[]> {
         results.push({
           name: city.name,
           countryName: city.countryName,
-          iso2: getCountryIso2(city),
+          iso2: city.countrySlug === 'thailand' ? 'TH' : 'JP',
           heroImage: city.heroImageUrl,
           places: [],
         });
@@ -91,63 +95,6 @@ async function fetchExampleTrip(): Promise<ExampleCity[]> {
   }
 }
 
-function pickTwoCities(cities: CityWithCountry[]): CityWithCountry[] {
-  const withHero = cities.filter((c) => c.heroImageUrl);
-  const pool = withHero.length >= 2 ? withHero : cities;
-
-  if (pool.length === 0) return [];
-  if (pool.length === 1) return [pool[0]];
-
-  const first = pool[0];
-  const second = pool.find((c) => c.countryName !== first.countryName) ?? pool[1];
-  return [first, second];
-}
-
-function getCountryIso2(city: CityWithCountry): string {
-  const slug = city.countrySlug;
-  const SLUG_TO_ISO: Record<string, string> = {
-    japan: 'JP', thailand: 'TH', indonesia: 'ID', vietnam: 'VN',
-    portugal: 'PT', spain: 'ES', italy: 'IT', france: 'FR', greece: 'GR',
-    morocco: 'MA', mexico: 'MX', colombia: 'CO', peru: 'PE', brazil: 'BR',
-    turkey: 'TR', india: 'IN', 'south-korea': 'KR', 'sri-lanka': 'LK',
-    australia: 'AU', 'new-zealand': 'NZ', croatia: 'HR', georgia: 'GE',
-    argentina: 'AR', chile: 'CL', 'costa-rica': 'CR', guatemala: 'GT',
-    kenya: 'KE', tanzania: 'TZ', 'south-africa': 'ZA', egypt: 'EG',
-    jordan: 'JO', oman: 'OM', 'united-kingdom': 'GB', germany: 'DE',
-    netherlands: 'NL', czech: 'CZ', hungary: 'HU', poland: 'PL',
-    romania: 'RO', montenegro: 'ME', albania: 'AL', cambodia: 'KH',
-    myanmar: 'MM', philippines: 'PH', malaysia: 'MY', nepal: 'NP',
-  };
-  return SLUG_TO_ISO[slug] ?? slug.slice(0, 2).toUpperCase();
-}
-
-// ── Static fallback ──────────────────────────────────────────────────────────
-
-const STATIC_CITIES: ExampleCity[] = [
-  {
-    name: 'Kyoto',
-    countryName: 'Japan',
-    iso2: 'JP',
-    heroImage: null,
-    places: [
-      { id: 's1', name: 'Fushimi Inari Shrine', placeType: 'landmark', googleRating: 4.7, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-      { id: 's2', name: 'Nishiki Market', placeType: 'restaurant', googleRating: 4.5, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-      { id: 's3', name: 'Arashiyama Bamboo Grove', placeType: 'activity', googleRating: 4.6, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-    ],
-  },
-  {
-    name: 'Lisbon',
-    countryName: 'Portugal',
-    iso2: 'PT',
-    heroImage: null,
-    places: [
-      { id: 's4', name: 'Time Out Market', placeType: 'restaurant', googleRating: 4.4, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-      { id: 's5', name: 'Belém Tower', placeType: 'landmark', googleRating: 4.5, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-      { id: 's6', name: 'Alfama Walking Tour', placeType: 'tour', googleRating: 4.8, imageUrl: null, imageUrlCached: null, areaName: null } as PlaceWithImage,
-    ],
-  },
-];
-
 // ── Component ────────────────────────────────────────────────────────────────
 
 export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
@@ -156,7 +103,7 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
 
   const cities = exampleCities && exampleCities.length > 0
     ? exampleCities
-    : loading ? null : STATIC_CITIES;
+    : null;
 
   const hasData = cities != null && cities.length > 0;
   const coverImages = hasData
@@ -182,8 +129,7 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
       {/* ── Mock Trip Card (tappable — opens demo) ──────── */}
       <Pressable
         onPress={() => {
-          const names = hasData ? cities.map((c) => c.name).join(',') : '';
-          router.push(`/trips/demo${names ? `?names=${encodeURIComponent(names)}` : ''}`);
+          router.push('/trips/demo?names=Bangkok,Kyoto');
         }}
         style={({ pressed }) => [
           styles.tripCard,

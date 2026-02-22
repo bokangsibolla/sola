@@ -338,6 +338,27 @@ export async function getPopularCitiesWithCountry(
   });
 }
 
+export async function getCityWithCountryBySlug(
+  slug: string
+): Promise<CityWithCountry | undefined> {
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*, countries(name, slug)')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .limit(1)
+    .single();
+
+  if (error || !data) return undefined;
+
+  const city = mapCity(data);
+  return {
+    ...city,
+    countryName: (data as any).countries?.name ?? '',
+    countrySlug: (data as any).countries?.slug ?? '',
+  };
+}
+
 export async function getAllCities(): Promise<City[]> {
   const { data, error } = await supabase
     .from('cities')
