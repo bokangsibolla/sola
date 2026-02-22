@@ -481,6 +481,7 @@ export interface Message {
   text: string;
   sentAt: string;
   readAt: string | null;
+  isDeleted?: boolean;
 }
 
 // ---------------------------------------------------------------------------
