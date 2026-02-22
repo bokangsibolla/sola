@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Feather } from '@expo/vector-icons';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
@@ -12,6 +12,7 @@ import {
   getOrCreateConversationGuarded,
   blockUserFull,
   reportUser,
+  removeConnection,
 } from '@/data/api';
 import { useTravelerProfile } from '@/data/travelers/useTravelerProfile';
 import { getFlag } from '@/data/trips/helpers';
@@ -62,19 +63,38 @@ export default function UserProfileScreen() {
   } = useTravelerProfile(id);
 
   const status = localStatus ?? fetchedStatus;
+  const connectionStatus = status ?? 'none';
+  const showBio = connectionStatus !== 'none';
+  const showExtended = connectionStatus === 'connected';
+
+  const doConnect = useCallback(async (message?: string) => {
+    try {
+      setLocalStatus('pending_sent');
+      await sendConnectionRequest(userId!, id!, contextLabel, message || undefined);
+      queryClient.invalidateQueries({ queryKey: ['travelers'] });
+    } catch {
+      setLocalStatus(null);
+      Alert.alert('Error', 'Could not send request');
+    }
+  }, [userId, id, contextLabel, queryClient]);
 
   const handleConnect = useCallback(async () => {
     if (!userId || !id) return;
     if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'connect with travelers')) return;
     posthog.capture('connection_request_sent', { recipient_id: id });
-    setLocalStatus('pending_sent');
-    try {
-      await sendConnectionRequest(userId, id, contextLabel);
-      queryClient.invalidateQueries({ queryKey: ['travelers'] });
-    } catch {
-      setLocalStatus(null);
-    }
-  }, [userId, id, contextLabel, posthog, queryClient, userProfile]);
+
+    Alert.prompt(
+      'Send connection request',
+      contextLabel ? contextLabel : 'Send a connection request?',
+      [
+        { text: 'Skip', onPress: () => doConnect() },
+        { text: 'Send', onPress: (msg?: string) => doConnect(msg) },
+      ],
+      'plain-text',
+      '',
+      'default',
+    );
+  }, [userId, id, contextLabel, posthog, doConnect, userProfile]);
 
   const handleAccept = useCallback(async () => {
     if (!incomingRequest) return;
@@ -122,66 +142,100 @@ export default function UserProfileScreen() {
 
   const handleMoreMenu = useCallback(() => {
     if (!userId || !id) return;
-    Alert.alert('', '', [
-      {
-        text: 'Block',
-        style: 'destructive',
+    const buttons: Array<{ text: string; style?: 'destructive' | 'cancel' | 'default'; onPress?: () => void }> = [];
+
+    if (connectionStatus === 'connected' || localStatus === 'connected') {
+      buttons.push({
+        text: 'Remove connection',
+        style: 'destructive' as const,
         onPress: () => {
           Alert.alert(
-            'Block this traveler?',
-            'They won\'t be able to see your profile or contact you.',
+            'Remove connection',
+            "They won't be notified. You'll lose access to each other's full profile and messages.",
             [
               { text: 'Cancel', style: 'cancel' },
               {
-                text: 'Block',
+                text: 'Remove',
                 style: 'destructive',
                 onPress: async () => {
-                  await blockUserFull(userId!, id);
-                  posthog.capture('user_blocked', { blocked_id: id });
-                  queryClient.invalidateQueries({ queryKey: ['travelers'] });
-                  router.back();
+                  try {
+                    await removeConnection(userId!, id);
+                    setLocalStatus('none');
+                    queryClient.invalidateQueries({ queryKey: ['travelers'] });
+                    queryClient.invalidateQueries({ queryKey: ['connections'] });
+                  } catch {
+                    Alert.alert('Error', 'Could not remove connection');
+                  }
                 },
               },
             ],
           );
         },
-      },
-      {
-        text: 'Report',
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert('Report this traveler', 'Select a reason:', [
+      });
+    }
+
+    buttons.push({
+      text: 'Block',
+      style: 'destructive' as const,
+      onPress: () => {
+        Alert.alert(
+          'Block this traveler?',
+          'They won\'t be able to see your profile or contact you.',
+          [
             { text: 'Cancel', style: 'cancel' },
             {
-              text: 'Fake profile',
+              text: 'Block',
+              style: 'destructive',
               onPress: async () => {
-                await reportUser(userId, id, 'fake_profile');
-                posthog.capture('user_reported', { reported_id: id, reason: 'fake_profile' });
-                Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
+                await blockUserFull(userId!, id);
+                posthog.capture('user_blocked', { blocked_id: id });
+                queryClient.invalidateQueries({ queryKey: ['travelers'] });
+                router.back();
               },
             },
-            {
-              text: 'Inappropriate behavior',
-              onPress: async () => {
-                await reportUser(userId, id, 'inappropriate_behavior');
-                posthog.capture('user_reported', { reported_id: id, reason: 'inappropriate_behavior' });
-                Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
-              },
-            },
-            {
-              text: 'Spam',
-              onPress: async () => {
-                await reportUser(userId, id, 'spam');
-                posthog.capture('user_reported', { reported_id: id, reason: 'spam' });
-                Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
-              },
-            },
-          ]);
-        },
+          ],
+        );
       },
-      { text: 'Cancel', style: 'cancel' },
-    ]);
-  }, [userId, id, posthog, queryClient, router]);
+    });
+
+    buttons.push({
+      text: 'Report',
+      style: 'destructive' as const,
+      onPress: () => {
+        Alert.alert('Report this traveler', 'Select a reason:', [
+          { text: 'Cancel', style: 'cancel' },
+          {
+            text: 'Fake profile',
+            onPress: async () => {
+              await reportUser(userId, id, 'fake_profile');
+              posthog.capture('user_reported', { reported_id: id, reason: 'fake_profile' });
+              Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
+            },
+          },
+          {
+            text: 'Inappropriate behavior',
+            onPress: async () => {
+              await reportUser(userId, id, 'inappropriate_behavior');
+              posthog.capture('user_reported', { reported_id: id, reason: 'inappropriate_behavior' });
+              Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
+            },
+          },
+          {
+            text: 'Spam',
+            onPress: async () => {
+              await reportUser(userId, id, 'spam');
+              posthog.capture('user_reported', { reported_id: id, reason: 'spam' });
+              Alert.alert('Report submitted', 'Thank you for helping keep Sola safe.');
+            },
+          },
+        ]);
+      },
+    });
+
+    buttons.push({ text: 'Cancel', style: 'cancel' as const });
+
+    Alert.alert('', '', buttons);
+  }, [userId, id, connectionStatus, localStatus, posthog, queryClient, router]);
 
   if (isLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
@@ -257,10 +311,10 @@ export default function UserProfileScreen() {
         />
 
         {/* Bio */}
-        {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        {showBio && profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
 
         {/* Interests */}
-        {(profile.interests ?? []).length > 0 && (
+        {showExtended && (profile.interests ?? []).length > 0 && (
           <>
             <Text style={styles.sectionTitle}>Interests</Text>
             <View style={styles.tags}>
@@ -281,7 +335,7 @@ export default function UserProfileScreen() {
         )}
 
         {/* Trips Section */}
-        {hasTrips && (
+        {showExtended && hasTrips && (
           <>
             <Text style={styles.sectionTitle}>Trips</Text>
 
@@ -318,10 +372,10 @@ export default function UserProfileScreen() {
         )}
 
         {/* Visited Countries (from trips) */}
-        <VisitedCountries countries={visitedCountries} />
+        {showExtended && <VisitedCountries countries={visitedCountries} />}
 
         {/* User-listed countries (self-reported) */}
-        {userManagedCountries.length > 0 && (
+        {showExtended && userManagedCountries.length > 0 && (
           <View style={styles.userCountriesSection}>
             <Text style={styles.sectionTitle}>Countries visited</Text>
             <View style={styles.tags}>
@@ -333,6 +387,15 @@ export default function UserProfileScreen() {
                 </View>
               ))}
             </View>
+          </View>
+        )}
+
+        {/* Locked section for non-connected users */}
+        {!showExtended && (
+          <View style={styles.lockedSection}>
+            <Ionicons name="lock-closed-outline" size={24} color={colors.textMuted} />
+            <Text style={styles.lockedTitle}>Full profile</Text>
+            <Text style={styles.lockedText}>Connect to see trips, interests, and more</Text>
           </View>
         )}
       </ScrollView>
@@ -500,6 +563,21 @@ const styles = StyleSheet.create({
   },
   userCountriesSection: {
     marginBottom: spacing.xl,
+  },
+  lockedSection: {
+    alignItems: 'center' as const,
+    paddingVertical: spacing.xxxl,
+    gap: spacing.sm,
+  },
+  lockedTitle: {
+    fontSize: 17,
+    fontFamily: fonts.semiBold,
+    color: colors.textPrimary,
+  },
+  lockedText: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    color: colors.textMuted,
   },
   pastHeader: {
     flexDirection: 'row',

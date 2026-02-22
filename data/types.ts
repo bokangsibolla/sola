@@ -357,6 +357,7 @@ export interface ConnectionRequest {
   receiverId: string;
   status: 'pending' | 'accepted' | 'declined';
   context: string | null;
+  message?: string | null;
   createdAt: string;
   respondedAt: string | null;
 }
