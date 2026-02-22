@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -65,13 +65,6 @@ export default function CountryGuideScreen() {
     fallbackCrumbs: [{ label: 'Discover', path: '/(tabs)/discover' }],
   });
 
-  // Build image map for HighlightCards
-  const imageMap = useMemo(() => {
-    const map: Record<string, string | null> = {};
-    (cities ?? []).forEach(c => { map[c.id] = c.heroImageUrl; });
-    return map;
-  }, [cities]);
-
   if (countryLoading) return <LoadingScreen />;
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
   if (!country) {
@@ -106,7 +99,6 @@ export default function CountryGuideScreen() {
           country={country}
           cities={cities ?? []}
           communityData={communityData}
-          imageMap={imageMap}
         />
       )}
 

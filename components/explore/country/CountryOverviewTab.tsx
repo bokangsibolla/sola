@@ -4,7 +4,6 @@ import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, Country } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
 import { mapSoloLevel } from '@/components/explore/country/mappings';
-import { HighlightCards } from './HighlightCards';
 import { CityHorizontalCard } from './CityHorizontalCard';
 import { CommunityThreadRows } from './CommunityThreadRows';
 
@@ -12,7 +11,6 @@ interface Props {
   country: Country;
   cities: City[];
   communityData: { threads: ThreadWithAuthor[]; totalCount: number } | null;
-  imageMap: Record<string, string | null>;
 }
 
 // -- Quick Context Grid (matches city's QuickContextGrid) -----------------
@@ -46,7 +44,7 @@ function GridCell({ data, isRight, isBottom }: { data: CellData; isRight: boolea
 
 // -- Main Component -------------------------------------------------------
 
-export function CountryOverviewTab({ country, cities, communityData, imageMap }: Props) {
+export function CountryOverviewTab({ country, cities, communityData }: Props) {
   const router = useRouter();
 
   const introText = country.introMd
@@ -64,13 +62,6 @@ export function CountryOverviewTab({ country, cities, communityData, imageMap }:
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-
-      {/* Destination highlights -- below hero */}
-      {highlights.length > 0 && (
-        <View style={styles.highlightsWrap}>
-          <HighlightCards highlights={highlights} imageMap={imageMap} />
-        </View>
-      )}
 
       {/* Intro */}
       {introText && (
@@ -307,12 +298,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 14,
     color: colors.orange,
-  },
-
-  // Highlight cards wrapper (needs negative margin to break out of padding)
-  highlightsWrap: {
-    marginHorizontal: -spacing.screenX,
-    marginBottom: spacing.xl,
   },
 
   // Experience pillars (matches city ExperiencePillars)
