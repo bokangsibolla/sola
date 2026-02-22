@@ -60,6 +60,8 @@ export interface Country {
   healthSearchTerms: string[] | null;
   // Structured fields (country page redesign)
   budgetBreakdown: BudgetBreakdown | null;
+  destinationHighlights: DestinationHighlight[] | null;
+  budgetTips: BudgetTip[] | null;
   vibeSummary: string | null;
   socialVibe: string | null;
   culturalNote: string | null;
@@ -87,6 +89,21 @@ export interface BudgetBreakdown {
   food: BudgetRange;
   transport: BudgetRange;
   activities: BudgetRange;
+}
+
+export interface DestinationHighlight {
+  type: 'city' | 'place';
+  id: string;
+  label: string;
+  tagline: string;
+  imageUrl: string | null;
+}
+
+export interface BudgetTip {
+  category: 'accommodation' | 'transport' | 'food' | 'activities' | 'general';
+  tip: string;
+  type: 'save' | 'dont_skimp';
+  level: 'essential' | 'insider';
 }
 
 export interface City {

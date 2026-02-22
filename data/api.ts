@@ -134,6 +134,8 @@ export function mapCountry(row: Record<string, any>): Country {
     healthSearchTerms: row.health_search_terms ?? null,
     // Structured fields (country page redesign)
     budgetBreakdown: row.budget_breakdown ?? null,
+    destinationHighlights: row.destination_highlights ?? null,
+    budgetTips: row.budget_tips ?? null,
     vibeSummary: row.vibe_summary ?? null,
     socialVibe: row.social_vibe ?? null,
     culturalNote: row.cultural_note ?? null,
