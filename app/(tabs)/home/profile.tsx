@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
@@ -14,7 +15,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { countries } from '@/data/geo';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
 
 function countryFlag(iso2: string): string {
@@ -89,34 +90,34 @@ export default function ProfileScreen() {
               </View>
             )}
           </View>
-          <Text style={styles.name}>{profile?.firstName || 'Traveler'}</Text>
+          <SolaText variant="h2">{profile?.firstName || 'Traveler'}</SolaText>
           {profile?.username && (
-            <Text style={styles.username}>@{profile.username}</Text>
+            <SolaText style={styles.username}>@{profile.username}</SolaText>
           )}
           {country && (
-            <Text style={styles.origin}>
+            <SolaText variant="body" color={colors.textMuted} style={styles.origin}>
               {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}{country.name}
-            </Text>
+            </SolaText>
           )}
           {mode === 'travelling' && activeTripInfo && (
             <View style={styles.travellingBadge}>
               <Ionicons name="navigate" size={14} color={colors.orange} />
-              <Text style={styles.travellingBadgeText}>
+              <SolaText style={styles.travellingBadgeText}>
                 Currently in {activeTripInfo.city.name}
-              </Text>
+              </SolaText>
             </View>
           )}
-          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+          {profile?.bio ? <SolaText variant="body" color={colors.textSecondary} style={styles.bio}>{profile.bio}</SolaText> : null}
         </View>
 
         {/* Interests */}
         {(profile?.interests ?? []).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interests</Text>
+            <SolaText variant="label" style={styles.sectionTitle}>Interests</SolaText>
             <View style={styles.tags}>
               {(profile?.interests ?? []).map((interest) => (
                 <View key={interest} style={styles.tag}>
-                  <Text style={styles.tagText}>{interest}</Text>
+                  <SolaText style={styles.tagText}>{interest}</SolaText>
                 </View>
               ))}
             </View>
@@ -126,15 +127,15 @@ export default function ProfileScreen() {
         {/* Countries visited */}
         {(visitedCountries ?? []).length > 0 && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
+            <SolaText variant="label" style={styles.sectionTitle}>
               {(visitedCountries ?? []).length} {(visitedCountries ?? []).length === 1 ? 'country' : 'countries'} visited
-            </Text>
+            </SolaText>
             <View style={styles.tags}>
               {(visitedCountries ?? []).map((vc) => (
                 <View key={vc.countryId} style={styles.tag}>
-                  <Text style={styles.tagText}>
+                  <SolaText style={styles.tagText}>
                     {vc.countryIso2 ? countryFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
-                  </Text>
+                  </SolaText>
                 </View>
               ))}
             </View>
@@ -142,19 +143,19 @@ export default function ProfileScreen() {
         )}
 
         {/* Stats */}
-        <Text style={styles.stats}>
+        <SolaText style={styles.stats}>
           {(saved ?? []).length} {(saved ?? []).length === 1 ? 'place' : 'places'} saved
           {'  ·  '}
           {(collections ?? []).length} {(collections ?? []).length === 1 ? 'collection' : 'collections'}
-        </Text>
+        </SolaText>
 
         {/* Collections */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Collections</Text>
+          <SolaText variant="label" style={styles.sectionTitle}>Collections</SolaText>
           {(collections ?? []).length === 0 ? (
-            <Text style={styles.emptyText}>
+            <SolaText variant="body" color={colors.textMuted}>
               Save places into collections as you explore.
-            </Text>
+            </SolaText>
           ) : (
             (collections ?? []).map((col) => {
               const placeCount = (saved ?? []).filter((s) => s.collectionId === col.id).length;
@@ -167,12 +168,12 @@ export default function ProfileScreen() {
                     router.push(`/home/collections/${col.id}`);
                   }}
                 >
-                  <Text style={styles.collectionEmoji}>{col.emoji}</Text>
+                  <SolaText style={styles.collectionEmoji}>{col.emoji}</SolaText>
                   <View style={styles.collectionText}>
-                    <Text style={styles.collectionName}>{col.name}</Text>
-                    <Text style={styles.collectionCount}>
+                    <SolaText style={styles.collectionName}>{col.name}</SolaText>
+                    <SolaText style={styles.collectionCount}>
                       {placeCount} {placeCount === 1 ? 'place' : 'places'}
-                    </Text>
+                    </SolaText>
                   </View>
                   <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
                 </Pressable>
@@ -191,7 +192,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="create-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Edit profile</Text>
+            <SolaText style={styles.actionLabel}>Edit profile</SolaText>
           </Pressable>
           <Pressable
             style={styles.actionButton}
@@ -201,7 +202,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="settings-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Settings</Text>
+            <SolaText style={styles.actionLabel}>Settings</SolaText>
           </Pressable>
           <Pressable
             style={styles.actionButton}
@@ -211,7 +212,7 @@ export default function ProfileScreen() {
             }}
           >
             <Ionicons name="chatbubbles-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Messages</Text>
+            <SolaText style={styles.actionLabel}>Messages</SolaText>
           </Pressable>
         </View>
 
@@ -245,10 +246,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
+  name: {},
   username: {
     fontFamily: fonts.regular,
     fontSize: 14,
@@ -256,8 +254,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   origin: {
-    ...typography.body,
-    color: colors.textMuted,
     marginTop: spacing.xs,
   },
   travellingBadge: {
@@ -276,9 +272,7 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
   bio: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.sm,
     paddingHorizontal: spacing.xl,
   },
@@ -293,8 +287,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
     marginBottom: spacing.md,
   },
   tags: {
@@ -313,10 +305,7 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.orange,
   },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
+  emptyText: {},
   collectionRow: {
     flexDirection: 'row',
     alignItems: 'center',

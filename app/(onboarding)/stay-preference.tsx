@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
@@ -32,8 +33,8 @@ function Tile({ icon, label, selected, onPress }: TileProps) {
       style={[styles.tile, selected && styles.tileSelected]}
       onPress={onPress}
     >
-      <Text style={styles.tileIcon}>{icon}</Text>
-      <Text style={[styles.tileLabel, selected && styles.tileLabelSelected]}>{label}</Text>
+      <SolaText style={styles.tileIcon}>{icon}</SolaText>
+      <SolaText style={[styles.tileLabel, selected && styles.tileLabelSelected]}>{label}</SolaText>
     </Pressable>
   );
 }
@@ -95,7 +96,7 @@ export default function StayPreferenceScreen() {
       onSkip={handleSkip}
     >
       <View style={styles.section}>
-        <Text style={styles.question}>Where do you feel most at home?</Text>
+        <SolaText style={styles.question}>Where do you feel most at home?</SolaText>
         <View style={styles.grid}>
           {STAY_OPTIONS.map((opt) => (
             <Tile
@@ -110,7 +111,7 @@ export default function StayPreferenceScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.question}>How do you like to spend?</Text>
+        <SolaText style={styles.question}>How do you like to spend?</SolaText>
         <View style={styles.grid}>
           {SPEND_OPTIONS.map((opt) => (
             <Tile

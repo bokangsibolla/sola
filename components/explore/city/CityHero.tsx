@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -46,10 +47,10 @@ export function CityHero({ city, countryName }: CityHeroProps) {
 
       {/* City name + country + positioning line */}
       <View style={styles.overlay}>
-        <Text style={styles.countryLabel}>{countryName.toUpperCase()}</Text>
-        <Text style={styles.cityName}>{city.name}</Text>
+        <SolaText style={styles.countryLabel}>{countryName.toUpperCase()}</SolaText>
+        <SolaText style={styles.cityName}>{city.name}</SolaText>
         {city.positioningLine && (
-          <Text style={styles.positioningLine}>{city.positioningLine}</Text>
+          <SolaText style={styles.positioningLine}>{city.positioningLine}</SolaText>
         )}
       </View>
     </View>

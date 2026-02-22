@@ -1,6 +1,7 @@
 // app/(tabs)/discover/accommodation/[slug].tsx
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
@@ -156,7 +157,7 @@ export default function AccommodationDetailScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <NavigationHeader title="Accommodation" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Accommodation not found</Text>
+          <SolaText style={styles.emptyText}>Accommodation not found</SolaText>
         </View>
       </SafeAreaView>
     );

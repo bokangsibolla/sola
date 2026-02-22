@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   TextInput,
   Pressable,
   StyleSheet,
@@ -12,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -127,7 +127,7 @@ export default function NewThread() {
               {submitting ? (
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
-                <Text style={styles.postButtonText}>Post</Text>
+                <SolaText style={styles.postButtonText}>Post</SolaText>
               )}
             </Pressable>
           }
@@ -167,21 +167,21 @@ export default function NewThread() {
         />
 
         {showGuidedComposer && (
-          <Text style={styles.guidedHint}>
+          <SolaText style={styles.guidedHint}>
             Your question will be visible to women traveling to this place
-          </Text>
+          </SolaText>
         )}
 
         {/* Place selector */}
-        <Text style={styles.sectionLabel}>Place (optional)</Text>
+        <SolaText style={styles.sectionLabel}>Place (optional)</SolaText>
         <Pressable
           onPress={() => setShowPlaceSelector(true)}
           style={({ pressed }) => [styles.placeSelector, pressed && styles.pressed]}
         >
           <Feather name="map-pin" size={16} color={placeLabel ? colors.orange : colors.textMuted} />
-          <Text style={[styles.placeSelectorText, placeLabel && styles.placeSelectorTextActive]}>
+          <SolaText style={[styles.placeSelectorText, placeLabel && styles.placeSelectorTextActive]}>
             {placeLabel ?? 'Select a country or city'}
-          </Text>
+          </SolaText>
           {placeLabel && (
             <Pressable onPress={() => handleSelectPlace(undefined, undefined, 'All places')} hitSlop={8}>
               <Feather name="x" size={14} color={colors.textMuted} />
@@ -190,7 +190,7 @@ export default function NewThread() {
         </Pressable>
 
         {/* Topic selector */}
-        <Text style={styles.sectionLabel}>Topic (optional)</Text>
+        <SolaText style={styles.sectionLabel}>Topic (optional)</SolaText>
         <View style={styles.topicRow}>
           {topics.map((t) => (
             <Pressable
@@ -198,9 +198,9 @@ export default function NewThread() {
               onPress={() => setSelectedTopicId(selectedTopicId === t.id ? undefined : t.id)}
               style={[styles.topicPill, selectedTopicId === t.id && styles.topicPillActive]}
             >
-              <Text style={[styles.topicPillText, selectedTopicId === t.id && styles.topicPillTextActive]}>
+              <SolaText style={[styles.topicPillText, selectedTopicId === t.id && styles.topicPillTextActive]}>
                 {t.label}
-              </Text>
+              </SolaText>
             </Pressable>
           ))}
         </View>
@@ -265,7 +265,7 @@ function PlaceSelectorSheet({
         <Pressable style={styles.sheetBackdrop} onPress={onClose} />
         <View style={[styles.sheetContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.sheetHandle} />
-          <Text style={styles.sheetTitle}>Select place</Text>
+          <SolaText style={styles.sheetTitle}>Select place</SolaText>
 
           {!selectedCountry ? (
             <>
@@ -287,8 +287,8 @@ function PlaceSelectorSheet({
                     onPress={() => handleSelectCountry(c)}
                     style={styles.placeRow}
                   >
-                    <Text style={styles.placeRowFlag}>{getFlag(c.iso2)}</Text>
-                    <Text style={styles.placeRowText}>{c.name}</Text>
+                    <SolaText style={styles.placeRowFlag}>{getFlag(c.iso2)}</SolaText>
+                    <SolaText style={styles.placeRowText}>{c.name}</SolaText>
                     <Feather name="chevron-right" size={16} color={colors.textMuted} />
                   </Pressable>
                 ))}
@@ -298,7 +298,7 @@ function PlaceSelectorSheet({
             <>
               <Pressable onPress={() => { setSelectedCountry(null); setCities([]); }} style={styles.backRow}>
                 <Feather name="arrow-left" size={18} color={colors.orange} />
-                <Text style={styles.backRowText}>{selectedCountry.name}</Text>
+                <SolaText style={styles.backRowText}>{selectedCountry.name}</SolaText>
               </Pressable>
               <ScrollView style={styles.placeResults}>
                 <Pressable
@@ -308,7 +308,7 @@ function PlaceSelectorSheet({
                   style={styles.placeRow}
                 >
                   <Feather name="map" size={18} color={colors.textSecondary} />
-                  <Text style={styles.placeRowText}>All of {selectedCountry.name}</Text>
+                  <SolaText style={styles.placeRowText}>All of {selectedCountry.name}</SolaText>
                 </Pressable>
                 {cities.map((c) => (
                   <Pressable
@@ -318,7 +318,7 @@ function PlaceSelectorSheet({
                     }}
                     style={styles.placeRow}
                   >
-                    <Text style={styles.placeRowText}>{c.name}</Text>
+                    <SolaText style={styles.placeRowText}>{c.name}</SolaText>
                   </Pressable>
                 ))}
               </ScrollView>

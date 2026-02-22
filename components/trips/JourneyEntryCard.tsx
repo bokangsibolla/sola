@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { formatTime, ENTRY_ICONS, ENTRY_LABELS, MOOD_COLORS } from '@/data/trips/helpers';
 import type { TripEntry } from '@/data/trips/types';
@@ -20,21 +21,21 @@ export default function JourneyEntryCard({ entry, onPress }: JourneyEntryCardPro
       >
         <View style={styles.comfortRow}>
           <View style={[styles.moodDot, { backgroundColor: mood.text }]} />
-          <Text style={[styles.comfortText, { color: mood.text }]}>
+          <SolaText style={[styles.comfortText, { color: mood.text }]}>
             Feeling {mood.label.toLowerCase()}
-          </Text>
+          </SolaText>
           <View style={styles.spacer} />
           {entry.locationName && (
             <View style={styles.locationRow}>
               <Ionicons name="location-outline" size={12} color={mood.text} />
-              <Text style={[styles.locationText, { color: mood.text }]} numberOfLines={1}>
+              <SolaText style={[styles.locationText, { color: mood.text }]} numberOfLines={1}>
                 {entry.locationName}
-              </Text>
+              </SolaText>
             </View>
           )}
-          <Text style={[styles.timeText, { color: mood.text }]}>
+          <SolaText style={[styles.timeText, { color: mood.text }]}>
             {formatTime(entry.createdAt)}
-          </Text>
+          </SolaText>
         </View>
       </Pressable>
     );
@@ -49,31 +50,31 @@ export default function JourneyEntryCard({ entry, onPress }: JourneyEntryCardPro
       onPress={onPress}
     >
       <View style={styles.headerRow}>
-        <Text style={styles.icon}>{icon}</Text>
-        <Text style={styles.title} numberOfLines={1}>
+        <SolaText style={styles.icon}>{icon}</SolaText>
+        <SolaText style={styles.title} numberOfLines={1}>
           {entry.title || label}
-        </Text>
+        </SolaText>
       </View>
       {entry.body ? (
-        <Text style={styles.body} numberOfLines={2}>
+        <SolaText style={styles.body} numberOfLines={2}>
           {entry.body}
-        </Text>
+        </SolaText>
       ) : null}
       <View style={styles.footerRow}>
         {entry.locationName && (
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={12} color={colors.textMuted} />
-            <Text style={styles.locationText} numberOfLines={1}>
+            <SolaText style={styles.locationText} numberOfLines={1}>
               {entry.locationName}
-            </Text>
+            </SolaText>
           </View>
         )}
         <View style={styles.spacer} />
-        <Text style={styles.timeText}>{formatTime(entry.createdAt)}</Text>
+        <SolaText style={styles.timeText}>{formatTime(entry.createdAt)}</SolaText>
       </View>
       {entry.entryType === 'tip' && entry.isShareableTip && (
         <View style={styles.shareableBadge}>
-          <Text style={styles.shareableText}>Shareable</Text>
+          <SolaText style={styles.shareableText}>Shareable</SolaText>
         </View>
       )}
     </Pressable>

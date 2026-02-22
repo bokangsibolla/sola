@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing } from '@/constants/design';
 import { mapSoloLevel } from './mappings';
@@ -52,9 +53,9 @@ export function SignalsRow({ country }: Props) {
     >
       {signals.map((signal, index) => (
         <View key={signal} style={styles.item}>
-          <Text style={styles.text}>{signal}</Text>
+          <SolaText style={styles.text}>{signal}</SolaText>
           {index < signals.length - 1 && (
-            <Text style={styles.separator}>{'\u00B7'}</Text>
+            <SolaText style={styles.separator}>{'\u00B7'}</SolaText>
           )}
         </View>
       ))}

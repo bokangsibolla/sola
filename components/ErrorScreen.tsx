@@ -1,5 +1,6 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
+import { colors, radius, spacing } from '@/constants/design';
 
 interface Props {
   message?: string;
@@ -9,10 +10,10 @@ interface Props {
 export default function ErrorScreen({ message, onRetry }: Props) {
   return (
     <View style={styles.container}>
-      <Text style={styles.message}>{message ?? 'Something went wrong'}</Text>
+      <SolaText variant="body" color={colors.textMuted} style={styles.message}>{message ?? 'Something went wrong'}</SolaText>
       {onRetry && (
         <Pressable style={styles.button} onPress={onRetry}>
-          <Text style={styles.buttonText}>Retry</Text>
+          <SolaText variant="button" color={colors.background}>Retry</SolaText>
         </Pressable>
       )}
     </View>
@@ -28,9 +29,7 @@ const styles = StyleSheet.create({
     padding: spacing.xl,
   },
   message: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.lg,
   },
   button: {
@@ -38,9 +37,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.md,
     borderRadius: radius.button,
-  },
-  buttonText: {
-    ...typography.button,
-    color: colors.background,
   },
 });

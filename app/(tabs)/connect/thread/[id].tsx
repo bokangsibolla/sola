@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
   Pressable,
   TextInput,
@@ -11,6 +10,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
@@ -47,19 +47,19 @@ function ReplyCard({
 
   const authorAvatar = isSystem ? (
     <View style={[styles.avatar, styles.avatarSolaTeam]}>
-      <Text style={styles.avatarSolaTeamInitial}>S</Text>
+      <SolaText style={styles.avatarSolaTeamInitial}>S</SolaText>
     </View>
   ) : isSeed && reply.seedProfile ? (
     <View style={[styles.avatar, styles.avatarPlaceholder]}>
-      <Text style={styles.avatarInitial}>
+      <SolaText style={styles.avatarInitial}>
         {reply.seedProfile.displayName.charAt(0)}
-      </Text>
+      </SolaText>
     </View>
   ) : reply.author.avatarUrl ? (
     <Image source={{ uri: reply.author.avatarUrl }} style={styles.avatar} />
   ) : (
     <View style={[styles.avatar, styles.avatarPlaceholder]}>
-      <Text style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</Text>
+      <SolaText style={styles.avatarInitial}>{reply.author.firstName?.charAt(0) ?? '?'}</SolaText>
     </View>
   );
 
@@ -75,8 +75,8 @@ function ReplyCard({
         {isSystem || isSeed ? (
           <View style={styles.authorPressable}>
             {authorAvatar}
-            <Text style={styles.replyAuthorName}>{authorNameText}</Text>
-            {isSystem && <Text style={styles.teamBadge}>TEAM</Text>}
+            <SolaText style={styles.replyAuthorName}>{authorNameText}</SolaText>
+            {isSystem && <SolaText style={styles.teamBadge}>TEAM</SolaText>}
           </View>
         ) : (
           <Pressable
@@ -84,10 +84,10 @@ function ReplyCard({
             onPress={() => router.push(`/connect/user/${reply.author.id}` as any)}
           >
             {authorAvatar}
-            <Text style={styles.replyAuthorName}>{authorNameText}</Text>
+            <SolaText style={styles.replyAuthorName}>{authorNameText}</SolaText>
           </Pressable>
         )}
-        <Text style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</Text>
+        <SolaText style={styles.replyTime}>{formatTimeAgo(reply.createdAt)}</SolaText>
         <View style={{ flex: 1 }} />
         <Pressable
           onPress={() => onReport(reply.id, reply.authorId)}
@@ -96,7 +96,7 @@ function ReplyCard({
           <Feather name="more-horizontal" size={16} color={colors.textMuted} />
         </Pressable>
       </View>
-      <Text style={styles.replyBody}>{reply.body}</Text>
+      <SolaText style={styles.replyBody}>{reply.body}</SolaText>
 
       {/* Helpful button */}
       <Pressable
@@ -109,12 +109,12 @@ function ReplyCard({
           size={14}
           color={isHelpful ? colors.orange : colors.textMuted}
         />
-        <Text style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
+        <SolaText style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
           {reply.voteScore}
-        </Text>
-        <Text style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
+        </SolaText>
+        <SolaText style={[styles.helpfulText, isHelpful && styles.helpfulTextActive]}>
           helpful
-        </Text>
+        </SolaText>
       </Pressable>
     </View>
   );
@@ -208,7 +208,7 @@ export default function ThreadDetail() {
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <NavigationHeader title="Discussion" parentTitle="Connect" />
         <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>Thread not found</Text>
+          <SolaText style={styles.emptyTitle}>Thread not found</SolaText>
         </View>
       </View>
     );
@@ -221,36 +221,36 @@ export default function ThreadDetail() {
       {/* Meta badges */}
       <View style={styles.metaRow}>
         {thread.topicLabel && (
-          <Text style={styles.topicBadge}>{thread.topicLabel}</Text>
+          <SolaText style={styles.topicBadge}>{thread.topicLabel}</SolaText>
         )}
         {(thread.cityName || thread.countryName) && (
-          <Text style={styles.placeBadge}>
+          <SolaText style={styles.placeBadge}>
             {thread.cityName ?? thread.countryName}
-          </Text>
+          </SolaText>
         )}
       </View>
 
       {/* Title */}
-      <Text style={styles.threadTitle}>{thread.title}</Text>
+      <SolaText style={styles.threadTitle}>{thread.title}</SolaText>
 
       {/* Author row */}
       <View style={styles.authorRow}>
         {thread.authorType === 'system' ? (
           <>
             <View style={[styles.avatar, styles.avatarSolaTeam]}>
-              <Text style={styles.avatarSolaTeamInitial}>S</Text>
+              <SolaText style={styles.avatarSolaTeamInitial}>S</SolaText>
             </View>
-            <Text style={styles.authorName}>Sola Team</Text>
-            <Text style={styles.teamBadge}>TEAM</Text>
+            <SolaText style={styles.authorName}>Sola Team</SolaText>
+            <SolaText style={styles.teamBadge}>TEAM</SolaText>
           </>
         ) : thread.authorType === 'seed' && thread.seedProfile ? (
           <>
             <View style={[styles.avatar, styles.avatarPlaceholder]}>
-              <Text style={styles.avatarInitial}>
+              <SolaText style={styles.avatarInitial}>
                 {thread.seedProfile.displayName.charAt(0)}
-              </Text>
+              </SolaText>
             </View>
-            <Text style={styles.authorName}>{thread.seedProfile.displayName}</Text>
+            <SolaText style={styles.authorName}>{thread.seedProfile.displayName}</SolaText>
           </>
         ) : (
           <Pressable
@@ -261,20 +261,20 @@ export default function ThreadDetail() {
               <Image source={{ uri: thread.author.avatarUrl }} style={styles.avatar} />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <Text style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</Text>
+                <SolaText style={styles.avatarInitial}>{thread.author.firstName?.charAt(0) ?? '?'}</SolaText>
               </View>
             )}
-            <Text style={styles.authorName}>
+            <SolaText style={styles.authorName}>
               {thread.author.firstName}
               {thread.author.username ? ` @${thread.author.username}` : ''}
-            </Text>
+            </SolaText>
           </Pressable>
         )}
-        <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
+        <SolaText style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</SolaText>
       </View>
 
       {/* Body */}
-      <Text style={styles.threadBody}>{thread.body}</Text>
+      <SolaText style={styles.threadBody}>{thread.body}</SolaText>
 
       {/* Actions row */}
       <View style={styles.actionsRow}>
@@ -288,12 +288,12 @@ export default function ThreadDetail() {
             size={16}
             color={isThreadHelpful ? colors.orange : colors.textMuted}
           />
-          <Text style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
+          <SolaText style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
             {thread.voteScore}
-          </Text>
-          <Text style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
+          </SolaText>
+          <SolaText style={[styles.helpfulText, isThreadHelpful && styles.helpfulTextActive]}>
             helpful
-          </Text>
+          </SolaText>
         </Pressable>
         <Pressable onPress={handleReportThread} hitSlop={8}>
           <Feather name="flag" size={15} color={colors.textMuted} />
@@ -301,9 +301,9 @@ export default function ThreadDetail() {
       </View>
 
       {/* Answers header */}
-      <Text style={styles.repliesHeader}>
+      <SolaText style={styles.repliesHeader}>
         {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-      </Text>
+      </SolaText>
     </View>
   );
 

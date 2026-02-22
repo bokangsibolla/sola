@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { Tag } from '@/data/types';
 
@@ -53,18 +54,18 @@ const TagsSection: React.FC<TagsSectionProps> = ({ tags }) => {
         const tc = tagColors(group as Tag['filterGroup']);
         return (
           <View key={group} style={styles.group}>
-            <Text style={styles.groupLabel}>
+            <SolaText style={styles.groupLabel}>
               {TAG_GROUP_LABELS[group] ?? group.toUpperCase()}
-            </Text>
+            </SolaText>
             <View style={styles.tagRow}>
               {groupTags.map((tag) => (
                 <View
                   key={tag.id}
                   style={[styles.pill, { backgroundColor: tc.bg }]}
                 >
-                  <Text style={[styles.pillText, { color: tc.fg }]}>
+                  <SolaText style={[styles.pillText, { color: tc.fg }]}>
                     {tag.label}
-                  </Text>
+                  </SolaText>
                 </View>
               ))}
             </View>

@@ -5,9 +5,9 @@ import {
   RefreshControl,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
@@ -99,7 +99,7 @@ export default function DiscoverScreen() {
             accessibilityLabel="Search destinations"
           >
             <Feather name="search" size={16} color={colors.textMuted} />
-            <Text style={styles.searchText}>Where to next?</Text>
+            <SolaText style={styles.searchText}>Where to next?</SolaText>
           </Pressable>
         </View>
 
@@ -122,14 +122,14 @@ export default function DiscoverScreen() {
                   ]}
                   onPress={() => toggleTag(chip.value)}
                 >
-                  <Text
+                  <SolaText
                     style={[
                       styles.filterChipText,
                       isActive && styles.filterChipTextActive,
                     ]}
                   >
                     {chip.label}
-                  </Text>
+                  </SolaText>
                 </Pressable>
               );
             })}
@@ -168,9 +168,9 @@ export default function DiscoverScreen() {
           </View>
         ) : (
           <View style={styles.emptyWrap}>
-            <Text style={styles.emptyText}>
+            <SolaText style={styles.emptyText}>
               No countries yet
-            </Text>
+            </SolaText>
           </View>
         )}
       </ScrollView>

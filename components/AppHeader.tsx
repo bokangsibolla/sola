@@ -1,6 +1,7 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@/constants/design';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
+import { colors, spacing } from '@/constants/design';
 
 interface AppHeaderProps {
   title: string;
@@ -21,15 +22,15 @@ export default function AppHeader({ title, subtitle, rightAction, rightComponent
       {leftComponent && <View style={styles.leftContainer}>{leftComponent}</View>}
       {hasTitle && (
         <View style={[styles.textContainer, !!leftComponent && styles.textContainerWithLeft]}>
-          <Text style={styles.title}>{title}</Text>
-          {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+          <SolaText variant="h1" style={styles.title}>{title}</SolaText>
+          {subtitle && <SolaText variant="caption" color={colors.textSecondary} style={styles.subtitle}>{subtitle}</SolaText>}
         </View>
       )}
       {!hasTitle && leftComponent && <View style={styles.spacer} pointerEvents="none" />}
       {rightComponent && <View style={styles.rightContainer}>{rightComponent}</View>}
       {!rightComponent && rightAction && (
         <Pressable onPress={rightAction.onPress}>
-          <Text style={styles.actionText}>{rightAction.label}</Text>
+          <SolaText variant="body" color={colors.orange} style={styles.actionText}>{rightAction.label}</SolaText>
         </Pressable>
       )}
     </View>
@@ -59,18 +60,12 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    ...typography.h1,
-    color: colors.textPrimary,
     marginBottom: 0,
   },
   subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
     marginTop: 2,
   },
   actionText: {
-    ...typography.body,
-    color: colors.orange,
     fontWeight: '500',
   },
 });

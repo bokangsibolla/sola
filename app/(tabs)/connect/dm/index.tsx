@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -13,7 +14,7 @@ import { usePaginatedData } from '@/hooks/usePaginatedData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { Conversation } from '@/data/types';
 import { getImageUrl } from '@/lib/image';
 
@@ -73,17 +74,17 @@ export default function DMListScreen() {
           </View>
 
           {/* Warm copy */}
-          <Text style={styles.emptyHeadline}>Your travel conversations</Text>
-          <Text style={styles.emptySubtext}>
+          <SolaText style={styles.emptyHeadline}>Your travel conversations</SolaText>
+          <SolaText variant="body" color={colors.textMuted} style={styles.emptySubtext}>
             Connect with fellow travelers heading your way
-          </Text>
+          </SolaText>
 
           {/* CTA to find travelers */}
           <Pressable
             style={styles.ctaButton}
             onPress={() => router.back()}
           >
-            <Text style={styles.ctaText}>Find travelers</Text>
+            <SolaText variant="button" color={colors.background}>Find travelers</SolaText>
           </Pressable>
         </View>
       ) : (
@@ -129,19 +130,19 @@ function ConversationRow({ convo, userId }: { convo: Conversation; userId: strin
       )}
       <View style={styles.rowText}>
         <View style={styles.rowTop}>
-          <Text style={styles.rowName}>{other.firstName}</Text>
-          <Text style={styles.rowTime}>{timeAgo(convo.lastMessageAt)}</Text>
+          <SolaText style={styles.rowName}>{other.firstName}</SolaText>
+          <SolaText style={styles.rowTime}>{timeAgo(convo.lastMessageAt)}</SolaText>
         </View>
-        <Text
+        <SolaText
           style={[styles.rowMessage, convo.unreadCount > 0 && styles.rowMessageUnread]}
           numberOfLines={1}
         >
           {convo.lastMessage}
-        </Text>
+        </SolaText>
       </View>
       {convo.unreadCount > 0 && (
         <View style={styles.badge}>
-          <Text style={styles.badgeText}>{convo.unreadCount}</Text>
+          <SolaText style={styles.badgeText}>{convo.unreadCount}</SolaText>
         </View>
       )}
     </Pressable>
@@ -178,9 +179,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   emptySubtext: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.xxl,
   },
   ctaButton: {
@@ -189,10 +188,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.button,
   },
-  ctaText: {
-    ...typography.button,
-    color: colors.background,
-  },
+  ctaText: {},
 
   /* ── Conversation rows ── */
   row: {

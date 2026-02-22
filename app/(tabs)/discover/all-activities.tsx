@@ -4,10 +4,10 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -76,24 +76,24 @@ export default function AllActivitiesScreen() {
         <View style={styles.listImageContainer}>
           {item.highlights && item.highlights.length > 0 && (
             <View style={styles.highlightBadge}>
-              <Text style={styles.highlightText} numberOfLines={1}>
+              <SolaText style={styles.highlightText} numberOfLines={1}>
                 {item.highlights[0]}
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>
         <View style={styles.listContent}>
-          <Text style={styles.listTitle} numberOfLines={2}>
+          <SolaText style={styles.listTitle} numberOfLines={2}>
             {item.name}
-          </Text>
-          <Text style={styles.listSubtitle}>{item.cityName}</Text>
+          </SolaText>
+          <SolaText style={styles.listSubtitle}>{item.cityName}</SolaText>
           {item.placeType && (
-            <Text style={styles.listType}>
+            <SolaText style={styles.listType}>
               {item.placeType.charAt(0).toUpperCase() + item.placeType.slice(1)}
-            </Text>
+            </SolaText>
           )}
           {item.estimatedDuration && (
-            <Text style={styles.listDuration}>{item.estimatedDuration}</Text>
+            <SolaText style={styles.listDuration}>{item.estimatedDuration}</SolaText>
           )}
         </View>
       </Pressable>
@@ -134,7 +134,7 @@ export default function AllActivitiesScreen() {
         ListEmptyComponent={
           loading ? null : (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No activities found</Text>
+              <SolaText style={styles.emptyText}>No activities found</SolaText>
             </View>
           )
         }

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { BudgetBreakdown as BudgetBreakdownType } from '@/data/types';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { extractLeadSentence } from './mappings';
@@ -56,13 +57,13 @@ function BudgetRow({ data, isLast }: { data: RowData; isLast: boolean }) {
   return (
     <View style={[styles.row, !isLast && styles.rowBorder]}>
       <View style={styles.rowLeft}>
-        <Text style={styles.emoji}>{data.emoji}</Text>
+        <SolaText style={styles.emoji}>{data.emoji}</SolaText>
         <View style={styles.rowText}>
           <View style={styles.rowTopLine}>
-            <Text style={styles.rowLabel}>{data.label}</Text>
-            <Text style={styles.rowRange}>{data.range}</Text>
+            <SolaText style={styles.rowLabel}>{data.label}</SolaText>
+            <SolaText style={styles.rowRange}>{data.range}</SolaText>
           </View>
-          <Text style={styles.rowNote}>{data.note}</Text>
+          <SolaText style={styles.rowNote}>{data.note}</SolaText>
         </View>
       </View>
     </View>
@@ -78,12 +79,12 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Budget</Text>
+      <SolaText style={styles.heading}>Budget</SolaText>
 
       {/* Daily total summary */}
       <View style={styles.summaryBar}>
-        <Text style={styles.summaryLabel}>Daily budget</Text>
-        <Text style={styles.summaryAmount}>${total.low}\u2013${total.high}</Text>
+        <SolaText style={styles.summaryLabel}>Daily budget</SolaText>
+        <SolaText style={styles.summaryAmount}>${total.low}\u2013${total.high}</SolaText>
       </View>
 
       {/* Category rows */}
@@ -96,15 +97,15 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
       {/* Money tip */}
       {moneyTip && (
         <View style={styles.tipRow}>
-          <Text style={styles.tipEmoji}>{'\u{1F4A1}'}</Text>
-          <Text style={styles.tipText}>{moneyTip}</Text>
+          <SolaText style={styles.tipEmoji}>{'\u{1F4A1}'}</SolaText>
+          <SolaText style={styles.tipText}>{moneyTip}</SolaText>
         </View>
       )}
 
       {/* Currency footer */}
-      <Text style={styles.currencyNote}>
+      <SolaText style={styles.currencyNote}>
         Prices in {budget.accommodation.currency || 'USD'}
-      </Text>
+      </SolaText>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { CategoryCount } from '@/data/city/types';
 
@@ -36,13 +37,13 @@ export function PlaceCategoryTabs({ categories, activeKey, onSelect }: Props) {
             onPress={() => onSelect(cat.key)}
             style={[styles.pill, active && styles.pillActive]}
           >
-            <Text style={[styles.pillText, active && styles.pillTextActive]}>
+            <SolaText style={[styles.pillText, active && styles.pillTextActive]}>
               {cat.emoji} {cat.label}
-            </Text>
+            </SolaText>
             <View style={[styles.countBadge, active && styles.countBadgeActive]}>
-              <Text style={[styles.countText, active && styles.countTextActive]}>
+              <SolaText style={[styles.countText, active && styles.countTextActive]}>
                 {cat.count}
-              </Text>
+              </SolaText>
             </View>
           </Pressable>
         );

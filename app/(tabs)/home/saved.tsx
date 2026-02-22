@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -68,13 +69,13 @@ function PlaceRow({
         </View>
       )}
       <View style={styles.placeContent}>
-        <Text style={styles.placeName} numberOfLines={1}>
+        <SolaText style={styles.placeName} numberOfLines={1}>
           {place.placeName}
-        </Text>
+        </SolaText>
         {place.cityName && (
-          <Text style={styles.placeCity} numberOfLines={1}>
+          <SolaText style={styles.placeCity} numberOfLines={1}>
             {place.cityName}
-          </Text>
+          </SolaText>
         )}
       </View>
       <Pressable
@@ -125,10 +126,10 @@ export default function SavedPlacesScreen() {
       {visiblePlaces.length === 0 ? (
         <View style={styles.emptyContainer}>
           <Feather name="bookmark" size={32} color={colors.textMuted} />
-          <Text style={styles.emptyTitle}>No saved places yet</Text>
-          <Text style={styles.emptyHint}>
+          <SolaText style={styles.emptyTitle}>No saved places yet</SolaText>
+          <SolaText style={styles.emptyHint}>
             Tap the bookmark icon on any place to save it here
-          </Text>
+          </SolaText>
         </View>
       ) : (
         <FlatList

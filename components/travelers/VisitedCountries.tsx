@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 import { getFlag } from '@/data/trips/helpers';
 import type { VisitedCountry } from '@/data/trips/tripApi';
 
@@ -22,15 +23,15 @@ export default function VisitedCountries({ countries }: VisitedCountriesProps) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.headline}>{countLabel}</Text>
+      <SolaText style={styles.headline}>{countLabel}</SolaText>
 
       {visible.map((c) => (
         <View key={c.countryIso2} style={styles.row}>
-          <Text style={styles.flag}>{getFlag(c.countryIso2)}</Text>
-          <Text style={styles.countryName}>{c.countryName}</Text>
-          <Text style={styles.tripCount}>
+          <SolaText style={styles.flag}>{getFlag(c.countryIso2)}</SolaText>
+          <SolaText style={styles.countryName}>{c.countryName}</SolaText>
+          <SolaText style={styles.tripCount}>
             {c.tripCount} {c.tripCount === 1 ? 'trip' : 'trips'}
-          </Text>
+          </SolaText>
         </View>
       ))}
 
@@ -40,9 +41,9 @@ export default function VisitedCountries({ countries }: VisitedCountriesProps) {
           onPress={() => setExpanded(true)}
           hitSlop={8}
         >
-          <Text style={styles.showMoreText}>
+          <SolaText style={styles.showMoreText}>
             Show all {countries.length} countries
-          </Text>
+          </SolaText>
           <Feather name="chevron-down" size={14} color={colors.orange} />
         </Pressable>
       )}
@@ -53,7 +54,7 @@ export default function VisitedCountries({ countries }: VisitedCountriesProps) {
           onPress={() => setExpanded(false)}
           hitSlop={8}
         >
-          <Text style={styles.showMoreText}>Show less</Text>
+          <SolaText style={styles.showMoreText}>Show less</SolaText>
           <Feather name="chevron-up" size={14} color={colors.orange} />
         </Pressable>
       )}

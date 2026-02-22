@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -62,24 +63,24 @@ export function TripCard({ trip, savedItemCount, cityImageUrl, status }: TripCar
 
         <View style={styles.statusPillContainer}>
           <View style={[styles.statusPill, isActive ? styles.statusActive : styles.statusUpcoming]}>
-            <Text style={[styles.statusText, isActive ? styles.statusTextActive : styles.statusTextUpcoming]}>
+            <SolaText style={[styles.statusText, isActive ? styles.statusTextActive : styles.statusTextUpcoming]}>
               {isActive ? 'Active' : 'Upcoming'}
-            </Text>
+            </SolaText>
           </View>
         </View>
 
         <View style={styles.content}>
-          <Text style={styles.title} numberOfLines={1}>
+          <SolaText style={styles.title} numberOfLines={1}>
             {displayTitle}
-          </Text>
+          </SolaText>
           <View style={styles.meta}>
             {dateRange ? (
-              <Text style={styles.metaText}>{dateRange}</Text>
+              <SolaText style={styles.metaText}>{dateRange}</SolaText>
             ) : null}
             {savedItemCount > 0 ? (
               <View style={styles.savedBadge}>
                 <Feather name="bookmark" size={12} color="rgba(255,255,255,0.8)" />
-                <Text style={styles.savedText}>{savedItemCount} saved</Text>
+                <SolaText style={styles.savedText}>{savedItemCount} saved</SolaText>
               </View>
             ) : null}
           </View>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface GoodToKnowProps {
@@ -11,12 +12,12 @@ const GoodToKnow: React.FC<GoodToKnowProps> = ({ considerations }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>GOOD TO KNOW</Text>
+      <SolaText style={styles.sectionLabel}>GOOD TO KNOW</SolaText>
       <View style={styles.list}>
         {considerations.map((item, index) => (
           <View key={index} style={styles.row}>
             <View style={styles.dot} />
-            <Text style={styles.text}>{item}</Text>
+            <SolaText style={styles.text}>{item}</SolaText>
           </View>
         ))}
       </View>

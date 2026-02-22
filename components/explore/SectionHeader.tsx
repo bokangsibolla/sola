@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, spacing } from '@/constants/design';
 
@@ -20,15 +21,15 @@ export default function SectionHeader({
   return (
     <View style={styles.container}>
       <View style={styles.textContainer}>
-        <Text style={[styles.title, isEditorial && styles.titleEditorial]}>
+        <SolaText style={[styles.title, isEditorial && styles.titleEditorial]}>
           {title}
-        </Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        </SolaText>
+        {subtitle && <SolaText style={styles.subtitle}>{subtitle}</SolaText>}
       </View>
 
       {onSeeAll && (
         <Pressable style={styles.seeAllButton} onPress={onSeeAll}>
-          <Text style={styles.seeAllText}>See all</Text>
+          <SolaText style={styles.seeAllText}>See all</SolaText>
           <Ionicons name="arrow-forward" size={14} color={colors.orange} />
         </Pressable>
       )}

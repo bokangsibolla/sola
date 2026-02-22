@@ -4,10 +4,10 @@ import {
   Modal,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -61,7 +61,7 @@ export function CurrencyPickerModal({
         <Pressable style={styles.backdrop} onPress={handleClose} />
         <View style={[styles.container, { paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.handle} />
-          <Text style={styles.title}>{t('currency.selectCurrency')}</Text>
+          <SolaText style={styles.title}>{t('currency.selectCurrency')}</SolaText>
 
           <View style={styles.searchContainer}>
             <Ionicons name="search" size={18} color={colors.textMuted} />
@@ -94,12 +94,12 @@ export function CurrencyPickerModal({
                   style={[styles.row, isSelected && styles.rowSelected]}
                   onPress={() => handleSelect(item.code)}
                 >
-                  <Text style={styles.symbol}>{item.symbol}</Text>
+                  <SolaText style={styles.symbol}>{item.symbol}</SolaText>
                   <View style={styles.labelContainer}>
-                    <Text style={[styles.code, isSelected && styles.codeSelected]}>
+                    <SolaText style={[styles.code, isSelected && styles.codeSelected]}>
                       {item.code}
-                    </Text>
-                    <Text style={styles.label}>{item.label}</Text>
+                    </SolaText>
+                    <SolaText style={styles.label}>{item.label}</SolaText>
                   </View>
                   {isSelected && (
                     <Ionicons name="checkmark-circle" size={20} color={colors.orange} />
@@ -108,7 +108,7 @@ export function CurrencyPickerModal({
               );
             }}
             ListEmptyComponent={
-              <Text style={styles.empty}>{t('currency.noCurrenciesFound')}</Text>
+              <SolaText style={styles.empty}>{t('currency.noCurrenciesFound')}</SolaText>
             }
           />
         </View>

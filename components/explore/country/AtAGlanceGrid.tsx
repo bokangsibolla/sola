@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { mapSoloLevel } from './mappings';
@@ -65,8 +66,8 @@ function Cell({
         !isBottom && styles.cellBorderBottom,
       ]}
     >
-      <Text style={styles.cellLabel}>{data.label}</Text>
-      <Text style={styles.cellValue} numberOfLines={2}>{data.value}</Text>
+      <SolaText style={styles.cellLabel}>{data.label}</SolaText>
+      <SolaText style={styles.cellValue} numberOfLines={2}>{data.value}</SolaText>
     </View>
   );
 }

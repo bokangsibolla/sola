@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { CityEvent } from '@/data/types';
 
@@ -37,29 +38,29 @@ export function EventCard({ event }: EventCardProps) {
         />
       ) : (
         <View style={[styles.cardImage, styles.cardImagePlaceholder]}>
-          <Text style={styles.placeholderIcon}>
+          <SolaText style={styles.placeholderIcon}>
             {event.eventType === 'festival' ? '\uD83C\uDF89' : '\uD83C\uDF1F'}
-          </Text>
+          </SolaText>
         </View>
       )}
       <View style={styles.cardBody}>
-        <Text style={styles.cardName} numberOfLines={2}>{event.name}</Text>
+        <SolaText style={styles.cardName} numberOfLines={2}>{event.name}</SolaText>
         <View style={styles.metaRow}>
-          <Text style={styles.dateText}>{dateLabel}</Text>
+          <SolaText style={styles.dateText}>{dateLabel}</SolaText>
           <View style={styles.typePill}>
-            <Text style={styles.typeText}>{EVENT_TYPE_LABELS[event.eventType]}</Text>
+            <SolaText style={styles.typeText}>{EVENT_TYPE_LABELS[event.eventType]}</SolaText>
           </View>
           {event.isFree && (
-            <Text style={styles.freeLabel}>Free</Text>
+            <SolaText style={styles.freeLabel}>Free</SolaText>
           )}
         </View>
         {event.description && (
-          <Text style={styles.description} numberOfLines={2}>{event.description}</Text>
+          <SolaText style={styles.description} numberOfLines={2}>{event.description}</SolaText>
         )}
         {event.soloTip && (
           <View style={styles.soloTipContainer}>
             <Ionicons name="shield-checkmark-outline" size={12} color={colors.greenSoft} />
-            <Text style={styles.soloTipText} numberOfLines={2}>{event.soloTip}</Text>
+            <SolaText style={styles.soloTipText} numberOfLines={2}>{event.soloTip}</SolaText>
           </View>
         )}
       </View>

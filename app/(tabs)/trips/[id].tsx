@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -166,7 +167,7 @@ export default function TripDetailScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <NavigationHeader title="Trip" parentTitle="Trips" />
-        <Text style={styles.notFound}>Trip not found</Text>
+        <SolaText style={styles.notFound}>Trip not found</SolaText>
       </View>
     );
   }
@@ -186,9 +187,9 @@ export default function TripDetailScreen() {
     <>
       {/* Route display */}
       <View style={styles.routeSection}>
-        <Text style={styles.routeText}>
+        <SolaText style={styles.routeText}>
           {flag} {routeText}
-        </Text>
+        </SolaText>
       </View>
 
       {/* Stat pills */}
@@ -252,7 +253,7 @@ export default function TripDetailScreen() {
               }}
             >
               <Ionicons name="trash-outline" size={18} color={colors.emergency} />
-              <Text style={[styles.menuItemText, { color: colors.emergency }]}>Delete trip</Text>
+              <SolaText style={[styles.menuItemText, { color: colors.emergency }]}>Delete trip</SolaText>
             </Pressable>
           </View>
         </>
@@ -277,7 +278,7 @@ export default function TripDetailScreen() {
           {hasDates && generating && (
             <View style={styles.generatingState}>
               <ActivityIndicator size="small" color={colors.orange} />
-              <Text style={styles.generatingText}>Setting up your itinerary...</Text>
+              <SolaText style={styles.generatingText}>Setting up your itinerary...</SolaText>
             </View>
           )}
 
@@ -285,10 +286,10 @@ export default function TripDetailScreen() {
           {!hasDates && (
             <View style={styles.emptyState}>
               <Ionicons name="calendar-outline" size={32} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>No itinerary yet</Text>
-              <Text style={styles.emptySubtitle}>
+              <SolaText style={styles.emptyTitle}>No itinerary yet</SolaText>
+              <SolaText style={styles.emptySubtitle}>
                 Add trip dates to generate your day-by-day plan
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>

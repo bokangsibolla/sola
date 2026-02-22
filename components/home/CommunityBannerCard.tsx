@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -33,8 +34,8 @@ export function CommunityBannerCard() {
           style={StyleSheet.absoluteFillObject}
         />
         <View style={styles.content}>
-          <Text style={styles.title}>Real stories from solo women</Text>
-          <Text style={styles.subtitle}>{'Join the conversation  \u2192'}</Text>
+          <SolaText style={styles.title}>Real stories from solo women</SolaText>
+          <SolaText style={styles.subtitle}>{'Join the conversation  \u2192'}</SolaText>
         </View>
       </Pressable>
     </View>

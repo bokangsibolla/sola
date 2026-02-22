@@ -4,12 +4,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useAuth } from '@/state/AuthContext';
 import { createTripEntry } from '@/data/trips/tripApi';
@@ -83,7 +83,7 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
     >
       <View style={[styles.sheet, { paddingTop: insets.top || spacing.lg }]}>
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Add entry</Text>
+          <SolaText variant="screenTitle">Add entry</SolaText>
           <Pressable onPress={onClose} hitSlop={12}>
             <Ionicons name="close" size={24} color={colors.textPrimary} />
           </Pressable>
@@ -95,7 +95,7 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
           showsVerticalScrollIndicator={false}
         >
           {/* Entry type selector */}
-          <Text style={styles.label}>What happened?</Text>
+          <SolaText style={styles.label}>What happened?</SolaText>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
@@ -113,10 +113,10 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
                     if (type !== 'comfort_check') setMood(null);
                   }}
                 >
-                  <Text style={styles.typeIcon}>{ENTRY_ICONS[type]}</Text>
-                  <Text style={[styles.typeLabel, isActive && styles.typeLabelActive]}>
+                  <SolaText style={styles.typeIcon}>{ENTRY_ICONS[type]}</SolaText>
+                  <SolaText style={[styles.typeLabel, isActive && styles.typeLabelActive]}>
                     {ENTRY_LABELS[type]}
-                  </Text>
+                  </SolaText>
                 </Pressable>
               );
             })}
@@ -124,7 +124,7 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
 
           {isComfortCheck ? (
             <>
-              <Text style={styles.label}>How are you feeling?</Text>
+              <SolaText style={styles.label}>How are you feeling?</SolaText>
               <View style={styles.moodRow}>
                 {MOOD_OPTIONS.map((m) => {
                   const mc = MOOD_COLORS[m];
@@ -140,9 +140,9 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
                       onPress={() => setMood(m)}
                     >
                       <View style={[styles.moodDot, { backgroundColor: mc.text }]} />
-                      <Text style={[styles.moodLabel, isActive && { color: mc.text }]}>
+                      <SolaText style={[styles.moodLabel, isActive && { color: mc.text }]}>
                         {mc.label}
-                      </Text>
+                      </SolaText>
                     </Pressable>
                   );
                 })}
@@ -186,7 +186,7 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
           {/* Privacy reassurance */}
           <View style={styles.privacyRow}>
             <Ionicons name="lock-closed" size={14} color={colors.textMuted} />
-            <Text style={styles.privacyText}>Private — only you can see this</Text>
+            <SolaText style={styles.privacyText}>Private — only you can see this</SolaText>
           </View>
 
           {/* Save button */}
@@ -195,9 +195,9 @@ export default function AddEntrySheet({ tripId, visible, onClose, onSaved }: Add
             onPress={handleSave}
             disabled={!canSave || saving}
           >
-            <Text style={styles.saveButtonText}>
+            <SolaText variant="button" color="#FFFFFF">
               {saving ? 'Saving...' : 'Save entry'}
-            </Text>
+            </SolaText>
           </Pressable>
         </ScrollView>
       </View>
@@ -218,11 +218,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
-  },
-  headerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
   },
   content: {
     flex: 1,
@@ -348,10 +343,5 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.4,
-  },
-  saveButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
 });

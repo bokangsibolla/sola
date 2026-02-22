@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface LocationConsentBannerProps {
   onEnable: () => void;
@@ -19,10 +20,10 @@ export default function LocationConsentBanner({
         <Feather name="map-pin" size={20} color={colors.orange} />
       </View>
       <View style={styles.textWrap}>
-        <Text style={styles.title}>Find travelers near you</Text>
-        <Text style={styles.description}>
+        <SolaText style={styles.title}>Find travelers near you</SolaText>
+        <SolaText style={styles.description}>
           Share your approximate location to see women in your area. Only your city is shown — never your exact position.
-        </Text>
+        </SolaText>
       </View>
       <View style={styles.actions}>
         <Pressable
@@ -30,12 +31,12 @@ export default function LocationConsentBanner({
           onPress={onEnable}
           disabled={loading}
         >
-          <Text style={styles.enableButtonText}>
+          <SolaText style={styles.enableButtonText}>
             {loading ? 'Finding...' : 'Enable'}
-          </Text>
+          </SolaText>
         </Pressable>
         <Pressable onPress={onDismiss} hitSlop={8}>
-          <Text style={styles.dismissText}>Not now</Text>
+          <SolaText style={styles.dismissText}>Not now</SolaText>
         </Pressable>
       </View>
     </View>

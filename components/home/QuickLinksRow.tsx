@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
@@ -61,10 +62,10 @@ export function QuickLinksRow({ activeTripId }: QuickLinksRowProps) {
           onPress={() => router.push(item.route as any)}
         >
           <View style={styles.textWrap}>
-            <Text style={[styles.label, { color: item.accentColor }]}>
+            <SolaText style={[styles.label, { color: item.accentColor }]}>
               {item.label}
-            </Text>
-            <Text style={styles.subtitle}>{item.subtitle}</Text>
+            </SolaText>
+            <SolaText style={styles.subtitle}>{item.subtitle}</SolaText>
           </View>
           <Feather name="chevron-right" size={18} color={item.accentColor} />
         </Pressable>

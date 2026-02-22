@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import Animated, {
   FadeIn,
   FadeOut,
@@ -103,14 +104,14 @@ const QuickTags: React.FC<QuickTagsProps> = ({ tags }) => {
               }}
               style={styles.tab}
             >
-              <Text
+              <SolaText
                 style={[
                   styles.tabText,
                   isActive && styles.tabTextActive,
                 ]}
               >
                 {TAB_LABELS[tab]}
-              </Text>
+              </SolaText>
             </Pressable>
           );
         })}
@@ -128,9 +129,9 @@ const QuickTags: React.FC<QuickTagsProps> = ({ tags }) => {
             key={tag.id}
             style={[styles.tagPill, { backgroundColor: tagColor.bg }]}
           >
-            <Text style={[styles.tagText, { color: tagColor.text }]}>
+            <SolaText style={[styles.tagText, { color: tagColor.text }]}>
               {tag.label}
-            </Text>
+            </SolaText>
           </View>
         ))}
       </Animated.View>

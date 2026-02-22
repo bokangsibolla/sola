@@ -1,6 +1,7 @@
 import { useGlobalSearchParams, useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 export default function NotFoundScreen() {
@@ -10,12 +11,12 @@ export default function NotFoundScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 40 }]}>
-      <Text style={styles.title}>Page not found</Text>
-      <Text style={styles.debug}>
+      <SolaText style={styles.title}>Page not found</SolaText>
+      <SolaText style={styles.debug}>
         Attempted: {JSON.stringify(params, null, 2)}
-      </Text>
+      </SolaText>
       <Pressable style={styles.button} onPress={() => router.replace('/')}>
-        <Text style={styles.buttonText}>Go home</Text>
+        <SolaText style={styles.buttonText}>Go home</SolaText>
       </Pressable>
     </View>
   );

@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
-import { LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutAnimation, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface WhyWomenChooseProps {
@@ -22,21 +23,21 @@ const WhyWomenChoose: React.FC<WhyWomenChooseProps> = ({ text }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>WHY WOMEN CHOOSE THIS</Text>
+      <SolaText style={styles.sectionLabel}>WHY WOMEN CHOOSE THIS</SolaText>
       <View style={styles.card}>
         <View style={styles.accentBar} />
         <View style={styles.textContainer}>
-          <Text
+          <SolaText
             style={styles.text}
             numberOfLines={!expanded && isLong ? COLLAPSED_LINES : undefined}
           >
             {text}
-          </Text>
+          </SolaText>
           {isLong && (
             <Pressable onPress={toggleExpanded} hitSlop={8}>
-              <Text style={styles.toggle}>
+              <SolaText style={styles.toggle}>
                 {expanded ? 'Show less' : 'Read full overview'}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
         </View>

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import { TYPE_DOT_COLOR, TYPE_LABEL } from '@/components/trips/blockTypeColors';
 import type { ItineraryBlockWithTags, TripDayWithBlocks } from '@/data/trips/itineraryTypes';
@@ -50,18 +51,18 @@ export const DayOverviewCard: React.FC<DayOverviewCardProps> = ({ day, onPress }
         {/* Header: Day label + date + chevron */}
         <View style={styles.headerRow}>
           <View style={styles.headerLeft}>
-            <Text style={styles.dayLabel}>Day {day.dayIndex}</Text>
+            <SolaText style={styles.dayLabel}>Day {day.dayIndex}</SolaText>
             {day.date != null && (
-              <Text style={styles.dateText}>{formatDate(day.date)}</Text>
+              <SolaText style={styles.dateText}>{formatDate(day.date)}</SolaText>
             )}
           </View>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </View>
 
         {day.title != null && (
-          <Text style={styles.title} numberOfLines={1}>
+          <SolaText style={styles.title} numberOfLines={1}>
             {day.title}
-          </Text>
+          </SolaText>
         )}
 
         {/* Block entry rows */}
@@ -71,7 +72,7 @@ export const DayOverviewCard: React.FC<DayOverviewCardProps> = ({ day, onPress }
               <BlockEntryRow key={block.id} block={block} />
             ))}
             {extraCount > 0 && (
-              <Text style={styles.moreText}>+{extraCount} more</Text>
+              <SolaText style={styles.moreText}>+{extraCount} more</SolaText>
             )}
           </View>
         )}
@@ -93,16 +94,16 @@ const BlockEntryRow: React.FC<{ block: ItineraryBlockWithTags }> = ({ block }) =
   return (
     <View style={styles.entryRow}>
       <View style={styles.entryInfo}>
-        <Text style={styles.entryName} numberOfLines={1}>{name}</Text>
+        <SolaText style={styles.entryName} numberOfLines={1}>{name}</SolaText>
         <View style={styles.entryTagRow}>
           {dotColor && (
             <View style={[styles.tagDot, { backgroundColor: dotColor }]} />
           )}
           {typeLabel && (
-            <Text style={styles.entryTagText}>{typeLabel}</Text>
+            <SolaText style={styles.entryTagText}>{typeLabel}</SolaText>
           )}
           {cost && (
-            <Text style={styles.costText}>{cost}</Text>
+            <SolaText style={styles.costText}>{cost}</SolaText>
           )}
         </View>
       </View>

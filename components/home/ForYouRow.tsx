@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -119,7 +120,7 @@ export function ForYouRow({ heroState, savedPlaces, personalizedCities }: ForYou
               style={StyleSheet.absoluteFillObject}
             />
             <View style={styles.textOverlay}>
-              <Text style={styles.name} numberOfLines={2}>{item.name}</Text>
+              <SolaText style={styles.name} numberOfLines={2}>{item.name}</SolaText>
             </View>
           </Pressable>
         ))}

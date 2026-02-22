@@ -7,10 +7,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -24,7 +24,7 @@ import { useData } from '@/hooks/useData';
 import { getProfileById, updateProfile } from '@/data/api';
 import { getSupportedCurrencies, getSymbol } from '@/lib/currency';
 import { getSupportedLanguages, changeLanguage, type SupportedLanguage } from '@/lib/i18n';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 
 const RELATIONSHIP_OPTIONS = ['Parent', 'Partner', 'Sibling', 'Friend'] as const;
@@ -251,50 +251,50 @@ export default function SettingsScreen() {
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Verification */}
-        <Text style={styles.sectionTitle}>Verification</Text>
+        <SolaText variant="label" style={styles.sectionTitle}>Verification</SolaText>
 
         <Pressable
           style={styles.settingRow}
           onPress={() => router.push('/(tabs)/home/verify' as any)}
         >
           <Ionicons name={verificationInfo.icon} size={18} color={verificationInfo.color} />
-          <Text style={styles.settingLabel}>Identity Verification</Text>
-          <Text style={[styles.settingValue, { color: verificationInfo.color }]}>
+          <SolaText variant="body" style={styles.settingLabel}>Identity Verification</SolaText>
+          <SolaText style={[styles.settingValue, { color: verificationInfo.color }]}>
             {verificationInfo.label}
-          </Text>
+          </SolaText>
           {verificationStatus !== 'verified' && (
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           )}
         </Pressable>
 
         {/* Emergency Contact */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Emergency contact</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Emergency contact</SolaText>
 
         {!ecEditing && hasEmergencyContact ? (
           <View style={styles.ecCard}>
             <View style={styles.ecCardHeader}>
               <View style={styles.ecCardInfo}>
-                <Text style={styles.ecCardName}>{ecName}</Text>
+                <SolaText style={styles.ecCardName}>{ecName}</SolaText>
                 {ecRelationship ? (
-                  <Text style={styles.ecCardRelationship}>
+                  <SolaText style={styles.ecCardRelationship}>
                     {RELATIONSHIP_LABELS[ecRelationship] ?? ecRelationship}
-                  </Text>
+                  </SolaText>
                 ) : null}
               </View>
-              <Text style={styles.ecCardPhone}>{ecPhone}</Text>
+              <SolaText style={styles.ecCardPhone}>{ecPhone}</SolaText>
             </View>
             <View style={styles.ecCardActions}>
               <Pressable
                 style={styles.ecEditBtn}
                 onPress={() => setEcEditing(true)}
               >
-                <Text style={styles.ecEditBtnText}>Edit</Text>
+                <SolaText style={styles.ecEditBtnText}>Edit</SolaText>
               </Pressable>
               <Pressable
                 style={styles.ecRemoveBtn}
                 onPress={handleClearEmergencyContact}
               >
-                <Text style={styles.ecRemoveBtnText}>Remove</Text>
+                <SolaText style={styles.ecRemoveBtnText}>Remove</SolaText>
               </Pressable>
             </View>
           </View>
@@ -322,9 +322,9 @@ export default function SettingsScreen() {
                 )
               }
             >
-              <Text style={ecRelationship ? styles.ecPickerValue : styles.ecPickerPlaceholder}>
+              <SolaText style={ecRelationship ? styles.ecPickerValue : styles.ecPickerPlaceholder}>
                 {ecRelationship ? RELATIONSHIP_LABELS[ecRelationship] : 'Relationship'}
-              </Text>
+              </SolaText>
               <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
             </Pressable>
             <TextInput
@@ -346,9 +346,9 @@ export default function SettingsScreen() {
                   onPress={handleSaveEmergencyContact}
                   disabled={!ecName.trim() || !ecPhone.trim() || ecSaving}
                 >
-                  <Text style={styles.ecSaveBtnText}>
+                  <SolaText style={styles.ecSaveBtnText}>
                     {ecSaving ? 'Saving...' : 'Save contact'}
-                  </Text>
+                  </SolaText>
                 </Pressable>
                 {hasEmergencyContact && (
                   <Pressable
@@ -360,7 +360,7 @@ export default function SettingsScreen() {
                       setEcEditing(false);
                     }}
                   >
-                    <Text style={styles.ecCancelBtnText}>Cancel</Text>
+                    <SolaText style={styles.ecCancelBtnText}>Cancel</SolaText>
                   </Pressable>
                 )}
               </View>
@@ -368,29 +368,29 @@ export default function SettingsScreen() {
           </View>
         )}
 
-        <Text style={styles.ecHint}>
+        <SolaText style={styles.ecHint}>
           Shown on your trip safety cards for quick access
-        </Text>
+        </SolaText>
 
         {/* Preferences */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Preferences</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Preferences</SolaText>
 
         <Pressable style={styles.settingRow} onPress={handleCurrencyPicker}>
           <Ionicons name="wallet-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Currency</Text>
-          <Text style={styles.settingValue}>{getSymbol(currentCurrency)} {currentCurrency}</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Currency</SolaText>
+          <SolaText style={styles.settingValue}>{getSymbol(currentCurrency)} {currentCurrency}</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
         <Pressable style={styles.settingRow} onPress={handleLanguagePicker}>
           <Ionicons name="language-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Language</Text>
-          <Text style={styles.settingValue}>{languageLabel}</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Language</SolaText>
+          <SolaText style={styles.settingValue}>{languageLabel}</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
         {/* Privacy */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Privacy</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Privacy</SolaText>
 
         <Pressable
           style={styles.settingRow}
@@ -404,8 +404,8 @@ export default function SettingsScreen() {
           }
         >
           <Ionicons name="person-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Profile visibility</Text>
-          <Text style={styles.settingValue}>{VISIBILITY_LABELS[privacy.profileVisibility]}</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Profile visibility</SolaText>
+          <SolaText style={styles.settingValue}>{VISIBILITY_LABELS[privacy.profileVisibility]}</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
@@ -421,35 +421,35 @@ export default function SettingsScreen() {
           }
         >
           <Ionicons name="airplane-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Trip visibility</Text>
-          <Text style={styles.settingValue}>{VISIBILITY_LABELS[privacy.tripVisibility]}</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Trip visibility</SolaText>
+          <SolaText style={styles.settingValue}>{VISIBILITY_LABELS[privacy.tripVisibility]}</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
         {/* About */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>About</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>About</SolaText>
 
         <View style={styles.settingRow}>
           <Ionicons name="information-circle-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>About Sola</Text>
-          <Text style={styles.settingValue}>Women-first solo travel</Text>
+          <SolaText variant="body" style={styles.settingLabel}>About Sola</SolaText>
+          <SolaText style={styles.settingValue}>Women-first solo travel</SolaText>
         </View>
 
         <View style={styles.settingRow}>
           <Ionicons name="code-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Version</Text>
-          <Text style={styles.settingValue}>1.0.0</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Version</SolaText>
+          <SolaText style={styles.settingValue}>1.0.0</SolaText>
         </View>
 
         {/* Legal */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Legal</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Legal</SolaText>
 
         <Pressable
           style={styles.settingRow}
           onPress={() => Linking.openURL(PRIVACY_POLICY_URL)}
         >
           <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Privacy Policy</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Privacy Policy</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
@@ -458,26 +458,26 @@ export default function SettingsScreen() {
           onPress={() => Linking.openURL(TERMS_URL)}
         >
           <Ionicons name="document-text-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Terms of Service</Text>
+          <SolaText variant="body" style={styles.settingLabel}>Terms of Service</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
         {/* Account */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Account</Text>
+        <SolaText variant="label" style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Account</SolaText>
 
         <Pressable
           style={styles.settingRow}
           onPress={() => router.push('/(tabs)/home/delete-account')}
         >
           <Ionicons name="trash-outline" size={18} color="#E53E3E" />
-          <Text style={[styles.settingLabel, { color: '#E53E3E' }]}>Delete Account</Text>
+          <SolaText variant="body" color="#E53E3E" style={styles.settingLabel}>Delete Account</SolaText>
           <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
         </Pressable>
 
         {/* Danger zone */}
         <View style={{ marginTop: spacing.xl }}>
           <Pressable style={styles.logoutButton} onPress={handleLogout}>
-            <Text style={styles.logoutText}>Log out</Text>
+            <SolaText style={styles.logoutText}>Log out</SolaText>
           </Pressable>
         </View>
 
@@ -498,8 +498,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
     marginBottom: spacing.md,
   },
   settingRow: {
@@ -511,8 +509,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderDefault,
   },
   settingLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
     flex: 1,
   },
   settingValue: {

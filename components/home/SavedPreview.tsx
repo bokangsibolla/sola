@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,14 +28,14 @@ export function SavedPreview({ places }: SavedPreviewProps) {
     >
       <View style={styles.left}>
         <View style={styles.titleRow}>
-          <Text style={styles.title}>Saved places</Text>
+          <SolaText style={styles.title}>Saved places</SolaText>
           <Feather name="chevron-right" size={16} color={colors.textSecondary} />
         </View>
-        <Text style={styles.subtitle}>
+        <SolaText style={styles.subtitle}>
           {count > 0
             ? `${count} ${count === 1 ? 'place' : 'places'} on your shortlist`
             : 'Bookmark places as you explore'}
-        </Text>
+        </SolaText>
       </View>
 
       {count > 0 && (

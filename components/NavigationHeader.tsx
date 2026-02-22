@@ -2,14 +2,14 @@ import React from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { NavCrumb } from '@/hooks/useNavContext';
-import { colors, fonts, spacing, typography } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,7 +80,7 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
               contentFit="contain"
             />
           ) : (
-            <Text style={styles.rootTitle}>{title}</Text>
+            <SolaText variant="tabRootTitle">{title}</SolaText>
           )}
           <View style={styles.actionsRight}>{rightActions}</View>
         </View>
@@ -117,9 +117,9 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
 
         {/* Center: title (absolutely positioned for true centering) */}
         <View style={styles.titleContainer} pointerEvents="none">
-          <Text style={styles.pushTitle} numberOfLines={1}>
+          <SolaText style={styles.pushTitle} numberOfLines={1}>
             {title}
-          </Text>
+          </SolaText>
         </View>
 
         {/* Right: actions */}
@@ -159,10 +159,6 @@ const styles = StyleSheet.create({
   logo: {
     height: LOGO_HEIGHT,
     width: LOGO_WIDTH,
-  },
-  rootTitle: {
-    ...typography.tabRootTitle,
-    color: colors.textPrimary,
   },
 
   // ── Push / detail row ───────────────────────────────────────────

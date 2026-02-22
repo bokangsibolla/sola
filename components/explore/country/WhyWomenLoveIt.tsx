@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, StyleSheet, UIManager, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing } from '@/constants/design';
 import { StructuredContent } from './StructuredContent';
@@ -33,16 +34,16 @@ export function WhyWomenLoveIt({ country }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Why women love it</Text>
+      <SolaText style={styles.heading}>Why women love it</SolaText>
       <StructuredContent markdown={displayText} maxItems={expanded ? 8 : 4} />
       {hasMore && !expanded && (
         <Pressable onPress={toggle} hitSlop={8}>
-          <Text style={styles.readMore}>Read full overview</Text>
+          <SolaText style={styles.readMore}>Read full overview</SolaText>
         </Pressable>
       )}
       {expanded && hasMore && (
         <Pressable onPress={toggle} hitSlop={8}>
-          <Text style={styles.readMore}>Show less</Text>
+          <SolaText style={styles.readMore}>Show less</SolaText>
         </Pressable>
       )}
     </View>

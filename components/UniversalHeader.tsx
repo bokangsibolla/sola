@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   Pressable,
   StyleSheet,
   Modal,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import MenuButton from '@/components/MenuButton';
@@ -54,14 +54,14 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
     if (item === 'ellipsis') {
       return (
         <React.Fragment key="ellipsis">
-          <Text style={styles.separator}>/</Text>
+          <SolaText style={styles.separator}>/</SolaText>
           <Pressable
             onPress={() => setOverflowVisible(true)}
             hitSlop={8}
             accessibilityRole="button"
             accessibilityLabel="Show hidden breadcrumbs"
           >
-            <Text style={styles.ellipsis}>…</Text>
+            <SolaText style={styles.ellipsis}>…</SolaText>
           </Pressable>
         </React.Fragment>
       );
@@ -72,20 +72,20 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
 
     return (
       <React.Fragment key={`${crumb.label}-${index}`}>
-        {index > 0 && <Text style={styles.separator}>/</Text>}
+        {index > 0 && <SolaText style={styles.separator}>/</SolaText>}
         {isTappable ? (
           <Pressable onPress={crumb.onPress} hitSlop={4}>
-            <Text style={styles.crumbActive} numberOfLines={1}>
+            <SolaText style={styles.crumbActive} numberOfLines={1}>
               {crumb.label}
-            </Text>
+            </SolaText>
           </Pressable>
         ) : (
-          <Text
+          <SolaText
             style={isLast ? styles.crumbCurrent : styles.crumbActive}
             numberOfLines={1}
           >
             {crumb.label}
-          </Text>
+          </SolaText>
         )}
       </React.Fragment>
     );
@@ -137,21 +137,21 @@ const UniversalHeader: React.FC<UniversalHeaderProps> = ({
           onPress={() => setOverflowVisible(false)}
         >
           <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Navigation</Text>
+            <SolaText style={styles.modalTitle}>Navigation</SolaText>
             {hiddenCrumbs.map((crumb, index) => (
               <Pressable
                 key={`hidden-${crumb.label}-${index}`}
                 style={styles.modalItem}
                 onPress={() => handleHiddenCrumbPress(crumb)}
               >
-                <Text
+                <SolaText
                   style={[
                     styles.modalItemText,
                     crumb.onPress != null && styles.modalItemTextActive,
                   ]}
                 >
                   {crumb.label}
-                </Text>
+                </SolaText>
               </Pressable>
             ))}
           </View>

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface LocationContextProps {
@@ -11,9 +12,9 @@ const LocationContext: React.FC<LocationContextProps> = ({ text }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>NEIGHBORHOOD</Text>
+      <SolaText style={styles.sectionLabel}>NEIGHBORHOOD</SolaText>
       <View style={styles.card}>
-        <Text style={styles.text}>{text}</Text>
+        <SolaText style={styles.text}>{text}</SolaText>
       </View>
     </View>
   );

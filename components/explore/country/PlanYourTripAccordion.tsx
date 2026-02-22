@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, UIManager, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import type { Country, PlaceWithCity } from '@/data/types';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -123,11 +124,11 @@ function AccordionRow({ item, country }: { item: AccordionItem; country: Country
     <View style={styles.row}>
       <Pressable onPress={toggle} style={styles.rowHeader} hitSlop={4}>
         <View style={styles.rowTitleGroup}>
-          <Text style={styles.rowTitle}>{item.title}</Text>
+          <SolaText style={styles.rowTitle}>{item.title}</SolaText>
           {!expanded && (
-            <Text style={styles.rowPreview} numberOfLines={1}>
+            <SolaText style={styles.rowPreview} numberOfLines={1}>
               {item.preview}
-            </Text>
+            </SolaText>
           )}
         </View>
         <Ionicons
@@ -150,7 +151,7 @@ function AccordionRow({ item, country }: { item: AccordionItem; country: Country
           {hasPlaces && (
             <View style={styles.placesContainer}>
               {item.placesLabel && (
-                <Text style={styles.placesLabel}>{item.placesLabel}</Text>
+                <SolaText style={styles.placesLabel}>{item.placesLabel}</SolaText>
               )}
               <ScrollView
                 horizontal
@@ -176,7 +177,7 @@ export function PlanYourTripAccordion({ country, healthPlaces }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Plan your trip</Text>
+      <SolaText style={styles.heading}>Plan your trip</SolaText>
       <View style={styles.card}>
         {items.map((item, index) => (
           <View key={item.key}>

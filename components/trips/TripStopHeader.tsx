@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { formatDayDate } from '@/data/trips/helpers';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface TripStopHeaderProps {
@@ -28,12 +29,12 @@ export const TripStopHeader: React.FC<TripStopHeaderProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>
+      <SolaText style={styles.text}>
         {cityName.toUpperCase()}
         {dateRange != null && (
-          <Text style={styles.dateRange}> {'\u00B7'} {dateRange}</Text>
+          <SolaText style={styles.dateRange}> {'\u00B7'} {dateRange}</SolaText>
         )}
-      </Text>
+      </SolaText>
     </View>
   );
 };

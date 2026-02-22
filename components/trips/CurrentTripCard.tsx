@@ -1,9 +1,10 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getCityById } from '@/data/api';
@@ -57,18 +58,18 @@ export default function CurrentTripCard({ trip }: CurrentTripCardProps) {
         <View style={styles.overlay}>
           <View style={styles.statusRow}>
             <View style={[styles.statusPill, { backgroundColor: STATUS_COLORS.active.bg }]}>
-              <Text style={[styles.statusText, { color: STATUS_COLORS.active.text }]}>
+              <SolaText style={[styles.statusText, { color: STATUS_COLORS.active.text }]}>
                 Active{dayNum ? ` · Day ${dayNum}` : ''}
-              </Text>
+              </SolaText>
             </View>
           </View>
-          <Text style={styles.title} numberOfLines={1}>
+          <SolaText style={styles.title} numberOfLines={1}>
             {trip.title || trip.destinationName}
-          </Text>
-          <Text style={styles.subtitle} numberOfLines={1}>
+          </SolaText>
+          <SolaText style={styles.subtitle} numberOfLines={1}>
             {flag} {stopsText} · {trip.nights} {trip.nights === 1 ? 'night' : 'nights'}
-          </Text>
-          <Text style={styles.dates}>{dateText}</Text>
+          </SolaText>
+          <SolaText style={styles.dates}>{dateText}</SolaText>
         </View>
       </Pressable>
 
@@ -80,7 +81,7 @@ export default function CurrentTripCard({ trip }: CurrentTripCardProps) {
             onPress={() => router.push(`/trips/${trip.id}?tab=${action.tab}`)}
           >
             <Ionicons name={action.icon} size={16} color={colors.orange} />
-            <Text style={styles.actionText}>{action.label}</Text>
+            <SolaText style={styles.actionText}>{action.label}</SolaText>
           </Pressable>
         ))}
       </View>

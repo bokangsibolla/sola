@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { CityArea } from '@/data/types';
@@ -34,7 +35,7 @@ export function PlaceFilters({ areas, selectedAreaId, onAreaSelect, sortBy, onSo
               onPress={() => onAreaSelect(null)}
               style={[styles.chip, !selectedAreaId && styles.chipActive]}
             >
-              <Text style={[styles.chipText, !selectedAreaId && styles.chipTextActive]}>All areas</Text>
+              <SolaText style={[styles.chipText, !selectedAreaId && styles.chipTextActive]}>All areas</SolaText>
             </Pressable>
             {areas.map((area) => {
               const active = area.id === selectedAreaId;
@@ -44,7 +45,7 @@ export function PlaceFilters({ areas, selectedAreaId, onAreaSelect, sortBy, onSo
                   onPress={() => onAreaSelect(active ? null : area.id)}
                   style={[styles.chip, active && styles.chipActive]}
                 >
-                  <Text style={[styles.chipText, active && styles.chipTextActive]}>{area.name}</Text>
+                  <SolaText style={[styles.chipText, active && styles.chipTextActive]}>{area.name}</SolaText>
                 </Pressable>
               );
             })}
@@ -70,7 +71,7 @@ export function PlaceFilters({ areas, selectedAreaId, onAreaSelect, sortBy, onSo
                   color={active ? colors.orange : colors.textMuted}
                 />
               )}
-              <Text style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</Text>
+              <SolaText style={[styles.chipText, active && styles.chipTextActive]}>{opt.label}</SolaText>
             </Pressable>
           );
         })}

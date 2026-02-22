@@ -4,9 +4,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,9 +81,9 @@ const AccommodationHero: React.FC<AccommodationHeroProps> = ({
 
           {/* Category pill — top left */}
           <View style={styles.categoryPill}>
-            <Text style={styles.categoryText}>
+            <SolaText style={styles.categoryText}>
               {formatCategory(accommodation.placeType)}
-            </Text>
+            </SolaText>
           </View>
 
           {/* Save button — top right */}
@@ -103,29 +103,29 @@ const AccommodationHero: React.FC<AccommodationHeroProps> = ({
           {/* Counter pill */}
           {images.length > 1 && (
             <View style={styles.counterPill}>
-              <Text style={styles.counterText}>
+              <SolaText style={styles.counterText}>
                 {activeIndex + 1}/{images.length}
-              </Text>
+              </SolaText>
             </View>
           )}
 
           {/* Overlay content */}
           <View style={styles.overlayContent}>
-            <Text style={styles.heroName}>{accommodation.name}</Text>
+            <SolaText style={styles.heroName}>{accommodation.name}</SolaText>
             <View style={styles.metaRow}>
               {accommodation.pricePerNight && (
-                <Text style={styles.heroPrice}>
+                <SolaText style={styles.heroPrice}>
                   {accommodation.pricePerNight}/night
-                </Text>
+                </SolaText>
               )}
               {location.length > 0 && (
-                <Text style={styles.heroLocation}>{location}</Text>
+                <SolaText style={styles.heroLocation}>{location}</SolaText>
               )}
             </View>
             {accommodation.womenOnly && (
               <View style={styles.womenOnlyBadge}>
                 <Ionicons name="shield-checkmark" size={12} color={colors.greenSoft} />
-                <Text style={styles.womenOnlyText}>Women Only</Text>
+                <SolaText style={styles.womenOnlyText}>Women Only</SolaText>
               </View>
             )}
           </View>

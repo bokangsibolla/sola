@@ -1,4 +1,5 @@
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,9 +24,9 @@ function CityListCard({ city }: { city: City }) {
         <View style={[styles.cardImage, styles.cardPlaceholder]} />
       )}
       <View style={styles.cardBody}>
-        <Text style={styles.cardName}>{city.name}</Text>
+        <SolaText style={styles.cardName}>{city.name}</SolaText>
         {city.shortBlurb && (
-          <Text style={styles.cardBlurb} numberOfLines={2}>{city.shortBlurb}</Text>
+          <SolaText style={styles.cardBlurb} numberOfLines={2}>{city.shortBlurb}</SolaText>
         )}
       </View>
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} style={styles.cardChevron} />
@@ -54,10 +55,10 @@ export default function CountryCitiesScreen() {
       <View style={styles.nav}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backButton}>
           <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backLabel}>{countryName || 'Back'}</Text>
+          <SolaText style={styles.backLabel}>{countryName || 'Back'}</SolaText>
         </Pressable>
       </View>
-      <Text style={styles.screenTitle}>Cities in {countryName}</Text>
+      <SolaText style={styles.screenTitle}>Cities in {countryName}</SolaText>
       <FlatList
         data={cities ?? []}
         keyExtractor={(city) => city.slug}

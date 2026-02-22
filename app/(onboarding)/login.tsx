@@ -5,10 +5,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -197,8 +197,8 @@ export default function LoginScreen() {
 
       {/* Headline */}
       <View style={styles.headlineBlock}>
-        <Text style={styles.headline}>Welcome back</Text>
-        <Text style={styles.subtitle}>Log in to your account</Text>
+        <SolaText style={styles.headline}>Welcome back</SolaText>
+        <SolaText style={styles.subtitle}>Log in to your account</SolaText>
       </View>
 
       {/* Content */}
@@ -214,8 +214,8 @@ export default function LoginScreen() {
               <ActivityIndicator size="small" color={colors.textMuted} />
             ) : (
               <>
-                <Text style={styles.googleIcon}>G</Text>
-                <Text style={styles.socialText}>Continue with Google</Text>
+                <SolaText style={styles.googleIcon}>G</SolaText>
+                <SolaText style={styles.socialText}>Continue with Google</SolaText>
               </>
             )}
           </Pressable>
@@ -230,7 +230,7 @@ export default function LoginScreen() {
               ) : (
                 <>
                   <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                  <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+                  <SolaText style={[styles.socialText, styles.appleText]}>Continue with Apple</SolaText>
                 </>
               )}
             </Pressable>
@@ -240,7 +240,7 @@ export default function LoginScreen() {
         {/* Divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>or</Text>
+          <SolaText style={styles.dividerText}>or</SolaText>
           <View style={styles.dividerLine} />
         </View>
 
@@ -286,11 +286,11 @@ export default function LoginScreen() {
         </View>
 
         {fieldError ? (
-          <Text style={styles.errorText}>{fieldError}</Text>
+          <SolaText style={styles.errorText}>{fieldError}</SolaText>
         ) : null}
 
         <Pressable onPress={handleForgotPassword} style={styles.forgotButton} hitSlop={8}>
-          <Text style={styles.forgotText}>Forgot password?</Text>
+          <SolaText style={styles.forgotText}>Forgot password?</SolaText>
         </Pressable>
       </View>
 
@@ -298,9 +298,9 @@ export default function LoginScreen() {
       <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, Platform.OS === 'android' ? 64 : 0) + 16 }]}>
         <PrimaryButton label="Log in" onPress={handleLogin} disabled={!canLogin} />
         <View style={styles.signupRow}>
-          <Text style={styles.signupLabel}>New here? </Text>
+          <SolaText style={styles.signupLabel}>New here? </SolaText>
           <Pressable onPress={() => router.back()}>
-            <Text style={styles.signupLink}>Create account</Text>
+            <SolaText style={styles.signupLink}>Create account</SolaText>
           </Pressable>
         </View>
       </View>

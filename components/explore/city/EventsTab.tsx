@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { ScrollView, StyleSheet, View, ActivityIndicator } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getEventsByCity } from '@/data/api';
@@ -61,8 +62,8 @@ export function EventsTab({ cityId, defaultMonth }: EventsTabProps) {
         ))
       ) : (
         <View style={styles.emptyContainer}>
-          <Text style={styles.emptyTitle}>No events this month</Text>
-          <Text style={styles.emptySubtitle}>Try selecting a different month to see what's happening</Text>
+          <SolaText style={styles.emptyTitle}>No events this month</SolaText>
+          <SolaText style={styles.emptySubtitle}>Try selecting a different month to see what's happening</SolaText>
         </View>
       )}
     </ScrollView>

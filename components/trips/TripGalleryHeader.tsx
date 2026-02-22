@@ -1,8 +1,9 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface StopCoord {
@@ -89,7 +90,7 @@ export const TripGalleryHeader: React.FC<TripGalleryHeaderProps> = ({
       ) : (
         <View style={styles.mapPlaceholder}>
           <Ionicons name="map-outline" size={20} color={colors.textMuted} />
-          <Text style={styles.mapPlaceholderText}>Map preview</Text>
+          <SolaText style={styles.mapPlaceholderText}>Map preview</SolaText>
         </View>
       )}
 
@@ -97,14 +98,14 @@ export const TripGalleryHeader: React.FC<TripGalleryHeaderProps> = ({
       <View style={styles.titleSection}>
         <View style={styles.statusRow}>
           <View style={[styles.statusPill, { backgroundColor: statusStyle.bg }]}>
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
+            <SolaText style={[styles.statusText, { color: statusStyle.text }]}>
               {statusStyle.label}
               {dayNum ? ` \u00B7 Day ${dayNum}` : ''}
-            </Text>
+            </SolaText>
           </View>
         </View>
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
-        <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+        <SolaText style={styles.title} numberOfLines={1}>{title}</SolaText>
+        <SolaText style={styles.subtitle} numberOfLines={1}>{subtitle}</SolaText>
       </View>
     </View>
   );

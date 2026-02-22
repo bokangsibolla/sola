@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { Pressable, StyleSheet, View, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { useTripMatches, TripMatchWithProfile } from '@/data/trips/useTripMatches';
 import { formatDateShort } from '@/data/trips/helpers';
@@ -19,16 +20,16 @@ function MatchContext({ match }: { match: TripMatchWithProfile }) {
       ? `, ${formatDateShort(match.overlapStart)}–${formatDateShort(match.overlapEnd)}`
       : '';
     return (
-      <Text style={styles.contextText}>
+      <SolaText style={styles.contextText}>
         You'll both be in {match.overlapCity}{dateRange}
-      </Text>
+      </SolaText>
     );
   }
   if ((match.theirStyleTags ?? []).length > 0) {
     return (
-      <Text style={styles.contextText}>
+      <SolaText style={styles.contextText}>
         Similar style: {match.theirStyleTags.slice(0, 3).join(', ')}
-      </Text>
+      </SolaText>
     );
   }
   return null;
@@ -45,18 +46,18 @@ export default function PeopleTab({ tripId, matchingOptIn, onToggleMatching }: P
         <View style={styles.iconCircle}>
           <Ionicons name="lock-closed-outline" size={28} color={colors.textMuted} />
         </View>
-        <Text style={styles.stateTitle}>Traveler matching is off</Text>
-        <Text style={styles.stateBody}>
+        <SolaText variant="label" style={styles.stateTitle}>Traveler matching is off</SolaText>
+        <SolaText variant="caption" style={styles.stateBody}>
           When you turn on matching, Sola will recommend travelers who overlap your route.
-        </Text>
-        <Text style={styles.consentText}>
+        </SolaText>
+        <SolaText style={styles.consentText}>
           Only your name, photo, and travel style are shared — never your journal or exact location.
-        </Text>
+        </SolaText>
         <Pressable
           style={({ pressed }) => [styles.enableButton, pressed && styles.pressed]}
           onPress={onToggleMatching}
         >
-          <Text style={styles.enableButtonText}>Turn on matching</Text>
+          <SolaText variant="button" color="#FFFFFF">Turn on matching</SolaText>
         </Pressable>
       </View>
     );
@@ -78,10 +79,10 @@ export default function PeopleTab({ tripId, matchingOptIn, onToggleMatching }: P
         <View style={styles.iconCircle}>
           <Ionicons name="people-outline" size={28} color={colors.textMuted} />
         </View>
-        <Text style={styles.stateTitle}>No travelers on your route yet</Text>
-        <Text style={styles.stateBody}>
+        <SolaText variant="label" style={styles.stateTitle}>No travelers on your route yet</SolaText>
+        <SolaText variant="caption" style={styles.stateBody}>
           We'll let you know when someone with overlapping dates and cities appears.
-        </Text>
+        </SolaText>
       </View>
     );
   }
@@ -89,7 +90,7 @@ export default function PeopleTab({ tripId, matchingOptIn, onToggleMatching }: P
   // State 3: Matching ON, has matches
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>Travelers on your route</Text>
+      <SolaText variant="label" style={styles.sectionTitle}>Travelers on your route</SolaText>
       {matches.map((match) => (
         <View key={match.theirUserId} style={styles.matchCard}>
           <TravelerCard
@@ -110,7 +111,7 @@ export default function PeopleTab({ tripId, matchingOptIn, onToggleMatching }: P
       ))}
       <View style={styles.footer}>
         <Ionicons name="information-circle-outline" size={14} color={colors.textMuted} />
-        <Text style={styles.footerText}>Only showing travelers who also opted in</Text>
+        <SolaText style={styles.footerText}>Only showing travelers who also opted in</SolaText>
       </View>
     </View>
   );
@@ -135,18 +136,11 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   stateTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
     marginBottom: spacing.sm,
     textAlign: 'center',
   },
   stateBody: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 20,
     marginBottom: spacing.md,
   },
   consentText: {
@@ -167,15 +161,7 @@ const styles = StyleSheet.create({
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
   },
-  enableButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
-  },
   sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
   matchCard: {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import {
   View,
-  Text,
   Pressable,
   TextInput,
   Modal,
@@ -11,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 import { reportContent } from '@/data/community/communityApi';
 import type { CommunityEntityType } from '@/data/community/types';
 
@@ -67,8 +67,8 @@ export default function ReportSheet({
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={[styles.container, { paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Report content</Text>
-          <Text style={styles.subtitle}>Why are you reporting this?</Text>
+          <SolaText style={styles.title}>Report content</SolaText>
+          <SolaText style={styles.subtitle}>Why are you reporting this?</SolaText>
 
           <View style={styles.reasonRow}>
             {REASONS.map((r) => (
@@ -77,9 +77,9 @@ export default function ReportSheet({
                 onPress={() => setSelectedReason(r.value)}
                 style={[styles.pill, selectedReason === r.value && styles.pillActive]}
               >
-                <Text style={[styles.pillText, selectedReason === r.value && styles.pillTextActive]}>
+                <SolaText style={[styles.pillText, selectedReason === r.value && styles.pillTextActive]}>
                   {r.label}
-                </Text>
+                </SolaText>
               </Pressable>
             ))}
           </View>
@@ -102,7 +102,7 @@ export default function ReportSheet({
             {submitting ? (
               <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
-              <Text style={styles.submitButtonText}>Submit report</Text>
+              <SolaText variant="button" color="#FFFFFF">Submit report</SolaText>
             )}
           </Pressable>
         </View>
@@ -160,5 +160,4 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
   },
   submitButtonDisabled: { opacity: 0.4 },
-  submitButtonText: { fontFamily: fonts.semiBold, fontSize: 16, color: '#FFFFFF' },
 });

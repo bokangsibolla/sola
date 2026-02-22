@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { colors, fonts, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface OptionCardProps {
   title: string;
@@ -19,8 +20,8 @@ export default function OptionCard({ title, subtitle, selected, onPress }: Optio
       ]}
       onPress={onPress}
     >
-      <Text style={[styles.title, selected && styles.titleSelected]}>{title}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <SolaText style={[styles.title, selected && styles.titleSelected]}>{title}</SolaText>
+      {subtitle ? <SolaText style={styles.subtitle}>{subtitle}</SolaText> : null}
     </Pressable>
   );
 }

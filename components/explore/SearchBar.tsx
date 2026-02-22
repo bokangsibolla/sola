@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
@@ -18,8 +19,8 @@ export default function SearchBar({ onPress }: SearchBarProps) {
         <Feather name="search" size={16} color={colors.textMuted} />
       </View>
       <View style={styles.textWrap}>
-        <Text style={styles.title}>Where feels right?</Text>
-        <Text style={styles.subtitle}>A country, city, or vibe</Text>
+        <SolaText style={styles.title}>Where feels right?</SolaText>
+        <SolaText style={styles.subtitle}>A country, city, or vibe</SolaText>
       </View>
     </Pressable>
   );

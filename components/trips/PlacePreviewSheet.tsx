@@ -1,8 +1,9 @@
 import React from 'react';
-import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { friendlyLabel } from '@/components/trips/TripDaySuggestions';
 import type { Place } from '@/data/types';
@@ -54,14 +55,14 @@ export function PlacePreviewSheet({
         </View>
 
         {/* Type label */}
-        <Text style={styles.typeLabel}>{friendlyLabel(place.placeType)}</Text>
+        <SolaText variant="pillLabel" color={colors.textMuted} uppercase letterSpacing={0.5} style={styles.typeLabel}>{friendlyLabel(place.placeType)}</SolaText>
 
         {/* Place name */}
-        <Text style={styles.placeName}>{place.name}</Text>
+        <SolaText style={styles.placeName}>{place.name}</SolaText>
 
         {/* Address */}
         {place.address != null && (
-          <Text style={styles.address} numberOfLines={2}>{place.address}</Text>
+          <SolaText style={styles.address} numberOfLines={2}>{place.address}</SolaText>
         )}
 
         {/* Action buttons */}
@@ -70,13 +71,13 @@ export function PlacePreviewSheet({
             style={styles.outlineButton}
             onPress={() => onViewDetails(place)}
           >
-            <Text style={styles.outlineButtonText}>View details</Text>
+            <SolaText style={styles.outlineButtonText}>View details</SolaText>
           </Pressable>
           <Pressable
             style={styles.filledButton}
             onPress={() => onAddToDay(place)}
           >
-            <Text style={styles.filledButtonText}>Add to day</Text>
+            <SolaText style={styles.filledButtonText}>Add to day</SolaText>
           </Pressable>
         </View>
       </View>
@@ -122,11 +123,6 @@ const styles = StyleSheet.create({
 
   // Content
   typeLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
     marginTop: spacing.lg,
   },
   placeName: {

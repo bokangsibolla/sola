@@ -1,8 +1,9 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { CONTINENT_LABELS } from '@/data/discover/types';
 import type { ContinentKey } from '@/data/discover/types';
@@ -49,18 +50,18 @@ export function CountryShowcaseCard({ country, reasonSignal }: CountryShowcaseCa
       <View style={styles.content}>
         {(country.badgeLabel || reasonSignal) && (
           <View style={styles.pillContainer}>
-            <Text style={styles.pillText}>
+            <SolaText style={styles.pillText}>
               {country.badgeLabel ?? reasonSignal}
-            </Text>
+            </SolaText>
           </View>
         )}
-        <Text style={styles.title} numberOfLines={1}>
+        <SolaText variant="cardTitle" color={colors.textOnImage} numberOfLines={1}>
           {country.name}
-        </Text>
+        </SolaText>
         {continentLabel && (
-          <Text style={styles.subtitle} numberOfLines={1}>
+          <SolaText variant="cardSubtitle" color={colors.textOnImageMuted} style={styles.subtitleSpacing} numberOfLines={1}>
             {continentLabel}
-          </Text>
+          </SolaText>
         )}
       </View>
     </Pressable>
@@ -104,13 +105,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
-  title: {
-    ...typography.cardTitle,
-    color: colors.textOnImage,
-  },
-  subtitle: {
-    ...typography.cardSubtitle,
-    color: colors.textOnImageMuted,
+  subtitleSpacing: {
     marginTop: 2,
   },
 });

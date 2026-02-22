@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, StyleSheet, UIManager, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City } from '@/data/types';
@@ -81,9 +82,9 @@ function AccordionRow({ item }: { item: AccordionItem }) {
     <View style={styles.row}>
       <Pressable onPress={toggle} style={styles.rowHeader} hitSlop={4}>
         <View style={styles.rowTitleGroup}>
-          <Text style={styles.rowTitle}>{item.title}</Text>
+          <SolaText style={styles.rowTitle}>{item.title}</SolaText>
           {!expanded && (
-            <Text style={styles.rowPreview} numberOfLines={1}>{item.preview}</Text>
+            <SolaText style={styles.rowPreview} numberOfLines={1}>{item.preview}</SolaText>
           )}
         </View>
         <Ionicons
@@ -97,8 +98,8 @@ function AccordionRow({ item }: { item: AccordionItem }) {
         <View style={styles.rowBody}>
           {item.bullets.map((bullet, i) => (
             <View key={i} style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>{'\u2022'}</Text>
-              <Text style={styles.bulletText}>{bullet}</Text>
+              <SolaText style={styles.bulletDot}>{'\u2022'}</SolaText>
+              <SolaText style={styles.bulletText}>{bullet}</SolaText>
             </View>
           ))}
         </View>
@@ -118,8 +119,8 @@ export function AwarenessAccordion({ city }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerEmoji}>⚡</Text>
-        <Text style={styles.heading}>Things to be aware of</Text>
+        <SolaText style={styles.headerEmoji}>⚡</SolaText>
+        <SolaText style={styles.heading}>Things to be aware of</SolaText>
       </View>
       <View style={styles.card}>
         {items.map((item, index) => (

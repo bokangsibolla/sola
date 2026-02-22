@@ -4,13 +4,13 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
   FlatList,
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
@@ -131,10 +131,10 @@ export default function SearchScreen() {
       onPress={() => handleResultPress(item)}
     >
       <View style={styles.resultContent}>
-        <Text style={styles.resultName}>{item.name}</Text>
-        <Text style={styles.resultContext}>{item.context}</Text>
+        <SolaText style={styles.resultName}>{item.name}</SolaText>
+        <SolaText style={styles.resultContext}>{item.context}</SolaText>
       </View>
-      <Text style={styles.resultType}>{item.type}</Text>
+      <SolaText style={styles.resultType}>{item.type}</SolaText>
     </Pressable>
   );
 
@@ -180,7 +180,7 @@ export default function SearchScreen() {
           {/* Section 1: Recent searches */}
           {recentSearches.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>RECENT</Text>
+              <SolaText style={styles.sectionTitle}>RECENT</SolaText>
               <View style={styles.recentList}>
                 {recentSearches.map((term) => (
                   <Pressable
@@ -188,7 +188,7 @@ export default function SearchScreen() {
                     style={styles.recentChip}
                     onPress={() => handleRecentPress(term)}
                   >
-                    <Text style={styles.recentText}>{term}</Text>
+                    <SolaText style={styles.recentText}>{term}</SolaText>
                   </Pressable>
                 ))}
               </View>
@@ -197,7 +197,7 @@ export default function SearchScreen() {
 
           {/* Section 2: Browse by */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>BROWSE BY</Text>
+            <SolaText style={styles.sectionTitle}>BROWSE BY</SolaText>
             <View style={styles.browseRow}>
               {browseCategories.map((cat) => (
                 <Pressable
@@ -206,7 +206,7 @@ export default function SearchScreen() {
                   onPress={() => router.push(cat.route)}
                 >
                   <Feather name={cat.icon} size={14} color={colors.orange} />
-                  <Text style={styles.browseChipText}>{cat.label}</Text>
+                  <SolaText style={styles.browseChipText}>{cat.label}</SolaText>
                 </Pressable>
               ))}
             </View>
@@ -215,9 +215,9 @@ export default function SearchScreen() {
           {/* Section 3: Popular destinations */}
           {popularCities.length > 0 && (
             <View style={styles.sectionNoPadX}>
-              <Text style={[styles.sectionTitle, { paddingHorizontal: spacing.screenX }]}>
+              <SolaText style={[styles.sectionTitle, { paddingHorizontal: spacing.screenX }]}>
                 POPULAR DESTINATIONS
-              </Text>
+              </SolaText>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
@@ -242,12 +242,12 @@ export default function SearchScreen() {
                     ) : (
                       <View style={[styles.popularImage, { backgroundColor: colors.neutralFill }]} />
                     )}
-                    <Text style={styles.popularCityName} numberOfLines={1}>
+                    <SolaText style={styles.popularCityName} numberOfLines={1}>
                       {city.name}
-                    </Text>
-                    <Text style={styles.popularCountryName} numberOfLines={1}>
+                    </SolaText>
+                    <SolaText style={styles.popularCountryName} numberOfLines={1}>
                       {city.countryName}
-                    </Text>
+                    </SolaText>
                   </Pressable>
                 ))}
               </ScrollView>
@@ -256,7 +256,7 @@ export default function SearchScreen() {
 
           {/* Section 4: Try searching for */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>TRY SEARCHING FOR</Text>
+            <SolaText style={styles.sectionTitle}>TRY SEARCHING FOR</SolaText>
             <View style={styles.suggestionList}>
               {suggestions.map((term) => (
                 <Pressable
@@ -265,7 +265,7 @@ export default function SearchScreen() {
                   onPress={() => setQuery(term)}
                 >
                   <Feather name="search" size={12} color={colors.textMuted} />
-                  <Text style={styles.suggestionText}>{term}</Text>
+                  <SolaText style={styles.suggestionText}>{term}</SolaText>
                 </Pressable>
               ))}
             </View>
@@ -274,10 +274,10 @@ export default function SearchScreen() {
       ) : results.length === 0 ? (
         // No results
         <View style={styles.centered}>
-          <Text style={styles.noResults}>No results for "{query}"</Text>
-          <Text style={styles.noResultsHint}>
+          <SolaText style={styles.noResults}>No results for "{query}"</SolaText>
+          <SolaText style={styles.noResultsHint}>
             Try searching for a country or city name.
-          </Text>
+          </SolaText>
         </View>
       ) : (
         // Grouped Results
@@ -285,7 +285,7 @@ export default function SearchScreen() {
           data={groupedResults}
           renderItem={({ item: group }) => (
             <View>
-              <Text style={styles.groupTitle}>{group.title}</Text>
+              <SolaText style={styles.groupTitle}>{group.title}</SolaText>
               {group.data.map((result) => (
                 <Pressable
                   key={`${result.type}-${result.id}`}
@@ -293,10 +293,10 @@ export default function SearchScreen() {
                   onPress={() => handleResultPress(result)}
                 >
                   <View style={styles.resultContent}>
-                    <Text style={styles.resultName}>{result.name}</Text>
-                    <Text style={styles.resultContext}>{result.context}</Text>
+                    <SolaText style={styles.resultName}>{result.name}</SolaText>
+                    <SolaText style={styles.resultContext}>{result.context}</SolaText>
                   </View>
-                  <Text style={styles.resultType}>{result.type}</Text>
+                  <SolaText style={styles.resultType}>{result.type}</SolaText>
                 </Pressable>
               ))}
             </View>

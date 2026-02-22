@@ -2,10 +2,10 @@ import React from 'react';
 import {
   Modal,
   View,
-  Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -54,7 +54,7 @@ export function ModeSwitchSheet({ visible, onClose }: ModeSwitchSheetProps) {
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={[styles.container, { paddingBottom: insets.bottom + spacing.lg }]}>
           <View style={styles.handle} />
-          <Text style={styles.title}>Mode</Text>
+          <SolaText style={styles.title}>Mode</SolaText>
 
           {/* Exploring option */}
           <Pressable
@@ -69,12 +69,12 @@ export function ModeSwitchSheet({ visible, onClose }: ModeSwitchSheetProps) {
               />
             </View>
             <View style={styles.optionContent}>
-              <Text style={[styles.optionTitle, isDiscover && styles.optionTitleActive]}>
+              <SolaText style={[styles.optionTitle, isDiscover && styles.optionTitleActive]}>
                 Exploring
-              </Text>
-              <Text style={styles.optionDescription}>
+              </SolaText>
+              <SolaText style={styles.optionDescription}>
                 Browse destinations, save places, plan ahead
-              </Text>
+              </SolaText>
             </View>
             {isDiscover && (
               <Feather name="check" size={20} color={colors.orange} />
@@ -105,7 +105,7 @@ export function ModeSwitchSheet({ visible, onClose }: ModeSwitchSheetProps) {
             <View style={styles.optionContent}>
               {activeTripInfo ? (
                 <>
-                  <Text
+                  <SolaText
                     style={[
                       styles.optionTitle,
                       isTravelling && styles.optionTitleActive,
@@ -113,19 +113,19 @@ export function ModeSwitchSheet({ visible, onClose }: ModeSwitchSheetProps) {
                   >
                     Travelling{' \u00B7 '}
                     {activeTripInfo.city.name}
-                  </Text>
-                  <Text style={styles.optionDescription}>
+                  </SolaText>
+                  <SolaText style={styles.optionDescription}>
                     {activeTripInfo.daysLeft === 1
                       ? '1 day left'
                       : `${activeTripInfo.daysLeft} days left`}
-                  </Text>
+                  </SolaText>
                 </>
               ) : (
                 <>
-                  <Text style={styles.optionTitle}>Start a trip</Text>
-                  <Text style={styles.optionDescription}>
+                  <SolaText style={styles.optionTitle}>Start a trip</SolaText>
+                  <SolaText style={styles.optionDescription}>
                     Plan your next destination
-                  </Text>
+                  </SolaText>
                 </>
               )}
             </View>

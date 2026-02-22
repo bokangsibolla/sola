@@ -6,10 +6,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -345,8 +345,8 @@ export default function NewTripScreen() {
       <View key={`dates-${stopIndex}`}>
         {isMultiStop && (
           <View style={styles.stopDateLabel}>
-            <Text style={styles.stopDateLabelFlag}>{getFlag(stop.countryIso2)}</Text>
-            <Text style={styles.stopDateLabelText}>{stop.cityName}</Text>
+            <SolaText style={styles.stopDateLabelFlag}>{getFlag(stop.countryIso2)}</SolaText>
+            <SolaText style={styles.stopDateLabelText}>{stop.cityName}</SolaText>
           </View>
         )}
         <View style={styles.dateRow}>
@@ -354,28 +354,28 @@ export default function NewTripScreen() {
             style={[styles.dateCard, stop.startDate && styles.dateCardFilled]}
             onPress={() => openPicker(stopIndex, 'start')}
           >
-            <Text style={styles.dateLabel}>Start date</Text>
-            <Text style={[styles.dateValue, stop.startDate && styles.dateValueFilled]}>
+            <SolaText style={styles.dateLabel}>Start date</SolaText>
+            <SolaText style={[styles.dateValue, stop.startDate && styles.dateValueFilled]}>
               {stop.startDate ? formatDate(stop.startDate) : 'Select'}
-            </Text>
+            </SolaText>
           </Pressable>
 
           <Pressable
             style={[styles.dateCard, stop.endDate && styles.dateCardFilled]}
             onPress={() => openPicker(stopIndex, 'end')}
           >
-            <Text style={styles.dateLabel}>End date</Text>
-            <Text style={[styles.dateValue, stop.endDate && styles.dateValueFilled]}>
+            <SolaText style={styles.dateLabel}>End date</SolaText>
+            <SolaText style={[styles.dateValue, stop.endDate && styles.dateValueFilled]}>
               {stop.endDate ? formatDate(stop.endDate) : 'Open'}
-            </Text>
+            </SolaText>
           </Pressable>
         </View>
 
         {stopNights > 0 && (
           <View style={styles.stopNightsBadge}>
-            <Text style={styles.nightsText}>
+            <SolaText style={styles.nightsText}>
               {stopNights} {stopNights === 1 ? 'night' : 'nights'}
-            </Text>
+            </SolaText>
           </View>
         )}
       </View>
@@ -406,7 +406,7 @@ export default function NewTripScreen() {
             </View>
             {tripKind && (
               <View style={styles.kindBadge}>
-                <Text style={styles.kindBadgeText}>{KIND_LABELS[tripKind]}</Text>
+                <SolaText style={styles.kindBadgeText}>{KIND_LABELS[tripKind]}</SolaText>
               </View>
             )}
           </Pressable>
@@ -414,12 +414,12 @@ export default function NewTripScreen() {
           <View style={styles.coverOptionalRow}>
             {tripKind && (
               <View style={styles.kindBadgeInline}>
-                <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
+                <SolaText style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</SolaText>
               </View>
             )}
             <Pressable style={styles.coverOptionalButton} onPress={handlePickCover}>
               <Ionicons name="camera-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.coverOptionalText}>Add cover photo</Text>
+              <SolaText style={styles.coverOptionalText}>Add cover photo</SolaText>
             </Pressable>
           </View>
         )}
@@ -427,7 +427,7 @@ export default function NewTripScreen() {
         {/* ── Destinations ────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Where are you going?</Text>
+            <SolaText style={styles.sectionTitle}>Where are you going?</SolaText>
             <View style={styles.inputRow}>
               <Ionicons name="search-outline" size={18} color={colors.textMuted} />
               <TextInput
@@ -452,14 +452,14 @@ export default function NewTripScreen() {
                     style={styles.resultRow}
                     onPress={() => handleSelectStop(r)}
                   >
-                    <Text style={styles.resultName}>{r.name}</Text>
-                    <Text style={styles.resultDetail}>
+                    <SolaText style={styles.resultName}>{r.name}</SolaText>
+                    <SolaText style={styles.resultDetail}>
                       {r.type === 'area'
                         ? r.parentName ?? 'Neighborhood'
                         : r.type === 'city'
                           ? r.parentName ?? 'City'
                           : 'Country'}
-                    </Text>
+                    </SolaText>
                   </Pressable>
                 ))}
               </View>
@@ -469,8 +469,8 @@ export default function NewTripScreen() {
               <View style={styles.stopsContainer}>
                 {stops.map((stop, index) => (
                   <View key={`${stop.cityName}-${index}`} style={styles.stopChip}>
-                    <Text style={styles.stopFlag}>{getFlag(stop.countryIso2)}</Text>
-                    <Text style={styles.stopName}>{stop.cityName}</Text>
+                    <SolaText style={styles.stopFlag}>{getFlag(stop.countryIso2)}</SolaText>
+                    <SolaText style={styles.stopName}>{stop.cityName}</SolaText>
                     <Pressable onPress={() => handleRemoveStop(index)} hitSlop={8}>
                       <Ionicons name="close" size={16} color={colors.textMuted} />
                     </Pressable>
@@ -481,7 +481,7 @@ export default function NewTripScreen() {
 
             {stops.length === 0 && search.length === 0 && (
               <View style={styles.emptyHint}>
-                <Text style={styles.emptyHintText}>Add up to 5 destinations</Text>
+                <SolaText style={styles.emptyHintText}>Add up to 5 destinations</SolaText>
               </View>
             )}
           </View>
@@ -492,9 +492,9 @@ export default function NewTripScreen() {
           <View style={styles.section}>
             <View style={styles.sectionCard}>
               <View style={styles.datesSectionHeader}>
-                <Text style={styles.datesSectionTitle}>
+                <SolaText style={styles.datesSectionTitle}>
                   {isMultiStop ? 'Dates per destination' : 'Trip dates'}
-                </Text>
+                </SolaText>
                 <Pressable
                   style={[styles.flexibleToggle, flexibleDates && styles.flexibleToggleActive]}
                   onPress={() => {
@@ -502,16 +502,16 @@ export default function NewTripScreen() {
                     if (!flexibleDates) setPickerTarget(null);
                   }}
                 >
-                  <Text style={[styles.flexibleToggleText, flexibleDates && styles.flexibleToggleTextActive]}>
+                  <SolaText style={[styles.flexibleToggleText, flexibleDates && styles.flexibleToggleTextActive]}>
                     {flexibleDates ? 'Flexible' : 'Set dates'}
-                  </Text>
+                  </SolaText>
                 </Pressable>
               </View>
 
               {flexibleDates ? (
                 <View style={styles.flexibleHint}>
                   <Ionicons name="calendar-outline" size={18} color={colors.textMuted} />
-                  <Text style={styles.flexibleHintText}>No fixed dates — you can add them later</Text>
+                  <SolaText style={styles.flexibleHintText}>No fixed dates — you can add them later</SolaText>
                 </View>
               ) : (
                 <>
@@ -520,9 +520,9 @@ export default function NewTripScreen() {
                   {/* Total nights for multi-stop */}
                   {isMultiStop && tripDates.totalNights > 0 && (
                     <View style={styles.totalNightsBadge}>
-                      <Text style={styles.nightsText}>
+                      <SolaText style={styles.nightsText}>
                         {tripDates.totalNights} {tripDates.totalNights === 1 ? 'night' : 'nights'} total
-                      </Text>
+                      </SolaText>
                     </View>
                   )}
 
@@ -530,20 +530,20 @@ export default function NewTripScreen() {
                   {Platform.OS === 'ios' && pickerTarget && (
                     <View style={styles.pickerContainer}>
                       <View style={styles.pickerHeader}>
-                        <Text style={styles.pickerTitle}>
+                        <SolaText style={styles.pickerTitle}>
                           {pickerTarget.field === 'start' ? 'Start date' : 'End date'}
                           {isMultiStop && pickerStop
                             ? ` — ${pickerStop.cityName}`
                             : ''}
-                        </Text>
+                        </SolaText>
                         <Pressable onPress={handlePickerDone}>
-                          <Text style={styles.pickerDone}>
+                          <SolaText style={styles.pickerDone}>
                             {pickerTarget.field === 'start' &&
                               pickerStop?.startDate &&
                               !pickerStop?.endDate
                               ? 'Next'
                               : 'Done'}
-                          </Text>
+                          </SolaText>
                         </Pressable>
                       </View>
                       <DateTimePicker
@@ -566,12 +566,12 @@ export default function NewTripScreen() {
         {/* ── Trip Name ──────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionCard}>
-            <Text style={styles.sectionTitle}>Trip name</Text>
+            <SolaText style={styles.sectionTitle}>Trip name</SolaText>
 
             <View style={styles.fieldGroup}>
               <View style={styles.labelRow}>
-                <Text style={styles.fieldLabel}>Name (optional)</Text>
-                <Text style={styles.charCount}>{tripName.length}/{NAME_MAX}</Text>
+                <SolaText style={styles.fieldLabel}>Name (optional)</SolaText>
+                <SolaText style={styles.charCount}>{tripName.length}/{NAME_MAX}</SolaText>
               </View>
               <TextInput
                 style={styles.textInput}
@@ -598,9 +598,9 @@ export default function NewTripScreen() {
           onPress={handleCreate}
           disabled={!canCreate || saving}
         >
-          <Text style={styles.createButtonText}>
+          <SolaText style={styles.createButtonText}>
             {saving ? 'Creating...' : 'Create trip'}
-          </Text>
+          </SolaText>
         </Pressable>
       </View>
 
@@ -610,7 +610,7 @@ export default function NewTripScreen() {
           <Pressable style={styles.sheetBackdrop} onPress={() => router.back()} />
           <View style={[styles.sheetContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>What kind of trip?</Text>
+            <SolaText style={styles.sheetTitle}>What kind of trip?</SolaText>
 
             {TRIP_KINDS.map((kind, idx) => (
               <Pressable
@@ -622,8 +622,8 @@ export default function NewTripScreen() {
                 ]}
                 onPress={() => handleSelectKind(kind.key)}
               >
-                <Text style={styles.kindTitle}>{kind.title}</Text>
-                <Text style={styles.kindDetail}>{kind.detail}</Text>
+                <SolaText style={styles.kindTitle}>{kind.title}</SolaText>
+                <SolaText style={styles.kindDetail}>{kind.detail}</SolaText>
               </Pressable>
             ))}
 
@@ -631,7 +631,7 @@ export default function NewTripScreen() {
               style={({ pressed }) => [styles.sheetCancel, pressed && { opacity: 0.6 }]}
               onPress={() => router.back()}
             >
-              <Text style={styles.sheetCancelText}>Cancel</Text>
+              <SolaText style={styles.sheetCancelText}>Cancel</SolaText>
             </Pressable>
           </View>
         </View>

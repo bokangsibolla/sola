@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -22,9 +23,9 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.sectionTitle}>From the community</Text>
+        <SolaText style={styles.sectionTitle}>From the community</SolaText>
         <Pressable onPress={() => router.push('/(tabs)/connect' as any)} hitSlop={8}>
-          <Text style={styles.seeAll}>See all</Text>
+          <SolaText style={styles.seeAll}>See all</SolaText>
         </Pressable>
       </View>
 
@@ -54,14 +55,14 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
                 style={styles.gradient}
               />
               <View style={styles.imageOverlay}>
-                <Text style={styles.imageTitle} numberOfLines={2}>
+                <SolaText style={styles.imageTitle} numberOfLines={2}>
                   {thread.title}
-                </Text>
+                </SolaText>
                 <View style={styles.imageMetaRow}>
                   <Feather name="message-circle" size={12} color="rgba(255,255,255,0.8)" />
-                  <Text style={styles.imageReplyCount}>
+                  <SolaText style={styles.imageReplyCount}>
                     {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
-                  </Text>
+                  </SolaText>
                 </View>
               </View>
             </Pressable>
@@ -74,16 +75,16 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
               ]}
               onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
             >
-              <Text style={styles.textTitle} numberOfLines={3}>
+              <SolaText style={styles.textTitle} numberOfLines={3}>
                 {thread.title}
-              </Text>
+              </SolaText>
               <View style={styles.textMetaRow}>
-                <Text style={styles.textAuthor} numberOfLines={1}>
+                <SolaText style={styles.textAuthor} numberOfLines={1}>
                   {thread.author.firstName}
-                </Text>
-                <Text style={styles.textDot}>&middot;</Text>
+                </SolaText>
+                <SolaText style={styles.textDot}>&middot;</SolaText>
                 <Feather name="message-circle" size={12} color={colors.textMuted} />
-                <Text style={styles.textReplyCount}>{thread.replyCount}</Text>
+                <SolaText style={styles.textReplyCount}>{thread.replyCount}</SolaText>
               </View>
             </Pressable>
           ),

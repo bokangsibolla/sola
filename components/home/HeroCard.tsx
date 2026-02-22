@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -112,17 +113,17 @@ export function HeroCard({ hero }: HeroCardProps) {
       <View style={styles.pillContainer}>
         {hero.kind === 'active' && (
           <View style={[styles.pill, styles.pillActive]}>
-            <Text style={[styles.pillText, styles.pillTextActive]}>CURRENTLY TRAVELING</Text>
+            <SolaText style={[styles.pillText, styles.pillTextActive]}>CURRENTLY TRAVELING</SolaText>
           </View>
         )}
         {hero.kind === 'upcoming' && (
           <View style={[styles.pill, styles.pillUpcoming]}>
-            <Text style={[styles.pillText, styles.pillTextUpcoming]}>UPCOMING</Text>
+            <SolaText style={[styles.pillText, styles.pillTextUpcoming]}>UPCOMING</SolaText>
           </View>
         )}
         {hero.kind === 'featured' && (
           <View style={[styles.pill, styles.pillFeatured]}>
-            <Text style={[styles.pillText, styles.pillTextFeatured]}>FEATURED</Text>
+            <SolaText style={[styles.pillText, styles.pillTextFeatured]}>FEATURED</SolaText>
           </View>
         )}
       </View>
@@ -153,16 +154,16 @@ function renderActive(hero: Extract<HeroState, { kind: 'active' }>, _tick: numbe
 
   return (
     <>
-      <Text style={styles.cityName} numberOfLines={1}>
+      <SolaText style={styles.cityName} numberOfLines={1}>
         {cityName}
-      </Text>
+      </SolaText>
       {dayProgress && (
-        <Text style={styles.metaText}>{dayProgress}</Text>
+        <SolaText style={styles.metaText}>{dayProgress}</SolaText>
       )}
       {localTime && (
         <View style={styles.timeRow}>
           <Feather name="clock" size={12} color="rgba(255,255,255,0.8)" />
-          <Text style={styles.timeText}>{localTime} local time</Text>
+          <SolaText style={styles.timeText}>{localTime} local time</SolaText>
         </View>
       )}
     </>
@@ -176,14 +177,14 @@ function renderUpcoming(hero: Extract<HeroState, { kind: 'upcoming' }>) {
 
   return (
     <>
-      <Text style={styles.cityName} numberOfLines={1}>
+      <SolaText style={styles.cityName} numberOfLines={1}>
         {cityName}
-      </Text>
+      </SolaText>
       {countdown && (
-        <Text style={styles.metaText}>{countdown}</Text>
+        <SolaText style={styles.metaText}>{countdown}</SolaText>
       )}
       {dateRange && (
-        <Text style={styles.dateRangeText}>{dateRange}</Text>
+        <SolaText style={styles.dateRangeText}>{dateRange}</SolaText>
       )}
     </>
   );
@@ -192,16 +193,16 @@ function renderUpcoming(hero: Extract<HeroState, { kind: 'upcoming' }>) {
 function renderFeatured(hero: Extract<HeroState, { kind: 'featured' }>) {
   return (
     <>
-      <Text style={styles.cityName} numberOfLines={1}>
+      <SolaText style={styles.cityName} numberOfLines={1}>
         {hero.city.name}
-      </Text>
-      <Text style={styles.countryName} numberOfLines={1}>
+      </SolaText>
+      <SolaText style={styles.countryName} numberOfLines={1}>
         {hero.city.countryName}
-      </Text>
+      </SolaText>
       {hero.city.shortBlurb && (
-        <Text style={styles.blurbText} numberOfLines={2}>
+        <SolaText style={styles.blurbText} numberOfLines={2}>
           {hero.city.shortBlurb}
-        </Text>
+        </SolaText>
       )}
     </>
   );

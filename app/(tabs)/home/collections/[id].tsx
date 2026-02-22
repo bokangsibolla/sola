@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,7 +19,7 @@ import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { Place } from '@/data/types';
 
 function PlaceRow({ place, userId, collectionId }: { place: Place; userId: string; collectionId: string }) {
@@ -46,9 +47,9 @@ function PlaceRow({ place, userId, collectionId }: { place: Place; userId: strin
       )}
       <View style={styles.placeInfo}>
         <View style={styles.placeHeader}>
-          <Text style={styles.placeName} numberOfLines={1}>
+          <SolaText style={styles.placeName} numberOfLines={1}>
             {place.name}
-          </Text>
+          </SolaText>
           <Pressable
             hitSlop={8}
             onPress={(e) => {
@@ -65,13 +66,13 @@ function PlaceRow({ place, userId, collectionId }: { place: Place; userId: strin
           </Pressable>
         </View>
         {category && (
-          <Text style={styles.placeCategory}>{category.name}</Text>
+          <SolaText style={styles.placeCategory}>{category.name}</SolaText>
         )}
         {tags && tags.length > 0 && (
           <View style={styles.tagRow}>
             {tags.slice(0, 3).map((tag) => (
               <View key={tag.id} style={styles.tag}>
-                <Text style={styles.tagText}>{tag.label}</Text>
+                <SolaText style={styles.tagText}>{tag.label}</SolaText>
               </View>
             ))}
           </View>
@@ -111,7 +112,7 @@ export default function CollectionDetailScreen() {
             <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
           </Pressable>
         </View>
-        <Text style={styles.emptyText}>Collection not found</Text>
+        <SolaText variant="body" color={colors.textMuted} style={styles.emptyText}>Collection not found</SolaText>
       </View>
     );
   }
@@ -126,16 +127,16 @@ export default function CollectionDetailScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.emoji}>{collection.emoji}</Text>
-        <Text style={styles.title}>{collection.name}</Text>
-        <Text style={styles.count}>
+        <SolaText style={styles.emoji}>{collection.emoji}</SolaText>
+        <SolaText variant="h2" style={styles.title}>{collection.name}</SolaText>
+        <SolaText variant="body" color={colors.textMuted} style={styles.count}>
           {placeList.length} {placeList.length === 1 ? 'place' : 'places'}
-        </Text>
+        </SolaText>
 
         {placeList.length === 0 ? (
           <View style={styles.emptyContainer}>
             <Ionicons name="bookmark-outline" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyText}>No places in this collection yet.</Text>
+            <SolaText variant="body" color={colors.textMuted} style={styles.emptyText}>No places in this collection yet.</SolaText>
           </View>
         ) : (
           userId && placeList.map((place) => (
@@ -168,14 +169,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   title: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
   count: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.xl,
   },
   emptyContainer: {
@@ -184,9 +181,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
   },
   placeCard: {
     borderWidth: 1,

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
@@ -59,7 +60,7 @@ export default function TripsScreen() {
           <CurrentTripCard trip={trips.current} />
           {upcoming.length > 0 && (
             <View style={styles.section}>
-              <Text style={styles.sectionLabel}>UPCOMING</Text>
+              <SolaText style={styles.sectionLabel}>UPCOMING</SolaText>
               {upcoming.map((trip) => (
                 <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
               ))}
@@ -70,7 +71,7 @@ export default function TripsScreen() {
             onPress={() => router.push('/trips/new')}
           >
             <Ionicons name="add" size={20} color={colors.orange} />
-            <Text style={styles.newTripText}>Plan a new trip</Text>
+            <SolaText style={styles.newTripText}>Plan a new trip</SolaText>
           </Pressable>
         </ScrollView>
       </AppScreen>
@@ -94,7 +95,7 @@ export default function TripsScreen() {
             {/* Upcoming trips */}
             {upcoming.length > 0 && (
               <View style={styles.section}>
-                <Text style={styles.sectionLabel}>UPCOMING</Text>
+                <SolaText style={styles.sectionLabel}>UPCOMING</SolaText>
                 {upcoming.map((trip) => (
                   <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
                 ))}
@@ -108,7 +109,7 @@ export default function TripsScreen() {
                   style={styles.pastToggle}
                   onPress={() => setShowPast(!showPast)}
                 >
-                  <Text style={styles.sectionLabel}>PAST TRIPS</Text>
+                  <SolaText style={styles.sectionLabel}>PAST TRIPS</SolaText>
                   <Ionicons
                     name={showPast ? 'chevron-up' : 'chevron-down'}
                     size={16}
@@ -128,7 +129,7 @@ export default function TripsScreen() {
               onPress={() => router.push('/trips/new')}
             >
               <Ionicons name="add" size={20} color={colors.orange} />
-              <Text style={styles.newTripText}>Plan a new trip</Text>
+              <SolaText style={styles.newTripText}>Plan a new trip</SolaText>
             </Pressable>
           </>
         )}

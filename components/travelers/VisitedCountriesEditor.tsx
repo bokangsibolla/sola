@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 import { getCountriesList } from '@/data/api';
 import { getFlag } from '@/data/trips/helpers';
 
@@ -64,9 +65,9 @@ export default function VisitedCountriesEditor({ selectedIds, onChange }: Visite
               style={styles.chip}
               onPress={() => toggleCountry(c.id)}
             >
-              <Text style={styles.chipText}>
+              <SolaText style={styles.chipText}>
                 {getFlag(c.iso2)} {c.name}
-              </Text>
+              </SolaText>
               <Ionicons name="close" size={14} color={colors.background} style={{ marginLeft: 4 }} />
             </Pressable>
           ))}
@@ -102,8 +103,8 @@ export default function VisitedCountriesEditor({ selectedIds, onChange }: Visite
                 style={styles.dropdownRow}
                 onPress={() => toggleCountry(c.id)}
               >
-                <Text style={styles.dropdownFlag}>{getFlag(c.iso2)}</Text>
-                <Text style={styles.dropdownName}>{c.name}</Text>
+                <SolaText style={styles.dropdownFlag}>{getFlag(c.iso2)}</SolaText>
+                <SolaText style={styles.dropdownName}>{c.name}</SolaText>
                 {isSelected && (
                   <Ionicons name="checkmark" size={18} color={colors.orange} />
                 )}

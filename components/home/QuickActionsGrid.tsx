@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
@@ -78,8 +79,8 @@ export function QuickActionsGrid({ activeTripId }: QuickActionsGridProps) {
           <View style={[styles.iconCircle, { backgroundColor: item.iconBg }]}>
             <Ionicons name={item.iconName} size={18} color={item.iconColor} />
           </View>
-          <Text style={styles.label}>{item.label}</Text>
-          <Text style={styles.subtitle}>{item.subtitle}</Text>
+          <SolaText style={styles.label}>{item.label}</SolaText>
+          <SolaText style={styles.subtitle}>{item.subtitle}</SolaText>
         </Pressable>
       ))}
     </View>

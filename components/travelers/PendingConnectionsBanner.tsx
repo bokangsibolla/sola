@@ -1,6 +1,7 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface PendingConnectionsBannerProps {
   count: number;
@@ -15,11 +16,11 @@ export default function PendingConnectionsBanner({ count, onPress }: PendingConn
       <View style={styles.iconWrap}>
         <Feather name="users" size={16} color={colors.orange} />
       </View>
-      <Text style={styles.text}>
+      <SolaText style={styles.text}>
         {count === 1
           ? '1 traveler wants to connect'
           : `${count} travelers want to connect`}
-      </Text>
+      </SolaText>
       <Feather name="chevron-right" size={18} color={colors.textMuted} />
     </Pressable>
   );

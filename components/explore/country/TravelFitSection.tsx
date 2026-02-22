@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, StyleSheet, UIManager, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import type { Country } from '@/data/types';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -32,7 +33,7 @@ function AccordionBlock({
   return (
     <View style={[styles.block, !isLast && styles.blockBorder]}>
       <Pressable onPress={toggle} style={styles.blockHeader} hitSlop={4}>
-        <Text style={styles.blockTitle}>{title}</Text>
+        <SolaText style={styles.blockTitle}>{title}</SolaText>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={16}
@@ -64,7 +65,7 @@ export function TravelFitSection({ country }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.heading}>Travel fit</Text>
+      <SolaText style={styles.heading}>Travel fit</SolaText>
       <View style={styles.card}>
         {blocks.map((block, i) => (
           <AccordionBlock

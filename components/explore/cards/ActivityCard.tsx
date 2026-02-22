@@ -1,5 +1,6 @@
 // components/explore/cards/ActivityCard.tsx
-import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Pressable, StyleSheet, View, Dimensions } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { ActivityWithCity } from '@/data/explore/types';
@@ -30,7 +31,7 @@ export function ActivityCard({ activity, onPress }: ActivityCardProps) {
           />
         ) : null}
       </View>
-      <Text style={styles.name} numberOfLines={2}>{activity.name}</Text>
+      <SolaText style={styles.name} numberOfLines={2}>{activity.name}</SolaText>
     </Pressable>
   );
 }

@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Pressable, ScrollView, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -34,9 +35,9 @@ export function MonthPicker({ selectedMonth, onSelect }: MonthPickerProps) {
             onPress={() => onSelect(month)}
             style={[styles.pill, active && styles.pillActive]}
           >
-            <Text style={[styles.pillText, active && styles.pillTextActive]}>
+            <SolaText style={[styles.pillText, active && styles.pillTextActive]}>
               {label}
-            </Text>
+            </SolaText>
           </Pressable>
         );
       })}

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import {
@@ -68,34 +69,34 @@ export function CommunityPeek({ threads, title }: CommunityPeekProps) {
                 />
               ) : (
                 <View style={[styles.avatar, styles.avatarFallback]}>
-                  <Text style={styles.avatarInitial}>
+                  <SolaText style={styles.avatarInitial}>
                     {getInitial(thread.author.firstName)}
-                  </Text>
+                  </SolaText>
                 </View>
               )}
 
               {/* Middle content */}
               <View style={styles.content}>
-                <Text style={styles.title} numberOfLines={2}>
+                <SolaText style={styles.title} numberOfLines={2}>
                   {thread.title}
-                </Text>
+                </SolaText>
                 <View style={styles.meta}>
                   {thread.cityName && (
                     <View style={styles.cityPill}>
-                      <Text style={styles.cityText}>{thread.cityName}</Text>
+                      <SolaText style={styles.cityText}>{thread.cityName}</SolaText>
                     </View>
                   )}
-                  {thread.cityName && <Text style={styles.dot}>{'\u00B7'}</Text>}
-                  <Text style={styles.timeText}>
+                  {thread.cityName && <SolaText style={styles.dot}>{'\u00B7'}</SolaText>}
+                  <SolaText style={styles.timeText}>
                     {getRelativeTime(thread.createdAt)}
-                  </Text>
+                  </SolaText>
                 </View>
               </View>
 
               {/* Reply count */}
-              <Text style={styles.replyCount}>
+              <SolaText style={styles.replyCount}>
                 {thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}
-              </Text>
+              </SolaText>
             </Pressable>
           </React.Fragment>
         ))}

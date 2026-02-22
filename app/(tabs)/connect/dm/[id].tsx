@@ -6,10 +6,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -23,7 +23,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import type { Message } from '@/data/types';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 export default function DMThreadScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
@@ -184,16 +184,16 @@ export default function DMThreadScreen() {
         onEndReachedThreshold={0.3}
         ListEmptyComponent={
           <View style={styles.emptyChat}>
-            <Text style={styles.emptyChatText}>Say hi to {other?.firstName ?? 'your new connection'}!</Text>
+            <SolaText style={styles.emptyChatText}>Say hi to {other?.firstName ?? 'your new connection'}!</SolaText>
           </View>
         }
         renderItem={({ item }) => {
           const isMe = item.senderId === userId;
           return (
             <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-              <Text style={[styles.bubbleText, isMe ? styles.bubbleTextMe : styles.bubbleTextThem]}>
+              <SolaText style={[styles.bubbleText, isMe ? styles.bubbleTextMe : styles.bubbleTextThem]}>
                 {item.text}
-              </Text>
+              </SolaText>
             </View>
           );
         }}

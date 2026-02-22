@@ -1,7 +1,6 @@
 import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import {
   View,
-  Text,
   FlatList,
   SectionList,
   Pressable,
@@ -11,6 +10,7 @@ import {
   RefreshControl,
   Keyboard,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import type { Router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -18,7 +18,7 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, fonts, spacing, radius, typography } from '@/constants/design';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
@@ -88,25 +88,25 @@ function FeaturedHeroCard({
 
       {/* "FROM SOLA" type label */}
       <View style={styles.heroTypeLabel}>
-        <Text style={styles.heroTypeLabelText}>FROM SOLA</Text>
+        <SolaText style={styles.heroTypeLabelText}>FROM SOLA</SolaText>
       </View>
 
       <View style={styles.heroContent} pointerEvents="none">
         {placeName && (
           <View style={styles.heroPlacePill}>
             <Feather name="map-pin" size={10} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.heroPlaceText}>{placeName}</Text>
+            <SolaText style={styles.heroPlaceText}>{placeName}</SolaText>
           </View>
         )}
-        <Text style={styles.heroTitle} numberOfLines={2}>
+        <SolaText style={styles.heroTitle} numberOfLines={2}>
           {thread.title}
-        </Text>
+        </SolaText>
         <View style={styles.heroMeta}>
-          <Text style={styles.heroMetaText}>
+          <SolaText style={styles.heroMetaText}>
             {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-          </Text>
-          <Text style={styles.heroMetaDot}>&middot;</Text>
-          <Text style={styles.heroMetaText}>{formatTimeAgo(thread.createdAt)}</Text>
+          </SolaText>
+          <SolaText style={styles.heroMetaDot}>&middot;</SolaText>
+          <SolaText style={styles.heroMetaText}>{formatTimeAgo(thread.createdAt)}</SolaText>
         </View>
       </View>
     </Pressable>
@@ -150,13 +150,13 @@ function ThreadCard({
 
   const avatarContent = isSystem ? (
     <View style={[styles.avatar, styles.avatarSystem]}>
-      <Text style={styles.avatarSystemText}>S</Text>
+      <SolaText style={styles.avatarSystemText}>S</SolaText>
     </View>
   ) : isSeed ? (
     <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>
+      <SolaText style={styles.avatarFallbackText}>
         {authorName.charAt(0).toUpperCase()}
-      </Text>
+      </SolaText>
     </View>
   ) : thread.author.avatarUrl ? (
     <Image
@@ -166,9 +166,9 @@ function ThreadCard({
     />
   ) : (
     <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>
+      <SolaText style={styles.avatarFallbackText}>
         {authorName.charAt(0).toUpperCase()}
-      </Text>
+      </SolaText>
     </View>
   );
 
@@ -185,15 +185,15 @@ function ThreadCard({
             {isSystem ? (
               <View style={styles.authorPressable}>
                 {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
+                <SolaText style={styles.authorName}>{authorName}</SolaText>
                 <View style={styles.teamBadge}>
-                  <Text style={styles.teamBadgeText}>TEAM</Text>
+                  <SolaText style={styles.teamBadgeText}>TEAM</SolaText>
                 </View>
               </View>
             ) : isSeed ? (
               <View style={styles.authorPressable}>
                 {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
+                <SolaText style={styles.authorName}>{authorName}</SolaText>
               </View>
             ) : (
               <Pressable
@@ -201,22 +201,22 @@ function ThreadCard({
                 style={styles.authorPressable}
               >
                 {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
+                <SolaText style={styles.authorName}>{authorName}</SolaText>
               </Pressable>
             )}
-            <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
+            <SolaText style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</SolaText>
           </View>
 
           {/* Title */}
-          <Text style={styles.threadTitle} numberOfLines={2}>
+          <SolaText style={styles.threadTitle} numberOfLines={2}>
             {thread.title}
-          </Text>
+          </SolaText>
 
           {/* Subtitle: topic · place */}
           {subtitle.length > 0 && (
-            <Text style={styles.threadSubtitle} numberOfLines={1}>
+            <SolaText style={styles.threadSubtitle} numberOfLines={1}>
               {subtitle}
-            </Text>
+            </SolaText>
           )}
 
           {/* Footer: helpful + answers */}
@@ -227,9 +227,9 @@ function ThreadCard({
               style={styles.helpfulButton}
             >
               <Feather name="arrow-up" size={14} color={helpfulColor} />
-              <Text style={[styles.footerText, { color: helpfulColor }]}>
+              <SolaText style={[styles.footerText, { color: helpfulColor }]}>
                 {thread.voteScore} helpful
-              </Text>
+              </SolaText>
             </Pressable>
 
             <View style={styles.replyStatRow}>
@@ -238,14 +238,14 @@ function ThreadCard({
                 size={13}
                 color={thread.replyCount > 0 ? colors.orange : colors.textMuted}
               />
-              <Text
+              <SolaText
                 style={[
                   styles.footerText,
                   { color: thread.replyCount > 0 ? colors.orange : colors.textMuted },
                 ]}
               >
                 {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-              </Text>
+              </SolaText>
             </View>
           </View>
         </View>
@@ -272,8 +272,8 @@ function IntroBanner({ onDismiss }: { onDismiss: () => void }) {
   return (
     <View style={styles.introBanner}>
       <View style={styles.introBannerContent}>
-        <Text style={styles.introBannerTitle}>Real questions from women traveling solo.</Text>
-        <Text style={styles.introBannerSubtitle}>Ask anything — safety, stays, transport, experiences.</Text>
+        <SolaText style={styles.introBannerTitle}>Real questions from women traveling solo.</SolaText>
+        <SolaText style={styles.introBannerSubtitle}>Ask anything — safety, stays, transport, experiences.</SolaText>
       </View>
       <Pressable onPress={onDismiss} hitSlop={8} style={styles.introBannerClose}>
         <Feather name="x" size={16} color={colors.textMuted} />
@@ -357,14 +357,14 @@ function SegmentControl({
         ]}
         onPress={() => onChangeSegment('discussions')}
       >
-        <Text
+        <SolaText
           style={[
             styles.segmentText,
             activeSegment === 'discussions' && styles.segmentTextActive,
           ]}
         >
           Discussions
-        </Text>
+        </SolaText>
       </Pressable>
       <Pressable
         style={[
@@ -373,14 +373,14 @@ function SegmentControl({
         ]}
         onPress={() => onChangeSegment('travelers')}
       >
-        <Text
+        <SolaText
           style={[
             styles.segmentText,
             activeSegment === 'travelers' && styles.segmentTextActive,
           ]}
         >
           Travelers
-        </Text>
+        </SolaText>
       </Pressable>
     </View>
   );
@@ -524,7 +524,7 @@ function DiscussionsView() {
           {showDivider && (
             <View style={styles.newActivityDivider}>
               <View style={styles.newActivityLine} />
-              <Text style={styles.newActivityText}>Earlier</Text>
+              <SolaText style={styles.newActivityText}>Earlier</SolaText>
               <View style={styles.newActivityLine} />
             </View>
           )}
@@ -582,16 +582,16 @@ function DiscussionsView() {
       ) : (
         <Pressable onPress={() => setIsSearching(true)} style={styles.searchPill}>
           <Feather name="search" size={16} color={colors.textMuted} />
-          <Text style={styles.searchPillText}>Search discussions...</Text>
+          <SolaText style={styles.searchPillText}>Search discussions...</SolaText>
         </Pressable>
       )}
 
       {/* Section label */}
-      <Text style={styles.sectionLabel}>
+      <SolaText style={styles.sectionLabel}>
         {mode === 'travelling' && activeTripInfo
           ? `${activeTripInfo.city.name.toUpperCase()} & MORE`
           : 'RECENT DISCUSSIONS'}
-      </Text>
+      </SolaText>
     </View>
   );
 
@@ -610,7 +610,7 @@ function DiscussionsView() {
           ) : (
             <View style={styles.emptyState}>
               <Feather name="message-circle" size={40} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No conversations yet</Text>
+              <SolaText style={styles.emptyText}>No conversations yet</SolaText>
             </View>
           )
         }
@@ -775,7 +775,7 @@ function TravelersView() {
             />
           )}
           {!isSearching && searchResults.length === 0 && query.length >= 2 && (
-            <Text style={styles.emptySearch}>No travelers found for &quot;@{query}&quot;</Text>
+            <SolaText style={styles.emptySearch}>No travelers found for &quot;@{query}&quot;</SolaText>
           )}
           {searchResults.map((result) => (
             <Pressable
@@ -798,15 +798,15 @@ function TravelersView() {
                 </View>
               )}
               <View style={styles.searchResultText}>
-                <Text style={styles.searchResultName}>{result.firstName}</Text>
-                <Text style={styles.searchResultUsername}>@{result.username}</Text>
+                <SolaText style={styles.searchResultName}>{result.firstName}</SolaText>
+                <SolaText style={styles.searchResultUsername}>@{result.username}</SolaText>
               </View>
               {result.homeCountryIso2 && (
-                <Text style={styles.searchResultFlag}>
+                <SolaText style={styles.searchResultFlag}>
                   {Array.from(result.homeCountryIso2.toUpperCase()).map((c) =>
                     String.fromCodePoint(0x1f1e6 - 65 + c.charCodeAt(0)),
                   ).join('')}
-                </Text>
+                </SolaText>
               )}
             </Pressable>
           ))}
@@ -848,10 +848,10 @@ function TravelersView() {
           ListEmptyComponent={
             <View style={styles.emptyStateTravelers}>
               <Feather name="users" size={40} color={colors.textMuted} />
-              <Text style={styles.emptyTitleTravelers}>No travelers nearby yet</Text>
-              <Text style={styles.emptySubtitleTravelers}>
+              <SolaText style={styles.emptyTitleTravelers}>No travelers nearby yet</SolaText>
+              <SolaText variant="body" color={colors.textMuted} style={styles.emptySubtitleTravelers}>
                 Enable location sharing to find women in your area, or check back soon
-              </Text>
+              </SolaText>
             </View>
           }
         />
@@ -1313,9 +1313,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptySubtitleTravelers: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     paddingHorizontal: spacing.xl,
   },
 

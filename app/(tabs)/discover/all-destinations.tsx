@@ -1,7 +1,8 @@
 // app/(tabs)/discover/all-destinations.tsx
 // Browse destinations — 2-column continent grid
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -43,10 +44,10 @@ function ContinentCard({
         style={StyleSheet.absoluteFillObject}
       />
       <View style={styles.gridContent}>
-        <Text style={styles.gridName}>{continent.label}</Text>
-        <Text style={styles.gridMeta}>
+        <SolaText style={styles.gridName}>{continent.label}</SolaText>
+        <SolaText style={styles.gridMeta}>
           {continent.countryCount} {continent.countryCount === 1 ? 'country' : 'countries'} · {continent.cityCount} {continent.cityCount === 1 ? 'city' : 'cities'}
-        </Text>
+        </SolaText>
       </View>
     </Pressable>
   );

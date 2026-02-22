@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -48,10 +49,10 @@ function SectionHeader({
 }) {
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <SolaText style={styles.sectionTitle}>{title}</SolaText>
       {actionLabel && onAction && (
         <Pressable onPress={onAction} hitSlop={8}>
-          <Text style={styles.seeAll}>{actionLabel}</Text>
+          <SolaText style={styles.seeAll}>{actionLabel}</SolaText>
         </Pressable>
       )}
     </View>
@@ -147,7 +148,7 @@ export default function CountryGuideScreen() {
     return (
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <NavigationHeader title="Country" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
-        <Text style={styles.notFound}>Guide not found</Text>
+        <SolaText style={styles.notFound}>Guide not found</SolaText>
       </SafeAreaView>
     );
   }
@@ -193,8 +194,8 @@ export default function CountryGuideScreen() {
             style={styles.heroGradient}
           />
           <View style={styles.heroOverlay} pointerEvents="none">
-            <Text style={styles.heroName}>{country.name}</Text>
-            {country.subtitle && <Text style={styles.heroTagline}>{country.subtitle}</Text>}
+            <SolaText style={styles.heroName}>{country.name}</SolaText>
+            {country.subtitle && <SolaText style={styles.heroTagline}>{country.subtitle}</SolaText>}
           </View>
         </View>
 
@@ -204,7 +205,7 @@ export default function CountryGuideScreen() {
         {/* 3. Intro paragraph */}
         {introText ? (
           <View style={styles.content}>
-            <Text style={styles.introText}>{introText}</Text>
+            <SolaText style={styles.introText}>{introText}</SolaText>
           </View>
         ) : null}
 

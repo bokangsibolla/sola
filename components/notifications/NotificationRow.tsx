@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, View, Text, StyleSheet } from 'react-native';
+import { Pressable, View, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -48,7 +49,7 @@ export function NotificationRow({ notification }: NotificationRowProps) {
       {/* Avatar */}
       {isAdmin ? (
         <View style={[styles.avatar, styles.avatarAdmin]}>
-          <Text style={styles.avatarAdminText}>S</Text>
+          <SolaText style={styles.avatarAdminText}>S</SolaText>
         </View>
       ) : notification.actor?.avatarUrl ? (
         <Image
@@ -58,25 +59,25 @@ export function NotificationRow({ notification }: NotificationRowProps) {
         />
       ) : (
         <View style={[styles.avatar, styles.avatarFallback]}>
-          <Text style={styles.avatarFallbackText}>
+          <SolaText style={styles.avatarFallbackText}>
             {getActorInitial(notification)}
-          </Text>
+          </SolaText>
         </View>
       )}
 
       {/* Content */}
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>
-          <Text style={styles.actorName}>{actorName}</Text>
+        <SolaText style={styles.title} numberOfLines={2}>
+          <SolaText style={styles.actorName}>{actorName}</SolaText>
           {' '}
           {notification.title}
-        </Text>
+        </SolaText>
         {notification.body && (
-          <Text style={styles.body} numberOfLines={1}>
+          <SolaText variant="caption" numberOfLines={1} style={styles.bodySpacing}>
             {notification.body}
-          </Text>
+          </SolaText>
         )}
-        <Text style={styles.time}>{formatTimeAgo(notification.createdAt)}</Text>
+        <SolaText style={styles.time}>{formatTimeAgo(notification.createdAt)}</SolaText>
       </View>
     </Pressable>
   );
@@ -131,11 +132,7 @@ const styles = StyleSheet.create({
   actorName: {
     fontFamily: fonts.semiBold,
   },
-  body: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textMuted,
+  bodySpacing: {
     marginTop: 2,
   },
   time: {

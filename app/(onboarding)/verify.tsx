@@ -4,10 +4,10 @@ import {
   Alert,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -156,11 +156,11 @@ export default function VerifyScreen() {
 
       {/* Headline */}
       <View style={styles.headlineBlock}>
-        <Text style={styles.headline}>Check your email</Text>
-        <Text style={styles.subtitle}>
+        <SolaText style={styles.headline}>Check your email</SolaText>
+        <SolaText style={styles.subtitle}>
           We sent a 6-digit code to{'\n'}
-          <Text style={styles.emailText}>{email}</Text>
-        </Text>
+          <SolaText style={styles.emailText}>{email}</SolaText>
+        </SolaText>
       </View>
 
       {/* Code input */}
@@ -189,17 +189,17 @@ export default function VerifyScreen() {
           {loading ? (
             <ActivityIndicator size="small" color={colors.background} />
           ) : (
-            <Text style={styles.verifyButtonText}>Verify</Text>
+            <SolaText style={styles.verifyButtonText}>Verify</SolaText>
           )}
         </Pressable>
 
         <View style={styles.resendRow}>
-          <Text style={styles.resendLabel}>Didn't get the code? </Text>
+          <SolaText style={styles.resendLabel}>Didn't get the code? </SolaText>
           <Pressable onPress={handleResend} disabled={resending}>
             {resending ? (
               <ActivityIndicator size="small" color={colors.orange} />
             ) : (
-              <Text style={styles.resendLink}>Resend</Text>
+              <SolaText style={styles.resendLink}>Resend</SolaText>
             )}
           </Pressable>
         </View>

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 // ── Time Utilities ───────────────────────────────────────────────────────────
@@ -78,14 +79,14 @@ export const TimePickerField: React.FC<TimePickerFieldProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.label}>{label}</Text>
+      <SolaText style={styles.label}>{label}</SolaText>
 
       <Pressable style={styles.field} onPress={handlePress}>
         <Ionicons name="time-outline" size={18} color={colors.textMuted} />
         {displayText ? (
-          <Text style={styles.valueText}>{displayText}</Text>
+          <SolaText style={styles.valueText}>{displayText}</SolaText>
         ) : (
-          <Text style={styles.placeholderText}>{placeholder}</Text>
+          <SolaText style={styles.placeholderText}>{placeholder}</SolaText>
         )}
         {value && onClear && (
           <Pressable
@@ -114,7 +115,7 @@ export const TimePickerField: React.FC<TimePickerFieldProps> = ({
             minimumDate={minimumDate}
           />
           <Pressable style={styles.doneButton} onPress={() => setShowPicker(false)}>
-            <Text style={styles.doneButtonText}>Done</Text>
+            <SolaText style={styles.doneButtonText}>Done</SolaText>
           </Pressable>
         </View>
       )}

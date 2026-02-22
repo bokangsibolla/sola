@@ -1,13 +1,14 @@
 import React from 'react';
-import { Text, StyleSheet } from 'react-native';
+import { StyleSheet } from 'react-native';
 import { colors, fonts, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface NotificationSectionHeaderProps {
   title: string;
 }
 
 export function NotificationSectionHeader({ title }: NotificationSectionHeaderProps) {
-  return <Text style={styles.header}>{title}</Text>;
+  return <SolaText style={styles.header}>{title}</SolaText>;
 }
 
 const styles = StyleSheet.create({

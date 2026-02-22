@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, spacing, radius } from '@/constants/design';
@@ -14,22 +15,22 @@ export function TripPromptCard({ onDismiss }: TripPromptCardProps) {
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <Text style={styles.title}>Travelling soon?</Text>
+        <SolaText style={styles.title}>Travelling soon?</SolaText>
         <Pressable onPress={onDismiss} hitSlop={8} style={styles.closeButton}>
           <Feather name="x" size={16} color={colors.textMuted} />
         </Pressable>
       </View>
 
-      <Text style={styles.body}>
+      <SolaText style={styles.body}>
         Log your trip to unlock Travelling Mode — your feed adapts to show local tips, saved
         places, and community for wherever you're headed.
-      </Text>
+      </SolaText>
 
       <Pressable
         onPress={() => router.push('/trips/new')}
         style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
       >
-        <Text style={styles.ctaText}>Log a trip</Text>
+        <SolaText style={styles.ctaText}>Log a trip</SolaText>
       </Pressable>
     </View>
   );

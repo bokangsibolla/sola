@@ -1,5 +1,6 @@
 import React from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -76,8 +77,8 @@ export default function OnboardingScreen({
         entering={FadeInDown.duration(350).damping(20)}
         style={styles.headlineBlock}
       >
-        <Text style={styles.headline}>{headline}</Text>
-        {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+        <SolaText style={styles.headline}>{headline}</SolaText>
+        {subtitle ? <SolaText style={styles.subtitle}>{subtitle}</SolaText> : null}
       </Animated.View>
 
       {/* Content */}
@@ -93,7 +94,7 @@ export default function OnboardingScreen({
         <PrimaryButton label={ctaLabel} onPress={onCtaPress} disabled={ctaDisabled} />
         {onSkip && (
           <Pressable onPress={onSkip} style={styles.skipButton} hitSlop={8}>
-            <Text style={styles.skipText}>Skip for now</Text>
+            <SolaText style={styles.skipText}>Skip for now</SolaText>
           </Pressable>
         )}
       </View>

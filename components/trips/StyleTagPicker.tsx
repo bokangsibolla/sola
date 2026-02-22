@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 const TRAVEL_STYLE_OPTIONS = [
@@ -29,9 +30,9 @@ export default function StyleTagPicker({ selected, onToggle }: StyleTagPickerPro
             style={[styles.pill, isSelected && styles.pillSelected]}
             onPress={() => onToggle(option.key)}
           >
-            <Text style={[styles.pillText, isSelected && styles.pillTextSelected]}>
+            <SolaText style={[styles.pillText, isSelected && styles.pillTextSelected]}>
               {option.label}
-            </Text>
+            </SolaText>
           </Pressable>
         );
       })}

@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useData } from '@/hooks/useData';
 import { getCityById } from '@/data/api';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { formatDateShort, getFlag, STATUS_COLORS } from '@/data/trips/helpers';
 import type { TripWithStops } from '@/data/trips/types';
@@ -77,7 +78,7 @@ export default function TripListCard({ trip, onDelete }: TripListCardProps) {
             />
           ) : (
             <View style={[StyleSheet.absoluteFillObject, styles.heroPlaceholder]}>
-              <Text style={styles.heroPlaceholderFlag}>{flag}</Text>
+              <SolaText style={styles.heroPlaceholderFlag}>{flag}</SolaText>
             </View>
           )}
           <LinearGradient
@@ -88,9 +89,9 @@ export default function TripListCard({ trip, onDelete }: TripListCardProps) {
           {/* Status badge — top left */}
           <View style={styles.badgeRow}>
             <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-              <Text style={[styles.statusText, { color: statusStyle.text }]}>
+              <SolaText style={[styles.statusText, { color: statusStyle.text }]}>
                 {statusStyle.label}
-              </Text>
+              </SolaText>
             </View>
           </View>
 
@@ -105,12 +106,12 @@ export default function TripListCard({ trip, onDelete }: TripListCardProps) {
 
           {/* Title + meta — bottom */}
           <View style={styles.overlay}>
-            <Text style={styles.title} numberOfLines={1}>
+            <SolaText style={styles.title} numberOfLines={1}>
               {trip.title || trip.destinationName}
-            </Text>
-            <Text style={styles.subtitle} numberOfLines={1}>
+            </SolaText>
+            <SolaText style={styles.subtitle} numberOfLines={1}>
               {flag} {stopsText}
-            </Text>
+            </SolaText>
           </View>
         </View>
 
@@ -118,18 +119,18 @@ export default function TripListCard({ trip, onDelete }: TripListCardProps) {
         <View style={styles.infoBar}>
           <View style={styles.infoItem}>
             <Ionicons name="calendar-outline" size={14} color={colors.textSecondary} />
-            <Text style={styles.infoText}>{dateText}</Text>
+            <SolaText style={styles.infoText}>{dateText}</SolaText>
           </View>
           {nightsLabel && (
             <View style={styles.infoItem}>
               <Ionicons name="moon-outline" size={13} color={colors.textSecondary} />
-              <Text style={styles.infoText}>{nightsLabel}</Text>
+              <SolaText style={styles.infoText}>{nightsLabel}</SolaText>
             </View>
           )}
           {stops.length > 1 && (
             <View style={styles.infoItem}>
               <Ionicons name="location-outline" size={14} color={colors.textSecondary} />
-              <Text style={styles.infoText}>{stops.length} stops</Text>
+              <SolaText style={styles.infoText}>{stops.length} stops</SolaText>
             </View>
           )}
         </View>
@@ -145,7 +146,7 @@ export default function TripListCard({ trip, onDelete }: TripListCardProps) {
           <View style={styles.dropdown}>
             <Pressable style={styles.dropdownItem} onPress={handleDelete}>
               <Ionicons name="trash-outline" size={16} color={colors.emergency} />
-              <Text style={styles.dropdownTextDanger}>Delete trip</Text>
+              <SolaText style={styles.dropdownTextDanger}>Delete trip</SolaText>
             </Pressable>
           </View>
         </>

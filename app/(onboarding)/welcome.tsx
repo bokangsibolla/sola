@@ -6,9 +6,9 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -78,7 +78,7 @@ export default function WelcomeScreen() {
             style={styles.logo}
             contentFit="contain"
           />
-          <Text style={styles.tagline}>Because women travel differently.</Text>
+          <SolaText style={styles.tagline}>Because women travel differently.</SolaText>
         </View>
       </View>
 
@@ -92,7 +92,7 @@ export default function WelcomeScreen() {
             navigateTo('/(onboarding)/create-account');
           }}
         >
-          <Text style={styles.ctaText}>Create new account</Text>
+          <SolaText style={styles.ctaText}>Create new account</SolaText>
           <Ionicons name="arrow-forward" size={16} color="#FFFFFF" />
         </Pressable>
 
@@ -105,13 +105,13 @@ export default function WelcomeScreen() {
             navigateTo('/(onboarding)/login');
           }}
         >
-          <Text style={styles.loginText}>I already have an account</Text>
+          <SolaText style={styles.loginText}>I already have an account</SolaText>
         </Pressable>
 
         {/* OR divider */}
         <View style={styles.divider}>
           <View style={styles.dividerLine} />
-          <Text style={styles.dividerLabel}>OR</Text>
+          <SolaText style={styles.dividerLabel}>OR</SolaText>
           <View style={styles.dividerLine} />
         </View>
 
@@ -132,7 +132,7 @@ export default function WelcomeScreen() {
             {loading ? (
               <ActivityIndicator size="small" color={colors.textPrimary} />
             ) : (
-              <Text style={styles.googleG}>G</Text>
+              <SolaText style={styles.googleG}>G</SolaText>
             )}
           </Pressable>
         </View>

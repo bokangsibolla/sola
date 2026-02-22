@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -26,7 +27,7 @@ export function SearchPill({ firstName }: SearchPillProps) {
       accessibilityLabel="Search destinations"
     >
       <Feather name="search" size={16} color={colors.textMuted} />
-      <Text style={styles.placeholder}>{placeholder}</Text>
+      <SolaText style={styles.placeholder}>{placeholder}</SolaText>
     </Pressable>
   );
 }

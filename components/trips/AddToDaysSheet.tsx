@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TYPE_DOT_COLOR, TYPE_LABEL } from '@/components/trips/blockTypeColors';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -91,20 +92,20 @@ export function AddToDaysSheet({
             { backgroundColor: (TYPE_DOT_COLOR as Record<string, string>)[placeType] ?? colors.textMuted },
           ]} />
           <View style={styles.placeText}>
-            <Text style={styles.placeName} numberOfLines={1}>{placeName}</Text>
-            <Text style={styles.placeType}>
+            <SolaText style={styles.placeName} numberOfLines={1}>{placeName}</SolaText>
+            <SolaText style={styles.placeType}>
               {(TYPE_LABEL as Record<string, string>)[placeType] ?? placeType}
-            </Text>
+            </SolaText>
           </View>
         </View>
 
         {/* Section label + select all/reset */}
         <View style={styles.sectionRow}>
-          <Text style={styles.sectionLabel}>Add to days</Text>
+          <SolaText style={styles.sectionLabel}>Add to days</SolaText>
           <Pressable onPress={allSelected ? selectNone : selectAll} hitSlop={8}>
-            <Text style={styles.selectAllText}>
+            <SolaText style={styles.selectAllText}>
               {allSelected ? 'Reset' : 'Select all'}
-            </Text>
+            </SolaText>
           </Pressable>
         </View>
 
@@ -122,13 +123,13 @@ export function AddToDaysSheet({
                 style={[styles.dayPill, isSelected && styles.dayPillSelected]}
                 onPress={() => toggleDay(day.index)}
               >
-                <Text style={[styles.dayPillText, isSelected && styles.dayPillTextSelected]}>
+                <SolaText style={[styles.dayPillText, isSelected && styles.dayPillTextSelected]}>
                   {day.label}
-                </Text>
+                </SolaText>
                 {day.sublabel && (
-                  <Text style={[styles.dayPillSub, isSelected && styles.dayPillSubSelected]}>
+                  <SolaText style={[styles.dayPillSub, isSelected && styles.dayPillSubSelected]}>
                     {day.sublabel}
-                  </Text>
+                  </SolaText>
                 )}
                 {isSelected && (
                   <Ionicons name="checkmark" size={14} color={colors.orange} style={styles.dayPillCheck} />
@@ -144,13 +145,13 @@ export function AddToDaysSheet({
           onPress={handleConfirm}
           disabled={count === 0}
         >
-          <Text style={styles.confirmText}>
+          <SolaText variant="button" color="#FFFFFF">
             {count === 0
               ? 'Select at least one day'
               : count === 1
                 ? 'Add to 1 day'
                 : `Add to ${count} days`}
-          </Text>
+          </SolaText>
         </Pressable>
       </View>
     </Modal>
@@ -280,10 +281,5 @@ const styles = StyleSheet.create({
   },
   confirmDisabled: {
     opacity: 0.4,
-  },
-  confirmText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
 });

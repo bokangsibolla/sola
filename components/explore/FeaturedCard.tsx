@@ -1,8 +1,9 @@
 // components/explore/FeaturedCard.tsx
 import { useCallback, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -67,12 +68,12 @@ export default function FeaturedCard({
               styles.badge,
               badgeVariant === 'highlight' && styles.badgeHighlight
             ]}>
-              <Text style={[
+              <SolaText style={[
                 styles.badgeText,
                 badgeVariant === 'highlight' && styles.badgeTextHighlight
               ]}>
                 {badge}
-              </Text>
+              </SolaText>
             </View>
           )}
 
@@ -87,13 +88,13 @@ export default function FeaturedCard({
 
           {/* Content overlay */}
           <View style={styles.contentOverlay} pointerEvents="none">
-            <Text style={styles.title} numberOfLines={1}>
+            <SolaText style={styles.title} numberOfLines={1}>
               {title}
-            </Text>
+            </SolaText>
             {blurb && blurb.trim().length > 0 && (
-              <Text style={styles.blurb} numberOfLines={2}>
+              <SolaText style={styles.blurb} numberOfLines={2}>
                 {blurb}
-              </Text>
+              </SolaText>
             )}
           </View>
         </View>

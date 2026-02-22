@@ -4,10 +4,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -17,7 +17,7 @@ import * as Sentry from '@sentry/react-native';
 import { useAuth } from '@/state/AuthContext';
 import { clearLocalData } from '@/lib/clearLocalData';
 import { deleteAccount } from '@/data/api';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 // Local color overrides for this screen
 const surface = '#F9F9F9';
@@ -84,7 +84,7 @@ export default function DeleteAccountScreen() {
         <Pressable onPress={() => router.back()} hitSlop={12}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </Pressable>
-        <Text style={styles.navTitle}>Delete Account</Text>
+        <SolaText variant="label" color="#E53E3E">Delete Account</SolaText>
         <View style={{ width: 24 }} />
       </View>
 
@@ -99,45 +99,45 @@ export default function DeleteAccountScreen() {
         </View>
 
         {/* Warning Message */}
-        <Text style={styles.title}>Delete Your Account?</Text>
-        <Text style={styles.description}>
+        <SolaText style={styles.title}>Delete Your Account?</SolaText>
+        <SolaText variant="body" color={colors.textSecondary} style={styles.description}>
           This will permanently delete your Sola account and all associated data, including:
-        </Text>
+        </SolaText>
 
         <View style={styles.listContainer}>
           <View style={styles.listItem}>
             <Ionicons name="person-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.listText}>Your profile and preferences</Text>
+            <SolaText variant="body" color={colors.textSecondary} style={styles.listText}>Your profile and preferences</SolaText>
           </View>
           <View style={styles.listItem}>
             <Ionicons name="airplane-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.listText}>All saved trips and itineraries</Text>
+            <SolaText variant="body" color={colors.textSecondary} style={styles.listText}>All saved trips and itineraries</SolaText>
           </View>
           <View style={styles.listItem}>
             <Ionicons name="bookmark-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.listText}>Saved places and collections</Text>
+            <SolaText variant="body" color={colors.textSecondary} style={styles.listText}>Saved places and collections</SolaText>
           </View>
           <View style={styles.listItem}>
             <Ionicons name="chatbubble-outline" size={18} color={colors.textSecondary} />
-            <Text style={styles.listText}>All messages and conversations</Text>
+            <SolaText variant="body" color={colors.textSecondary} style={styles.listText}>All messages and conversations</SolaText>
           </View>
         </View>
 
-        <Text style={styles.warning}>This action cannot be undone.</Text>
+        <SolaText style={styles.warning}>This action cannot be undone.</SolaText>
 
         {/* Email Display */}
         {user?.email && (
           <View style={styles.emailContainer}>
-            <Text style={styles.emailLabel}>Account email:</Text>
-            <Text style={styles.emailValue}>{user.email}</Text>
+            <SolaText style={styles.emailLabel}>Account email:</SolaText>
+            <SolaText style={styles.emailValue}>{user.email}</SolaText>
           </View>
         )}
 
         {/* Confirmation Input */}
         <View style={styles.confirmationContainer}>
-          <Text style={styles.confirmationLabel}>
-            Type <Text style={styles.confirmationHighlight}>{CONFIRMATION_TEXT}</Text> to confirm:
-          </Text>
+          <SolaText variant="body" color={colors.textSecondary} style={styles.confirmationLabel}>
+            Type <SolaText style={styles.confirmationHighlight}>{CONFIRMATION_TEXT}</SolaText> to confirm:
+          </SolaText>
           <TextInput
             style={styles.input}
             value={confirmation}
@@ -159,14 +159,14 @@ export default function DeleteAccountScreen() {
           onPress={handleDelete}
           disabled={!isConfirmed || loading}
         >
-          <Text style={styles.deleteButtonText}>
+          <SolaText style={styles.deleteButtonText}>
             {loading ? 'Deleting...' : 'Delete My Account'}
-          </Text>
+          </SolaText>
         </Pressable>
 
         {/* Cancel Link */}
         <Pressable style={styles.cancelButton} onPress={() => router.back()}>
-          <Text style={styles.cancelText}>Cancel and keep my account</Text>
+          <SolaText style={styles.cancelText}>Cancel and keep my account</SolaText>
         </Pressable>
 
         <View style={{ height: spacing.xxl }} />
@@ -190,8 +190,6 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.borderDefault,
   },
   navTitle: {
-    ...typography.label,
-    color: '#E53E3E',
   },
   content: {
     paddingHorizontal: spacing.lg,
@@ -209,9 +207,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   description: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.lg,
   },
   listContainer: {
@@ -227,8 +223,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   listText: {
-    ...typography.body,
-    color: colors.textSecondary,
     flex: 1,
   },
   warning: {
@@ -259,8 +253,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   confirmationLabel: {
-    ...typography.body,
-    color: colors.textSecondary,
     marginBottom: spacing.sm,
   },
   confirmationHighlight: {

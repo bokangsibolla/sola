@@ -1,6 +1,7 @@
 // components/explore/ContinentFilter.tsx
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { ContinentKey } from '@/data/discover/types';
 import { colors, fonts, spacing, typography } from '@/constants/design';
 
@@ -54,9 +55,9 @@ function FilterItem({
       accessibilityRole="button"
       accessibilityState={{ selected: isActive }}
     >
-      <Text style={[styles.label, isActive && styles.labelActive]}>
+      <SolaText variant="filterLabel" color={isActive ? colors.textPrimary : colors.textMuted}>
         {label}
-      </Text>
+      </SolaText>
       {isActive && <View style={styles.underline} />}
     </Pressable>
   );
@@ -71,13 +72,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     minHeight: 44,
     justifyContent: 'center',
-  },
-  label: {
-    ...typography.filterLabel,
-    color: colors.textMuted,
-  },
-  labelActive: {
-    color: colors.textPrimary,
   },
   underline: {
     position: 'absolute',

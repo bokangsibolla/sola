@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { colors, fonts, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface SectionHeaderProps {
   title: string;
@@ -9,8 +10,8 @@ interface SectionHeaderProps {
 export default function SectionHeader({ title, subtitle }: SectionHeaderProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
-      {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+      <SolaText style={styles.title}>{title}</SolaText>
+      {subtitle && <SolaText style={styles.subtitle}>{subtitle}</SolaText>}
     </View>
   );
 }

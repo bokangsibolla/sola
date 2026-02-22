@@ -8,10 +8,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ import { useAuth } from '@/state/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { countries } from '@/data/geo';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 
 const BIO_MAX = 140;
@@ -248,12 +248,12 @@ export default function EditProfileScreen() {
                 <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
               )}
             </View>
-            <Text style={styles.photoLabel}>{photoUri ? 'Change photo' : 'Add photo'}</Text>
+            <SolaText style={styles.photoLabel}>{photoUri ? 'Change photo' : 'Add photo'}</SolaText>
           </Pressable>
         </View>
 
         {/* Name */}
-        <Text style={styles.fieldLabel}>Name</Text>
+        <SolaText style={styles.fieldLabel}>Name</SolaText>
         <TextInput
           style={styles.input}
           value={firstName}
@@ -263,9 +263,9 @@ export default function EditProfileScreen() {
         />
 
         {/* Username */}
-        <Text style={styles.fieldLabel}>Username</Text>
+        <SolaText style={styles.fieldLabel}>Username</SolaText>
         <View style={[styles.input, { flexDirection: 'row', alignItems: 'center' }]}>
-          <Text style={{ fontFamily: fonts.regular, fontSize: 16, color: colors.textMuted }}>@</Text>
+          <SolaText style={{ fontFamily: fonts.regular, fontSize: 16, color: colors.textMuted }}>@</SolaText>
           <TextInput
             style={{ flex: 1, fontFamily: fonts.regular, fontSize: 16, color: colors.textPrimary, padding: 0 }}
             value={username}
@@ -287,13 +287,13 @@ export default function EditProfileScreen() {
           )}
         </View>
         {usernameError && (
-          <Text style={{ fontFamily: fonts.regular, fontSize: 12, color: '#E53E3E', marginTop: 4, marginBottom: spacing.md }}>
+          <SolaText style={{ fontFamily: fonts.regular, fontSize: 12, color: '#E53E3E', marginTop: 4, marginBottom: spacing.md }}>
             {usernameError}
-          </Text>
+          </SolaText>
         )}
 
         {/* Bio */}
-        <Text style={styles.fieldLabel}>Bio</Text>
+        <SolaText style={styles.fieldLabel}>Bio</SolaText>
         <View style={styles.bioContainer}>
           <TextInput
             style={styles.bioInput}
@@ -304,11 +304,11 @@ export default function EditProfileScreen() {
             multiline
             maxLength={BIO_MAX}
           />
-          <Text style={[styles.bioCounter, { color: counterColor }]}>{remaining}</Text>
+          <SolaText style={[styles.bioCounter, { color: counterColor }]}>{remaining}</SolaText>
         </View>
 
         {/* Country */}
-        <Text style={styles.fieldLabel}>Where are you from?</Text>
+        <SolaText style={styles.fieldLabel}>Where are you from?</SolaText>
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
           <TextInput
@@ -336,16 +336,16 @@ export default function EditProfileScreen() {
                   setCountrySearch('');
                 }}
               >
-                <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
+                <SolaText style={[styles.pillText, selected && styles.pillTextSelected]}>
                   {c.flag ?? ''} {c.name}
-                </Text>
+                </SolaText>
               </Pressable>
             );
           })}
         </View>
 
         {/* Interests */}
-        <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Interests</Text>
+        <SolaText style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Interests</SolaText>
         {interests.length > 0 && (
           <View style={styles.pillGrid}>
             {interests.map((item) => (
@@ -354,9 +354,9 @@ export default function EditProfileScreen() {
                 style={[styles.pill, styles.pillSelected]}
                 onPress={() => toggleInterest(item)}
               >
-                <Text style={[styles.pillText, styles.pillTextSelected]}>
+                <SolaText style={[styles.pillText, styles.pillTextSelected]}>
                   {item}
-                </Text>
+                </SolaText>
                 <Ionicons name="close" size={14} color={colors.background} style={{ marginLeft: 4 }} />
               </Pressable>
             ))}
@@ -370,14 +370,14 @@ export default function EditProfileScreen() {
                 style={styles.pill}
                 onPress={() => toggleInterest(item)}
               >
-                <Text style={styles.pillText}>{item}</Text>
+                <SolaText style={styles.pillText}>{item}</SolaText>
               </Pressable>
             ))}
           </View>
         )}
 
         {/* Countries visited */}
-        <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Countries I've visited</Text>
+        <SolaText style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Countries I've visited</SolaText>
         <VisitedCountriesEditor
           selectedIds={visitedCountryIds}
           onChange={setVisitedCountryIds}
@@ -385,7 +385,7 @@ export default function EditProfileScreen() {
 
         {/* Save */}
         <Pressable style={[styles.saveButton, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-          <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save changes'}</Text>
+          <SolaText variant="button" color={colors.background}>{saving ? 'Saving...' : 'Save changes'}</SolaText>
         </Pressable>
 
         <View style={{ height: spacing.xxl }} />
@@ -520,7 +520,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.xxl,
   },
   saveButtonText: {
-    ...typography.button,
-    color: colors.background,
   },
 });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface WhatStandsOutProps {
@@ -11,12 +12,12 @@ const WhatStandsOut: React.FC<WhatStandsOutProps> = ({ highlights }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>WHAT STANDS OUT</Text>
+      <SolaText style={styles.sectionLabel}>WHAT STANDS OUT</SolaText>
       <View style={styles.pillRow}>
         {highlights.map((highlight, index) => (
           <View key={index} style={styles.pill}>
-            <Text style={styles.diamond}>{'\u25C7'}</Text>
-            <Text style={styles.pillText}>{highlight}</Text>
+            <SolaText style={styles.diamond}>{'\u25C7'}</SolaText>
+            <SolaText style={styles.pillText}>{highlight}</SolaText>
           </View>
         ))}
       </View>

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { updateBlock } from '@/data/trips/itineraryApi';
 import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
@@ -91,11 +92,11 @@ export const EditTimeSheet: React.FC<EditTimeSheetProps> = ({
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Text style={styles.headerTitle} numberOfLines={1}>
+            <SolaText variant="screenTitle" style={styles.headerTitle} numberOfLines={1}>
               {title}
-            </Text>
+            </SolaText>
             <View style={styles.typePill}>
-              <Text style={styles.typePillText}>{typeLabel}</Text>
+              <SolaText variant="pillLabel" color={colors.textMuted} uppercase letterSpacing={0.5}>{typeLabel}</SolaText>
             </View>
           </View>
           <Pressable onPress={onClose} hitSlop={12}>
@@ -108,7 +109,7 @@ export const EditTimeSheet: React.FC<EditTimeSheetProps> = ({
           keyboardShouldPersistTaps="handled"
         >
           {/* Time pickers */}
-          <Text style={styles.sectionTitle}>Set time</Text>
+          <SolaText variant="label" style={styles.sectionTitle}>Set time</SolaText>
           <View style={styles.timeRow}>
             <TimePickerField
               label="Start"
@@ -131,7 +132,7 @@ export const EditTimeSheet: React.FC<EditTimeSheetProps> = ({
           {(startTime || endTime) && (
             <Pressable style={styles.clearRow} onPress={handleClearAll}>
               <Ionicons name="trash-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.clearText}>Clear times</Text>
+              <SolaText style={styles.clearText}>Clear times</SolaText>
             </Pressable>
           )}
 
@@ -141,9 +142,9 @@ export const EditTimeSheet: React.FC<EditTimeSheetProps> = ({
             onPress={handleSave}
             disabled={saving}
           >
-            <Text style={styles.saveButtonText}>
+            <SolaText variant="button" color="#FFFFFF">
               {saving ? 'Saving...' : 'Save'}
-            </Text>
+            </SolaText>
           </Pressable>
         </ScrollView>
       </View>
@@ -175,9 +176,6 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   headerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
     flexShrink: 1,
   },
   typePill: {
@@ -186,22 +184,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
   },
-  typePillText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
 
   content: {
     padding: spacing.screenX,
     paddingTop: spacing.xl,
   },
   sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
     marginBottom: spacing.lg,
   },
   timeRow: {
@@ -231,10 +219,5 @@ const styles = StyleSheet.create({
   },
   saveButtonDisabled: {
     opacity: 0.5,
-  },
-  saveButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
 });

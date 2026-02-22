@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, UIManager, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import type { Country } from '@/data/types';
 import type { PlaceWithCity } from '@/data/types';
@@ -109,11 +110,11 @@ function AccordionRow({ item }: { item: AccordionItem }) {
     <View style={styles.row}>
       <Pressable onPress={toggle} style={styles.rowHeader} hitSlop={4}>
         <View style={styles.rowTitleGroup}>
-          <Text style={styles.rowTitle}>{item.title}</Text>
+          <SolaText style={styles.rowTitle}>{item.title}</SolaText>
           {!expanded && (
-            <Text style={styles.rowPreview} numberOfLines={1}>
+            <SolaText style={styles.rowPreview} numberOfLines={1}>
               {item.preview}
-            </Text>
+            </SolaText>
           )}
         </View>
         <Ionicons
@@ -126,13 +127,13 @@ function AccordionRow({ item }: { item: AccordionItem }) {
       {expanded && (
         <View style={styles.rowBody}>
           {paragraphs.map((p, i) => (
-            <Text key={i} style={styles.paragraph}>{p}</Text>
+            <SolaText key={i} style={styles.paragraph}>{p}</SolaText>
           ))}
 
           {hasPlaces && (
             <View style={styles.placesContainer}>
               {item.placesLabel && (
-                <Text style={styles.placesLabel}>{item.placesLabel}</Text>
+                <SolaText style={styles.placesLabel}>{item.placesLabel}</SolaText>
               )}
               <ScrollView
                 horizontal
@@ -158,7 +159,7 @@ export function KnowBeforeYouGoAccordion({ country, healthPlaces }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Know before you go</Text>
+      <SolaText style={styles.heading}>Know before you go</SolaText>
       <View style={styles.card}>
         {items.map((item, index) => (
           <View key={item.key}>

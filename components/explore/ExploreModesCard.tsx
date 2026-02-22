@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
@@ -10,17 +11,17 @@ interface ExploreModesCardProps {
 export function ExploreModesCard({ onDismiss }: ExploreModesCardProps) {
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Two ways to explore</Text>
+      <SolaText style={styles.title}>Two ways to explore</SolaText>
 
       <View style={styles.row}>
         <View style={styles.iconCircle}>
           <Feather name="compass" size={18} color={colors.textSecondary} />
         </View>
         <View style={styles.rowText}>
-          <Text style={styles.modeName}>Discover</Text>
-          <Text style={styles.modeDescription}>
+          <SolaText style={styles.modeName}>Discover</SolaText>
+          <SolaText style={styles.modeDescription}>
             Browse cities and places around the world
-          </Text>
+          </SolaText>
         </View>
       </View>
 
@@ -29,15 +30,15 @@ export function ExploreModesCard({ onDismiss }: ExploreModesCardProps) {
           <Feather name="navigation" size={18} color={colors.orange} />
         </View>
         <View style={styles.rowText}>
-          <Text style={styles.modeName}>Travelling</Text>
-          <Text style={styles.modeDescription}>
+          <SolaText style={styles.modeName}>Travelling</SolaText>
+          <SolaText style={styles.modeDescription}>
             Switch to a city you're visiting for local tips, saved places, and community
-          </Text>
+          </SolaText>
         </View>
       </View>
 
       <Pressable onPress={onDismiss} hitSlop={8} style={styles.dismissButton}>
-        <Text style={styles.dismissText}>Got it</Text>
+        <SolaText style={styles.dismissText}>Got it</SolaText>
       </Pressable>
     </View>
   );

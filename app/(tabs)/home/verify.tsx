@@ -4,16 +4,16 @@ import {
   Linking,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Sentry from '@sentry/react-native';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
@@ -94,12 +94,12 @@ export default function VerifyScreen() {
           <View style={styles.verifiedBadge}>
             <Ionicons name="shield-checkmark" size={48} color={colors.greenSoft} />
           </View>
-          <Text style={styles.statusTitle}>Verified</Text>
-          <Text style={styles.statusMessage}>
+          <SolaText style={styles.statusTitle}>Verified</SolaText>
+          <SolaText variant="body" color={colors.textSecondary} style={styles.statusMessage}>
             Your identity has been verified. Thank you for helping keep our community safe.
-          </Text>
+          </SolaText>
           <Pressable style={styles.doneButton} onPress={() => router.back()}>
-            <Text style={styles.doneButtonText}>Done</Text>
+            <SolaText style={styles.doneButtonText}>Done</SolaText>
           </Pressable>
         </View>
       </View>
@@ -117,12 +117,12 @@ export default function VerifyScreen() {
           <View style={styles.pendingBadge}>
             <Ionicons name="time-outline" size={48} color={colors.orange} />
           </View>
-          <Text style={styles.statusTitle}>Under Review</Text>
-          <Text style={styles.statusMessage}>
+          <SolaText style={styles.statusTitle}>Under Review</SolaText>
+          <SolaText variant="body" color={colors.textSecondary} style={styles.statusMessage}>
             Your verification is being reviewed. This usually takes less than 24 hours.
-          </Text>
+          </SolaText>
           <Pressable style={styles.doneButton} onPress={() => router.back()}>
-            <Text style={styles.doneButtonText}>Done</Text>
+            <SolaText style={styles.doneButtonText}>Done</SolaText>
           </Pressable>
         </View>
       </View>
@@ -139,22 +139,22 @@ export default function VerifyScreen() {
       </View>
 
       <View style={styles.content}>
-        <Text style={styles.description}>
+        <SolaText variant="body" color={colors.textSecondary} style={styles.description}>
           Take a quick selfie to verify your identity. This helps keep our community safe for everyone.
-        </Text>
+        </SolaText>
 
         {isRejected && (
           <View style={styles.rejectedBanner}>
             <Ionicons name="alert-circle-outline" size={18} color={colors.emergency} />
-            <Text style={styles.rejectedText}>
+            <SolaText style={styles.rejectedText}>
               Your previous submission was not approved. Please try again with a clear, well-lit selfie.
-            </Text>
+            </SolaText>
           </View>
         )}
 
         <View style={styles.poseCard}>
-          <Text style={styles.poseLabel}>POSE</Text>
-          <Text style={styles.poseText}>Please {pose}</Text>
+          <SolaText style={styles.poseLabel}>POSE</SolaText>
+          <SolaText style={styles.poseText}>Please {pose}</SolaText>
         </View>
 
         {selfieUri ? (
@@ -162,13 +162,13 @@ export default function VerifyScreen() {
             <Image source={{ uri: selfieUri }} style={styles.preview} contentFit="cover" />
             <Pressable style={styles.retakeButton} onPress={() => setSelfieUri(null)}>
               <Ionicons name="refresh-outline" size={18} color={colors.textPrimary} />
-              <Text style={styles.retakeText}>Retake</Text>
+              <SolaText style={styles.retakeText}>Retake</SolaText>
             </Pressable>
           </View>
         ) : (
           <Pressable style={styles.cameraButton} onPress={takeSelfie}>
             <Ionicons name="camera-outline" size={32} color={colors.orange} />
-            <Text style={styles.cameraButtonText}>Take Selfie</Text>
+            <SolaText style={styles.cameraButtonText}>Take Selfie</SolaText>
           </Pressable>
         )}
 
@@ -178,9 +178,9 @@ export default function VerifyScreen() {
             onPress={handleSubmit}
             disabled={submitting}
           >
-            <Text style={styles.submitButtonText}>
+            <SolaText style={styles.submitButtonText}>
               {submitting ? 'Submitting...' : 'Submit for Review'}
-            </Text>
+            </SolaText>
           </Pressable>
         )}
       </View>
@@ -208,8 +208,6 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xxl,
   },
   description: {
-    ...typography.body,
-    color: colors.textSecondary,
     marginBottom: spacing.xxl,
   },
   rejectedBanner: {
@@ -316,9 +314,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   statusMessage: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     maxWidth: 300,
     marginBottom: spacing.xxl,
   },

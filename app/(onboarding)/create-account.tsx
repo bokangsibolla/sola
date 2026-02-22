@@ -5,10 +5,10 @@ import {
   Platform,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
@@ -172,8 +172,8 @@ export default function CreateAccountScreen() {
             <ActivityIndicator size="small" color={colors.textMuted} />
           ) : (
             <>
-              <Text style={styles.socialIcon}>G</Text>
-              <Text style={styles.socialText}>Continue with Google</Text>
+              <SolaText style={styles.socialIcon}>G</SolaText>
+              <SolaText style={styles.socialText}>Continue with Google</SolaText>
             </>
           )}
         </Pressable>
@@ -188,7 +188,7 @@ export default function CreateAccountScreen() {
             ) : (
               <>
                 <Ionicons name="logo-apple" size={18} color="#FFFFFF" />
-                <Text style={[styles.socialText, styles.appleText]}>Continue with Apple</Text>
+                <SolaText style={[styles.socialText, styles.appleText]}>Continue with Apple</SolaText>
               </>
             )}
           </Pressable>
@@ -198,7 +198,7 @@ export default function CreateAccountScreen() {
       {/* Divider */}
       <View style={styles.divider}>
         <View style={styles.dividerLine} />
-        <Text style={styles.dividerText}>or continue with email</Text>
+        <SolaText style={styles.dividerText}>or continue with email</SolaText>
         <View style={styles.dividerLine} />
       </View>
 
@@ -242,17 +242,17 @@ export default function CreateAccountScreen() {
       </View>
 
       {fieldError ? (
-        <Text style={styles.errorText}>{fieldError}</Text>
+        <SolaText style={styles.errorText}>{fieldError}</SolaText>
       ) : (
-        <Text style={styles.hint}>
+        <SolaText style={styles.hint}>
           Your password must be at least {MIN_PASSWORD_LENGTH} characters.
-        </Text>
+        </SolaText>
       )}
 
       <View style={styles.loginRow}>
-        <Text style={styles.loginLabel}>Already have an account? </Text>
+        <SolaText style={styles.loginLabel}>Already have an account? </SolaText>
         <Pressable onPress={() => router.push('/(onboarding)/login' as any)}>
-          <Text style={styles.loginLink}>Log in</Text>
+          <SolaText style={styles.loginLink}>Log in</SolaText>
         </Pressable>
       </View>
     </OnboardingScreen>

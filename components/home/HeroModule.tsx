@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -121,7 +122,7 @@ export function HeroModule({ hero }: HeroModuleProps) {
         <View style={styles.pillContainer}>
           <View style={styles.pill}>
             {hero.kind === 'active' && <View style={styles.liveDot} />}
-            <Text style={styles.pillText}>{pillText}</Text>
+            <SolaText style={styles.pillText}>{pillText}</SolaText>
           </View>
         </View>
 
@@ -138,9 +139,9 @@ export function HeroModule({ hero }: HeroModuleProps) {
 
         {/* Bottom content */}
         <View style={styles.overlay}>
-          <Text style={styles.title} numberOfLines={1}>{title}</Text>
+          <SolaText style={styles.title} numberOfLines={1}>{title}</SolaText>
           {subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>{subtitle}</Text>
+            <SolaText variant="heroSubtitle" color={colors.textOnImageMuted} style={styles.subtitle} numberOfLines={1}>{subtitle}</SolaText>
           )}
         </View>
       </Pressable>
@@ -215,10 +216,6 @@ const styles = StyleSheet.create({
     color: colors.textOnImage,
   },
   subtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.textOnImageMuted,
     marginTop: spacing.xs,
   },
 });

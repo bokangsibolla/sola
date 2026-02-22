@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -267,10 +268,10 @@ export default function DayTimelineScreen() {
         {/* ── Day header ──────────────────────────────────────────────── */}
         <View style={styles.dayHeader}>
           {day.date != null && (
-            <Text style={styles.dateText}>{formatDayDate(day.date)}</Text>
+            <SolaText style={styles.dateText}>{formatDayDate(day.date)}</SolaText>
           )}
           {day.title != null && (
-            <Text style={styles.dayTitle}>{day.title}</Text>
+            <SolaText style={styles.dayTitle}>{day.title}</SolaText>
           )}
           <View style={styles.headerDivider} />
         </View>
@@ -303,7 +304,7 @@ export default function DayTimelineScreen() {
           </View>
         ) : (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyTitle}>No stops yet</Text>
+            <SolaText style={styles.emptyTitle}>No stops yet</SolaText>
             <Pressable
               style={styles.emptyButton}
               onPress={() => {
@@ -311,7 +312,7 @@ export default function DayTimelineScreen() {
                 setShowAddStop(true);
               }}
             >
-              <Text style={styles.emptyButtonText}>Add your first stop</Text>
+              <SolaText style={styles.emptyButtonText}>Add your first stop</SolaText>
             </Pressable>
           </View>
         )}

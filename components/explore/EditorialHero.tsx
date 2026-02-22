@@ -1,9 +1,10 @@
 // components/explore/EditorialHero.tsx
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { CONTINENT_LABELS } from '@/data/discover/types';
 import type { ContinentKey } from '@/data/discover/types';
@@ -46,13 +47,13 @@ export function EditorialHero({ country }: EditorialHeroProps) {
       />
       <View style={styles.content}>
         <View style={styles.pillContainer}>
-          <Text style={styles.pillText}>
+          <SolaText variant="pillLabel" color={colors.textOnImage} uppercase letterSpacing={0.8}>
             {country.badgeLabel ?? 'Featured'}
-          </Text>
+          </SolaText>
         </View>
-        <Text style={styles.title}>{country.name}</Text>
+        <SolaText variant="heroTitle" color={colors.textOnImage}>{country.name}</SolaText>
         {continentLabel && (
-          <Text style={styles.subtitle}>{continentLabel}</Text>
+          <SolaText variant="heroSubtitle" color={colors.textOnImageMuted} style={styles.subtitleSpacing}>{continentLabel}</SolaText>
         )}
       </View>
     </Pressable>
@@ -87,19 +88,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.xs,
     marginBottom: spacing.sm,
   },
-  pillText: {
-    ...typography.pillLabel,
-    color: colors.textOnImage,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  title: {
-    ...typography.heroTitle,
-    color: colors.textOnImage,
-  },
-  subtitle: {
-    ...typography.heroSubtitle,
-    color: colors.textOnImageMuted,
+  subtitleSpacing: {
     marginTop: spacing.xs,
   },
 });

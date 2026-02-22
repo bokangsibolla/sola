@@ -1,5 +1,6 @@
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { MapPreview } from '@/components/explore/activity/MapPreview';
@@ -54,31 +55,31 @@ const PracticalDetails: React.FC<PracticalDetailsProps> = ({
       {/* Details section */}
       {hasDetails && (
         <View style={styles.detailsSection}>
-          <Text style={styles.sectionLabel}>DETAILS</Text>
+          <SolaText style={styles.sectionLabel}>DETAILS</SolaText>
           {activity.address && (
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>{activity.address}</Text>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>{activity.address}</SolaText>
             </View>
           )}
           {activity.hoursText && (
             <View style={styles.detailRow}>
               <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>{activity.hoursText}</Text>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>{activity.hoursText}</SolaText>
             </View>
           )}
           {activity.phone && (
             <Pressable style={styles.detailRow} onPress={handlePhone}>
               <Ionicons name="call-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>{activity.phone}</Text>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>{activity.phone}</SolaText>
             </Pressable>
           )}
           {activity.website && (
             <Pressable style={styles.detailRow} onPress={handleWebsite}>
               <Ionicons name="globe-outline" size={16} color={colors.blueSoft} />
-              <Text style={[styles.detailText, styles.linkText]} numberOfLines={1}>
+              <SolaText variant="body" color={colors.blueSoft} style={styles.detailTextLayout} numberOfLines={1}>
                 {activity.website}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
         </View>
@@ -101,14 +102,14 @@ const PracticalDetails: React.FC<PracticalDetailsProps> = ({
             size={20}
             color={colors.background}
           />
-          <Text style={styles.saveBtnText}>
+          <SolaText style={styles.saveBtnText}>
             {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
-          </Text>
+          </SolaText>
         </Pressable>
 
         <Pressable onPress={onOpenMaps} style={[styles.actionBtn, styles.mapsBtn]}>
           <Ionicons name="map-outline" size={20} color={colors.textPrimary} />
-          <Text style={styles.mapsBtnText}>View on Maps</Text>
+          <SolaText style={styles.mapsBtnText}>View on Maps</SolaText>
         </Pressable>
       </View>
     </View>
@@ -140,13 +141,8 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.sm,
   },
-  detailText: {
-    ...typography.body,
-    color: colors.textSecondary,
+  detailTextLayout: {
     flex: 1,
-  },
-  linkText: {
-    color: colors.blueSoft,
   },
   actionRow: {
     flexDirection: 'row',

@@ -5,12 +5,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 
 import { getPlacesGroupedByTime } from '@/data/api';
 import { createBlock } from '@/data/trips/itineraryApi';
@@ -144,7 +144,7 @@ function SuggestionSection({ title, places, tripId, dayId, onAdded, onAddPlace }
 
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <SolaText style={styles.sectionTitle}>{title}</SolaText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -169,10 +169,10 @@ function SuggestionSection({ title, places, tripId, dayId, onAdded, onAddPlace }
                 )}
               </View>
               <View style={styles.cardInfo}>
-                <Text style={styles.placeName} numberOfLines={1}>{place.name}</Text>
-                <Text style={styles.placeType} numberOfLines={1}>
+                <SolaText style={styles.placeName} numberOfLines={1}>{place.name}</SolaText>
+                <SolaText style={styles.placeType} numberOfLines={1}>
                   {friendlyLabel(place.placeType)}
-                </Text>
+                </SolaText>
               </View>
             </Pressable>
 
@@ -185,7 +185,7 @@ function SuggestionSection({ title, places, tripId, dayId, onAdded, onAddPlace }
               ) : (
                 <>
                   <Ionicons name="add-circle-outline" size={16} color={colors.orange} />
-                  <Text style={styles.addText}>Add</Text>
+                  <SolaText style={styles.addText}>Add</SolaText>
                 </>
               )}
             </Pressable>
@@ -253,10 +253,10 @@ function SuggestionGrid({ places, tripId, dayId, onAdded, onAddPlace }: GridProp
               )}
             </View>
             <View style={styles.cardInfo}>
-              <Text style={styles.placeName} numberOfLines={1}>{place.name}</Text>
-              <Text style={styles.placeType} numberOfLines={1}>
+              <SolaText style={styles.placeName} numberOfLines={1}>{place.name}</SolaText>
+              <SolaText style={styles.placeType} numberOfLines={1}>
                 {friendlyLabel(place.placeType)}
-              </Text>
+              </SolaText>
             </View>
           </Pressable>
 
@@ -269,7 +269,7 @@ function SuggestionGrid({ places, tripId, dayId, onAdded, onAddPlace }: GridProp
             ) : (
               <>
                 <Ionicons name="add-circle-outline" size={16} color={colors.orange} />
-                <Text style={styles.addText}>Add</Text>
+                <SolaText style={styles.addText}>Add</SolaText>
               </>
             )}
           </Pressable>
@@ -307,7 +307,7 @@ export function TripDaySuggestions({ cityId, tripId, dayId, addedPlaceIds, onAdd
   if (!hasAny) {
     return (
       <View style={styles.emptyFallback}>
-        <Text style={styles.emptyFallbackText}>No suggestions available for this destination yet</Text>
+        <SolaText style={styles.emptyFallbackText}>No suggestions available for this destination yet</SolaText>
       </View>
     );
   }
@@ -344,9 +344,9 @@ export function TripDaySuggestions({ cityId, tripId, dayId, addedPlaceIds, onAdd
               style={[styles.filterChip, isActive && styles.filterChipActive]}
               onPress={() => setActiveCategory(cat.key)}
             >
-              <Text style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
+              <SolaText style={[styles.filterChipText, isActive && styles.filterChipTextActive]}>
                 {cat.label}
-              </Text>
+              </SolaText>
             </Pressable>
           );
         })}
@@ -401,9 +401,9 @@ export function TripDaySuggestions({ cityId, tripId, dayId, addedPlaceIds, onAdd
 
       {activeCategory !== 'all' && filteredPlaces.length === 0 && (
         <View style={styles.emptyFallback}>
-          <Text style={styles.emptyFallbackText}>
+          <SolaText style={styles.emptyFallbackText}>
             No suggestions in this category yet
-          </Text>
+          </SolaText>
         </View>
       )}
     </View>

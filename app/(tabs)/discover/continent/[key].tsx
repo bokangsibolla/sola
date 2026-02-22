@@ -1,7 +1,8 @@
 // app/(tabs)/discover/continent/[key].tsx
 // Continent detail — country list with search + sort
 import React, { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -46,9 +47,9 @@ function SortChips({
             onPress={() => onChange(opt.key)}
             style={[styles.chip, isActive && styles.chipActive]}
           >
-            <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+            <SolaText style={[styles.chipText, isActive && styles.chipTextActive]}>
               {opt.label}
-            </Text>
+            </SolaText>
           </Pressable>
         );
       })}
@@ -80,11 +81,11 @@ function CountryRow({
         transition={200}
       />
       <View style={styles.countryBody}>
-        <Text style={styles.countryName} numberOfLines={1}>{country.name}</Text>
-        <Text style={styles.countryMeta} numberOfLines={1}>
+        <SolaText style={styles.countryName} numberOfLines={1}>{country.name}</SolaText>
+        <SolaText style={styles.countryMeta} numberOfLines={1}>
           {cityCount} {cityCount === 1 ? 'city' : 'cities'}
           {postCount > 0 && ` · ${postCount} community ${postCount === 1 ? 'post' : 'posts'}`}
-        </Text>
+        </SolaText>
       </View>
       <Feather name="chevron-right" size={16} color={colors.textMuted} />
     </Pressable>
@@ -202,9 +203,9 @@ export default function ContinentDetailScreen() {
           />
         )}
         ListEmptyComponent={
-          <Text style={styles.emptyText}>
+          <SolaText style={styles.emptyText}>
             {search ? 'No countries match your search' : 'No countries found'}
-          </Text>
+          </SolaText>
         }
       />
     </AppScreen>

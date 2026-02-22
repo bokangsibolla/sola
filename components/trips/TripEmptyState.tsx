@@ -1,8 +1,9 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import { useData } from '@/hooks/useData';
 import { getPopularCitiesWithCountry } from '@/data/api';
 import { getPlacesByCategoryForCity } from '@/data/city/cityApi';
@@ -166,17 +167,17 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
   return (
     <View style={styles.container}>
       {/* ── Heading ─────────────────────────────────────────── */}
-      <Text style={styles.heading}>Plan your next trip</Text>
-      <Text style={styles.subheading}>
+      <SolaText style={styles.heading}>Plan your next trip</SolaText>
+      <SolaText style={styles.subheading}>
         Seamless day-by-day planning at your fingertips.
-      </Text>
+      </SolaText>
 
       {/* ── CTA (above fold) ──────────────────────────────── */}
       <Pressable
         style={({ pressed }) => [styles.ctaButton, pressed && styles.pressed]}
         onPress={onPress}
       >
-        <Text style={styles.ctaText}>Create your first trip</Text>
+        <SolaText variant="button" color="#FFFFFF">Create your first trip</SolaText>
       </Pressable>
 
       {/* ── Mock Trip Card (tappable — opens demo) ──────── */}
@@ -197,20 +198,20 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
             <Image source={{ uri: coverImages[0] }} style={styles.coverLeft} contentFit="cover" />
             <Image source={{ uri: coverImages[1] }} style={styles.coverRight} contentFit="cover" />
             <View style={styles.exampleBadge}>
-              <Text style={styles.exampleBadgeText}>EXAMPLE TRIP</Text>
+              <SolaText variant="pillLabel" color="#FFFFFF" letterSpacing={0.8} style={styles.exampleBadgeText}>EXAMPLE TRIP</SolaText>
             </View>
           </View>
         ) : coverImages.length === 1 ? (
           <View style={styles.coverSingle}>
             <Image source={{ uri: coverImages[0] }} style={styles.coverFull} contentFit="cover" />
             <View style={styles.exampleBadge}>
-              <Text style={styles.exampleBadgeText}>EXAMPLE TRIP</Text>
+              <SolaText variant="pillLabel" color="#FFFFFF" letterSpacing={0.8} style={styles.exampleBadgeText}>EXAMPLE TRIP</SolaText>
             </View>
           </View>
         ) : (
           <View style={styles.coverPlaceholder}>
             <View style={styles.exampleBadge}>
-              <Text style={styles.exampleBadgeText}>EXAMPLE TRIP</Text>
+              <SolaText variant="pillLabel" color="#FFFFFF" letterSpacing={0.8} style={styles.exampleBadgeText}>EXAMPLE TRIP</SolaText>
             </View>
           </View>
         )}
@@ -220,48 +221,48 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
           {/* Trip title + meta */}
           {hasData ? (
             <>
-              <Text style={styles.tripTitle}>
+              <SolaText style={styles.tripTitle}>
                 {cities.map((c) => c.name).join(' & ')}
-              </Text>
+              </SolaText>
               <View style={styles.metaRow}>
                 {cities.map((c) => (
                   <View key={c.name} style={styles.metaPill}>
-                    <Text style={styles.metaFlag}>{getFlag(c.iso2)}</Text>
-                    <Text style={styles.metaText}>{c.countryName}</Text>
+                    <SolaText style={styles.metaFlag}>{getFlag(c.iso2)}</SolaText>
+                    <SolaText style={styles.metaText}>{c.countryName}</SolaText>
                   </View>
                 ))}
                 <View style={styles.metaPill}>
                   <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-                  <Text style={styles.metaText}>10 Days</Text>
+                  <SolaText style={styles.metaText}>10 Days</SolaText>
                 </View>
                 <View style={styles.metaPill}>
                   <Ionicons name="wallet-outline" size={12} color="#2D8A4E" />
-                  <Text style={[styles.metaText, { color: '#2D8A4E' }]}>~$850 est.</Text>
+                  <SolaText style={[styles.metaText, { color: '#2D8A4E' }]}>~$850 est.</SolaText>
                 </View>
               </View>
             </>
           ) : (
             <>
-              <Text style={styles.tripTitle}>Your Multi-City Adventure</Text>
+              <SolaText style={styles.tripTitle}>Your Multi-City Adventure</SolaText>
               <View style={styles.metaRow}>
                 <View style={styles.metaPill}>
                   <Ionicons name="calendar-outline" size={12} color={colors.textSecondary} />
-                  <Text style={styles.metaText}>7 Days</Text>
+                  <SolaText style={styles.metaText}>7 Days</SolaText>
                 </View>
                 <View style={styles.metaPill}>
                   <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
-                  <Text style={styles.metaText}>4 Places</Text>
+                  <SolaText style={styles.metaText}>4 Places</SolaText>
                 </View>
                 <View style={styles.metaPill}>
                   <Ionicons name="wallet-outline" size={12} color="#2D8A4E" />
-                  <Text style={[styles.metaText, { color: '#2D8A4E' }]}>~$650 est.</Text>
+                  <SolaText style={[styles.metaText, { color: '#2D8A4E' }]}>~$650 est.</SolaText>
                 </View>
               </View>
             </>
           )}
 
           {/* Section label */}
-          <Text style={styles.itineraryLabel}>ITINERARY</Text>
+          <SolaText variant="pillLabel" color={colors.textMuted} uppercase letterSpacing={1} style={styles.itineraryLabel}>ITINERARY</SolaText>
 
           {/* ── Day blocks ────────────────────────────────── */}
           {loading ? (
@@ -282,38 +283,38 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
                 ]} />
                 <View style={styles.dayContent}>
                   <View style={styles.dayHeader}>
-                    <Text style={styles.dayLabel}>
+                    <SolaText style={styles.dayLabel}>
                       {cityIdx === 0 ? 'Day 1\u20135' : 'Day 6\u201310'}
-                    </Text>
+                    </SolaText>
                     <View style={styles.cityChip}>
-                      <Text style={styles.cityChipFlag}>{getFlag(city.iso2)}</Text>
-                      <Text style={styles.cityChipText}>{city.name}</Text>
+                      <SolaText style={styles.cityChipFlag}>{getFlag(city.iso2)}</SolaText>
+                      <SolaText style={styles.cityChipText}>{city.name}</SolaText>
                     </View>
                   </View>
 
                   {city.places.map((place) => (
                     <View key={place.id} style={styles.entryRow}>
                       <View style={styles.entryInfo}>
-                        <Text style={styles.entryName} numberOfLines={1}>
+                        <SolaText style={styles.entryName} numberOfLines={1}>
                           {place.name}
-                        </Text>
+                        </SolaText>
                         <View style={styles.entryTagRow}>
                           <View style={[
                             styles.tagDot,
                             { backgroundColor: TYPE_DOT_COLOR[place.placeType] ?? colors.textMuted },
                           ]} />
-                          <Text style={styles.entryTagText}>
+                          <SolaText style={styles.entryTagText}>
                             {TYPE_LABEL[place.placeType] ?? place.placeType}
-                          </Text>
+                          </SolaText>
                           {place.googleRating != null && place.googleRating > 0 && (
-                            <Text style={styles.ratingText}>
+                            <SolaText style={styles.ratingText}>
                               {place.googleRating.toFixed(1)} \u2605
-                            </Text>
+                            </SolaText>
                           )}
                           {MOCK_COST[place.placeType] && (
-                            <Text style={styles.costHint}>
+                            <SolaText style={styles.costHint}>
                               {MOCK_COST[place.placeType]}
-                            </Text>
+                            </SolaText>
                           )}
                         </View>
                       </View>
@@ -332,9 +333,9 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
                   ))}
 
                   {city.places.length > 0 && (
-                    <Text style={styles.moreStops}>
+                    <SolaText style={styles.moreStops}>
                       +{2 + cityIdx} more stops...
-                    </Text>
+                    </SolaText>
                   )}
                 </View>
               </View>
@@ -346,11 +347,11 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
             <View style={styles.suggestionIcon}>
               <Ionicons name="sparkles" size={14} color={colors.blueSoft} />
             </View>
-            <Text style={styles.suggestionText} numberOfLines={2}>
+            <SolaText style={styles.suggestionText} numberOfLines={2}>
               {hasData
                 ? `Move the restaurant to Day 2 evening \u2014 it's on the way back from ${cities[0]?.places[0]?.name ?? 'the temple'}.`
                 : 'Reorder stops to minimize travel time between locations.'}
-            </Text>
+            </SolaText>
           </View>
         </View>
       </Pressable>
@@ -397,11 +398,6 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: 0.9,
     transform: [{ scale: 0.98 }],
-  },
-  ctaText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
 
   // ── Trip Card ──
@@ -452,8 +448,6 @@ const styles = StyleSheet.create({
   exampleBadgeText: {
     fontFamily: fonts.semiBold,
     fontSize: 9,
-    color: '#FFFFFF',
-    letterSpacing: 0.8,
   },
 
   // ── Card body ──
@@ -493,9 +487,6 @@ const styles = StyleSheet.create({
   // ── Itinerary label ──
   itineraryLabel: {
     fontFamily: fonts.semiBold,
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 1,
     marginBottom: spacing.md,
   },
 

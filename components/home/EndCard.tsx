@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
@@ -30,9 +31,9 @@ export function EndCard({ onExplore }: EndCardProps) {
         style={styles.gradient}
       />
       <View style={styles.overlay}>
-        <Text style={styles.heading}>Where will you go next?</Text>
+        <SolaText style={styles.heading}>Where will you go next?</SolaText>
         <View style={styles.ctaRow}>
-          <Text style={styles.cta}>Explore destinations</Text>
+          <SolaText style={styles.cta}>Explore destinations</SolaText>
           <Feather name="arrow-right" size={14} color="rgba(255,255,255,0.8)" />
         </View>
       </View>

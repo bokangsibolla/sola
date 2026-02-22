@@ -1,6 +1,7 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface CredibilityStatsProps {
   countriesCount: number;
@@ -46,10 +47,10 @@ export default function CredibilityStats({
       {stats.map((stat, i) => (
         <View key={i} style={styles.stat}>
           <Feather name={stat.icon} size={14} color={colors.textMuted} />
-          <Text style={styles.value}>
+          <SolaText style={styles.value}>
             {stat.value}
-            {stat.label ? <Text style={styles.label}> {stat.label}</Text> : null}
-          </Text>
+            {stat.label ? <SolaText style={styles.label}> {stat.label}</SolaText> : null}
+          </SolaText>
         </View>
       ))}
     </View>

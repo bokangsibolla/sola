@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { Place } from '@/data/types';
 
@@ -37,15 +38,15 @@ const AtAGlance: React.FC<AtAGlanceProps> = ({ activity }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>AT A GLANCE</Text>
+      <SolaText style={styles.sectionLabel}>AT A GLANCE</SolaText>
       <View style={styles.card}>
         {rows.map((row, index) => (
           <View
             key={row.label}
             style={[styles.row, index < rows.length - 1 && styles.rowBorder]}
           >
-            <Text style={styles.rowLabel}>{row.label}</Text>
-            <Text style={styles.rowValue}>{row.value}</Text>
+            <SolaText style={styles.rowLabel}>{row.label}</SolaText>
+            <SolaText style={styles.rowValue}>{row.value}</SolaText>
           </View>
         ))}
       </View>

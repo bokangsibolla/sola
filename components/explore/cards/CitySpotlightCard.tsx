@@ -1,5 +1,6 @@
 // components/explore/cards/CitySpotlightCard.tsx
-import { Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Pressable, StyleSheet, View, Dimensions } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { CityWithCountry } from '@/data/explore/types';
@@ -31,11 +32,11 @@ export function CitySpotlightCard({ city, onPress }: CitySpotlightCardProps) {
         ) : null}
       </Pressable>
       <View style={styles.info}>
-        <Text style={styles.name}>{city.name}</Text>
-        <Text style={styles.country}>{city.countryName}</Text>
+        <SolaText style={styles.name}>{city.name}</SolaText>
+        <SolaText style={styles.country}>{city.countryName}</SolaText>
       </View>
       {city.shortBlurb && (
-        <Text style={styles.blurb} numberOfLines={2}>{city.shortBlurb}</Text>
+        <SolaText style={styles.blurb} numberOfLines={2}>{city.shortBlurb}</SolaText>
       )}
     </View>
   );

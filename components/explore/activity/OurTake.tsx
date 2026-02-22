@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface OurTakeProps {
@@ -15,20 +16,20 @@ const OurTake: React.FC<OurTakeProps> = ({ bullets, fallbackText }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>WHY WE INCLUDE THIS</Text>
+      <SolaText style={styles.sectionLabel}>WHY WE INCLUDE THIS</SolaText>
       {hasBullets ? (
         <View style={styles.bulletList}>
           {bullets.slice(0, 6).map((bullet, index) => (
             <View key={index} style={styles.bulletRow}>
               <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{bullet}</Text>
+              <SolaText style={styles.bulletText}>{bullet}</SolaText>
             </View>
           ))}
         </View>
       ) : (
         <View style={styles.accentRow}>
           <View style={styles.accentBar} />
-          <Text style={styles.proseText}>{fallbackText}</Text>
+          <SolaText style={styles.proseText}>{fallbackText}</SolaText>
         </View>
       )}
     </View>

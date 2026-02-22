@@ -1,5 +1,6 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 import { formatDateShort, getFlag, STATUS_COLORS } from '@/data/trips/helpers';
 import type { TripWithStops } from '@/data/trips/types';
 
@@ -22,25 +23,25 @@ export default function ProfileTripCard({ trip, overlapLabel }: ProfileTripCardP
 
   return (
     <View style={styles.card}>
-      <Text style={styles.flag}>{flag}</Text>
+      <SolaText style={styles.flag}>{flag}</SolaText>
       <View style={styles.textContent}>
-        <Text style={styles.title} numberOfLines={1}>
+        <SolaText style={styles.title} numberOfLines={1}>
           {trip.title || trip.destinationName}
-        </Text>
-        <Text style={styles.dates}>{dateText}</Text>
+        </SolaText>
+        <SolaText style={styles.dates}>{dateText}</SolaText>
         {stops.length > 1 && (
-          <Text style={styles.stops} numberOfLines={1}>{stopsText}</Text>
+          <SolaText style={styles.stops} numberOfLines={1}>{stopsText}</SolaText>
         )}
         {overlapLabel && (
           <View style={styles.overlapBadge}>
-            <Text style={styles.overlapText}>{overlapLabel}</Text>
+            <SolaText style={styles.overlapText}>{overlapLabel}</SolaText>
           </View>
         )}
       </View>
       <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
-        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+        <SolaText style={[styles.statusText, { color: statusStyle.text }]}>
           {statusStyle.label}
-        </Text>
+        </SolaText>
       </View>
     </View>
   );

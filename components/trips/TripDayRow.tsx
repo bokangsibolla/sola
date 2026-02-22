@@ -1,8 +1,9 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { TripDayWithBlocks } from '@/data/trips/itineraryTypes';
 import { formatDayDate } from '@/data/trips/helpers';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, pressedState } from '@/constants/design';
 
 interface TripDayRowProps {
@@ -39,28 +40,28 @@ export const TripDayRow: React.FC<TripDayRowProps> = ({ day, isToday, onPress })
       <View style={styles.content}>
         {/* Row 1: Day label, date, today pill, stop count, chevron */}
         <View style={styles.row1}>
-          <Text style={styles.dayLabel}>Day {day.dayIndex}</Text>
+          <SolaText style={styles.dayLabel}>Day {day.dayIndex}</SolaText>
           {dateLabel != null && (
-            <Text style={styles.dateText}>{dateLabel}</Text>
+            <SolaText style={styles.dateText}>{dateLabel}</SolaText>
           )}
           {isToday && (
             <View style={styles.todayPill}>
-              <Text style={styles.todayText}>TODAY</Text>
+              <SolaText variant="pillLabel" color={colors.orange} uppercase letterSpacing={0.5} style={styles.todayText}>TODAY</SolaText>
             </View>
           )}
           <View style={styles.row1Right}>
-            <Text style={styles.stopsText}>{stopsLabel}</Text>
+            <SolaText style={styles.stopsText}>{stopsLabel}</SolaText>
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           </View>
         </View>
 
         {/* Row 2: Place name preview */}
-        <Text
+        <SolaText
           style={[styles.previewText, blockCount === 0 && styles.previewEmpty]}
           numberOfLines={1}
         >
           {preview}
-        </Text>
+        </SolaText>
       </View>
     </Pressable>
   );
@@ -111,9 +112,6 @@ const styles = StyleSheet.create({
   todayText: {
     fontFamily: fonts.semiBold,
     fontSize: 10,
-    color: colors.orange,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   row1Right: {
     flex: 1,

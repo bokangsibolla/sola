@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { ItinerarySuggestion } from '@/data/trips/itineraryTypes';
 
@@ -21,7 +22,7 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
     <View style={styles.container}>
       <View style={styles.topRow}>
         <Ionicons name="sparkles" size={18} color={colors.orange} />
-        <Text style={styles.reasonText}>{suggestion.reason}</Text>
+        <SolaText style={styles.reasonText}>{suggestion.reason}</SolaText>
       </View>
 
       <View style={styles.actionRow}>
@@ -30,14 +31,14 @@ export const SuggestionCard: React.FC<SuggestionCardProps> = ({
           style={styles.dismissButton}
           hitSlop={0}
         >
-          <Text style={styles.dismissText}>Dismiss</Text>
+          <SolaText style={styles.dismissText}>Dismiss</SolaText>
         </Pressable>
         <Pressable
           onPress={onApply}
           style={styles.applyButton}
           hitSlop={0}
         >
-          <Text style={styles.applyText}>Apply</Text>
+          <SolaText style={styles.applyText}>Apply</SolaText>
         </Pressable>
       </View>
     </View>

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import type { Country } from '@/data/types';
 import { colors, fonts, spacing } from '@/constants/design';
 
@@ -24,9 +25,9 @@ export function FinalNote({ country }: Props) {
   return (
     <View style={styles.container}>
       <View style={styles.divider} />
-      <Text style={styles.heading}>Final note</Text>
+      <SolaText style={styles.heading}>Final note</SolaText>
       {text.map((p, i) => (
-        <Text key={i} style={styles.body}>{p}</Text>
+        <SolaText key={i} style={styles.body}>{p}</SolaText>
       ))}
     </View>
   );

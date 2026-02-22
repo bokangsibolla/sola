@@ -1,8 +1,9 @@
 // components/explore/GridCard.tsx
 import { useCallback, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -83,7 +84,7 @@ export default function GridCard({
           {/* Optional badge - only render if badge exists */}
           {badge && badge.trim().length > 0 && (
             <View style={styles.badge}>
-              <Text style={styles.badgeText}>{badge}</Text>
+              <SolaText style={styles.badgeText}>{badge}</SolaText>
             </View>
           )}
 
@@ -108,30 +109,30 @@ export default function GridCard({
 
         <View style={styles.contentContainer}>
           {/* Title */}
-          <Text style={styles.title} numberOfLines={1}>
+          <SolaText style={styles.title} numberOfLines={1}>
             {title}
-          </Text>
+          </SolaText>
 
           {/* Blurb - one-liner description */}
           {blurb && blurb.trim().length > 0 && (
-            <Text style={styles.blurb} numberOfLines={1}>
+            <SolaText style={styles.blurb} numberOfLines={1}>
               {blurb}
-            </Text>
+            </SolaText>
           )}
 
           {/* Price and/or rating - only show if data exists */}
           {(showPrice || showRating) && (
             <View style={styles.metaRow}>
               {showPrice && (
-                <Text style={styles.price}>
+                <SolaText style={styles.price}>
                   From {formatCurrency(price.amount, price.currency)}
-                  {price.suffix && <Text style={styles.priceSuffix}> {price.suffix}</Text>}
-                </Text>
+                  {price.suffix && <SolaText style={styles.priceSuffix}> {price.suffix}</SolaText>}
+                </SolaText>
               )}
               {showRating && (
                 <View style={styles.ratingContainer}>
                   <Ionicons name="star" size={11} color={colors.textPrimary} />
-                  <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
+                  <SolaText style={styles.ratingText}>{rating.toFixed(1)}</SolaText>
                 </View>
               )}
             </View>

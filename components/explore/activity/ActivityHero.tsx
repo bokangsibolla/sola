@@ -3,9 +3,9 @@ import {
   Dimensions,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -81,9 +81,9 @@ const ActivityHero: React.FC<ActivityHeroProps> = ({
           </ScrollView>
           {images.length > 1 && (
             <View style={styles.counterPill}>
-              <Text style={styles.counterText}>
+              <SolaText style={styles.counterText}>
                 {activeIndex + 1}/{images.length}
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>
@@ -95,15 +95,15 @@ const ActivityHero: React.FC<ActivityHeroProps> = ({
 
       {/* Identity block */}
       <View style={styles.identity}>
-        <Text style={styles.typeLabel}>{formatDisplayType(activity)}</Text>
+        <SolaText style={styles.typeLabel}>{formatDisplayType(activity)}</SolaText>
         <View style={styles.nameRow}>
-          <Text style={useSerif ? styles.nameSerif : styles.nameSans}>
+          <SolaText style={useSerif ? styles.nameSerif : styles.nameSans}>
             {activity.name}
-          </Text>
-          {price && <Text style={styles.price}>{price}</Text>}
+          </SolaText>
+          {price && <SolaText style={styles.price}>{price}</SolaText>}
         </View>
         {location.length > 0 && (
-          <Text style={styles.location}>{location}</Text>
+          <SolaText style={styles.location}>{location}</SolaText>
         )}
 
         {/* Signal tags */}
@@ -111,7 +111,7 @@ const ActivityHero: React.FC<ActivityHeroProps> = ({
           <View style={styles.signalRow}>
             {signalTags.map((tag) => (
               <View key={tag.id} style={styles.signalPill}>
-                <Text style={styles.signalText}>{tag.label}</Text>
+                <SolaText style={styles.signalText}>{tag.label}</SolaText>
               </View>
             ))}
           </View>

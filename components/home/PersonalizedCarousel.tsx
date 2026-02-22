@@ -1,5 +1,6 @@
 import React from 'react';
-import { Dimensions, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -31,7 +32,7 @@ export function PersonalizedCarousel({ cities, isPersonalized = false }: Persona
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionTitle}>{title}</Text>
+      <SolaText variant="sectionTitle" style={styles.sectionTitle}>{title}</SolaText>
       <FlatList
         data={cities}
         keyExtractor={(item) => item.cityId}
@@ -64,16 +65,16 @@ export function PersonalizedCarousel({ cities, isPersonalized = false }: Persona
                 style={styles.gradient}
               />
               <View style={styles.overlay}>
-                <Text style={styles.cityName} numberOfLines={1}>
+                <SolaText style={styles.cityName} numberOfLines={1}>
                   {item.cityName}
-                </Text>
-                <Text style={styles.countryName} numberOfLines={1}>
+                </SolaText>
+                <SolaText style={styles.countryName} numberOfLines={1}>
                   {item.countryName}
-                </Text>
+                </SolaText>
                 {reasonLine && (
-                  <Text style={styles.reasonLine} numberOfLines={1}>
+                  <SolaText style={styles.reasonLine} numberOfLines={1}>
                     {reasonLine}
-                  </Text>
+                  </SolaText>
                 )}
               </View>
             </Pressable>
@@ -89,10 +90,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: colors.textPrimary,
     paddingHorizontal: spacing.screenX,
     marginBottom: spacing.md,
   },

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, elevation, fonts, radius, spacing } from '@/constants/design';
@@ -41,14 +42,14 @@ const StickyBottomCTA: React.FC<StickyBottomCTAProps> = ({
           size={20}
           color={colors.background}
         />
-        <Text style={styles.saveText}>
+        <SolaText style={styles.saveText}>
           {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
-        </Text>
+        </SolaText>
       </Pressable>
 
       <Pressable onPress={onOpenMaps} style={[styles.button, styles.mapsButton]}>
         <Ionicons name="map-outline" size={20} color={colors.textPrimary} />
-        <Text style={styles.mapsText}>View on Maps</Text>
+        <SolaText style={styles.mapsText}>View on Maps</SolaText>
       </Pressable>
     </View>
   );

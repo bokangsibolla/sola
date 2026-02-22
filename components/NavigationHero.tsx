@@ -2,9 +2,9 @@ import React from 'react';
 import {
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
@@ -114,15 +114,15 @@ const NavigationHero: React.FC<NavigationHeroProps> = ({
       {/* ── Title overlay ──────────────────────────────────────── */}
       <View style={styles.heroOverlay}>
         {label && (
-          <Text style={styles.heroLabel}>{label.toUpperCase()}</Text>
+          <SolaText style={styles.heroLabel}>{label.toUpperCase()}</SolaText>
         )}
-        <Text style={styles.heroTitle} numberOfLines={2}>
+        <SolaText style={styles.heroTitle} numberOfLines={2}>
           {title}
-        </Text>
+        </SolaText>
         {subtitle && (
-          <Text style={styles.heroSubtitle} numberOfLines={2}>
+          <SolaText style={styles.heroSubtitle} numberOfLines={2}>
             {subtitle}
-          </Text>
+          </SolaText>
         )}
       </View>
     </View>

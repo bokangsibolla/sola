@@ -1,5 +1,6 @@
 // components/explore/cards/EditorialCollectionCard.tsx
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius } from '@/constants/design';
@@ -35,21 +36,21 @@ export function EditorialCollectionCard({ collection, onPress }: EditorialCollec
         pointerEvents="none"
       />
       <View style={styles.typeLabel} pointerEvents="none">
-        <Text style={styles.typeLabelText}>Collection</Text>
+        <SolaText style={styles.typeLabelText}>Collection</SolaText>
       </View>
       <View style={styles.content} pointerEvents="none">
         {collection.badgeLabel && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{collection.badgeLabel}</Text>
+            <SolaText style={styles.badgeText}>{collection.badgeLabel}</SolaText>
           </View>
         )}
-        <Text style={styles.title}>{collection.title}</Text>
+        <SolaText style={styles.title}>{collection.title}</SolaText>
         {collection.subtitle && (
-          <Text style={styles.subtitle}>{collection.subtitle}</Text>
+          <SolaText style={styles.subtitle}>{collection.subtitle}</SolaText>
         )}
-        <Text style={styles.itemCount}>
+        <SolaText style={styles.itemCount}>
           {collection.items.length} {collection.items.length === 1 ? 'destination' : 'destinations'}
-        </Text>
+        </SolaText>
       </View>
     </Pressable>
   );

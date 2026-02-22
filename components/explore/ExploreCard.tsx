@@ -1,7 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
-import { Animated, Pressable, StyleSheet, Text, View, Dimensions } from 'react-native';
+import { Animated, Pressable, StyleSheet, View, Dimensions } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 const SCREEN_WIDTH = Dimensions.get('window').width;
@@ -87,38 +88,38 @@ export default function ExploreCard({
         </View>
 
         <View style={styles.contentContainer}>
-          <Text style={styles.title} numberOfLines={2}>
+          <SolaText style={styles.title} numberOfLines={2}>
             {title}
-          </Text>
+          </SolaText>
 
           {subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>
+            <SolaText style={styles.subtitle} numberOfLines={1}>
               {subtitle}
-            </Text>
+            </SolaText>
           )}
 
           {metaRow && (
-            <Text style={styles.metaRow} numberOfLines={1}>
+            <SolaText style={styles.metaRow} numberOfLines={1}>
               {metaRow}
-            </Text>
+            </SolaText>
           )}
 
           {rating !== undefined && (
             <View style={styles.ratingRow}>
               <Ionicons name="star" size={14} color={colors.textPrimary} style={styles.starIcon} />
-              <Text style={styles.ratingText}>{rating.toFixed(2)}</Text>
+              <SolaText style={styles.ratingText}>{rating.toFixed(2)}</SolaText>
               {reviewCount !== undefined && (
-                <Text style={styles.reviewCount}>({reviewCount.toLocaleString()})</Text>
+                <SolaText style={styles.reviewCount}>({reviewCount.toLocaleString()})</SolaText>
               )}
             </View>
           )}
 
           {price && (
             <View style={styles.priceRow}>
-              <Text style={styles.priceText}>
+              <SolaText style={styles.priceText}>
                 From {formatCurrency(price.amount, price.currency)}
-                {price.suffix && <Text style={styles.priceSuffix}> {price.suffix}</Text>}
-              </Text>
+                {price.suffix && <SolaText style={styles.priceSuffix}> {price.suffix}</SolaText>}
+              </SolaText>
             </View>
           )}
         </View>

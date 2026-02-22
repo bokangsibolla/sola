@@ -1,6 +1,7 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface TripMetaPillsProps {
@@ -53,7 +54,7 @@ export const TripMetaPills: React.FC<TripMetaPillsProps> = ({
             color={colors.textSecondary}
             style={styles.pillIcon}
           />
-          <Text style={styles.pillText}>{pill.label}</Text>
+          <SolaText style={styles.pillText}>{pill.label}</SolaText>
         </View>
       ))}
     </ScrollView>

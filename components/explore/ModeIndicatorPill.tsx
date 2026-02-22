@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, Text, StyleSheet } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useAppMode } from '@/state/AppModeContext';
 import { colors, fonts, spacing, radius } from '@/constants/design';
@@ -23,12 +24,12 @@ export function ModeIndicatorPill({ onPress }: ModeIndicatorPillProps) {
         size={14}
         color={isTravelling ? colors.orange : colors.textMuted}
       />
-      <Text
+      <SolaText
         style={[styles.label, isTravelling ? styles.labelTravelling : styles.labelDiscover]}
         numberOfLines={1}
       >
         {isTravelling ? `In ${activeTripInfo.city.name}` : 'Exploring'}
-      </Text>
+      </SolaText>
     </Pressable>
   );
 }

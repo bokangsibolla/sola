@@ -1,5 +1,6 @@
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { MapPreview } from '@/components/explore/activity/MapPreview';
@@ -40,7 +41,7 @@ const AccommodationPractical: React.FC<AccommodationPracticalProps> = ({
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>DETAILS</Text>
+      <SolaText style={styles.sectionLabel}>DETAILS</SolaText>
 
       {/* Map preview */}
       <View style={styles.mapSection}>
@@ -59,59 +60,59 @@ const AccommodationPractical: React.FC<AccommodationPracticalProps> = ({
           {accommodation.address && (
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>{accommodation.address}</Text>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>{accommodation.address}</SolaText>
             </View>
           )}
 
           {accommodation.checkInTime && (
             <View style={styles.detailRow}>
               <Ionicons name="log-in-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>
                 Check-in: {accommodation.checkInTime}
-              </Text>
+              </SolaText>
             </View>
           )}
 
           {accommodation.checkOutTime && (
             <View style={styles.detailRow}>
               <Ionicons name="log-out-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>
                 Check-out: {accommodation.checkOutTime}
-              </Text>
+              </SolaText>
             </View>
           )}
 
           {accommodation.website && (
             <Pressable style={styles.detailRow} onPress={handleWebsite}>
               <Ionicons name="globe-outline" size={16} color={colors.blueSoft} />
-              <Text style={[styles.detailText, styles.linkText]} numberOfLines={1}>
+              <SolaText variant="body" color={colors.blueSoft} style={styles.detailTextLayout} numberOfLines={1}>
                 {accommodation.website}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
 
           {accommodation.phone && (
             <Pressable style={styles.detailRow} onPress={handlePhone}>
               <Ionicons name="call-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>{accommodation.phone}</Text>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>{accommodation.phone}</SolaText>
             </Pressable>
           )}
 
           {accommodation.paymentTypes && accommodation.paymentTypes.length > 0 && (
             <View style={styles.detailRow}>
               <Ionicons name="card-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>
                 {accommodation.paymentTypes.join(', ')}
-              </Text>
+              </SolaText>
             </View>
           )}
 
           {accommodation.nearestTransport && (
             <View style={styles.detailRow}>
               <Ionicons name="bus-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.detailText}>
+              <SolaText variant="body" color={colors.textSecondary} style={styles.detailTextLayout}>
                 {accommodation.nearestTransport}
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>
@@ -145,12 +146,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     marginBottom: spacing.xs,
   },
-  detailText: {
-    ...typography.body,
-    color: colors.textSecondary,
+  detailTextLayout: {
     flex: 1,
-  },
-  linkText: {
-    color: colors.blueSoft,
   },
 });

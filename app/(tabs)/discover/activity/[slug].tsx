@@ -1,12 +1,13 @@
 // app/(tabs)/discover/activity/[slug].tsx
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
-import { colors, spacing, typography } from '@/constants/design';
+import { colors, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import {
@@ -154,7 +155,7 @@ export default function ActivityDetailScreen() {
       <SafeAreaView style={styles.container} edges={['top']}>
         <NavigationHeader title="Activity" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
         <View style={styles.emptyState}>
-          <Text style={styles.emptyText}>Activity not found</Text>
+          <SolaText variant="body" color={colors.textMuted}>Activity not found</SolaText>
         </View>
       </SafeAreaView>
     );
@@ -232,8 +233,5 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
+  emptyText: {},
 });

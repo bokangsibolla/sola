@@ -1,4 +1,5 @@
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import type { Country } from '@/data/types';
 import type { EmergencyNumbers } from '@/data/safety';
@@ -95,23 +96,23 @@ export function QuickReference({ country, emergency }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Quick reference</Text>
+      <SolaText style={styles.heading}>Quick reference</SolaText>
       <View style={styles.card}>
         {rows.map((row, index) => {
           const isLast = index === rows.length - 1;
 
           return (
             <View key={row.key} style={[styles.row, !isLast && styles.rowBorder]}>
-              <Text style={styles.rowLabel}>{row.label}</Text>
+              <SolaText style={styles.rowLabel}>{row.label}</SolaText>
 
               {row.kind === 'value' && (
-                <Text style={styles.rowValue}>{row.value}</Text>
+                <SolaText style={styles.rowValue}>{row.value}</SolaText>
               )}
 
               {row.kind === 'link' && (
                 <Pressable onPress={() => openUrl(row.url)} hitSlop={8}>
                   <View style={styles.linkRow}>
-                    <Text style={styles.linkText}>{row.linkLabel}</Text>
+                    <SolaText style={styles.linkText}>{row.linkLabel}</SolaText>
                     <Ionicons name="open-outline" size={12} color={colors.orange} style={styles.linkIcon} />
                   </View>
                 </Pressable>
@@ -121,10 +122,10 @@ export function QuickReference({ country, emergency }: Props) {
                 <View style={styles.phoneGroup}>
                   {row.numbers.map((num, i) => (
                     <Pressable key={i} onPress={() => callNumber(num.number)} hitSlop={8}>
-                      <Text style={styles.phoneItem}>
-                        <Text style={styles.phoneLabel}>{num.label} </Text>
-                        <Text style={styles.phoneNumber}>{num.number}</Text>
-                      </Text>
+                      <SolaText style={styles.phoneItem}>
+                        <SolaText style={styles.phoneLabel}>{num.label} </SolaText>
+                        <SolaText style={styles.phoneNumber}>{num.number}</SolaText>
+                      </SolaText>
                     </Pressable>
                   ))}
                 </View>
@@ -135,9 +136,9 @@ export function QuickReference({ country, emergency }: Props) {
                   {row.providers.map((provider, i) => (
                     <Pressable key={i} onPress={() => openUrl(provider.url)} hitSlop={4}>
                       <View style={styles.simRow}>
-                        <Text style={styles.linkText}>{provider.name}</Text>
+                        <SolaText style={styles.linkText}>{provider.name}</SolaText>
                         {provider.note && (
-                          <Text style={styles.simNote}> {provider.note}</Text>
+                          <SolaText style={styles.simNote}> {provider.note}</SolaText>
                         )}
                       </View>
                     </Pressable>

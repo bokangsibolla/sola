@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
@@ -100,7 +101,7 @@ export default function DayStyleScreen() {
       onSkip={handleSkip}
     >
       <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Pick up to 2</Text>
+        <SolaText style={styles.sectionLabel}>Pick up to 2</SolaText>
         <View style={styles.pillGrid}>
           {INTERESTS.map((option) => (
             <Pill
@@ -114,8 +115,8 @@ export default function DayStyleScreen() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionHeadline}>What would make this trip feel right?</Text>
-        <Text style={styles.sectionLabel}>Pick up to 2</Text>
+        <SolaText style={styles.sectionHeadline}>What would make this trip feel right?</SolaText>
+        <SolaText style={styles.sectionLabel}>Pick up to 2</SolaText>
         <View style={styles.pillGrid}>
           {PRIORITIES.map((option) => (
             <Pill

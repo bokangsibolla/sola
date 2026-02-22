@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface WomenRecommendProps {
@@ -13,21 +14,21 @@ const WomenRecommend: React.FC<WomenRecommendProps> = ({ text }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>FROM WOMEN WHO'VE DONE THIS</Text>
+      <SolaText style={styles.sectionLabel}>FROM WOMEN WHO'VE DONE THIS</SolaText>
       <View style={styles.accentRow}>
         <View style={styles.accentBar} />
         <View style={styles.textContainer}>
-          <Text
+          <SolaText
             style={styles.quoteText}
             numberOfLines={expanded ? undefined : 5}
           >
             {text}
-          </Text>
+          </SolaText>
           {text.length > 200 && (
             <Pressable onPress={() => setExpanded(!expanded)} hitSlop={8}>
-              <Text style={styles.toggle}>
+              <SolaText style={styles.toggle}>
                 {expanded ? 'Show less' : 'Read more'}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
         </View>

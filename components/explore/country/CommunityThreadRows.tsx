@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { ThreadWithAuthor } from '@/data/community/types';
@@ -21,7 +22,7 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.heading}>What Solo Women Are Asking</Text>
+        <SolaText style={styles.heading}>What Solo Women Are Asking</SolaText>
         {showSeeAll && (
           <Pressable
             onPress={() => router.push({
@@ -30,7 +31,7 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
             } as any)}
             hitSlop={8}
           >
-            <Text style={styles.seeAll}>See all</Text>
+            <SolaText style={styles.seeAll}>See all</SolaText>
           </Pressable>
         )}
       </View>
@@ -52,8 +53,8 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
             ]}
           >
             <View style={styles.rowBody}>
-              <Text style={styles.threadTitle} numberOfLines={2}>{thread.title}</Text>
-              <Text style={styles.threadMeta}>{meta}</Text>
+              <SolaText style={styles.threadTitle} numberOfLines={2}>{thread.title}</SolaText>
+              <SolaText style={styles.threadMeta}>{meta}</SolaText>
             </View>
             <Ionicons name="chevron-forward" size={16} color={colors.borderDefault} />
           </Pressable>

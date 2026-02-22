@@ -8,10 +8,10 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
@@ -190,11 +190,11 @@ export default function ProfileScreen() {
               <Ionicons name="checkmark" size={14} color={colors.background} />
             )}
           </View>
-          <Text style={styles.confirmText}>I identify as a woman</Text>
+          <SolaText style={styles.confirmText}>I identify as a woman</SolaText>
         </Pressable>
-        <Text style={styles.confirmHint}>
+        <SolaText style={styles.confirmHint}>
           Sola is built for women travelers. This helps us keep the community safe.
-        </Text>
+        </SolaText>
 
         {/* Photo + name row */}
         <View style={styles.topRow}>
@@ -211,7 +211,7 @@ export default function ProfileScreen() {
                   <Ionicons name="camera-outline" size={28} color={colors.textMuted} />
                 )}
               </View>
-              <Text style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</Text>
+              <SolaText style={styles.photoLabel}>{photoUri ? 'Change' : 'Add later'}</SolaText>
             </Pressable>
           )}
 
@@ -228,7 +228,7 @@ export default function ProfileScreen() {
         </View>
 
         {/* Country section */}
-        <Text style={styles.sectionLabel}>Where are you from?</Text>
+        <SolaText style={styles.sectionLabel}>Where are you from?</SolaText>
 
         <View style={styles.searchContainer}>
           <Ionicons name="search" size={18} color={colors.textMuted} style={styles.searchIcon} />
@@ -267,13 +267,13 @@ export default function ProfileScreen() {
             />
           ))}
           {search.length >= 2 && displayedCountries.length === 0 && (
-            <Text style={styles.noResults}>No countries found</Text>
+            <SolaText style={styles.noResults}>No countries found</SolaText>
           )}
         </View>
 
         {/* Birthday section */}
-        <Text style={[styles.sectionLabel, styles.birthdaySection]}>When were you born?</Text>
-        <Text style={styles.sectionHint}>Used to personalise your experience</Text>
+        <SolaText style={[styles.sectionLabel, styles.birthdaySection]}>When were you born?</SolaText>
+        <SolaText style={styles.sectionHint}>Used to personalise your experience</SolaText>
 
         <Pressable
           style={[styles.dateButton, dateOfBirth && styles.dateButtonSelected]}
@@ -284,9 +284,9 @@ export default function ProfileScreen() {
             size={18}
             color={dateOfBirth ? colors.textPrimary : colors.textMuted}
           />
-          <Text style={[styles.dateText, !dateOfBirth && styles.datePlaceholder]}>
+          <SolaText style={[styles.dateText, !dateOfBirth && styles.datePlaceholder]}>
             {dateOfBirth ? formatDate(dateOfBirth) : 'Select your birthday'}
-          </Text>
+          </SolaText>
         </Pressable>
 
         {showDatePicker && (
@@ -302,7 +302,7 @@ export default function ProfileScreen() {
 
         {Platform.OS === 'ios' && showDatePicker && (
           <Pressable style={styles.doneButton} onPress={() => setShowDatePicker(false)}>
-            <Text style={styles.doneText}>Done</Text>
+            <SolaText style={styles.doneText}>Done</SolaText>
           </Pressable>
         )}
       </ScrollView>

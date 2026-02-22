@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 interface TripPrivacyCardProps {
@@ -23,14 +24,14 @@ export default function TripPrivacyCard({ variant, value, onValueChange }: TripP
           />
         </View>
         <View style={styles.textContainer}>
-          <Text style={styles.title}>
+          <SolaText style={styles.title}>
             {isPrivacy ? 'Keep trip private' : 'Traveler matching'}
-          </Text>
-          <Text style={styles.description}>
+          </SolaText>
+          <SolaText style={styles.description}>
             {isPrivacy
               ? 'Your trip is only visible to you'
               : 'Allow Sola to recommend travelers on your route'}
-          </Text>
+          </SolaText>
         </View>
         <Switch
           value={value}
@@ -40,9 +41,9 @@ export default function TripPrivacyCard({ variant, value, onValueChange }: TripP
         />
       </View>
       {!isPrivacy && value && (
-        <Text style={styles.consent}>
+        <SolaText style={styles.consent}>
           When enabled, travelers with overlapping dates and cities can see your name and travel style — never your exact location or journal entries.
-        </Text>
+        </SolaText>
       )}
     </View>
   );

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -217,17 +218,17 @@ export default function TripDemoScreen() {
         {/* Example badge */}
         <View style={styles.badgeRow}>
           <View style={styles.exampleBadge}>
-            <Text style={styles.exampleBadgeText}>EXAMPLE TRIP</Text>
+            <SolaText style={styles.exampleBadgeText}>EXAMPLE TRIP</SolaText>
           </View>
         </View>
 
         {/* Route */}
         <View style={styles.routeSection}>
-          <Text style={styles.routeText}>{routeText}</Text>
-          <Text style={styles.routeMeta}>
+          <SolaText style={styles.routeText}>{routeText}</SolaText>
+          <SolaText style={styles.routeMeta}>
             {totalDays} days · {cities.length} {cities.length === 1 ? 'destination' : 'destinations'}
             {totalStops > 0 ? ` · ${totalStops} stops added` : ''}
-          </Text>
+          </SolaText>
         </View>
 
         {/* Day navigator */}
@@ -246,14 +247,14 @@ export default function TripDemoScreen() {
           </Pressable>
 
           <View style={styles.dayNavCenter}>
-            <Text style={styles.dayNavTitle}>
+            <SolaText style={styles.dayNavTitle}>
               Day {dayIndex + 1} of {totalDays}
-            </Text>
-            <Text style={styles.dayNavDate}>{formatMockDate(dayIndex)}</Text>
+            </SolaText>
+            <SolaText style={styles.dayNavDate}>{formatMockDate(dayIndex)}</SolaText>
             {currentCity && (
-              <Text style={styles.dayNavCity}>
+              <SolaText style={styles.dayNavCity}>
                 {getFlag(getIso2(currentCity))} {currentCityName}
-              </Text>
+              </SolaText>
             )}
           </View>
 
@@ -280,12 +281,12 @@ export default function TripDemoScreen() {
               style={styles.planBar}
               onPress={() => setPlanExpanded(!planExpanded)}
             >
-              <Text style={styles.planBarText}>
+              <SolaText style={styles.planBarText}>
                 Your plan · {currentDayPlaces.length} {currentDayPlaces.length === 1 ? 'stop' : 'stops'}
-              </Text>
-              <Text style={styles.planBarToggle}>
+              </SolaText>
+              <SolaText style={styles.planBarToggle}>
                 {planExpanded ? 'Hide' : 'View'}
-              </Text>
+              </SolaText>
             </Pressable>
 
             {planExpanded && (
@@ -307,10 +308,10 @@ export default function TripDemoScreen() {
                       </View>
                     )}
                     <View style={styles.planItemInfo}>
-                      <Text style={styles.planItemName} numberOfLines={1}>{place.name}</Text>
-                      <Text style={styles.planItemType}>
+                      <SolaText style={styles.planItemName} numberOfLines={1}>{place.name}</SolaText>
+                      <SolaText style={styles.planItemType}>
                         {TYPE_LABEL[place.placeType] ?? place.placeType}
-                      </Text>
+                      </SolaText>
                     </View>
                     <Pressable
                       style={styles.planItemRemove}
@@ -330,9 +331,9 @@ export default function TripDemoScreen() {
         {currentDayPlaces.length === 0 && (
           <View style={styles.hintBar}>
             <Ionicons name="arrow-down" size={16} color={colors.orange} />
-            <Text style={styles.hintText}>
+            <SolaText style={styles.hintText}>
               Tap "Add" on any place to build your day
-            </Text>
+            </SolaText>
           </View>
         )}
 
@@ -353,7 +354,7 @@ export default function TripDemoScreen() {
           style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
           onPress={() => router.push('/trips/new')}
         >
-          <Text style={styles.ctaText}>Start planning your trip</Text>
+          <SolaText style={styles.ctaText}>Start planning your trip</SolaText>
         </Pressable>
       </View>
 

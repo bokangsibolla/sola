@@ -1,5 +1,6 @@
 // components/explore/cards/CountryCard.tsx
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
@@ -45,9 +46,9 @@ export function CountryCard({ country, onPress, index = 0 }: CountryCardProps) {
         pointerEvents="none"
       />
       <View style={styles.content}>
-        <Text style={styles.name} numberOfLines={1}>{country.name}</Text>
+        <SolaText style={styles.name} numberOfLines={1}>{country.name}</SolaText>
         {country.shortBlurb ? (
-          <Text style={styles.signal} numberOfLines={1}>{country.shortBlurb}</Text>
+          <SolaText style={styles.signal} numberOfLines={1}>{country.shortBlurb}</SolaText>
         ) : null}
       </View>
     </Pressable>

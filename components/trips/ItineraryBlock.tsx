@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 
@@ -76,7 +77,7 @@ export const ItineraryBlock: React.FC<ItineraryBlockProps> = ({
       {/* Left column — time */}
       <View style={styles.leftCol}>
         {block.startTime != null && (
-          <Text style={styles.timeText}>{formatTime(block.startTime)}</Text>
+          <SolaText style={styles.timeText}>{formatTime(block.startTime)}</SolaText>
         )}
       </View>
 
@@ -94,18 +95,18 @@ export const ItineraryBlock: React.FC<ItineraryBlockProps> = ({
 
       {/* Right column — content */}
       <View style={styles.rightCol}>
-        <Text style={styles.title} numberOfLines={2}>
+        <SolaText style={styles.title} numberOfLines={2}>
           {title}
-        </Text>
-        <Text style={styles.subtitle} numberOfLines={1}>
+        </SolaText>
+        <SolaText style={styles.subtitle} numberOfLines={1}>
           {subtitle}
-        </Text>
+        </SolaText>
 
         {block.tags.length > 0 && (
           <View style={styles.tagsRow}>
             {block.tags.map((tag) => (
               <View key={tag.id} style={styles.tagChip}>
-                <Text style={styles.tagText}>{tag.label}</Text>
+                <SolaText style={styles.tagText}>{tag.label}</SolaText>
               </View>
             ))}
           </View>
@@ -115,9 +116,9 @@ export const ItineraryBlock: React.FC<ItineraryBlockProps> = ({
           <View
             style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}
           >
-            <Text style={[styles.statusText, { color: statusStyle.text }]}>
+            <SolaText style={[styles.statusText, { color: statusStyle.text }]}>
               {statusStyle.label}
-            </Text>
+            </SolaText>
           </View>
         )}
       </View>

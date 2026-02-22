@@ -1,4 +1,5 @@
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -64,17 +65,17 @@ export function PlaceHorizontalCard({ place, compact }: Props) {
         />
         {place.badgeLabel && (
           <View style={styles.badgeContainer}>
-            <Text style={styles.badgeText}>{place.badgeLabel}</Text>
+            <SolaText style={styles.badgeText}>{place.badgeLabel}</SolaText>
           </View>
         )}
         <View style={styles.imageOverlay}>
-          <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
-          <Text style={styles.cityName}>in {place.cityName}</Text>
+          <SolaText style={styles.name} numberOfLines={1}>{place.name}</SolaText>
+          <SolaText style={styles.cityName}>in {place.cityName}</SolaText>
         </View>
       </View>
       {place.whySelected && (
         <View style={styles.body}>
-          <Text style={styles.whySelected} numberOfLines={2}>{place.whySelected}</Text>
+          <SolaText style={styles.whySelected} numberOfLines={2}>{place.whySelected}</SolaText>
         </View>
       )}
     </Pressable>

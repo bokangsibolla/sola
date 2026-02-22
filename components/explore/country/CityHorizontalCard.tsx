@@ -1,4 +1,5 @@
-import { Dimensions, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Dimensions, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -52,14 +53,14 @@ export function CityHorizontalCard({ city, compact }: Props) {
 
       {city.bestFor && (
         <View style={styles.bestForContainer}>
-          <Text style={styles.bestForText}>{city.bestFor}</Text>
+          <SolaText style={styles.bestForText}>{city.bestFor}</SolaText>
         </View>
       )}
 
       <View style={styles.overlay}>
-        <Text style={styles.name}>{city.name}</Text>
+        <SolaText style={styles.name}>{city.name}</SolaText>
         {city.shortBlurb && (
-          <Text style={styles.blurb} numberOfLines={2}>{city.shortBlurb}</Text>
+          <SolaText style={styles.blurb} numberOfLines={2}>{city.shortBlurb}</SolaText>
         )}
       </View>
     </Pressable>

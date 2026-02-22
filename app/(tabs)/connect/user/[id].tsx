@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -20,7 +21,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import CredibilityStats from '@/components/travelers/CredibilityStats';
 import ProfileTripCard from '@/components/travelers/ProfileTripCard';
 import VisitedCountries from '@/components/travelers/VisitedCountries';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
@@ -188,7 +189,7 @@ export default function UserProfileScreen() {
   if (!profile) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>User not found</Text>
+        <SolaText variant="body" color={colors.textMuted} style={styles.notFound}>User not found</SolaText>
       </View>
     );
   }
@@ -222,28 +223,28 @@ export default function UserProfileScreen() {
               <Feather name="user" size={36} color={colors.textMuted} />
             </View>
           )}
-          <Text style={styles.name}>{profile.firstName}</Text>
+          <SolaText variant="h2">{profile.firstName}</SolaText>
           {profile.username && (
-            <Text style={styles.username}>@{profile.username}</Text>
+            <SolaText style={styles.username}>@{profile.username}</SolaText>
           )}
           {(profile.homeCountryName || profile.nationality) && (
-            <Text style={styles.origin}>
+            <SolaText variant="body" color={colors.textMuted} style={styles.origin}>
               {profile.homeCountryIso2 ? getFlag(profile.homeCountryIso2) + ' ' : ''}
               {profile.homeCountryName}
               {profile.nationality ? ` \u00b7 ${profile.nationality}` : ''}
-            </Text>
+            </SolaText>
           )}
           {profile.locationSharingEnabled && profile.locationCityName && (
             <View style={styles.locationRow}>
               <Feather name="map-pin" size={14} color={colors.orange} />
-              <Text style={styles.currentCity}>
+              <SolaText style={styles.currentCity}>
                 Currently in {profile.locationCityName}
-              </Text>
+              </SolaText>
             </View>
           )}
           {contextLabel && (
             <View style={styles.contextBadge}>
-              <Text style={styles.contextBadgeText}>{contextLabel}</Text>
+              <SolaText style={styles.contextBadgeText}>{contextLabel}</SolaText>
             </View>
           )}
         </View>
@@ -256,23 +257,23 @@ export default function UserProfileScreen() {
         />
 
         {/* Bio */}
-        {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        {profile.bio && <SolaText variant="body" style={styles.bio}>{profile.bio}</SolaText>}
 
         {/* Interests */}
         {(profile.interests ?? []).length > 0 && (
           <>
-            <Text style={styles.sectionTitle}>Interests</Text>
+            <SolaText variant="label" style={styles.sectionTitle}>Interests</SolaText>
             <View style={styles.tags}>
               {(profile.interests ?? []).map((interest) => (
                 <View
                   key={interest}
                   style={[styles.tag, shared.includes(interest) && styles.tagShared]}
                 >
-                  <Text
+                  <SolaText
                     style={[styles.tagText, shared.includes(interest) && styles.tagTextShared]}
                   >
                     {interest}
-                  </Text>
+                  </SolaText>
                 </View>
               ))}
             </View>
@@ -282,7 +283,7 @@ export default function UserProfileScreen() {
         {/* Trips Section */}
         {hasTrips && (
           <>
-            <Text style={styles.sectionTitle}>Trips</Text>
+            <SolaText variant="label" style={styles.sectionTitle}>Trips</SolaText>
 
             {trips.current && (
               <ProfileTripCard trip={trips.current} overlapLabel={tripOverlaps.get(trips.current.id)} />
@@ -299,9 +300,9 @@ export default function UserProfileScreen() {
                   onPress={() => setShowPastTrips(!showPastTrips)}
                   hitSlop={8}
                 >
-                  <Text style={styles.pastHeaderText}>
+                  <SolaText style={styles.pastHeaderText}>
                     Past trips ({trips.past.length})
-                  </Text>
+                  </SolaText>
                   <Feather
                     name={showPastTrips ? 'chevron-up' : 'chevron-down'}
                     size={16}
@@ -322,13 +323,13 @@ export default function UserProfileScreen() {
         {/* User-listed countries (self-reported) */}
         {userManagedCountries.length > 0 && (
           <View style={styles.userCountriesSection}>
-            <Text style={styles.sectionTitle}>Countries visited</Text>
+            <SolaText variant="label" style={styles.sectionTitle}>Countries visited</SolaText>
             <View style={styles.tags}>
               {userManagedCountries.map((vc) => (
                 <View key={vc.countryId} style={styles.tag}>
-                  <Text style={styles.tagText}>
+                  <SolaText style={styles.tagText}>
                     {vc.countryIso2 ? getFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
-                  </Text>
+                  </SolaText>
                 </View>
               ))}
             </View>
@@ -346,17 +347,17 @@ export default function UserProfileScreen() {
               disabled={actionLoading}
             >
               <Feather name="user-plus" size={18} color={colors.background} />
-              <Text style={styles.connectButtonText}>Connect</Text>
+              <SolaText variant="button" color={colors.background}>Connect</SolaText>
             </Pressable>
             {contextLabel && (
-              <Text style={styles.connectContext}>{contextLabel}</Text>
+              <SolaText style={styles.connectContext}>{contextLabel}</SolaText>
             )}
           </View>
         )}
         {status === 'pending_sent' && (
           <View style={styles.pendingBar}>
             <Feather name="clock" size={16} color={colors.textMuted} />
-            <Text style={styles.pendingText}>Connection request sent</Text>
+            <SolaText style={styles.pendingText}>Connection request sent</SolaText>
           </View>
         )}
         {status === 'pending_received' && (
@@ -367,14 +368,14 @@ export default function UserProfileScreen() {
               disabled={actionLoading}
             >
               <Feather name="check" size={16} color={colors.background} />
-              <Text style={styles.acceptButtonText}>Accept</Text>
+              <SolaText variant="button" color={colors.background}>Accept</SolaText>
             </Pressable>
             <Pressable
               style={[styles.declineButton, actionLoading && { opacity: 0.6 }]}
               onPress={handleDecline}
               disabled={actionLoading}
             >
-              <Text style={styles.declineButtonText}>Decline</Text>
+              <SolaText style={styles.declineButtonText}>Decline</SolaText>
             </Pressable>
           </View>
         )}
@@ -385,9 +386,9 @@ export default function UserProfileScreen() {
             disabled={actionLoading}
           >
             <Feather name="message-circle" size={18} color={colors.background} />
-            <Text style={styles.messageButtonText}>
+            <SolaText variant="button" color={colors.background}>
               {actionLoading ? 'Opening...' : 'Message'}
-            </Text>
+            </SolaText>
           </Pressable>
         )}
       </View>
@@ -402,9 +403,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
   },
   notFound: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.xxl,
   },
   scroll: {
@@ -425,10 +424,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  name: {
-    ...typography.h2,
-    color: colors.textPrimary,
-  },
+  name: {},
   username: {
     fontFamily: fonts.regular,
     fontSize: 14,
@@ -436,8 +432,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   origin: {
-    ...typography.body,
-    color: colors.textMuted,
     marginTop: spacing.xs,
   },
   locationRow: {
@@ -464,14 +458,10 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
   bio: {
-    ...typography.body,
-    color: colors.textPrimary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
   tags: {
@@ -526,10 +516,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     paddingVertical: spacing.md,
   },
-  connectButtonText: {
-    ...typography.button,
-    color: colors.background,
-  },
+  connectButtonText: {},
   connectContext: {
     fontFamily: fonts.regular,
     fontSize: 12,
@@ -565,10 +552,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     paddingVertical: spacing.md,
   },
-  acceptButtonText: {
-    ...typography.button,
-    color: colors.background,
-  },
+  acceptButtonText: {},
   declineButton: {
     flex: 1,
     alignItems: 'center',
@@ -592,8 +576,5 @@ const styles = StyleSheet.create({
     borderRadius: radius.button,
     paddingVertical: spacing.md,
   },
-  messageButtonText: {
-    ...typography.button,
-    color: colors.background,
-  },
+  messageButtonText: {},
 });

@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 interface SegmentedControlProps {
@@ -19,9 +20,9 @@ export default function SegmentedControl({ tabs, activeIndex, onTabPress }: Segm
             style={styles.tab}
             onPress={() => onTabPress(index)}
           >
-            <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+            <SolaText style={[styles.tabText, isActive && styles.tabTextActive]}>
               {tab}
-            </Text>
+            </SolaText>
             {isActive && <View style={styles.indicator} />}
           </Pressable>
         );

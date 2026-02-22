@@ -4,9 +4,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -145,16 +145,16 @@ function PlaceListCard({ place, isStay }: { place: PlaceWithCity; isStay: boolea
       )}
       <View style={styles.cardBody}>
         <View style={styles.cardTopRow}>
-          <Text style={styles.cardName} numberOfLines={1}>
+          <SolaText style={styles.cardName} numberOfLines={1}>
             {place.name}
-          </Text>
+          </SolaText>
           {isStay && place.pricePerNight && (
-            <Text style={styles.cardPrice}>
+            <SolaText style={styles.cardPrice}>
               ${place.pricePerNight}/n
-            </Text>
+            </SolaText>
           )}
         </View>
-        <Text style={styles.cardCity}>in {place.cityName}</Text>
+        <SolaText style={styles.cardCity}>in {place.cityName}</SolaText>
 
         {/* Stay-specific badges */}
         {isStay && (
@@ -162,34 +162,34 @@ function PlaceListCard({ place, isStay }: { place: PlaceWithCity; isStay: boolea
             {place.womenOnly && (
               <View style={[styles.badge, { backgroundColor: colors.greenFill }]}>
                 <Ionicons name="shield-checkmark" size={10} color={colors.greenSoft} />
-                <Text style={[styles.badgeText, { color: colors.greenSoft }]}>
+                <SolaText style={[styles.badgeText, { color: colors.greenSoft }]}>
                   Women Only
-                </Text>
+                </SolaText>
               </View>
             )}
             {(place.verificationStatus === 'sola_checked' ||
               place.verificationStatus === 'baseline_passed') && (
               <View style={[styles.badge, { backgroundColor: colors.orangeFill }]}>
                 <Ionicons name="checkmark-circle" size={10} color={colors.orange} />
-                <Text style={[styles.badgeText, { color: colors.orange }]}>
+                <SolaText style={[styles.badgeText, { color: colors.orange }]}>
                   Verified
-                </Text>
+                </SolaText>
               </View>
             )}
             {place.placeType !== 'hotel' && (
               <View style={[styles.badge, { backgroundColor: colors.neutralFill }]}>
-                <Text style={[styles.badgeText, { color: colors.textSecondary }]}>
+                <SolaText style={[styles.badgeText, { color: colors.textSecondary }]}>
                   {place.placeType === 'hostel' ? 'Hostel' : 'Homestay'}
-                </Text>
+                </SolaText>
               </View>
             )}
           </View>
         )}
 
         {place.whySelected && (
-          <Text style={styles.cardWhy} numberOfLines={2}>
+          <SolaText style={styles.cardWhy} numberOfLines={2}>
             {place.whySelected}
-          </Text>
+          </SolaText>
         )}
       </View>
     </Pressable>
@@ -282,12 +282,12 @@ export default function CountryPlacesScreen() {
           style={styles.backButton}
         >
           <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backLabel}>{countryName || 'Back'}</Text>
+          <SolaText style={styles.backLabel}>{countryName || 'Back'}</SolaText>
         </Pressable>
       </View>
-      <Text style={styles.screenTitle}>
+      <SolaText style={styles.screenTitle}>
         {isStay ? 'Where to Stay' : 'Things to Do'}
-      </Text>
+      </SolaText>
 
       {/* Category tabs */}
       <View style={styles.tabs}>
@@ -299,11 +299,11 @@ export default function CountryPlacesScreen() {
               onPress={() => handleCategoryChange(cat.key)}
               style={[styles.tab, isActive && styles.tabActive]}
             >
-              <Text
+              <SolaText
                 style={[styles.tabText, isActive && styles.tabTextActive]}
               >
                 {cat.label}
-              </Text>
+              </SolaText>
             </Pressable>
           );
         })}
@@ -335,22 +335,22 @@ export default function CountryPlacesScreen() {
                   size={14}
                   color={isActive ? f.color : colors.textMuted}
                 />
-                <Text
+                <SolaText
                   style={[
                     styles.filterText,
                     isActive && { color: f.color },
                   ]}
                 >
                   {f.label}
-                </Text>
-                <Text
+                </SolaText>
+                <SolaText
                   style={[
                     styles.filterCount,
                     isActive && { color: f.color },
                   ]}
                 >
                   {count}
-                </Text>
+                </SolaText>
               </Pressable>
             );
           })}
@@ -365,14 +365,14 @@ export default function CountryPlacesScreen() {
             size={32}
             color={colors.textMuted}
           />
-          <Text style={styles.emptyTitle}>
+          <SolaText style={styles.emptyTitle}>
             {activeFilters.size > 0
               ? 'No matches for these filters'
               : 'No places found'}
-          </Text>
+          </SolaText>
           {activeFilters.size > 0 && (
             <Pressable onPress={() => setActiveFilters(new Set())}>
-              <Text style={styles.clearFilters}>Clear filters</Text>
+              <SolaText style={styles.clearFilters}>Clear filters</SolaText>
             </Pressable>
           )}
         </View>

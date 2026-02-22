@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
@@ -44,13 +45,13 @@ export default function MoodboardCard({
         style={styles.gradient}
       />
       <View style={styles.overlay}>
-        <Text style={isHero ? styles.heroName : styles.supportingName} numberOfLines={2}>
+        <SolaText style={isHero ? styles.heroName : styles.supportingName} numberOfLines={2}>
           {name}
-        </Text>
+        </SolaText>
         {subtitle ? (
-          <Text style={styles.subtitle} numberOfLines={1}>
+          <SolaText style={styles.subtitle} numberOfLines={1}>
             {subtitle}
-          </Text>
+          </SolaText>
         ) : null}
       </View>
     </Pressable>

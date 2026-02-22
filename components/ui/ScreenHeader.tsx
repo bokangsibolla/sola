@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import BackButton from './BackButton';
-import { colors, spacing, typography } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
+import { spacing } from '@/constants/design';
 
 interface ScreenHeaderProps {
   /** Screen title displayed next to back button */
@@ -24,7 +25,7 @@ export default function ScreenHeader({
     <View style={styles.container}>
       <BackButton variant={variant} onPress={onBack} />
       {title ? (
-        <Text style={styles.title} numberOfLines={1}>{title}</Text>
+        <SolaText variant="screenTitle" numberOfLines={1} style={styles.title}>{title}</SolaText>
       ) : (
         <View style={styles.spacer} />
       )}
@@ -44,8 +45,6 @@ const styles = StyleSheet.create({
     minHeight: 44,
   },
   title: {
-    ...typography.screenTitle,
-    color: colors.textPrimary,
     flex: 1,
     marginLeft: spacing.xs,
   },

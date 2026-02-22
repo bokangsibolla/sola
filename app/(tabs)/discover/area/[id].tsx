@@ -2,12 +2,12 @@ import { useCallback, useMemo } from 'react';
 import {
   FlatList,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import NavigationHero from '@/components/NavigationHero';
 import { useNavContext } from '@/hooks/useNavContext';
@@ -108,7 +108,7 @@ export default function AreaDetailScreen() {
   if (!area) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>Area not found</Text>
+        <SolaText variant="body" color={colors.textMuted} style={styles.notFound}>Area not found</SolaText>
       </View>
     );
   }
@@ -131,26 +131,26 @@ export default function AreaDetailScreen() {
       <View style={styles.summarySection}>
         {area.whoItSuits && (
           <View style={styles.whoItSuitsCard}>
-            <Text style={styles.whoItSuitsLabel}>BEST FOR</Text>
-            <Text style={styles.whoItSuitsText}>{area.whoItSuits}</Text>
+            <SolaText style={styles.whoItSuitsLabel}>BEST FOR</SolaText>
+            <SolaText style={styles.whoItSuitsText}>{area.whoItSuits}</SolaText>
           </View>
         )}
 
         {/* Quick stats */}
         <View style={styles.statsRow}>
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{places?.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Places</Text>
+            <SolaText style={styles.statValue}>{places?.length ?? 0}</SolaText>
+            <SolaText style={styles.statLabel}>Places</SolaText>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{grouped.length}</Text>
-            <Text style={styles.statLabel}>Categories</Text>
+            <SolaText style={styles.statValue}>{grouped.length}</SolaText>
+            <SolaText style={styles.statLabel}>Categories</SolaText>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statItem}>
-            <Text style={styles.statValue}>{area.areaKind}</Text>
-            <Text style={styles.statLabel}>Type</Text>
+            <SolaText style={styles.statValue}>{area.areaKind}</SolaText>
+            <SolaText style={styles.statLabel}>Type</SolaText>
           </View>
         </View>
       </View>
@@ -158,14 +158,14 @@ export default function AreaDetailScreen() {
       {/* Section headers for grouped places */}
       {grouped.length > 0 && (
         <View style={styles.placesHeader}>
-          <Text style={styles.sectionTitle}>Places in {area.name}</Text>
+          <SolaText style={styles.sectionTitle}>Places in {area.name}</SolaText>
         </View>
       )}
 
       {/* Render grouped place sections */}
       {grouped.map((group) => (
         <View key={group.type} style={styles.groupSection}>
-          <Text style={styles.groupLabel}>{group.label}</Text>
+          <SolaText style={styles.groupLabel}>{group.label}</SolaText>
           {group.places.map((place) => (
             <View key={place.id} style={styles.placeCardWrapper}>
               <CompactPlaceCard
@@ -179,7 +179,7 @@ export default function AreaDetailScreen() {
       {/* Empty state */}
       {(!places || places.length === 0) && !placesLoading && (
         <View style={styles.emptySection}>
-          <Text style={styles.emptyText}>No places added to this area yet</Text>
+          <SolaText style={styles.emptyText}>No places added to this area yet</SolaText>
         </View>
       )}
     </View>
@@ -207,9 +207,7 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xxxxl,
   },
   notFound: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.xxl,
   },
   // Summary

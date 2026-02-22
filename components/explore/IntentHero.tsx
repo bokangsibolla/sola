@@ -14,11 +14,12 @@
  */
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import { useIntentHero } from '@/data/explore/useIntentHero';
 import { colors, fonts, spacing, radius, pressedState } from '@/constants/design';
 
@@ -123,21 +124,21 @@ export function IntentHero() {
       {modeLabel && (
         <View style={styles.modeLabelRow}>
           <Feather name="navigation" size={12} color={colors.orange} />
-          <Text style={styles.modeLabelText}>{modeLabel}</Text>
+          <SolaText style={styles.modeLabelText}>{modeLabel}</SolaText>
         </View>
       )}
 
       {/* Personal greeting */}
       {greeting && (
-        <Text style={styles.greeting}>{greeting}</Text>
+        <SolaText style={styles.greeting}>{greeting}</SolaText>
       )}
 
       {/* Headline — large, data-driven */}
-      <Text style={styles.headline}>{headline}</Text>
+      <SolaText style={styles.headline}>{headline}</SolaText>
 
       {/* Subtitle — supporting context */}
       {subtitle.length > 0 && (
-        <Text style={styles.subtitle}>{subtitle}</Text>
+        <SolaText style={styles.subtitle}>{subtitle}</SolaText>
       )}
 
       {/* Destination card — for returning users, shows the highlighted destination */}
@@ -157,11 +158,11 @@ export function IntentHero() {
             style={StyleSheet.absoluteFillObject}
           />
           <View style={styles.destinationCardContent}>
-            <Text style={styles.destinationCardLabel}>
+            <SolaText style={styles.destinationCardLabel}>
               {savedSummary
                 ? `${savedSummary.totalCount} places saved \u00B7 Discover more`
                 : 'Explore this destination'}
-            </Text>
+            </SolaText>
           </View>
         </Pressable>
       )}
@@ -174,7 +175,7 @@ export function IntentHero() {
         accessibilityLabel={searchPrompt}
       >
         <Feather name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.searchText}>{searchPrompt}</Text>
+        <SolaText style={styles.searchText}>{searchPrompt}</SolaText>
       </Pressable>
 
       {/* Quick action — only when data supports it (skip if destination card shown) */}
@@ -184,7 +185,7 @@ export function IntentHero() {
           style={({ pressed }) => [styles.quickAction, pressed && styles.quickActionPressed]}
           accessibilityRole="link"
         >
-          <Text style={styles.quickActionText}>{quickAction.label}</Text>
+          <SolaText style={styles.quickActionText}>{quickAction.label}</SolaText>
           <Feather name="arrow-right" size={16} color={colors.orange} />
         </Pressable>
       )}

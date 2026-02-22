@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -55,8 +56,8 @@ export default function ResetPasswordScreen() {
 
       {/* Headline */}
       <View style={styles.headlineBlock}>
-        <Text style={styles.headline}>Reset password</Text>
-        <Text style={styles.subtitle}>Enter your new password below</Text>
+        <SolaText style={styles.headline}>Reset password</SolaText>
+        <SolaText style={styles.subtitle}>Enter your new password below</SolaText>
       </View>
 
       {/* Content */}
@@ -82,7 +83,7 @@ export default function ResetPasswordScreen() {
           />
         </View>
 
-        <Text style={styles.hint}>Password must be at least 6 characters</Text>
+        <SolaText style={styles.hint}>Password must be at least 6 characters</SolaText>
       </View>
 
       {/* Footer */}

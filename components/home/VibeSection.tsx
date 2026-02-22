@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -67,13 +68,13 @@ function GridCard({
         style={styles.cardGradient}
       />
       <View style={styles.cardOverlay}>
-        <Text style={styles.cardName} numberOfLines={1}>
+        <SolaText style={styles.cardName} numberOfLines={1}>
           {item.name}
-        </Text>
+        </SolaText>
         {item.subtitle ? (
-          <Text style={styles.cardSubtitle} numberOfLines={1}>
+          <SolaText style={styles.cardSubtitle} numberOfLines={1}>
             {item.subtitle}
-          </Text>
+          </SolaText>
         ) : null}
       </View>
     </Pressable>
@@ -90,7 +91,7 @@ function ActivityRow({ activities }: { activities: ActivityItem[] }) {
 
   return (
     <View style={styles.activitySection}>
-      <Text style={styles.activityLabel}>THINGS TO DO</Text>
+      <SolaText style={styles.activityLabel}>THINGS TO DO</SolaText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}
@@ -122,12 +123,12 @@ function ActivityRow({ activities }: { activities: ActivityItem[] }) {
               style={styles.activityGradient}
             />
             <View style={styles.activityOverlay}>
-              <Text style={styles.activityName} numberOfLines={2}>
+              <SolaText style={styles.activityName} numberOfLines={2}>
                 {activity.name}
-              </Text>
-              <Text style={styles.activityCity} numberOfLines={1}>
+              </SolaText>
+              <SolaText style={styles.activityCity} numberOfLines={1}>
                 {activity.cityName}
-              </Text>
+              </SolaText>
             </View>
           </Pressable>
         ))}
@@ -174,7 +175,7 @@ export default function VibeSection({ title, cities, countries, activities }: Vi
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>{title}</Text>
+      <SolaText style={styles.title}>{title}</SolaText>
 
       <View style={styles.grid}>
         {/* Row 1: Full-width card */}
@@ -201,7 +202,7 @@ export default function VibeSection({ title, cities, countries, activities }: Vi
           onPress={() => {}}
           hitSlop={8}
         >
-          <Text style={styles.seeAllText}>See all</Text>
+          <SolaText style={styles.seeAllText}>See all</SolaText>
         </Pressable>
       )}
 

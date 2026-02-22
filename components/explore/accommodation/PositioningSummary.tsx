@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, elevation, fonts, radius, spacing } from '@/constants/design';
 
 interface PositioningSummaryProps {
@@ -11,7 +12,7 @@ const PositioningSummary: React.FC<PositioningSummaryProps> = ({ text }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.text}>{text}</Text>
+      <SolaText style={styles.text}>{text}</SolaText>
     </View>
   );
 };

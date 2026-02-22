@@ -4,10 +4,10 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -73,17 +73,17 @@ export default function AllCountriesScreen() {
         transition={200}
       />
       <View style={styles.listContent}>
-        <Text style={styles.listTitle}>{item.name}</Text>
+        <SolaText style={styles.listTitle}>{item.name}</SolaText>
         {item.shortBlurb && (
-          <Text style={styles.listSubtitle} numberOfLines={2}>
+          <SolaText style={styles.listSubtitle} numberOfLines={2}>
             {item.shortBlurb}
-          </Text>
+          </SolaText>
         )}
         {item.soloLevel && (
           <View style={styles.levelBadge}>
-            <Text style={styles.levelText}>
+            <SolaText style={styles.levelText}>
               {item.soloLevel.charAt(0).toUpperCase() + item.soloLevel.slice(1)}
-            </Text>
+            </SolaText>
           </View>
         )}
       </View>
@@ -130,14 +130,14 @@ export default function AllCountriesScreen() {
                 ]}
                 onPress={() => handleTagPress(tag.tagSlug)}
               >
-                <Text
+                <SolaText
                   style={[
                     styles.tagText,
                     activeTag === tag.tagSlug && styles.tagTextActive,
                   ]}
                 >
                   {tag.tagLabel}
-                </Text>
+                </SolaText>
               </Pressable>
             )}
           />
@@ -154,7 +154,7 @@ export default function AllCountriesScreen() {
         ListEmptyComponent={
           loading ? null : (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>No countries found</Text>
+              <SolaText style={styles.emptyText}>No countries found</SolaText>
             </View>
           )
         }

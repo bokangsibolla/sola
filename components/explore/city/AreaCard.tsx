@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -32,9 +33,9 @@ function AreaCardItem({ area }: AreaCardProps) {
         style={styles.gradient}
       />
       <View style={styles.overlay}>
-        <Text style={styles.areaName}>{area.name}</Text>
+        <SolaText style={styles.areaName}>{area.name}</SolaText>
         {area.positioningLine && (
-          <Text style={styles.positioningLine} numberOfLines={1}>{area.positioningLine}</Text>
+          <SolaText style={styles.positioningLine} numberOfLines={1}>{area.positioningLine}</SolaText>
         )}
       </View>
     </Pressable>
@@ -50,7 +51,7 @@ export function AreaCardsRow({ areas }: AreaCardsRowProps) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>Neighborhoods</Text>
+      <SolaText style={styles.heading}>Neighborhoods</SolaText>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

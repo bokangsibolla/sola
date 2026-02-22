@@ -5,9 +5,9 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,7 +17,7 @@ import { useNavContext } from '@/hooks/useNavContext';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useData } from '@/hooks/useData';
@@ -73,7 +73,7 @@ const TAG_GROUP_CONFIG: Record<string, string> = {
 
 function PriceLabel({ level }: { level: number | null }) {
   if (!level || level <= 0) return null;
-  return <Text style={styles.priceLabel}>{'$'.repeat(level)}</Text>;
+  return <SolaText style={styles.priceLabel}>{'$'.repeat(level)}</SolaText>;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,12 +143,12 @@ function TrustStrip({ place }: { place: Place }) {
 
   return (
     <View style={styles.trustSection}>
-      <Text style={styles.sectionLabel}>VERIFIED BY SOLA</Text>
+      <SolaText style={styles.sectionLabel}>VERIFIED BY SOLA</SolaText>
       <View style={styles.trustRow}>
         <Ionicons name="shield-checkmark" size={16} color={shieldColor} />
         <View style={styles.trustContent}>
-          {sourceLine && <Text style={styles.trustText}>{sourceLine}</Text>}
-          {dateLine && <Text style={styles.trustDate}>{dateLine}</Text>}
+          {sourceLine && <SolaText style={styles.trustText}>{sourceLine}</SolaText>}
+          {dateLine && <SolaText style={styles.trustDate}>{dateLine}</SolaText>}
         </View>
       </View>
     </View>
@@ -198,11 +198,11 @@ function AtAGlance({ place }: { place: Place }) {
 
   return (
     <View style={styles.glanceSection}>
-      <Text style={styles.sectionLabel}>AT A GLANCE</Text>
+      <SolaText style={styles.sectionLabel}>AT A GLANCE</SolaText>
       {signals.slice(0, 4).map((signal, i) => (
         <View key={i} style={styles.glanceRow}>
           <Ionicons name={signal.icon} size={16} color={colors.textSecondary} />
-          <Text style={styles.glanceText}>{signal.label}</Text>
+          <SolaText style={styles.glanceText}>{signal.label}</SolaText>
         </View>
       ))}
     </View>
@@ -357,7 +357,7 @@ export default function PlaceDetailScreen() {
   if (!place) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>Place not found</Text>
+        <SolaText variant="body" color={colors.textMuted} style={styles.notFound}>Place not found</SolaText>
       </View>
     );
   }
@@ -418,9 +418,9 @@ export default function PlaceDetailScreen() {
             </ScrollView>
             {images.length > 1 && (
               <View style={styles.counterPill}>
-                <Text style={styles.counterText}>
+                <SolaText style={styles.counterText}>
                   {activeImageIndex + 1}/{images.length}
-                </Text>
+                </SolaText>
               </View>
             )}
           </View>
@@ -436,14 +436,14 @@ export default function PlaceDetailScreen() {
 
         <View style={styles.content}>
           {/* Identity block */}
-          <Text style={styles.typeLabel}>{displayType.toUpperCase()}</Text>
+          <SolaText style={styles.typeLabel}>{displayType.toUpperCase()}</SolaText>
           <View style={styles.nameRow}>
-            <Text style={useSerifName ? styles.placeNameSerif : styles.placeNameSans}>
+            <SolaText style={useSerifName ? styles.placeNameSerif : styles.placeNameSans}>
               {place.name}
-            </Text>
+            </SolaText>
             <PriceLabel level={place.priceLevel} />
           </View>
-          {city && <Text style={styles.cityLabel}>{city.name}</Text>}
+          {city && <SolaText style={styles.cityLabel}>{city.name}</SolaText>}
 
           {/* Trust Strip — enriched only */}
           <TrustStrip place={place} />
@@ -451,25 +451,25 @@ export default function PlaceDetailScreen() {
           {/* Editorial — OUR TAKE (enriched) or plain description (basic) */}
           {place.whySelected ? (
             <View style={styles.editorialSection}>
-              <Text style={styles.sectionLabel}>OUR TAKE</Text>
+              <SolaText style={styles.sectionLabel}>OUR TAKE</SolaText>
               <View style={styles.accentRow}>
                 <View style={styles.accentBar} />
-                <Text style={styles.editorialText}>{place.whySelected}</Text>
+                <SolaText variant="body" color={colors.textSecondary} style={styles.editorialText}>{place.whySelected}</SolaText>
               </View>
             </View>
           ) : place.description ? (
             <View style={styles.editorialSection}>
-              <Text style={styles.descriptionText}>{place.description}</Text>
+              <SolaText variant="body" style={styles.descriptionText}>{place.description}</SolaText>
             </View>
           ) : null}
 
           {/* Women's voice — enriched only */}
           {place.soloFemaleReviews && (
             <View style={styles.womensVoiceSection}>
-              <Text style={styles.sectionLabel}>FROM WOMEN WHO'VE BEEN HERE</Text>
+              <SolaText style={styles.sectionLabel}>FROM WOMEN WHO'VE BEEN HERE</SolaText>
               <View style={styles.accentRow}>
                 <View style={styles.accentBar} />
-                <Text style={styles.womensVoiceText}>{place.soloFemaleReviews}</Text>
+                <SolaText style={styles.womensVoiceText}>{place.soloFemaleReviews}</SolaText>
               </View>
             </View>
           )}
@@ -480,12 +480,12 @@ export default function PlaceDetailScreen() {
           {/* Highlights → WHAT STANDS OUT */}
           {highlights.length > 0 && (
             <View style={styles.highlightsSection}>
-              <Text style={styles.sectionLabel}>WHAT STANDS OUT</Text>
+              <SolaText style={styles.sectionLabel}>WHAT STANDS OUT</SolaText>
               <View style={styles.highlightsRow}>
                 {highlights.map((highlight, idx) => (
                   <View key={idx} style={styles.signalPill}>
-                    <Text style={styles.signalDiamond}>{'\u25C7'}</Text>
-                    <Text style={styles.signalText}>{highlight}</Text>
+                    <SolaText style={styles.signalDiamond}>{'\u25C7'}</SolaText>
+                    <SolaText style={styles.signalText}>{highlight}</SolaText>
                   </View>
                 ))}
               </View>
@@ -495,11 +495,11 @@ export default function PlaceDetailScreen() {
           {/* Good to Know */}
           {considerations.length > 0 && (
             <View style={styles.considerationsSection}>
-              <Text style={styles.sectionLabel}>GOOD TO KNOW</Text>
+              <SolaText style={styles.sectionLabel}>GOOD TO KNOW</SolaText>
               {considerations.map((item, idx) => (
                 <View key={idx} style={styles.considerationRow}>
                   <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.considerationText}>{item}</Text>
+                  <SolaText style={styles.considerationText}>{item}</SolaText>
                 </View>
               ))}
             </View>
@@ -510,9 +510,9 @@ export default function PlaceDetailScreen() {
             <View style={styles.tagsSection}>
               {Object.entries(groupedTags).map(([group, groupTags]) => (
                 <View key={group} style={styles.tagGroup}>
-                  <Text style={styles.tagGroupLabel}>
+                  <SolaText style={styles.tagGroupLabel}>
                     {TAG_GROUP_CONFIG[group] ?? group.toUpperCase()}
-                  </Text>
+                  </SolaText>
                   <View style={styles.tagRow}>
                     {groupTags.map((tag) => {
                       const tc = tagColors(tag.filterGroup);
@@ -521,9 +521,9 @@ export default function PlaceDetailScreen() {
                           key={tag.id}
                           style={[styles.tagPill, { backgroundColor: tc.bg }]}
                         >
-                          <Text style={[styles.tagText, { color: tc.fg }]}>
+                          <SolaText style={[styles.tagText, { color: tc.fg }]}>
                             {tag.label}
-                          </Text>
+                          </SolaText>
                         </View>
                       );
                     })}
@@ -536,23 +536,23 @@ export default function PlaceDetailScreen() {
           {/* Details */}
           {(place.address || place.hoursText || place.phone || place.website) && (
             <View style={styles.detailsSection}>
-              <Text style={styles.sectionLabel}>DETAILS</Text>
+              <SolaText style={styles.sectionLabel}>DETAILS</SolaText>
               {place.address && (
                 <View style={styles.detailRow}>
                   <Ionicons name="location-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.detailText}>{place.address}</Text>
+                  <SolaText variant="body" color={colors.textSecondary} style={styles.detailText}>{place.address}</SolaText>
                 </View>
               )}
               {place.hoursText && (
                 <View style={styles.detailRow}>
                   <Ionicons name="time-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.detailText}>{place.hoursText}</Text>
+                  <SolaText variant="body" color={colors.textSecondary} style={styles.detailText}>{place.hoursText}</SolaText>
                 </View>
               )}
               {place.phone && (
                 <View style={styles.detailRow}>
                   <Ionicons name="call-outline" size={16} color={colors.textMuted} />
-                  <Text style={styles.detailText}>{place.phone}</Text>
+                  <SolaText variant="body" color={colors.textSecondary} style={styles.detailText}>{place.phone}</SolaText>
                 </View>
               )}
               {place.website && (
@@ -561,9 +561,9 @@ export default function PlaceDetailScreen() {
                   onPress={() => Linking.openURL(place.website!.startsWith('http') ? place.website! : `https://${place.website}`)}
                 >
                   <Ionicons name="globe-outline" size={16} color={colors.blueSoft} />
-                  <Text style={[styles.detailText, styles.linkText]} numberOfLines={1}>
+                  <SolaText variant="body" color={colors.textSecondary} style={[styles.detailText, styles.linkText]} numberOfLines={1}>
                     {place.website}
-                  </Text>
+                  </SolaText>
                 </Pressable>
               )}
             </View>
@@ -572,10 +572,10 @@ export default function PlaceDetailScreen() {
           {/* Why This Fits You */}
           {fitMessage && (
             <View style={styles.fitSection}>
-              <Text style={styles.sectionLabel}>WHY THIS FITS YOU</Text>
+              <SolaText style={styles.sectionLabel}>WHY THIS FITS YOU</SolaText>
               <View style={styles.fitCard}>
                 <Ionicons name="sparkles" size={16} color={colors.orange} />
-                <Text style={styles.fitBody}>{fitMessage}</Text>
+                <SolaText variant="body" color={colors.textSecondary} style={styles.fitBody}>{fitMessage}</SolaText>
               </View>
             </View>
           )}
@@ -597,9 +597,9 @@ export default function PlaceDetailScreen() {
                 size={20}
                 color={colors.background}
               />
-              <Text style={styles.actionBtnText}>
+              <SolaText style={styles.actionBtnText}>
                 {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
-              </Text>
+              </SolaText>
             </Pressable>
 
             <Pressable
@@ -607,7 +607,7 @@ export default function PlaceDetailScreen() {
               style={[styles.actionBtn, styles.mapsBtn]}
             >
               <Ionicons name="map-outline" size={20} color={colors.textPrimary} />
-              <Text style={styles.mapsBtnText}>View on Maps</Text>
+              <SolaText style={styles.mapsBtnText}>View on Maps</SolaText>
             </Pressable>
           </View>
         </View>
@@ -629,9 +629,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   notFound: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.xxl,
   },
 
@@ -757,14 +755,10 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   editorialText: {
-    ...typography.body,
-    color: colors.textSecondary,
     lineHeight: 22,
     flex: 1,
   },
   descriptionText: {
-    ...typography.body,
-    color: colors.textPrimary,
     lineHeight: 22,
   },
 
@@ -884,8 +878,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   detailText: {
-    ...typography.body,
-    color: colors.textSecondary,
     flex: 1,
   },
   linkText: {
@@ -905,8 +897,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   fitBody: {
-    ...typography.body,
-    color: colors.textSecondary,
     flex: 1,
   },
 

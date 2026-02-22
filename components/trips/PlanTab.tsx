@@ -5,10 +5,10 @@ import {
   Pressable,
   Share,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -71,10 +71,10 @@ function EmergencyNumberRow({
       style={[styles.emergencyRow, last && { borderBottomWidth: 0 }]}
       onPress={handleCopy}
     >
-      <Text style={styles.emergencyLabel}>{label}</Text>
+      <SolaText variant="body" style={styles.emergencyLabel}>{label}</SolaText>
       <View style={styles.emergencyRight}>
-        <Text style={styles.emergencyNumber}>{number}</Text>
-        <Text style={styles.copyHint}>{copied ? 'Copied' : 'Tap to copy'}</Text>
+        <SolaText style={styles.emergencyNumber}>{number}</SolaText>
+        <SolaText style={styles.copyHint}>{copied ? 'Copied' : 'Tap to copy'}</SolaText>
       </View>
     </Pressable>
   );
@@ -116,25 +116,25 @@ function EmergencyContactCard({ profile }: { profile: Profile }) {
     <View style={styles.ecCard}>
       <View style={styles.ecTop}>
         <View style={styles.ecInfo}>
-          <Text style={styles.ecName}>{name}</Text>
+          <SolaText style={styles.ecName}>{name}</SolaText>
           {relationship && (
             <View style={styles.ecBadge}>
-              <Text style={styles.ecBadgeText}>
+              <SolaText style={styles.ecBadgeText}>
                 {relationshipLabel[relationship] ?? relationship}
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>
-        <Text style={styles.ecPhone}>{phone}</Text>
+        <SolaText style={styles.ecPhone}>{phone}</SolaText>
       </View>
       <View style={styles.ecActions}>
         <Pressable style={styles.ecActionBtn} onPress={handleWhatsApp}>
           <Feather name="message-circle" size={14} color={colors.greenSoft} />
-          <Text style={[styles.ecActionText, { color: colors.greenSoft }]}>WhatsApp</Text>
+          <SolaText style={[styles.ecActionText, { color: colors.greenSoft }]}>WhatsApp</SolaText>
         </Pressable>
         <Pressable style={styles.ecActionBtn} onPress={handleCall}>
           <Feather name="phone" size={14} color={colors.orange} />
-          <Text style={[styles.ecActionText, { color: colors.orange }]}>Call</Text>
+          <SolaText style={[styles.ecActionText, { color: colors.orange }]}>Call</SolaText>
         </Pressable>
       </View>
     </View>
@@ -178,7 +178,7 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
     <View style={styles.container}>
       {/* Safety section — emergency contact + numbers + share */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Safety</Text>
+        <SolaText variant="label" style={styles.sectionTitle}>Safety</SolaText>
 
         {/* Emergency contact from profile */}
         {profile?.emergencyContactName && profile?.emergencyContactPhone ? (
@@ -189,7 +189,7 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
             onPress={() => router.push('/(tabs)/home/settings' as any)}
           >
             <Feather name="user-plus" size={14} color={colors.orange} />
-            <Text style={styles.setupContactText}>Add an emergency contact</Text>
+            <SolaText style={styles.setupContactText}>Add an emergency contact</SolaText>
           </Pressable>
         )}
 
@@ -212,30 +212,30 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
             onPress={() => Linking.openURL(embassyLookupUrl)}
           >
             <Feather name="globe" size={14} color={colors.textSecondary} />
-            <Text style={styles.actionBtnText}>Find embassy</Text>
+            <SolaText style={styles.actionBtnText}>Find embassy</SolaText>
           </Pressable>
           <Pressable style={styles.actionBtn} onPress={handleShareTrip}>
             <Feather name="share" size={14} color={colors.textSecondary} />
-            <Text style={styles.actionBtnText}>Share my trip</Text>
+            <SolaText style={styles.actionBtnText}>Share my trip</SolaText>
           </Pressable>
         </View>
       </View>
 
       {/* Saved places section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Saved places</Text>
+        <SolaText variant="label" style={styles.sectionTitle}>Saved places</SolaText>
         {savedItems.length === 0 ? (
-          <Text style={styles.emptyText}>
+          <SolaText style={styles.emptyText}>
             Save places from Explore to add them to your trip
-          </Text>
+          </SolaText>
         ) : (
           savedItems.map((item) => (
             <View key={item.id} style={styles.savedItemCard}>
               <View style={styles.savedItemContent}>
-                <Text style={styles.savedItemType}>{item.category.toUpperCase()}</Text>
-                <Text style={styles.savedItemId} numberOfLines={1}>
+                <SolaText style={styles.savedItemType}>{item.category.toUpperCase()}</SolaText>
+                <SolaText style={styles.savedItemId} numberOfLines={1}>
                   {item.entityType} · {item.entityId.slice(0, 8)}
-                </Text>
+                </SolaText>
               </View>
             </View>
           ))
@@ -250,13 +250,13 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
           }}
         >
           <Feather name="plus-circle" size={16} color={colors.orange} />
-          <Text style={styles.addPlaceText}>Add a place</Text>
+          <SolaText style={styles.addPlaceText}>Add a place</SolaText>
         </Pressable>
       </View>
 
       {/* Notes section */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Notes</Text>
+        <SolaText variant="label" style={styles.sectionTitle}>Notes</SolaText>
         <TextInput
           style={styles.notesInput}
           placeholder="Things to remember, places to visit..."
@@ -270,7 +270,7 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
           multiline
           maxLength={500}
         />
-        <Text style={styles.charCount}>{notes.length}/500</Text>
+        <SolaText style={styles.charCount}>{notes.length}/500</SolaText>
       </View>
     </View>
   );
@@ -286,8 +286,6 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    ...typography.label,
-    color: colors.textPrimary,
     marginBottom: spacing.md,
   },
   emptyText: {
@@ -373,10 +371,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderDefault,
   },
-  emergencyLabel: {
-    ...typography.body,
-    color: colors.textPrimary,
-  },
+  emergencyLabel: {},
   emergencyRight: {
     alignItems: 'flex-end',
   },

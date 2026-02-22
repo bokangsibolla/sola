@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City } from '@/data/types';
 
@@ -28,14 +29,14 @@ export function ExperiencePillars({ city }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>What brings women here</Text>
+      <SolaText style={styles.heading}>What brings women here</SolaText>
       <View style={styles.grid}>
         {pillars.map((pillar, i) => (
           <View key={i} style={styles.cell}>
             <View style={styles.accentDot} />
-            <Text style={styles.cellTitle}>{pillar.title}</Text>
+            <SolaText style={styles.cellTitle}>{pillar.title}</SolaText>
             {pillar.descriptor ? (
-              <Text style={styles.cellDescriptor}>{pillar.descriptor}</Text>
+              <SolaText style={styles.cellDescriptor}>{pillar.descriptor}</SolaText>
             ) : null}
           </View>
         ))}

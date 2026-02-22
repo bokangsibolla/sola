@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, FlatList, Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
@@ -11,7 +12,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import { getConnectionRequests, getProfileById, respondToConnectionRequest } from '@/data/api';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
 import type { ConnectionRequest, Profile } from '@/data/types';
 
@@ -41,10 +42,10 @@ export default function ConnectionsScreen() {
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Feather name="inbox" size={40} color={colors.textMuted} />
-            <Text style={styles.emptyTitle}>No pending requests</Text>
-            <Text style={styles.emptySubtitle}>
+            <SolaText style={styles.emptyTitle}>No pending requests</SolaText>
+            <SolaText variant="body" color={colors.textMuted} style={styles.emptySubtitle}>
               When someone wants to connect, their request will appear here
-            </Text>
+            </SolaText>
           </View>
         }
         renderItem={({ item }) => (
@@ -118,28 +119,28 @@ function RequestCard({
           </View>
         )}
         <View style={styles.cardInfo}>
-          <Text style={styles.name}>{profile.firstName}</Text>
+          <SolaText style={styles.name}>{profile.firstName}</SolaText>
           {(profile.locationCityName || profile.homeCountryName) && (
-            <Text style={styles.location}>
+            <SolaText style={styles.location}>
               {profile.locationCityName ?? profile.homeCountryName}
               {profile.nationality ? ` · ${profile.nationality}` : ''}
-            </Text>
+            </SolaText>
           )}
           {request.context && (
-            <Text style={styles.contextLabel}>{request.context}</Text>
+            <SolaText style={styles.contextLabel}>{request.context}</SolaText>
           )}
         </View>
       </View>
 
       {profile.bio && (
-        <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
+        <SolaText variant="captionSmall" color={colors.textSecondary} style={styles.bio} numberOfLines={2}>{profile.bio}</SolaText>
       )}
 
       {(profile.interests ?? []).length > 0 && (
         <View style={styles.tags}>
           {(profile.interests ?? []).slice(0, 4).map((interest) => (
             <View key={interest} style={styles.tag}>
-              <Text style={styles.tagText}>{interest}</Text>
+              <SolaText style={styles.tagText}>{interest}</SolaText>
             </View>
           ))}
         </View>
@@ -155,9 +156,9 @@ function RequestCard({
           disabled={responding !== null}
         >
           <Feather name="check" size={16} color={colors.background} />
-          <Text style={styles.acceptButtonText}>
+          <SolaText style={styles.acceptButtonText}>
             {responding === 'accepting' ? 'Accepting...' : 'Accept'}
-          </Text>
+          </SolaText>
         </Pressable>
         <Pressable
           style={[styles.declineButton, responding === 'declining' && { opacity: 0.6 }]}
@@ -167,9 +168,9 @@ function RequestCard({
           }}
           disabled={responding !== null}
         >
-          <Text style={styles.declineButtonText}>
+          <SolaText style={styles.declineButtonText}>
             {responding === 'declining' ? 'Declining...' : 'Decline'}
-          </Text>
+          </SolaText>
         </Pressable>
       </View>
     </Pressable>
@@ -193,9 +194,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   emptySubtitle: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     paddingHorizontal: spacing.xl,
   },
   card: {
@@ -245,8 +244,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bio: {
-    ...typography.captionSmall,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
   },
   tags: {

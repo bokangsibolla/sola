@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 
@@ -47,10 +48,10 @@ export function AccommodationBanner({ blocks, onPress }: AccommodationBannerProp
 
             {/* Middle: info */}
             <View style={styles.info}>
-              <Text style={styles.stayLabel}>STAY</Text>
-              <Text style={styles.name} numberOfLines={1}>{name}</Text>
+              <SolaText variant="pillLabel" color={colors.textMuted} uppercase letterSpacing={0.5}>STAY</SolaText>
+              <SolaText style={styles.name} numberOfLines={1}>{name}</SolaText>
               {address != null && (
-                <Text style={styles.address} numberOfLines={1}>{address}</Text>
+                <SolaText style={styles.address} numberOfLines={1}>{address}</SolaText>
               )}
             </View>
 
@@ -99,13 +100,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
-  },
-  stayLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   name: {
     fontFamily: fonts.semiBold,

@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import type { Tag } from '@/data/types';
 import type { PlaceWithImage } from '@/data/city/types';
@@ -78,25 +79,25 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
           {place.womenOnly && (
             <View style={[styles.overlayBadge, { backgroundColor: colors.greenFill }]}>
               <Ionicons name="shield-checkmark" size={10} color={colors.greenSoft} />
-              <Text style={[styles.overlayBadgeText, { color: colors.greenSoft }]}>
+              <SolaText style={[styles.overlayBadgeText, { color: colors.greenSoft }]}>
                 Women Only
-              </Text>
+              </SolaText>
             </View>
           )}
           {isSolaVisited && (
             <View style={[styles.overlayBadge, { backgroundColor: colors.blueFill }]}>
               <Ionicons name="checkmark-circle" size={10} color={colors.blueSoft} />
-              <Text style={[styles.overlayBadgeText, { color: colors.blueSoft }]}>
+              <SolaText style={[styles.overlayBadgeText, { color: colors.blueSoft }]}>
                 Verified
-              </Text>
+              </SolaText>
             </View>
           )}
           {!isSolaVisited && isVerified && (
             <View style={[styles.overlayBadge, { backgroundColor: colors.neutralFill }]}>
               <Ionicons name="checkmark-circle-outline" size={10} color={colors.textMuted} />
-              <Text style={[styles.overlayBadgeText, { color: colors.textMuted }]}>
+              <SolaText style={[styles.overlayBadgeText, { color: colors.textMuted }]}>
                 Checked
-              </Text>
+              </SolaText>
             </View>
           )}
         </View>
@@ -104,17 +105,17 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
         {/* Type pill */}
         {isAccommodation && typeLabel && (
           <View style={styles.typePill}>
-            <Text style={styles.typePillText}>{typeLabel}</Text>
+            <SolaText style={styles.typePillText}>{typeLabel}</SolaText>
           </View>
         )}
       </View>
 
       {/* Body */}
       <View style={styles.body}>
-        <Text style={styles.name} numberOfLines={1}>{place.name}</Text>
+        <SolaText style={styles.name} numberOfLines={1}>{place.name}</SolaText>
 
         {place.areaName && (
-          <Text style={styles.areaName} numberOfLines={1}>{place.areaName}</Text>
+          <SolaText style={styles.areaName} numberOfLines={1}>{place.areaName}</SolaText>
         )}
 
         {/* Tags — max 3 */}
@@ -124,7 +125,7 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
               const tc = tagColors(tag.filterGroup);
               return (
                 <View key={tag.id} style={[styles.tagPill, { backgroundColor: tc.bg }]}>
-                  <Text style={[styles.tagText, { color: tc.fg }]}>{tag.label}</Text>
+                  <SolaText style={[styles.tagText, { color: tc.fg }]}>{tag.label}</SolaText>
                 </View>
               );
             })}

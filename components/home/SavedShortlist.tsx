@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -53,11 +54,11 @@ export function SavedShortlist({ places, totalCount }: SavedShortlistProps) {
           </View>
         ))}
       </View>
-      <Text style={styles.label}>
+      <SolaText style={styles.label}>
         {totalCount != null
           ? `${totalCount} saved ${totalCount === 1 ? 'place' : 'places'}`
           : 'Saved places waiting'}
-      </Text>
+      </SolaText>
       <Feather name="chevron-right" size={16} color={colors.textMuted} />
     </Pressable>
   );

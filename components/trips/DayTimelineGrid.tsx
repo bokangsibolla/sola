@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 import { TYPE_DOT_COLOR } from '@/components/trips/blockTypeColors';
@@ -107,7 +108,7 @@ export const DayTimelineGrid: React.FC<DayTimelineGridProps> = ({
           const top = (hour - startHour) * HOUR_HEIGHT;
           return (
             <View key={hour} style={[styles.hourRow, { top }]}>
-              <Text style={styles.hourLabel}>{formatHourLabel(hour)}</Text>
+              <SolaText style={styles.hourLabel}>{formatHourLabel(hour)}</SolaText>
               <View style={styles.hourLine} />
             </View>
           );
@@ -152,12 +153,12 @@ export const DayTimelineGrid: React.FC<DayTimelineGridProps> = ({
               ]}
               onPress={() => onBlockPress(block.id)}
             >
-              <Text style={styles.blockTitle} numberOfLines={1}>
+              <SolaText style={styles.blockTitle} numberOfLines={1}>
                 {title}
-              </Text>
-              <Text style={styles.blockTime} numberOfLines={1}>
+              </SolaText>
+              <SolaText style={styles.blockTime} numberOfLines={1}>
                 {timeRange}
-              </Text>
+              </SolaText>
             </Pressable>
           );
         })}

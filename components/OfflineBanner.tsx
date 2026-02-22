@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, spacing } from '@/constants/design';
@@ -15,7 +16,7 @@ export default function OfflineBanner({ visible }: OfflineBannerProps) {
   return (
     <View style={[styles.container, { paddingTop: insets.top + spacing.xs }]}>
       <Ionicons name="cloud-offline" size={16} color="#FFFFFF" />
-      <Text style={styles.text}>No internet connection</Text>
+      <SolaText style={styles.text}>No internet connection</SolaText>
     </View>
   );
 }

@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City } from '@/data/types';
 
@@ -15,12 +16,12 @@ export function HowWomenUseCity({ city }: Props) {
   return (
     <View style={styles.section}>
       <View style={styles.headerRow}>
-        <Text style={styles.headerEmoji}>🧭</Text>
-        <Text style={styles.heading}>Solo in {city.name}</Text>
+        <SolaText style={styles.headerEmoji}>🧭</SolaText>
+        <SolaText style={styles.heading}>Solo in {city.name}</SolaText>
       </View>
 
       {summary && (
-        <Text style={styles.summaryText}>{summary}</Text>
+        <SolaText style={styles.summaryText}>{summary}</SolaText>
       )}
 
       {bullets.length > 0 && (
@@ -28,7 +29,7 @@ export function HowWomenUseCity({ city }: Props) {
           {bullets.map((bullet, i) => (
             <View key={i} style={styles.bulletRow}>
               <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{bullet}</Text>
+              <SolaText style={styles.bulletText}>{bullet}</SolaText>
             </View>
           ))}
         </View>

@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import { eventTracker } from '@/data/events/eventTracker';
-import { colors, fonts, spacing, typography } from '@/constants/design';
+import { colors, spacing } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHero from '@/components/NavigationHero';
@@ -106,7 +107,7 @@ export default function CityScreen() {
   if (!city) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>City not found</Text>
+        <SolaText variant="body" color={colors.textMuted} style={styles.notFound}>City not found</SolaText>
       </View>
     );
   }
@@ -166,9 +167,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   notFound: {
-    ...typography.body,
-    color: colors.textMuted,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.xxl,
   },
 });

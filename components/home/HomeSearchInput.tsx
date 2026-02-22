@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
@@ -7,7 +8,6 @@ import {
   fonts,
   radius,
   spacing,
-  typography,
   pressedState,
 } from '@/constants/design';
 import type { HeroState } from '@/data/home/types';
@@ -44,8 +44,8 @@ export function HomeSearchInput({ chips, firstName, heroState }: HomeSearchInput
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>{greetingText}</Text>
-      {subline && <Text style={styles.subline}>{subline}</Text>}
+      <SolaText variant="greeting">{greetingText}</SolaText>
+      {subline && <SolaText style={styles.subline}>{subline}</SolaText>}
 
       <Pressable
         style={({ pressed }) => [styles.searchPill, pressed && styles.searchPressed]}
@@ -54,7 +54,7 @@ export function HomeSearchInput({ chips, firstName, heroState }: HomeSearchInput
         accessibilityLabel="Search destinations"
       >
         <Feather name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.searchPlaceholder}>Where to next?</Text>
+        <SolaText style={styles.searchPlaceholder}>Where to next?</SolaText>
       </Pressable>
 
       {chips.length > 0 && (
@@ -78,7 +78,7 @@ export function HomeSearchInput({ chips, firstName, heroState }: HomeSearchInput
                 } as any)
               }
             >
-              <Text style={styles.chipText}>{chip.label}</Text>
+              <SolaText style={styles.chipText}>{chip.label}</SolaText>
             </Pressable>
           ))}
         </ScrollView>
@@ -92,10 +92,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
-  },
-  greeting: {
-    ...typography.greeting,
-    color: colors.textPrimary,
   },
   subline: {
     fontFamily: fonts.regular,

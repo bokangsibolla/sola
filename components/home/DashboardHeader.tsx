@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import {
@@ -7,7 +8,6 @@ import {
   fonts,
   radius,
   spacing,
-  typography,
   pressedState,
 } from '@/constants/design';
 import type { HeroState } from '@/data/home/types';
@@ -42,8 +42,8 @@ export function DashboardHeader({ firstName, heroState }: DashboardHeaderProps) 
 
   return (
     <View style={styles.container}>
-      <Text style={styles.greeting}>{greetingText}</Text>
-      {subline && <Text style={styles.subline}>{subline}</Text>}
+      <SolaText variant="greeting">{greetingText}</SolaText>
+      {subline && <SolaText style={styles.subline}>{subline}</SolaText>}
 
       <Pressable
         style={({ pressed }) => [styles.searchPill, pressed && styles.searchPressed]}
@@ -52,7 +52,7 @@ export function DashboardHeader({ firstName, heroState }: DashboardHeaderProps) 
         accessibilityLabel="Search destinations"
       >
         <Feather name="search" size={16} color={colors.textMuted} />
-        <Text style={styles.searchPlaceholder}>Where will you go next?</Text>
+        <SolaText style={styles.searchPlaceholder}>Where will you go next?</SolaText>
       </Pressable>
     </View>
   );
@@ -63,10 +63,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.sm,
     marginBottom: spacing.xl,
-  },
-  greeting: {
-    ...typography.greeting,
-    color: colors.textPrimary,
   },
   subline: {
     fontFamily: fonts.regular,

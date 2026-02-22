@@ -4,9 +4,9 @@ import {
   FlatList,
   Pressable,
   StyleSheet,
-  Text,
   View,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
@@ -254,7 +254,7 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     return <View style={styles.centered}><ActivityIndicator color={colors.orange} /></View>;
   }
   if (categoryCounts.length === 0) {
-    return <View style={styles.centered}><Text style={styles.emptyText}>No places added yet</Text></View>;
+    return <View style={styles.centered}><SolaText style={styles.emptyText}>No places added yet</SolaText></View>;
   }
 
   const showSubTypes = subTypeCounts.length > 1;
@@ -288,13 +288,13 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
               }}
               style={styles.catItem}
             >
-              <Text style={styles.catEmoji}>{cat.emoji}</Text>
-              <Text
+              <SolaText style={styles.catEmoji}>{cat.emoji}</SolaText>
+              <SolaText
                 style={[styles.catLabel, active && styles.catLabelActive]}
                 numberOfLines={1}
               >
                 {cat.label}
-              </Text>
+              </SolaText>
               {active && <View style={styles.catUnderline} />}
             </Pressable>
           );
@@ -310,15 +310,15 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
               onPress={() => setOpenDropdown(openDropdown === 'type' ? null : 'type')}
               style={[styles.dropdownBtn, openDropdown === 'type' && styles.dropdownBtnOpen]}
             >
-              <Text
+              <SolaText
                 style={[styles.dropdownBtnText, activeSubType && styles.dropdownBtnTextActive]}
                 numberOfLines={1}
               >
                 {activeSubLabel}
-              </Text>
-              <Text style={styles.dropdownChevron}>
+              </SolaText>
+              <SolaText style={styles.dropdownChevron}>
                 {openDropdown === 'type' ? '▲' : '▼'}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
           {showAreaFilter && (
@@ -326,15 +326,15 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
               onPress={() => setOpenDropdown(openDropdown === 'area' ? null : 'area')}
               style={[styles.dropdownBtn, openDropdown === 'area' && styles.dropdownBtnOpen]}
             >
-              <Text
+              <SolaText
                 style={[styles.dropdownBtnText, selectedAreaId && styles.dropdownBtnTextActive]}
                 numberOfLines={1}
               >
                 {activeAreaLabel}
-              </Text>
-              <Text style={styles.dropdownChevron}>
+              </SolaText>
+              <SolaText style={styles.dropdownChevron}>
                 {openDropdown === 'area' ? '▲' : '▼'}
-              </Text>
+              </SolaText>
             </Pressable>
           )}
         </View>
@@ -347,9 +347,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
             onPress={() => { setActiveSubType(null); setOpenDropdown(null); }}
             style={[styles.dropdownOption, !activeSubType && styles.dropdownOptionActive]}
           >
-            <Text style={[styles.dropdownOptionText, !activeSubType && styles.dropdownOptionTextActive]}>
+            <SolaText style={[styles.dropdownOptionText, !activeSubType && styles.dropdownOptionTextActive]}>
               All types
-            </Text>
+            </SolaText>
           </Pressable>
           {subTypeCounts.map((st) => {
             const active = activeSubType === st.type;
@@ -359,10 +359,10 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                 onPress={() => { setActiveSubType(active ? null : st.type); setOpenDropdown(null); }}
                 style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
               >
-                <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
+                <SolaText style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
                   {st.label}
-                </Text>
-                <Text style={styles.dropdownOptionCount}>{st.count}</Text>
+                </SolaText>
+                <SolaText style={styles.dropdownOptionCount}>{st.count}</SolaText>
               </Pressable>
             );
           })}
@@ -376,9 +376,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
             onPress={() => { setSelectedAreaId(null); setOpenDropdown(null); }}
             style={[styles.dropdownOption, !selectedAreaId && styles.dropdownOptionActive]}
           >
-            <Text style={[styles.dropdownOptionText, !selectedAreaId && styles.dropdownOptionTextActive]}>
+            <SolaText style={[styles.dropdownOptionText, !selectedAreaId && styles.dropdownOptionTextActive]}>
               All areas
-            </Text>
+            </SolaText>
           </Pressable>
           {areaOptions.length > 0
             ? areaOptions.map((area) => {
@@ -389,10 +389,10 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                     onPress={() => { setSelectedAreaId(active ? null : area.id); setOpenDropdown(null); }}
                     style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
                   >
-                    <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
+                    <SolaText style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
                       {area.name}
-                    </Text>
-                    <Text style={styles.dropdownOptionCount}>{area.count}</Text>
+                    </SolaText>
+                    <SolaText style={styles.dropdownOptionCount}>{area.count}</SolaText>
                   </Pressable>
                 );
               })
@@ -404,9 +404,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                     onPress={() => { setSelectedAreaId(active ? null : area.id); setOpenDropdown(null); }}
                     style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
                   >
-                    <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
+                    <SolaText style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
                       {area.name}
-                    </Text>
+                    </SolaText>
                   </Pressable>
                 );
               })
@@ -436,7 +436,7 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                   size={12}
                   color={isActive ? f.color : isEmpty ? colors.textMuted : colors.textSecondary}
                 />
-                <Text
+                <SolaText
                   style={[
                     styles.stayChipText,
                     isActive && { color: f.color, fontFamily: fonts.semiBold },
@@ -444,7 +444,7 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                   ]}
                 >
                   {f.label}
-                </Text>
+                </SolaText>
               </Pressable>
             );
           })}
@@ -453,9 +453,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
 
       {/* ── Result count ── */}
       <View style={styles.resultRow}>
-        <Text style={styles.resultCount}>
+        <SolaText style={styles.resultCount}>
           {filteredPlaces.length} {filteredPlaces.length === 1 ? 'place' : 'places'}
-        </Text>
+        </SolaText>
       </View>
     </View>
   );
@@ -475,14 +475,14 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
             size={28}
             color={colors.textMuted}
           />
-          <Text style={styles.emptyText}>
+          <SolaText style={styles.emptyText}>
             {activeStayFilters.size > 0
               ? 'No stays match these filters'
               : 'No places match your filters'}
-          </Text>
+          </SolaText>
           {activeStayFilters.size > 0 && (
             <Pressable onPress={() => setActiveStayFilters(new Set())}>
-              <Text style={styles.clearFiltersText}>Clear filters</Text>
+              <SolaText style={styles.clearFiltersText}>Clear filters</SolaText>
             </Pressable>
           )}
         </View>

@@ -1,7 +1,8 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
@@ -47,24 +48,24 @@ export default function TravelerCard({
           )}
         </View>
         <View style={styles.headerText}>
-          <Text style={styles.name}>{profile.firstName}</Text>
+          <SolaText style={styles.name}>{profile.firstName}</SolaText>
           {profile.username && (
-            <Text style={styles.username}>@{profile.username}</Text>
+            <SolaText style={styles.username}>@{profile.username}</SolaText>
           )}
           {(profile.locationCityName || profile.homeCountryName) && (
-            <Text style={styles.location}>
+            <SolaText style={styles.location}>
               {profile.locationCityName ?? profile.homeCountryName}
               {profile.nationality ? ` · ${profile.nationality}` : ''}
-            </Text>
+            </SolaText>
           )}
           {contextLabel && (
-            <Text style={styles.contextLabel}>{contextLabel}</Text>
+            <SolaText style={styles.contextLabel}>{contextLabel}</SolaText>
           )}
         </View>
       </View>
 
       {profile.bio && (
-        <Text style={styles.bio} numberOfLines={2}>{profile.bio}</Text>
+        <SolaText variant="captionSmall" color={colors.textSecondary} style={styles.bio} numberOfLines={2}>{profile.bio}</SolaText>
       )}
 
       {displayInterests.length > 0 && (
@@ -77,14 +78,14 @@ export default function TravelerCard({
                 sharedInterests.includes(interest) && styles.tagShared,
               ]}
             >
-              <Text
+              <SolaText
                 style={[
                   styles.tagText,
                   sharedInterests.includes(interest) && styles.tagTextShared,
                 ]}
               >
                 {interest}
-              </Text>
+              </SolaText>
             </View>
           ))}
         </View>
@@ -99,18 +100,18 @@ export default function TravelerCard({
           }}
         >
           <Feather name="user-plus" size={14} color={colors.orange} />
-          <Text style={styles.connectButtonText}>Connect</Text>
+          <SolaText style={styles.connectButtonText}>Connect</SolaText>
         </Pressable>
       )}
       {connectionStatus === 'pending_sent' && (
         <View style={styles.statusPill}>
-          <Text style={styles.statusPillText}>Request sent</Text>
+          <SolaText style={styles.statusPillText}>Request sent</SolaText>
         </View>
       )}
       {connectionStatus === 'connected' && (
         <View style={[styles.statusPill, styles.statusPillConnected]}>
           <Feather name="check" size={12} color={colors.greenSoft} />
-          <Text style={[styles.statusPillText, styles.statusPillTextConnected]}>Connected</Text>
+          <SolaText style={[styles.statusPillText, styles.statusPillTextConnected]}>Connected</SolaText>
         </View>
       )}
     </Pressable>
@@ -173,8 +174,6 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bio: {
-    ...typography.captionSmall,
-    color: colors.textSecondary,
     marginTop: spacing.sm,
   },
   tags: {

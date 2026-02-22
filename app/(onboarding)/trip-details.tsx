@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
@@ -150,7 +151,7 @@ export default function TripDetailsScreen() {
             placeholder="City or country..."
             placeholderTextColor={colors.textMuted}
             value={destination || search}
-            onChangeText={(text) => {
+            onChangeText={(text: string) => {
               setDestination('');
               setSearch(text);
             }}
@@ -172,33 +173,33 @@ export default function TripDetailsScreen() {
                 style={styles.resultItem}
                 onPress={() => handleSelect(r.name)}
               >
-                <Text style={styles.resultName}>{r.name}</Text>
-                <Text style={styles.resultDetail}>{r.detail}</Text>
+                <SolaText style={styles.resultName}>{r.name}</SolaText>
+                <SolaText style={styles.resultDetail}>{r.detail}</SolaText>
               </Pressable>
             ))}
           </View>
         )}
 
         {search.length >= 2 && results.length === 0 && !destination && (
-          <Text style={styles.noResults}>
+          <SolaText style={styles.noResults}>
             No matches found. Type your destination and continue.
-          </Text>
+          </SolaText>
         )}
 
         {/* Date section — appears after destination is picked */}
         {(destination || search.trim()) ? (
           <View style={styles.dateSection}>
-            <Text style={styles.dateLabel}>When are you going?</Text>
+            <SolaText style={styles.dateLabel}>When are you going?</SolaText>
 
             <View style={styles.dateRow}>
               <Pressable
                 style={[styles.dateCard, arriving && styles.dateCardFilled]}
                 onPress={() => setShowPicker('arriving')}
               >
-                <Text style={styles.dateCardLabel}>Arriving</Text>
-                <Text style={[styles.dateCardValue, arriving && styles.dateCardValueFilled]}>
+                <SolaText style={styles.dateCardLabel}>Arriving</SolaText>
+                <SolaText style={[styles.dateCardValue, arriving && styles.dateCardValueFilled]}>
                   {arriving ? formatDate(arriving) : 'Pick a date'}
-                </Text>
+                </SolaText>
               </Pressable>
 
               <Pressable
@@ -211,10 +212,10 @@ export default function TripDetailsScreen() {
                   setShowPicker('leaving');
                 }}
               >
-                <Text style={styles.dateCardLabel}>Leaving</Text>
-                <Text style={[styles.dateCardValue, leaving && styles.dateCardValueFilled]}>
+                <SolaText style={styles.dateCardLabel}>Leaving</SolaText>
+                <SolaText style={[styles.dateCardValue, leaving && styles.dateCardValueFilled]}>
                   {leaving ? formatDate(leaving) : 'Pick a date'}
-                </Text>
+                </SolaText>
               </Pressable>
             </View>
 
@@ -222,11 +223,11 @@ export default function TripDetailsScreen() {
             {nights > 0 && (
               <View style={styles.nightsGroup}>
                 <View style={styles.nightsBadge}>
-                  <Text style={styles.nightsText}>
+                  <SolaText style={styles.nightsText}>
                     {nights} {nights === 1 ? 'night' : 'nights'}
-                  </Text>
+                  </SolaText>
                 </View>
-                <Text style={styles.durationLabel}>{durationLabel(nights)}</Text>
+                <SolaText style={styles.durationLabel}>{durationLabel(nights)}</SolaText>
               </View>
             )}
 
@@ -240,18 +241,18 @@ export default function TripDetailsScreen() {
                 size={20}
                 color={flexible ? colors.orange : colors.textMuted}
               />
-              <Text style={[styles.flexibleText, flexible && styles.flexibleTextActive]}>
+              <SolaText style={[styles.flexibleText, flexible && styles.flexibleTextActive]}>
                 I'm flexible on dates
-              </Text>
+              </SolaText>
             </Pressable>
 
             {/* iOS inline picker */}
             {Platform.OS === 'ios' && showPicker && (
               <View style={styles.pickerContainer}>
                 <View style={styles.pickerHeader}>
-                  <Text style={styles.pickerTitle}>
+                  <SolaText style={styles.pickerTitle}>
                     {showPicker === 'arriving' ? 'Arriving' : 'Leaving'}
-                  </Text>
+                  </SolaText>
                   <Pressable
                     onPress={() => {
                       if (showPicker === 'arriving' && arriving && !leaving) {
@@ -261,9 +262,9 @@ export default function TripDetailsScreen() {
                       }
                     }}
                   >
-                    <Text style={styles.pickerDone}>
+                    <SolaText style={styles.pickerDone}>
                       {showPicker === 'arriving' && arriving && !leaving ? 'Next' : 'Done'}
-                    </Text>
+                    </SolaText>
                   </Pressable>
                 </View>
                 <DateTimePicker

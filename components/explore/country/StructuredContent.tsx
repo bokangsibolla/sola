@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -69,22 +70,22 @@ function renderTextWithBold(text: string, baseStyle: any) {
   const parts = text.split(/(\*\*[^*]+\*\*)/g);
 
   if (parts.length === 1) {
-    return <Text style={baseStyle}>{text.replace(/\*\*/g, '')}</Text>;
+    return <SolaText style={baseStyle}>{text.replace(/\*\*/g, '')}</SolaText>;
   }
 
   return (
-    <Text style={baseStyle}>
+    <SolaText style={baseStyle}>
       {parts.map((part, i) => {
         if (part.startsWith('**') && part.endsWith('**')) {
           return (
-            <Text key={i} style={styles.bold}>
+            <SolaText key={i} style={styles.bold}>
               {part.slice(2, -2)}
-            </Text>
+            </SolaText>
           );
         }
         return <React.Fragment key={i}>{part}</React.Fragment>;
       })}
-    </Text>
+    </SolaText>
   );
 }
 
@@ -103,7 +104,7 @@ export function StructuredContent({ markdown, maxItems = 6 }: Props) {
         if (block.type === 'bullet') {
           return (
             <View key={i} style={styles.bulletRow}>
-              <Text style={styles.bulletDot}>{'\u2022'}</Text>
+              <SolaText style={styles.bulletDot}>{'\u2022'}</SolaText>
               <View style={styles.bulletContent}>
                 {renderTextWithBold(block.text, styles.bulletText)}
               </View>

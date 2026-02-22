@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface TripStatPillsProps {
@@ -15,19 +16,19 @@ export const TripStatPills: React.FC<TripStatPillsProps> = ({
 }) => (
   <View style={styles.row}>
     <View style={[styles.pill, styles.orangePill]}>
-      <Text style={[styles.pillText, styles.orangeText]}>
+      <SolaText style={[styles.pillText, styles.orangeText]}>
         {dayCount} {dayCount === 1 ? 'Day' : 'Days'}
-      </Text>
+      </SolaText>
     </View>
     <View style={[styles.pill, styles.greenPill]}>
-      <Text style={[styles.pillText, styles.greenText]}>
+      <SolaText style={[styles.pillText, styles.greenText]}>
         {spotCount} {spotCount === 1 ? 'Spot' : 'Spots'}
-      </Text>
+      </SolaText>
     </View>
     <View style={[styles.pill, styles.bluePill]}>
-      <Text style={[styles.pillText, styles.blueText]}>
+      <SolaText style={[styles.pillText, styles.blueText]}>
         {restaurantCount} {restaurantCount === 1 ? 'Restaurant' : 'Restaurants'}
-      </Text>
+      </SolaText>
     </View>
   </View>
 );

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { Image } from 'expo-image';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
 import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 
@@ -103,7 +104,7 @@ export const TimelineBlockCard: React.FC<TimelineBlockCardProps> = ({
       {/* Left gutter: time label or dot */}
       <View style={styles.gutter}>
         {block.startTime != null ? (
-          <Text style={styles.timeLabel}>{formatTimeShort(block.startTime)}</Text>
+          <SolaText style={styles.timeLabel}>{formatTimeShort(block.startTime)}</SolaText>
         ) : (
           <View style={styles.gutterDot} />
         )}
@@ -128,19 +129,19 @@ export const TimelineBlockCard: React.FC<TimelineBlockCardProps> = ({
           />
         )}
         <View style={styles.cardBody}>
-          <Text style={styles.typePill}>{typeLabel}</Text>
-          <Text style={styles.title} numberOfLines={2}>
+          <SolaText variant="pillLabel" color={colors.textMuted} uppercase letterSpacing={0.5} style={styles.typePill}>{typeLabel}</SolaText>
+          <SolaText style={styles.title} numberOfLines={2}>
             {title}
-          </Text>
+          </SolaText>
           {metaText.length > 0 && (
-            <Text style={styles.meta} numberOfLines={1}>
+            <SolaText style={styles.meta} numberOfLines={1}>
               {metaText}
-            </Text>
+            </SolaText>
           )}
           {descriptionText != null && (
-            <Text style={styles.description} numberOfLines={2}>
+            <SolaText style={styles.description} numberOfLines={2}>
               {descriptionText}
-            </Text>
+            </SolaText>
           )}
         </View>
       </Pressable>
@@ -210,11 +211,6 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
   typePill: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   title: {

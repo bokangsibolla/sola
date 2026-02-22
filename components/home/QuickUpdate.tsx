@@ -1,5 +1,6 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { TravelUpdate } from '@/data/home/types';
@@ -36,10 +37,10 @@ export function QuickUpdate({ update }: QuickUpdateProps) {
       <View style={[styles.card, { backgroundColor: config.bg }]}>
         <Feather name={config.icon} size={18} color={config.accent} style={styles.icon} />
         <View style={styles.content}>
-          <Text style={[styles.title, { color: config.accent }]}>{update.title}</Text>
-          <Text style={styles.body} numberOfLines={2}>
+          <SolaText style={[styles.title, { color: config.accent }]}>{update.title}</SolaText>
+          <SolaText style={styles.body} numberOfLines={2}>
             {update.body}
-          </Text>
+          </SolaText>
         </View>
       </View>
     </View>

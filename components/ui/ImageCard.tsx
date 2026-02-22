@@ -1,5 +1,6 @@
-import { colors, radius, spacing, typography } from '@/constants/design';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, radius, spacing } from '@/constants/design';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 
 interface ImageCardProps {
@@ -17,13 +18,13 @@ export default function ImageCard({ title, subtitle, imageUrl, onPress, badge }:
         <Image source={{ uri: imageUrl }} style={styles.image} contentFit="cover" transition={200} />
         {badge && (
           <View style={styles.badge}>
-            <Text style={styles.badgeText}>{badge}</Text>
+            <SolaText style={styles.badgeText}>{badge}</SolaText>
           </View>
         )}
       </View>
       <View style={styles.textContainer}>
-        <Text style={styles.title}>{title}</Text>
-        {subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
+        <SolaText variant="body" style={styles.title}>{title}</SolaText>
+        {subtitle && <SolaText variant="caption" color={colors.textSecondary}>{subtitle}</SolaText>}
       </View>
     </View>
   );
@@ -68,12 +69,6 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   title: {
-    ...typography.body,
     fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  subtitle: {
-    ...typography.caption,
-    color: colors.textSecondary,
   },
 });

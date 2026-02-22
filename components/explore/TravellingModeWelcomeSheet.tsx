@@ -1,5 +1,6 @@
 import React from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, View, Pressable, StyleSheet } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { ActiveTripInfo } from '@/state/AppModeContext';
@@ -29,23 +30,23 @@ export function TravellingModeWelcomeSheet({
             <Feather name="navigation" size={32} color={colors.orange} />
           </View>
 
-          <Text style={styles.title}>You're in {tripInfo.city.name}</Text>
-          <Text style={styles.subtitle}>
+          <SolaText style={styles.title}>You're in {tripInfo.city.name}</SolaText>
+          <SolaText style={styles.subtitle}>
             Your explore feed now shows places, tips, and community discussions for{' '}
             {tripInfo.city.name}.{' '}
             {tripInfo.daysLeft === 1
               ? '1 day left on your trip.'
               : `${tripInfo.daysLeft} days left on your trip.`}
-          </Text>
+          </SolaText>
 
           <View style={styles.features}>
             <View style={styles.featureRow}>
               <Feather name="map-pin" size={18} color={colors.textSecondary} />
-              <Text style={styles.featureText}>Saved places nearby</Text>
+              <SolaText style={styles.featureText}>Saved places nearby</SolaText>
             </View>
             <View style={styles.featureRow}>
               <Feather name="message-circle" size={18} color={colors.textSecondary} />
-              <Text style={styles.featureText}>Local community discussions</Text>
+              <SolaText style={styles.featureText}>Local community discussions</SolaText>
             </View>
           </View>
 
@@ -53,7 +54,7 @@ export function TravellingModeWelcomeSheet({
             onPress={onDismiss}
             style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
           >
-            <Text style={styles.ctaText}>Start exploring</Text>
+            <SolaText style={styles.ctaText}>Start exploring</SolaText>
           </Pressable>
         </View>
       </View>

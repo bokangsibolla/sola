@@ -5,12 +5,12 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Text,
   TextInput,
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { supabase } from '@/lib/supabase';
 import { rowsToCamel } from '@/data/api';
@@ -215,13 +215,13 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
   // ── Render helpers ─────────────────────────────────────────────────────────
   const renderPlaceResult = ({ item }: { item: PlaceResult }) => (
     <Pressable style={styles.resultRow} onPress={() => handlePlaceSelect(item)}>
-      <Text style={styles.resultName} numberOfLines={1}>
+      <SolaText style={styles.resultName} numberOfLines={1}>
         {item.name}
-      </Text>
+      </SolaText>
       {item.address ? (
-        <Text style={styles.resultAddress} numberOfLines={1}>
+        <SolaText style={styles.resultAddress} numberOfLines={1}>
           {item.address}
-        </Text>
+        </SolaText>
       ) : null}
     </Pressable>
   );
@@ -239,7 +239,7 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
       <View style={[styles.sheet, { paddingTop: insets.top || spacing.lg }]}>
         {/* ── Header ─────────────────────────────────────────────────── */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Add stop</Text>
+          <SolaText variant="screenTitle">Add stop</SolaText>
           <Pressable onPress={onClose} hitSlop={12}>
             <Ionicons name="close" size={24} color={colors.textMuted} />
           </Pressable>
@@ -260,9 +260,9 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
                 style={[styles.chip, isActive && styles.chipActive]}
                 onPress={() => handleTypeSelect(type)}
               >
-                <Text style={[styles.chipText, isActive && styles.chipTextActive]}>
+                <SolaText style={[styles.chipText, isActive && styles.chipTextActive]}>
                   {label}
-                </Text>
+                </SolaText>
               </Pressable>
             );
           })}
@@ -274,9 +274,9 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
             <>
               {selectedPlaceName ? (
                 <View style={styles.selectedPlace}>
-                  <Text style={styles.selectedPlaceText} numberOfLines={1}>
+                  <SolaText style={styles.selectedPlaceText} numberOfLines={1}>
                     {selectedPlaceName}
-                  </Text>
+                  </SolaText>
                   <Pressable
                     onPress={() => {
                       setSelectedPlaceId(null);
@@ -320,7 +320,7 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
           {/* ── Time fields (hidden for accommodation) ────────────── */}
           {selectedType !== 'accommodation' && (
             <>
-              <Text style={styles.timeLabel}>Time (optional)</Text>
+              <SolaText style={styles.timeLabel}>Time (optional)</SolaText>
               <View style={styles.timeRow}>
                 <TimePickerField
                   label="Start"
@@ -347,9 +347,9 @@ export const AddStopSheet: React.FC<AddStopSheetProps> = ({
             onPress={handleAdd}
             disabled={!canSubmit || submitting}
           >
-            <Text style={styles.addButtonText}>
+            <SolaText variant="button" color="#FFFFFF">
               {submitting ? 'Adding...' : 'Add to day'}
-            </Text>
+            </SolaText>
           </Pressable>
         </View>
       </View>
@@ -372,11 +372,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
-  },
-  headerTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
   },
 
   // ── Type picker ──────────────────────────────────────────────────────────
@@ -499,10 +494,5 @@ const styles = StyleSheet.create({
   },
   addButtonDisabled: {
     opacity: 0.5,
-  },
-  addButtonText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: '#FFFFFF',
   },
 });

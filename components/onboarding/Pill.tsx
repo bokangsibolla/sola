@@ -1,6 +1,7 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet } from 'react-native';
 import { colors, fonts, radius } from '@/constants/design';
+import { SolaText } from '@/components/ui/SolaText';
 
 interface PillProps {
   label: string;
@@ -15,8 +16,8 @@ export default function Pill({ label, subtitle, selected, onPress }: PillProps) 
       style={[styles.pill, selected && styles.pillSelected]}
       onPress={onPress}
     >
-      <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
-      {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
+      <SolaText style={[styles.label, selected && styles.labelSelected]}>{label}</SolaText>
+      {subtitle ? <SolaText style={styles.subtitle}>{subtitle}</SolaText> : null}
     </Pressable>
   );
 }

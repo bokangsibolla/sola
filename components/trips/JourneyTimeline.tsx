@@ -1,6 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 import { groupEntriesByDate } from '@/data/trips/helpers';
 import type { TripEntry } from '@/data/trips/types';
@@ -17,10 +18,10 @@ export default function JourneyTimeline({ entries }: JourneyTimelineProps) {
         <View style={styles.emptyIcon}>
           <Ionicons name="book-outline" size={28} color={colors.textMuted} />
         </View>
-        <Text style={styles.emptyTitle}>Your journey starts here</Text>
-        <Text style={styles.emptyBody}>
+        <SolaText variant="label" style={styles.emptyTitle}>Your journey starts here</SolaText>
+        <SolaText variant="caption" style={styles.emptyBody}>
           Add your first entry — a note, a check-in, or how you're feeling.
-        </Text>
+        </SolaText>
       </View>
     );
   }
@@ -31,7 +32,7 @@ export default function JourneyTimeline({ entries }: JourneyTimelineProps) {
     <View style={styles.container}>
       {grouped.map(([dateLabel, dayEntries]) => (
         <View key={dateLabel} style={styles.dateGroup}>
-          <Text style={styles.dateLabel}>{dateLabel.toUpperCase()}</Text>
+          <SolaText style={styles.dateLabel}>{dateLabel.toUpperCase()}</SolaText>
           {(dayEntries as TripEntry[]).map((entry) => (
             entry?.id ? <JourneyEntryCard key={entry.id} entry={entry} /> : null
           ))}
@@ -70,16 +71,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   emptyTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
     marginBottom: spacing.xs,
   },
   emptyBody: {
-    fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textMuted,
     textAlign: 'center',
-    lineHeight: 20,
   },
 });

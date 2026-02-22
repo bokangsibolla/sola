@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -103,9 +104,9 @@ export default function YoureInScreen() {
         </View>
 
         <View style={styles.center}>
-          <Text style={styles.headline}>You're in, {firstName}.</Text>
-          {greeting && <Text style={styles.greeting}>{greeting}</Text>}
-          <Text style={styles.subtitle}>Your travel world starts here.</Text>
+          <SolaText style={styles.headline}>You're in, {firstName}.</SolaText>
+          {greeting && <SolaText style={styles.greeting}>{greeting}</SolaText>}
+          <SolaText style={styles.subtitle}>Your travel world starts here.</SolaText>
         </View>
 
         <View style={[styles.bottomBlock, { paddingBottom: insets.bottom + 24 }]}>

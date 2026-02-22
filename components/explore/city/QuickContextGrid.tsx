@@ -1,4 +1,5 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City } from '@/data/types';
 import { mapSoloLevel } from '@/components/explore/country/mappings';
@@ -49,9 +50,9 @@ function buildCells(city: City): CellData[] {
 function Cell({ data, isRight, isBottom }: { data: CellData; isRight: boolean; isBottom: boolean }) {
   return (
     <View style={[styles.cell, !isRight && styles.cellBorderRight, !isBottom && styles.cellBorderBottom]}>
-      <Text style={styles.cellEmoji}>{data.emoji}</Text>
-      <Text style={styles.cellLabel}>{data.label}</Text>
-      <Text style={styles.cellValue} numberOfLines={2}>{data.value}</Text>
+      <SolaText style={styles.cellEmoji}>{data.emoji}</SolaText>
+      <SolaText style={styles.cellLabel}>{data.label}</SolaText>
+      <SolaText style={styles.cellValue} numberOfLines={2}>{data.value}</SolaText>
     </View>
   );
 }
@@ -67,7 +68,7 @@ export function QuickContextGrid({ city }: Props) {
 
   return (
     <View style={styles.section}>
-      <Text style={styles.heading}>At a glance</Text>
+      <SolaText style={styles.heading}>At a glance</SolaText>
       <View style={styles.grid}>
         {rows.map((row, rowIdx) => {
           const isBottomRow = rowIdx === rows.length - 1;

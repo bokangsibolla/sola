@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
@@ -48,16 +49,16 @@ export function DestinationCard({ city, width }: DestinationCardProps) {
       />
       {city.tagLabel && (
         <View style={styles.signalPill}>
-          <Text style={styles.signalText}>{city.tagLabel}</Text>
+          <SolaText style={styles.signalText}>{city.tagLabel}</SolaText>
         </View>
       )}
       <View style={styles.textOverlay}>
-        <Text style={styles.cityName} numberOfLines={1}>
+        <SolaText variant="cardTitle" color={colors.textOnImage} numberOfLines={1}>
           {city.cityName}
-        </Text>
-        <Text style={styles.countryName} numberOfLines={1}>
+        </SolaText>
+        <SolaText variant="cardSubtitle" color={colors.textOnImageMuted} style={styles.countryName}>
           {city.countryName}
-        </Text>
+        </SolaText>
       </View>
     </Pressable>
   );
@@ -99,17 +100,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing.lg,
   },
-  cityName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    lineHeight: 22,
-    color: colors.textOnImage,
-  },
   countryName: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textOnImageMuted,
     marginTop: spacing.xs,
   },
 });

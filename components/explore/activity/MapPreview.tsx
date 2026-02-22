@@ -1,5 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -58,10 +59,10 @@ const MapPreview: React.FC<MapPreviewProps> = ({
       {/* Label bar at bottom */}
       <View style={styles.labelBar}>
         <Ionicons name="location" size={14} color={colors.orange} />
-        <Text style={styles.labelText} numberOfLines={1}>
+        <SolaText style={styles.labelText} numberOfLines={1}>
           {address ?? name}
-        </Text>
-        <Text style={styles.openText}>Open</Text>
+        </SolaText>
+        <SolaText style={styles.openText}>Open</SolaText>
       </View>
     </Pressable>
   );

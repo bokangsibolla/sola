@@ -1,12 +1,12 @@
 import React, { useEffect, useCallback } from 'react';
 import {
   View,
-  Text,
   SectionList,
   RefreshControl,
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { NotificationRow } from '@/components/notifications/NotificationRow';
@@ -80,7 +80,7 @@ export default function NotificationsScreen() {
       ) : (
         !loading && (
           <View style={styles.emptyState}>
-            <Text style={styles.emptyText}>You're all caught up</Text>
+            <SolaText style={styles.emptyText}>You're all caught up</SolaText>
           </View>
         )
       )}

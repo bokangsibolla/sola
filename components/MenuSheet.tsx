@@ -2,10 +2,10 @@ import React from 'react';
 import {
   Modal,
   View,
-  Text,
   Pressable,
   StyleSheet,
 } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -71,7 +71,7 @@ export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps)
                 <Feather name={item.icon} size={18} color={colors.textPrimary} />
                 {item.showDot && <View style={styles.dot} />}
               </View>
-              <Text style={styles.rowLabel}>{item.label}</Text>
+              <SolaText style={styles.rowLabel}>{item.label}</SolaText>
               <Feather name="chevron-right" size={18} color={colors.textMuted} />
             </Pressable>
           ))}

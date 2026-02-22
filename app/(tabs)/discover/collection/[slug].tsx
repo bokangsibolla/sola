@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, View, Pressable } from 'react-native';
+import { ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import AppScreen from '@/components/AppScreen';
@@ -55,7 +56,7 @@ export default function CollectionPage() {
       <AppScreen>
         <NavigationHeader title="Collection" parentTitle="Discover" />
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>This collection is being updated.</Text>
+          <SolaText style={styles.emptyText}>This collection is being updated.</SolaText>
         </View>
       </AppScreen>
     );
@@ -104,12 +105,12 @@ export default function CollectionPage() {
           <View style={styles.heroOverlay}>
             {collection.badgeLabel && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{collection.badgeLabel}</Text>
+                <SolaText style={styles.badgeText}>{collection.badgeLabel}</SolaText>
               </View>
             )}
-            <Text style={styles.title}>{collection.title}</Text>
+            <SolaText style={styles.title}>{collection.title}</SolaText>
             {collection.subtitle && (
-              <Text style={styles.subtitle}>{collection.subtitle}</Text>
+              <SolaText style={styles.subtitle}>{collection.subtitle}</SolaText>
             )}
           </View>
         </View>
@@ -117,23 +118,23 @@ export default function CollectionPage() {
         <View style={styles.content}>
           {/* Intro */}
           {collection.introMd && (
-            <Text style={styles.intro}>{collection.introMd}</Text>
+            <SolaText style={styles.intro}>{collection.introMd}</SolaText>
           )}
 
           {/* Sponsored disclosure */}
           {collection.isSponsored && collection.sponsorName && (
             <View style={styles.sponsorBanner}>
               <Ionicons name="megaphone-outline" size={14} color={colors.textMuted} />
-              <Text style={styles.sponsorText}>
+              <SolaText style={styles.sponsorText}>
                 Sponsored by {collection.sponsorName}
-              </Text>
+              </SolaText>
             </View>
           )}
 
           {/* Items */}
-          <Text style={styles.sectionTitle}>
+          <SolaText style={styles.sectionTitle}>
             {collection.items.length} destination{collection.items.length !== 1 ? 's' : ''}
-          </Text>
+          </SolaText>
 
           {collection.items.map((item) => (
             <Pressable
@@ -153,16 +154,16 @@ export default function CollectionPage() {
               )}
               <View style={styles.itemInfo}>
                 <View style={styles.itemHeader}>
-                  <Text style={styles.itemName}>{item.entityName}</Text>
+                  <SolaText style={styles.itemName}>{item.entityName}</SolaText>
                   {item.isFeatured && (
                     <View style={styles.itemBadge}>
-                      <Text style={styles.itemBadgeText}>Featured</Text>
+                      <SolaText style={styles.itemBadgeText}>Featured</SolaText>
                     </View>
                   )}
                 </View>
-                <Text style={styles.itemType}>
+                <SolaText style={styles.itemType}>
                   {item.entityType === 'country' ? 'Country' : 'City'}
-                </Text>
+                </SolaText>
               </View>
               <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
             </Pressable>

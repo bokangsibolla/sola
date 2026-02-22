@@ -1,4 +1,5 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
+import { SolaText } from '@/components/ui/SolaText';
 import { colors, fonts, spacing } from '@/constants/design';
 import type { City, CityArea } from '@/data/types';
 import { QuickContextGrid } from './QuickContextGrid';
@@ -26,7 +27,7 @@ export function OverviewTab({ city, areas }: OverviewTabProps) {
       {/* Intro paragraph */}
       {introText && (
         <View style={styles.introSection}>
-          <Text style={styles.introText} numberOfLines={4}>{introText}</Text>
+          <SolaText style={styles.introText} numberOfLines={4}>{introText}</SolaText>
         </View>
       )}
 
