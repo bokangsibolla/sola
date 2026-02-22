@@ -11,6 +11,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
+// eslint-disable-next-line no-restricted-imports -- ErrorBoundary needs raw Text before fonts load
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, radius } from '@/constants/design';
 import { StatusBar } from 'expo-status-bar';

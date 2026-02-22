@@ -1,4 +1,5 @@
 import React from 'react';
+// eslint-disable-next-line no-restricted-imports -- SolaText wraps the raw RN Text
 import { Platform, Text, TextProps } from 'react-native';
 import { colors, typography } from '@/constants/design';
 
