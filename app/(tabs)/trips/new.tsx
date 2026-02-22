@@ -12,11 +12,8 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
-
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
-import * as ImagePicker from 'expo-image-picker';
 import { usePostHog } from 'posthog-react-native';
 import { searchDestinations } from '@/data/api';
 import type { DestinationResult } from '@/data/api';
@@ -27,7 +24,6 @@ import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
-import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 
 const DAY_MS = 86_400_000;
 const NAME_MAX = 50;
@@ -91,9 +87,6 @@ export default function NewTripScreen() {
   const [showKindSheet, setShowKindSheet] = useState(true);
   const [tripKind, setTripKind] = useState<TripKind | null>(null);
 
-  // Cover photo
-  const [coverUri, setCoverUri] = useState<string | null>(null);
-
   // Destinations (each stop carries its own dates)
   const [stops, setStops] = useState<SelectedStop[]>([]);
   const [search, setSearch] = useState('');
@@ -152,24 +145,8 @@ export default function NewTripScreen() {
     posthog.capture('create_trip_kind_selected', { kind });
   };
 
-  const handlePickCover = async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [16, 9],
-        quality: 0.8,
-      });
-      if (!result.canceled && result.assets[0]) {
-        setCoverUri(result.assets[0].uri);
-      }
-    } catch {
-      // Image picker failed — cover photo is optional, just skip
-    }
-  };
-
   const handleSelectStop = (result: DestinationResult) => {
-    if (stops.length >= 5 || !result.countryIso2) return;
+    if (!result.countryIso2) return;
     // Auto-chain: new stop starts when previous stop ends (or after its start if no end)
     const prevStop = stops[stops.length - 1];
     const prevDate = prevStop?.endDate ?? prevStop?.startDate ?? null;
@@ -394,33 +371,12 @@ export default function NewTripScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* ── Cover Photo (optional) ────────────────────────── */}
-        {coverUri ? (
-          <Pressable
-            style={({ pressed }) => [styles.coverArea, pressed && { opacity: 0.85 }]}
-            onPress={handlePickCover}
-          >
-            <Image source={{ uri: coverUri }} style={styles.coverImage} contentFit="cover" />
-            <View style={styles.coverEditBadge}>
-              <Ionicons name="camera" size={14} color="#FFFFFF" />
+        {/* ── Trip Kind Badge ────────────────────────────────── */}
+        {tripKind && (
+          <View style={styles.kindBadgeRow}>
+            <View style={styles.kindBadgeInline}>
+              <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
             </View>
-            {tripKind && (
-              <View style={styles.kindBadge}>
-                <Text style={styles.kindBadgeText}>{KIND_LABELS[tripKind]}</Text>
-              </View>
-            )}
-          </Pressable>
-        ) : (
-          <View style={styles.coverOptionalRow}>
-            {tripKind && (
-              <View style={styles.kindBadgeInline}>
-                <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
-              </View>
-            )}
-            <Pressable style={styles.coverOptionalButton} onPress={handlePickCover}>
-              <Ionicons name="camera-outline" size={16} color={colors.textMuted} />
-              <Text style={styles.coverOptionalText}>Add cover photo</Text>
-            </Pressable>
           </View>
         )}
 
@@ -481,8 +437,12 @@ export default function NewTripScreen() {
 
             {stops.length === 0 && search.length === 0 && (
               <View style={styles.emptyHint}>
-                <Text style={styles.emptyHintText}>Add up to 5 destinations</Text>
+                <Text style={styles.emptyHintText}>Add your destinations</Text>
               </View>
+            )}
+
+            {stops.length > 8 && (
+              <Text style={styles.ambitiousHint}>That's an ambitious route!</Text>
             )}
           </View>
         </View>
@@ -590,7 +550,7 @@ export default function NewTripScreen() {
       <View
         style={[
           styles.bottomBar,
-          { paddingBottom: insets.bottom + FLOATING_TAB_BAR_HEIGHT + spacing.sm },
+          { paddingBottom: insets.bottom + spacing.sm },
         ]}
       >
         <Pressable
@@ -661,62 +621,13 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Cover Photo ──
-  coverArea: {
-    height: 200,
-    backgroundColor: colors.neutralFill,
-    position: 'relative',
-  },
-  coverImage: {
-    ...StyleSheet.absoluteFillObject,
-  },
-  coverEditBadge: {
-    position: 'absolute',
-    bottom: spacing.md,
-    right: spacing.md,
-    width: 32,
-    height: 32,
-    borderRadius: radius.full,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  coverOptionalRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  // ── Kind Badge ──
+  kindBadgeRow: {
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
-  },
-  coverOptionalButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  coverOptionalText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  kindBadge: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-  },
-  kindBadgeText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: '#FFFFFF',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   kindBadgeInline: {
+    alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
@@ -781,6 +692,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
+  },
+  ambitiousHint: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   // ── Inputs ──
   inputRow: {

@@ -29,8 +29,8 @@ import {
   getCityById,
   getProfileById,
   isPlaceSaved,
-  toggleSavePlace,
 } from '@/data/api';
+import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
 import { useAuth } from '@/state/AuthContext';
 import type { Place, Tag } from '@/data/types';
 
@@ -272,6 +272,7 @@ export default function PlaceDetailScreen() {
   );
   const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [showSaveSheet, setShowSaveSheet] = useState(false);
 
   useEffect(() => {
     if (isSaved !== null) setSaved(isSaved);
@@ -279,21 +280,11 @@ export default function PlaceDetailScreen() {
 
   const canSave = Boolean(userId && id);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!userId || !id) return;
-
-    const newSaved = !saved;
-    setSaved(newSaved);
-    posthog.capture(newSaved ? 'place_saved' : 'place_unsaved', { place_id: id });
-
-    try {
-      await toggleSavePlace(userId, id);
-    } catch (error) {
-      // Revert on error
-      setSaved(saved);
-      Sentry.captureException(error);
-    }
-  }, [userId, id, saved, posthog]);
+    posthog.capture('place_save_sheet_opened', { place_id: id });
+    setShowSaveSheet(true);
+  }, [userId, id, posthog]);
 
   const handleOpenMaps = useCallback(() => {
     if (!place) return;
@@ -383,7 +374,7 @@ export default function PlaceDetailScreen() {
         rightActions={
           <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
             <Ionicons
-              name={saved ? 'heart' : 'heart-outline'}
+              name={saved ? 'bookmark' : 'bookmark-outline'}
               size={24}
               color={saved ? colors.orange : canSave ? colors.textPrimary : colors.textMuted}
             />
@@ -593,7 +584,7 @@ export default function PlaceDetailScreen() {
               ]}
             >
               <Ionicons
-                name={saved ? 'heart' : 'heart-outline'}
+                name={saved ? 'bookmark' : 'bookmark-outline'}
                 size={20}
                 color={colors.background}
               />
@@ -615,6 +606,18 @@ export default function PlaceDetailScreen() {
         {/* Bottom spacing */}
         <View style={{ height: insets.bottom + spacing.xxl }} />
       </ScrollView>
+
+      {/* Save to trip / collection sheet */}
+      {userId && id && place && (
+        <SaveSheet
+          visible={showSaveSheet}
+          onClose={() => setShowSaveSheet(false)}
+          entityType="place"
+          entityId={id}
+          entityName={place.name}
+          userId={userId}
+        />
+      )}
     </View>
   );
 }

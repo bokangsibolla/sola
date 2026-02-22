@@ -8,6 +8,8 @@ import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { TimelineBlockCard } from '@/components/trips/TimelineBlockCard';
+import type { BlockProgressStatus } from '@/components/trips/TimelineBlockCard';
+import { TodayBadge } from '@/components/trips/TripMode/TodayBadge';
 import { SuggestionCard } from '@/components/trips/SuggestionCard';
 import { AddStopSheet } from '@/components/trips/AddStopSheet';
 import { TripDaySuggestions, ACCOMMODATION_TYPES, placeRoute } from '@/components/trips/TripDaySuggestions';
@@ -21,6 +23,7 @@ import { useData } from '@/hooks/useData';
 import { getCityIdForDay, formatDayDate as formatDayDateShort } from '@/data/trips/helpers';
 import type { TripStop } from '@/data/trips/types';
 import type { Place } from '@/data/types';
+import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 import {
   applySuggestion,
   dismissSuggestion,
@@ -57,6 +60,43 @@ const formatDayDate = (dateStr: string): string => {
   return `${weekday}, ${day} ${month} ${year}`;
 };
 
+// ── Progress status helper ────────────────────────────────────────────────
+
+/**
+ * Compute the progress status for a block based on current time.
+ * Only applies when the day is today and the block has a start_time.
+ * Returns undefined if progress tracking doesn't apply.
+ */
+function getBlockProgressStatus(
+  block: ItineraryBlockWithTags,
+  isToday: boolean,
+): BlockProgressStatus {
+  if (!isToday || !block.startTime) return undefined;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  const startParts = block.startTime.split(':');
+  const startMinutes = parseInt(startParts[0], 10) * 60 + parseInt(startParts[1], 10);
+
+  if (block.endTime) {
+    const endParts = block.endTime.split(':');
+    const endMinutes = parseInt(endParts[0], 10) * 60 + parseInt(endParts[1], 10);
+
+    if (currentMinutes >= endMinutes) return 'completed';
+    if (currentMinutes >= startMinutes) return 'current';
+    return 'upcoming';
+  }
+
+  // No end time: use duration or default 60 min window
+  const durationMin = block.durationMin ?? 60;
+  const endMinutes = startMinutes + durationMin;
+
+  if (currentMinutes >= endMinutes) return 'completed';
+  if (currentMinutes >= startMinutes) return 'current';
+  return 'upcoming';
+}
+
 // ── Screen ────────────────────────────────────────────────────────────────
 
 export default function DayTimelineScreen() {
@@ -91,6 +131,13 @@ export default function DayTimelineScreen() {
   // Resolve city for this day (for suggestions + multi-day add)
   const tripStops: TripStop[] = trip?.stops ?? [];
   const dayCityId = day ? getCityIdForDay(day, tripStops) : null;
+
+  // Check if this day is today
+  const isToday = useMemo(() => {
+    if (!day?.date) return false;
+    const todayStr = new Date().toISOString().split('T')[0];
+    return day.date === todayStr;
+  }, [day?.date]);
 
   // Place IDs already added to this day
   const addedPlaceIds = useMemo(
@@ -266,9 +313,12 @@ export default function DayTimelineScreen() {
       >
         {/* ── Day header ──────────────────────────────────────────────── */}
         <View style={styles.dayHeader}>
-          {day.date != null && (
-            <Text style={styles.dateText}>{formatDayDate(day.date)}</Text>
-          )}
+          <View style={styles.dateRow}>
+            {day.date != null && (
+              <Text style={styles.dateText}>{formatDayDate(day.date)}</Text>
+            )}
+            {isToday && <TodayBadge />}
+          </View>
           {day.title != null && (
             <Text style={styles.dayTitle}>{day.title}</Text>
           )}
@@ -294,6 +344,7 @@ export default function DayTimelineScreen() {
                     index === timelineBlocks.length - 1 && !topSuggestion
                   }
                   onPress={() => handleBlockPress(block.id)}
+                  progressStatus={getBlockProgressStatus(block, isToday)}
                 />
                 <InsertButton
                   onPress={() => handleInsert(block.orderIndex)}
@@ -407,6 +458,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.lg,
     paddingBottom: spacing.md,
+  },
+  dateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   dateText: {
     fontFamily: fonts.regular,

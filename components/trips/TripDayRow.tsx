@@ -3,12 +3,39 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { TripDayWithBlocks } from '@/data/trips/itineraryTypes';
 import { formatDayDate } from '@/data/trips/helpers';
+import { TodayBadge } from '@/components/trips/TripMode/TodayBadge';
 import { colors, fonts, spacing, pressedState } from '@/constants/design';
 
 interface TripDayRowProps {
   day: TripDayWithBlocks;
   isToday: boolean;
   onPress: () => void;
+}
+
+/** Format "HH:MM:SS" to "2 PM" or "10 AM" */
+const formatTimeShort = (time: string): string => {
+  const h = parseInt(time.slice(0, 2), 10);
+  const m = parseInt(time.slice(3, 5), 10);
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  if (m > 0) return `${h12}:${m.toString().padStart(2, '0')} ${ampm}`;
+  return `${h12} ${ampm}`;
+};
+
+/** Find the next upcoming block based on current time. */
+function getNextBlock(day: TripDayWithBlocks): { name: string; time: string } | null {
+  const now = new Date();
+  const currentHHMM = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:00`;
+
+  for (const block of day.blocks) {
+    if (!block.startTime) continue;
+    // Find the first block whose start time hasn't passed yet
+    if (block.startTime >= currentHHMM) {
+      const name = block.titleOverride ?? block.place?.name ?? block.blockType;
+      return { name, time: formatTimeShort(block.startTime) };
+    }
+  }
+  return null;
 }
 
 export const TripDayRow: React.FC<TripDayRowProps> = ({ day, isToday, onPress }) => {
@@ -20,46 +47,59 @@ export const TripDayRow: React.FC<TripDayRowProps> = ({ day, isToday, onPress })
     .map((b) => b.titleOverride ?? b.place?.name ?? b.blockType)
     .join(' \u00B7 ');
   const extra = Math.max(0, day.blocks.length - 3);
-  const preview = names
+  const defaultPreview = names
     ? extra > 0
       ? `${names} + ${extra} more`
       : names
     : 'No stops yet';
+
+  // For today's row, show "Next: [name] at [time]" if available
+  const nextBlock = isToday ? getNextBlock(day) : null;
+  const preview = isToday && nextBlock
+    ? `${stopsLabel} \u00B7 Next: ${nextBlock.name} at ${nextBlock.time}`
+    : defaultPreview;
 
   const dateLabel = formatDayDate(day.date);
 
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.container, pressed && pressedState]}
+      style={({ pressed }) => [
+        styles.container,
+        isToday && styles.containerToday,
+        pressed && pressedState,
+      ]}
       accessibilityRole="button"
     >
-      <View style={styles.accentBar} />
+      {isToday && <View style={styles.accentBar} />}
 
-      <View style={styles.content}>
-        {/* Row 1: Day label, date, today pill, stop count, chevron */}
+      <View style={[styles.content, !isToday && styles.contentNoBar]}>
+        {/* Row 1: Day label, date, today badge, stop count, chevron */}
         <View style={styles.row1}>
           <Text style={styles.dayLabel}>Day {day.dayIndex}</Text>
-          {dateLabel != null && (
-            <Text style={styles.dateText}>{dateLabel}</Text>
-          )}
-          {isToday && (
-            <View style={styles.todayPill}>
-              <Text style={styles.todayText}>TODAY</Text>
-            </View>
+          {isToday ? (
+            <TodayBadge />
+          ) : (
+            dateLabel != null && (
+              <Text style={styles.dateText}>{dateLabel}</Text>
+            )
           )}
           <View style={styles.row1Right}>
-            <Text style={styles.stopsText}>{stopsLabel}</Text>
+            {!isToday && <Text style={styles.stopsText}>{stopsLabel}</Text>}
             <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
           </View>
         </View>
 
-        {/* Row 2: Place name preview */}
+        {/* Row 2: Preview line */}
         <Text
-          style={[styles.previewText, blockCount === 0 && styles.previewEmpty]}
+          style={[
+            styles.previewText,
+            blockCount === 0 && !isToday && styles.previewEmpty,
+            isToday && styles.previewToday,
+          ]}
           numberOfLines={1}
         >
-          {preview}
+          {isToday && dateLabel ? `${dateLabel} \u00B7 ${preview}` : preview}
         </Text>
       </View>
     </Pressable>
@@ -73,6 +113,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
   },
+  containerToday: {
+    backgroundColor: colors.orangeFill,
+  },
   accentBar: {
     width: 3,
     backgroundColor: colors.orange,
@@ -85,35 +128,23 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     justifyContent: 'center',
   },
+  contentNoBar: {
+    paddingLeft: spacing.screenX + 3 + spacing.md,
+  },
   row1: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
   },
   dayLabel: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.textPrimary,
-    marginRight: spacing.sm,
   },
   dateText: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textMuted,
-    marginRight: spacing.sm,
-  },
-  todayPill: {
-    backgroundColor: colors.orangeFill,
-    borderRadius: 4,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginRight: spacing.sm,
-  },
-  todayText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 10,
-    color: colors.orange,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
   },
   row1Right: {
     flex: 1,
@@ -136,5 +167,8 @@ const styles = StyleSheet.create({
   previewEmpty: {
     color: colors.textMuted,
     fontStyle: 'italic',
+  },
+  previewToday: {
+    color: colors.textPrimary,
   },
 });

@@ -4,7 +4,6 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
 import { colors, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
@@ -12,8 +11,8 @@ import { useAuth } from '@/state/AuthContext';
 import {
   getAccommodationWithDetails,
   isPlaceSaved,
-  toggleSavePlace,
 } from '@/data/api';
+import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useNavContext } from '@/hooks/useNavContext';
@@ -58,6 +57,7 @@ export default function AccommodationDetailScreen() {
     ['accommodationSaved', userId, accommodation?.id],
   );
   const [saved, setSaved] = useState(false);
+  const [showSaveSheet, setShowSaveSheet] = useState(false);
 
   useEffect(() => {
     if (isSavedFromDb != null) setSaved(isSavedFromDb);
@@ -86,20 +86,11 @@ export default function AccommodationDetailScreen() {
 
   const canSave = Boolean(userId && accommodation?.id);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!userId || !accommodation?.id) return;
-    const newSaved = !saved;
-    setSaved(newSaved);
-    posthog.capture(newSaved ? 'accommodation_saved' : 'accommodation_unsaved', {
-      accommodation_id: accommodation.id,
-    });
-    try {
-      await toggleSavePlace(userId, accommodation.id);
-    } catch (err) {
-      setSaved(saved);
-      Sentry.captureException(err);
-    }
-  }, [userId, accommodation?.id, saved, posthog]);
+    posthog.capture('accommodation_save_sheet_opened', { accommodation_id: accommodation.id });
+    setShowSaveSheet(true);
+  }, [userId, accommodation?.id, posthog]);
 
   const handleOpenMaps = useCallback(() => {
     if (!accommodation) return;
@@ -224,6 +215,18 @@ export default function AccommodationDetailScreen() {
         onSave={handleSave}
         onOpenMaps={handleOpenMaps}
       />
+
+      {/* Save to trip / collection sheet */}
+      {userId && accommodation?.id && (
+        <SaveSheet
+          visible={showSaveSheet}
+          onClose={() => setShowSaveSheet(false)}
+          entityType="place"
+          entityId={accommodation.id}
+          entityName={accommodation.name}
+          userId={userId}
+        />
+      )}
     </SafeAreaView>
   );
 }

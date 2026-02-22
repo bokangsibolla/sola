@@ -5,6 +5,9 @@ export type EntryType = 'note' | 'arrival' | 'departure' | 'stay' | 'tip' | 'com
 export type MoodTag = 'calm' | 'happy' | 'uneasy' | 'unsafe';
 export type EntryVisibility = 'private' | 'shared' | 'public';
 export type SavedItemCategory = 'general' | 'accommodation' | 'food' | 'activity' | 'transport' | 'other';
+export type SavedItemSource = 'manual' | 'collection_import' | 'suggestion';
+export type AccommodationStatus = 'planned' | 'booked' | 'confirmed';
+export type TransportType = 'flight' | 'train' | 'bus' | 'car' | 'ferry' | 'other';
 
 export interface TripStop {
   id: string;
@@ -139,4 +142,127 @@ export interface CreateEntryInput {
   moodTag?: MoodTag;
   visibility?: EntryVisibility;
   isShareableTip?: boolean;
+}
+
+// ── Accommodation ──────────────────────────────────────────
+
+export interface TripAccommodation {
+  id: string;
+  tripId: string;
+  placeId: string | null;
+  name: string;
+  checkIn: string;
+  checkOut: string;
+  address: string | null;
+  locationLat: number | null;
+  locationLng: number | null;
+  bookingUrl: string | null;
+  bookingRef: string | null;
+  cost: number | null;
+  currency: string;
+  status: AccommodationStatus;
+  notes: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAccommodationInput {
+  tripId: string;
+  placeId?: string;
+  name: string;
+  checkIn: string;
+  checkOut: string;
+  address?: string;
+  locationLat?: number;
+  locationLng?: number;
+  bookingUrl?: string;
+  bookingRef?: string;
+  cost?: number;
+  currency?: string;
+  status?: AccommodationStatus;
+  notes?: string;
+}
+
+export interface UpdateAccommodationInput {
+  name?: string;
+  checkIn?: string;
+  checkOut?: string;
+  address?: string | null;
+  locationLat?: number | null;
+  locationLng?: number | null;
+  bookingUrl?: string | null;
+  bookingRef?: string | null;
+  cost?: number | null;
+  currency?: string;
+  status?: AccommodationStatus;
+  notes?: string | null;
+}
+
+// ── Transport ──────────────────────────────────────────────
+
+export interface TripTransport {
+  id: string;
+  tripId: string;
+  fromStopOrder: number | null;
+  toStopOrder: number | null;
+  transportType: TransportType;
+  carrier: string | null;
+  reference: string | null;
+  departureAt: string | null;
+  arrivalAt: string | null;
+  departureLocation: string | null;
+  arrivalLocation: string | null;
+  bookingUrl: string | null;
+  cost: number | null;
+  currency: string;
+  notes: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTransportInput {
+  tripId: string;
+  fromStopOrder?: number;
+  toStopOrder?: number;
+  transportType: TransportType;
+  carrier?: string;
+  reference?: string;
+  departureAt?: string;
+  arrivalAt?: string;
+  departureLocation?: string;
+  arrivalLocation?: string;
+  bookingUrl?: string;
+  cost?: number;
+  currency?: string;
+  notes?: string;
+}
+
+export interface UpdateTransportInput {
+  fromStopOrder?: number | null;
+  toStopOrder?: number | null;
+  transportType?: TransportType;
+  carrier?: string | null;
+  reference?: string | null;
+  departureAt?: string | null;
+  arrivalAt?: string | null;
+  departureLocation?: string | null;
+  arrivalLocation?: string | null;
+  bookingUrl?: string | null;
+  cost?: number | null;
+  currency?: string;
+  notes?: string | null;
+}
+
+// ── Notification Settings ──────────────────────────────────
+
+export interface TripNotificationSettings {
+  tripId: string;
+  morningSummary: boolean;
+  stopReminders: boolean;
+  eveningJournal: boolean;
+  departureAlerts: boolean;
+  reminderMinutes: number;
+  morningHour: number;
+  eveningHour: number;
 }

@@ -13,6 +13,13 @@ import type {
   CreateEntryInput,
   TripOverlapMatch,
   TripKind,
+  TripAccommodation,
+  CreateAccommodationInput,
+  UpdateAccommodationInput,
+  TripTransport,
+  CreateTransportInput,
+  UpdateTransportInput,
+  TripNotificationSettings,
 } from './types';
 import { nightsBetween } from './helpers';
 
@@ -401,6 +408,198 @@ export interface VisitedCountry {
   countryName: string;
   tripCount: number;
 }
+
+// ── Accommodations ──────────────────────────────────────────
+
+export async function getTripAccommodations(tripId: string): Promise<TripAccommodation[]> {
+  const { data, error } = await supabase
+    .from('trip_accommodations')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('check_in', { ascending: true });
+  if (error) throw error;
+  return rowsToCamel<TripAccommodation>(data ?? []);
+}
+
+export async function getAccommodationForDate(
+  tripId: string,
+  date: string,
+): Promise<TripAccommodation | null> {
+  const { data, error } = await supabase
+    .from('trip_accommodations')
+    .select('*')
+    .eq('trip_id', tripId)
+    .lte('check_in', date)
+    .gt('check_out', date)
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<TripAccommodation>(data) : null;
+}
+
+export async function createAccommodation(input: CreateAccommodationInput): Promise<TripAccommodation> {
+  const { data, error } = await supabase
+    .from('trip_accommodations')
+    .insert({
+      trip_id: input.tripId,
+      place_id: input.placeId || null,
+      name: input.name,
+      check_in: input.checkIn,
+      check_out: input.checkOut,
+      address: input.address || null,
+      location_lat: input.locationLat ?? null,
+      location_lng: input.locationLng ?? null,
+      booking_url: input.bookingUrl || null,
+      booking_ref: input.bookingRef || null,
+      cost: input.cost ?? null,
+      currency: input.currency || 'USD',
+      status: input.status || 'planned',
+      notes: input.notes || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return toCamel<TripAccommodation>(data);
+}
+
+export async function updateAccommodation(
+  id: string,
+  updates: UpdateAccommodationInput,
+): Promise<void> {
+  const dbUpdates: Record<string, unknown> = {};
+  if (updates.name !== undefined) dbUpdates.name = updates.name;
+  if (updates.checkIn !== undefined) dbUpdates.check_in = updates.checkIn;
+  if (updates.checkOut !== undefined) dbUpdates.check_out = updates.checkOut;
+  if (updates.address !== undefined) dbUpdates.address = updates.address;
+  if (updates.locationLat !== undefined) dbUpdates.location_lat = updates.locationLat;
+  if (updates.locationLng !== undefined) dbUpdates.location_lng = updates.locationLng;
+  if (updates.bookingUrl !== undefined) dbUpdates.booking_url = updates.bookingUrl;
+  if (updates.bookingRef !== undefined) dbUpdates.booking_ref = updates.bookingRef;
+  if (updates.cost !== undefined) dbUpdates.cost = updates.cost;
+  if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+  if (updates.status !== undefined) dbUpdates.status = updates.status;
+  if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+  const { error } = await supabase
+    .from('trip_accommodations')
+    .update(dbUpdates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteAccommodation(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('trip_accommodations')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ── Transports ──────────────────────────────────────────────
+
+export async function getTripTransports(tripId: string): Promise<TripTransport[]> {
+  const { data, error } = await supabase
+    .from('trip_transports')
+    .select('*')
+    .eq('trip_id', tripId)
+    .order('departure_at', { ascending: true, nullsFirst: false });
+  if (error) throw error;
+  return rowsToCamel<TripTransport>(data ?? []);
+}
+
+export async function createTransport(input: CreateTransportInput): Promise<TripTransport> {
+  const { data, error } = await supabase
+    .from('trip_transports')
+    .insert({
+      trip_id: input.tripId,
+      from_stop_order: input.fromStopOrder ?? null,
+      to_stop_order: input.toStopOrder ?? null,
+      transport_type: input.transportType,
+      carrier: input.carrier || null,
+      reference: input.reference || null,
+      departure_at: input.departureAt || null,
+      arrival_at: input.arrivalAt || null,
+      departure_location: input.departureLocation || null,
+      arrival_location: input.arrivalLocation || null,
+      booking_url: input.bookingUrl || null,
+      cost: input.cost ?? null,
+      currency: input.currency || 'USD',
+      notes: input.notes || null,
+    })
+    .select()
+    .single();
+  if (error) throw error;
+  return toCamel<TripTransport>(data);
+}
+
+export async function updateTransport(
+  id: string,
+  updates: UpdateTransportInput,
+): Promise<void> {
+  const dbUpdates: Record<string, unknown> = {};
+  if (updates.fromStopOrder !== undefined) dbUpdates.from_stop_order = updates.fromStopOrder;
+  if (updates.toStopOrder !== undefined) dbUpdates.to_stop_order = updates.toStopOrder;
+  if (updates.transportType !== undefined) dbUpdates.transport_type = updates.transportType;
+  if (updates.carrier !== undefined) dbUpdates.carrier = updates.carrier;
+  if (updates.reference !== undefined) dbUpdates.reference = updates.reference;
+  if (updates.departureAt !== undefined) dbUpdates.departure_at = updates.departureAt;
+  if (updates.arrivalAt !== undefined) dbUpdates.arrival_at = updates.arrivalAt;
+  if (updates.departureLocation !== undefined) dbUpdates.departure_location = updates.departureLocation;
+  if (updates.arrivalLocation !== undefined) dbUpdates.arrival_location = updates.arrivalLocation;
+  if (updates.bookingUrl !== undefined) dbUpdates.booking_url = updates.bookingUrl;
+  if (updates.cost !== undefined) dbUpdates.cost = updates.cost;
+  if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+  if (updates.notes !== undefined) dbUpdates.notes = updates.notes;
+
+  const { error } = await supabase
+    .from('trip_transports')
+    .update(dbUpdates)
+    .eq('id', id);
+  if (error) throw error;
+}
+
+export async function deleteTransport(id: string): Promise<void> {
+  const { error } = await supabase
+    .from('trip_transports')
+    .delete()
+    .eq('id', id);
+  if (error) throw error;
+}
+
+// ── Notification Settings ───────────────────────────────────
+
+export async function getTripNotificationSettings(
+  tripId: string,
+): Promise<TripNotificationSettings | null> {
+  const { data, error } = await supabase
+    .from('trip_notification_settings')
+    .select('*')
+    .eq('trip_id', tripId)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? toCamel<TripNotificationSettings>(data) : null;
+}
+
+export async function upsertTripNotificationSettings(
+  tripId: string,
+  settings: Partial<Omit<TripNotificationSettings, 'tripId'>>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('trip_notification_settings')
+    .upsert({
+      trip_id: tripId,
+      morning_summary: settings.morningSummary,
+      stop_reminders: settings.stopReminders,
+      evening_journal: settings.eveningJournal,
+      departure_alerts: settings.departureAlerts,
+      reminder_minutes: settings.reminderMinutes,
+      morning_hour: settings.morningHour,
+      evening_hour: settings.eveningHour,
+    });
+  if (error) throw error;
+}
+
+// ── Public Trip Reads (for traveler profiles) ────────────────
 
 export async function getVisitedCountries(
   targetUserId: string,

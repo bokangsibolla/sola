@@ -4,7 +4,6 @@ import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
 import { colors, spacing, typography } from '@/constants/design';
 import { useData } from '@/hooks/useData';
@@ -12,8 +11,8 @@ import { useAuth } from '@/state/AuthContext';
 import {
   getActivityWithDetails,
   isPlaceSaved,
-  toggleSavePlace,
 } from '@/data/api';
+import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useNavContext } from '@/hooks/useNavContext';
@@ -57,6 +56,7 @@ export default function ActivityDetailScreen() {
     ['activitySaved', userId, activity?.id],
   );
   const [saved, setSaved] = useState(false);
+  const [showSaveSheet, setShowSaveSheet] = useState(false);
 
   useEffect(() => {
     if (isSavedFromDb != null) setSaved(isSavedFromDb);
@@ -84,20 +84,11 @@ export default function ActivityDetailScreen() {
 
   const canSave = Boolean(userId && activity?.id);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!userId || !activity?.id) return;
-    const newSaved = !saved;
-    setSaved(newSaved);
-    posthog.capture(newSaved ? 'activity_saved' : 'activity_unsaved', {
-      activity_id: activity.id,
-    });
-    try {
-      await toggleSavePlace(userId, activity.id);
-    } catch (err) {
-      setSaved(saved);
-      Sentry.captureException(err);
-    }
-  }, [userId, activity?.id, saved, posthog]);
+    posthog.capture('activity_save_sheet_opened', { activity_id: activity.id });
+    setShowSaveSheet(true);
+  }, [userId, activity?.id, posthog]);
 
   const handleOpenMaps = useCallback(() => {
     if (!activity) return;
@@ -215,6 +206,18 @@ export default function ActivityDetailScreen() {
         {/* Bottom spacing */}
         <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
+
+      {/* Save to trip / collection sheet */}
+      {userId && activity?.id && (
+        <SaveSheet
+          visible={showSaveSheet}
+          onClose={() => setShowSaveSheet(false)}
+          entityType="place"
+          entityId={activity.id}
+          entityName={activity.name}
+          userId={userId}
+        />
+      )}
     </SafeAreaView>
   );
 }
