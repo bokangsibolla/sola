@@ -102,6 +102,19 @@ Source of truth: `constants/design.ts`. See `.claude/skills/sola-design-system.m
 - All migrations go in `supabase/migrations/` with `YYYYMMDD_` prefix.
 - Never store secrets in client code.
 
+## Android Development
+
+**Always run before testing on device:**
+```bash
+./scripts/dev-android.sh
+```
+This script ensures USB port forwarding (`adb reverse`) and Metro dev server are both running. Both are required — the app won't connect without them.
+
+**Native build (only needed when native code changes):**
+```bash
+ANDROID_HOME=~/Library/Android/sdk JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home" npx expo run:android
+```
+
 ## Pre-existing Issues (Ignore These)
 
 These TypeScript errors exist in files we don't own — don't fix them:
