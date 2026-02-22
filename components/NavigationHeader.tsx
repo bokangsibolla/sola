@@ -1,14 +1,13 @@
 import React from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { NavCrumb } from '@/hooks/useNavContext';
+import BackButton, { BACK_BUTTON_SIZE } from '@/components/ui/BackButton';
 import { colors, fonts, spacing, typography } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -27,6 +26,10 @@ interface NavigationHeaderProps {
 
   /** Back handler — defaults to router.back() */
   onBack?: () => void;
+
+  /** Explicit back destination — ensures back stays within the current tab.
+   *  When set, overrides router.back() with router.navigate(backHref). */
+  backHref?: string;
 
   /** Kept for useNavContext compatibility — not rendered visually */
   ancestors?: NavCrumb[];
@@ -50,6 +53,7 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   showLogo,
   parentTitle,
   onBack,
+  backHref,
   variant = 'standard',
   rightActions,
 }) => {
@@ -61,6 +65,8 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
   const handleBack = () => {
     if (onBack) {
       onBack();
+    } else if (backHref) {
+      router.navigate(backHref as any);
     } else {
       router.back();
     }
@@ -93,27 +99,10 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({
     <View style={styles.container}>
       <View style={styles.pushRow}>
         {/* Left: back or close */}
-        {isModal ? (
-          <Pressable
-            onPress={handleBack}
-            style={styles.navButton}
-            hitSlop={spacing.md}
-            accessibilityRole="button"
-            accessibilityLabel="Close"
-          >
-            <Ionicons name="close" size={NAV_ICON_SM} color={colors.textPrimary} />
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={handleBack}
-            style={styles.navButton}
-            hitSlop={spacing.sm}
-            accessibilityRole="button"
-            accessibilityLabel="Go back"
-          >
-            <Ionicons name="chevron-back" size={NAV_ICON_MD} color={colors.textPrimary} />
-          </Pressable>
-        )}
+        <BackButton
+          variant={isModal ? 'close' : 'back'}
+          onPress={handleBack}
+        />
 
         {/* Center: title (absolutely positioned for true centering) */}
         <View style={styles.titleContainer} pointerEvents="none">
@@ -138,10 +127,7 @@ export default React.memo(NavigationHeader);
 const HEADER_HEIGHT = 48;
 const LOGO_HEIGHT = 22;
 const LOGO_WIDTH = 76;
-const NAV_BUTTON_WIDTH = 36;
 const TITLE_SIDE_CLEARANCE = 60;
-const NAV_ICON_SM = 22;
-const NAV_ICON_MD = 24;
 
 const styles = StyleSheet.create({
   container: {
@@ -171,15 +157,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     height: HEADER_HEIGHT,
-  },
-
-  // ── Nav button (back / close) ──────────────────────────────────
-  navButton: {
-    width: NAV_BUTTON_WIDTH,
-    height: HEADER_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 2,
   },
 
   // ── Centered title (push screens) ──────────────────────────────

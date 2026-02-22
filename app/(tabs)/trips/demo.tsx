@@ -167,7 +167,7 @@ export default function TripDemoScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <NavigationHeader title="Example trip" parentTitle="Trips" />
+      <NavigationHeader title="Example trip" parentTitle="Trips" backHref="/(tabs)/trips" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}

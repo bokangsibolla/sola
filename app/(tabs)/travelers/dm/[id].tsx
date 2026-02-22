@@ -192,6 +192,7 @@ export default function DMThreadScreen() {
         <NavigationHeader
           title={other?.firstName ?? 'Chat'}
           parentTitle="Messages"
+          backHref="/(tabs)/travelers/dm"
           rightActions={
             <Pressable onPress={showMenu} hitSlop={12} style={styles.menuButton}>
               <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />

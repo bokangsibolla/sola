@@ -255,6 +255,7 @@ export default function UserProfileScreen() {
       <NavigationHeader
         title={profile?.firstName ?? 'Traveler'}
         parentTitle="Travelers"
+        backHref="/(tabs)/travelers"
         rightActions={
           <Pressable onPress={handleMoreMenu} hitSlop={12}>
             <Feather name="more-horizontal" size={24} color={colors.textPrimary} />

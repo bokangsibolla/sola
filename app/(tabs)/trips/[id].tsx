@@ -149,7 +149,7 @@ export default function TripDetailScreen() {
           onPress: async () => {
             if (!trip) return;
             await deleteTrip(trip.id);
-            router.back();
+            router.replace('/(tabs)/trips');
           },
         },
       ],
@@ -164,7 +164,7 @@ export default function TripDetailScreen() {
   if (!trip) {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
-        <NavigationHeader title="Trip" parentTitle="Trips" />
+        <NavigationHeader title="Trip" parentTitle="Trips" backHref="/(tabs)/trips" />
         <Text style={styles.notFound}>Trip not found</Text>
       </View>
     );
@@ -228,6 +228,7 @@ export default function TripDetailScreen() {
       <NavigationHeader
         title="Trip"
         parentTitle="Trips"
+        backHref="/(tabs)/trips"
         rightActions={
           <Pressable onPress={() => setShowMenu(!showMenu)} hitSlop={12}>
             <Ionicons name="ellipsis-horizontal" size={24} color={colors.textPrimary} />
