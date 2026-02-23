@@ -57,6 +57,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    [
+      'expo-build-properties',
+      {
+        android: {
+          newArchEnabled: false,
+        },
+      },
+    ],
     '@react-native-google-signin/google-signin',
     [
       'expo-splash-screen',
