@@ -26,20 +26,35 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Step 1: Parse the request body
+  let parsed: { url?: string; method?: string; headers?: Record<string, string>; body?: string };
   try {
-    const { url, method, headers, body } = await req.json();
-
-    if (!url) {
+    const rawBody = await req.text();
+    if (!rawBody) {
       return new Response(
-        JSON.stringify({ error: "url is required in body" }),
-        {
-          status: 400,
-          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Empty request body" }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
     }
+    parsed = JSON.parse(rawBody);
+  } catch (parseErr) {
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON body", detail: String(parseErr) }),
+      { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
 
-    // Forward the request with all original headers (server-side, no issues)
+  const { url, method, headers, body } = parsed;
+
+  if (!url) {
+    return new Response(
+      JSON.stringify({ error: "url is required in body" }),
+      { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
+
+  // Step 2: Forward the request with all original headers (server-side, no issues)
+  try {
     const response = await fetch(url, {
       method: method || "GET",
       headers: headers || {},
@@ -68,13 +83,14 @@ Deno.serve(async (req) => {
       status: response.status,
       headers: responseHeaders,
     });
-  } catch (err) {
+  } catch (fetchErr) {
     return new Response(
-      JSON.stringify({ error: "Proxy error", detail: String(err) }),
-      {
-        status: 500,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      },
+      JSON.stringify({
+        error: "Proxy fetch failed",
+        detail: String(fetchErr),
+        target_url: url.substring(0, 80),
+      }),
+      { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
   }
 });

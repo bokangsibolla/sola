@@ -138,21 +138,37 @@ function xhrFetch(
 // a headerless edge function proxy that adds headers server-side.
 let _proxyMode = false;
 
+let _proxyCallCount = 0;
+
 /** Send a Supabase request through the android-proxy edge function (headerless). */
-function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
+async function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
   const headers = normalizeHeaders(init?.headers);
-  const body = JSON.stringify({
+  const method = init?.method ?? 'GET';
+  const payload = JSON.stringify({
     url,
-    method: init?.method ?? 'GET',
+    method,
     headers,
     body: typeof init?.body === 'string' ? init.body : undefined,
   });
 
-  // Use global fetch with NO custom headers — the whole point of the proxy
-  return fetch(`${supabaseUrl}/functions/v1/android-proxy`, {
+  _proxyCallCount++;
+  // Log first 5 proxy calls for diagnostics
+  if (_proxyCallCount <= 5) {
+    console.log(`[Sola Proxy] #${_proxyCallCount} ${method} ${url.substring(0, 70)}`);
+  }
+
+  // Use global fetch — only Content-Type header (standard, not blocked)
+  const response = await fetch(`${supabaseUrl}/functions/v1/android-proxy`, {
     method: 'POST',
-    body,
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
   });
+
+  if (_proxyCallCount <= 5) {
+    console.log(`[Sola Proxy] #${_proxyCallCount} → ${response.status}`);
+  }
+
+  return response;
 }
 
 // ── Connection warmup ───────────────────────────────────────────────────────
