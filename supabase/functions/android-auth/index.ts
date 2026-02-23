@@ -82,7 +82,30 @@ Deno.serve(async (req) => {
 
     const authData = await authResponse.json();
 
-    return new Response(JSON.stringify(authData), {
+    // If auth succeeded, also fetch profile onboarding status so the client
+    // doesn't need to make a separate (header-requiring) request.
+    let profile = null;
+    if (authResponse.ok && authData.access_token && authData.user?.id) {
+      try {
+        const profileResp = await fetch(
+          `${SUPABASE_URL}/rest/v1/profiles?select=id,onboarding_completed_at&id=eq.${authData.user.id}`,
+          {
+            headers: {
+              apikey: SUPABASE_ANON_KEY,
+              Authorization: `Bearer ${authData.access_token}`,
+            },
+          },
+        );
+        if (profileResp.ok) {
+          const profiles = await profileResp.json();
+          profile = profiles.length > 0 ? profiles[0] : null;
+        }
+      } catch {
+        // Profile check is best-effort — client will handle missing data
+      }
+    }
+
+    return new Response(JSON.stringify({ ...authData, profile }), {
       status: authResponse.status,
       headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
     });

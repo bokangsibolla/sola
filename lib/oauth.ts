@@ -1,6 +1,7 @@
 import * as AppleAuthentication from 'expo-apple-authentication';
 import * as Crypto from 'expo-crypto';
 import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/lib/supabase';
 
 const GOOGLE_WEB_CLIENT_ID =
@@ -40,13 +41,18 @@ function getGoogleSignin() {
 
 // ─── Android auth proxy (fallback) ──────────────────────────────────────────
 // Calls the `android-auth` edge function with NO custom headers, bypassing
-// Android New Arch networking bug. Used as fallback when direct signInWithIdToken
-// fails on Android.
+// Android networking bug where ANY request with custom headers fails.
+// After getting tokens from the proxy, writes the session directly to
+// AsyncStorage — bypassing setSession()/refreshSession() which both make
+// internal HTTP calls with custom headers that would also fail.
+
+// Supabase stores sessions under this key pattern
+const SUPABASE_STORAGE_KEY = 'sb-bfyewxgdfkmkviajmfzp-auth-token';
 
 async function exchangeTokenViaProxy(
   idToken: string,
   provider: string,
-): Promise<{ user: any; session: any }> {
+): Promise<{ user: any; session: any; profile?: any }> {
   const proxyUrl =
     `${SUPABASE_URL}/functions/v1/android-auth` +
     `?id_token=${encodeURIComponent(idToken)}&provider=${provider}`;
@@ -68,36 +74,47 @@ async function exchangeTokenViaProxy(
     );
   }
 
-  // Establish session in the Supabase client.
-  // setSession() calls _getUser() internally — an extra GET request that can
-  // fail on Android. If it fails, fall back to refreshSession() which uses a
-  // POST (no _getUser call) and is more reliable.
-  if (authData.access_token && authData.refresh_token) {
-    const { error: sessionError } = await supabase.auth.setSession({
-      access_token: authData.access_token,
-      refresh_token: authData.refresh_token,
-    });
-
-    if (sessionError) {
-      console.warn('[Sola] setSession failed, trying refreshSession fallback:', sessionError.message);
-      const { error: refreshError } = await supabase.auth.refreshSession({
-        refresh_token: authData.refresh_token,
-      });
-      if (refreshError) {
-        throw new Error(
-          `Session setup failed: setSession: ${sessionError.message}, refreshSession: ${refreshError.message}`,
-        );
-      }
-    }
+  if (!authData.access_token || !authData.refresh_token) {
+    throw new Error('Proxy auth returned no tokens');
   }
 
-  // Verify session is actually persisted
-  const { data: { session: currentSession } } = await supabase.auth.getSession();
-  if (!currentSession) {
-    throw new Error('Session was not established after proxy auth');
+  // Try setSession first — works on devices where headers aren't blocked
+  const { error: sessionError } = await supabase.auth.setSession({
+    access_token: authData.access_token,
+    refresh_token: authData.refresh_token,
+  });
+
+  if (!sessionError) {
+    // setSession worked — session is established normally
+    return { user: authData.user, session: authData, profile: authData.profile || null };
   }
 
-  return { user: authData.user, session: authData };
+  // setSession failed (custom headers blocked on this device).
+  // Write session directly to AsyncStorage so the Supabase client
+  // picks it up on next getSession() without making any network calls.
+  console.warn('[Sola] setSession failed, writing session directly to storage:', sessionError.message);
+
+  const sessionData = {
+    access_token: authData.access_token,
+    token_type: authData.token_type || 'bearer',
+    expires_in: authData.expires_in || 3600,
+    expires_at: authData.expires_at || Math.floor(Date.now() / 1000) + (authData.expires_in || 3600),
+    refresh_token: authData.refresh_token,
+    user: authData.user,
+  };
+
+  await AsyncStorage.setItem(SUPABASE_STORAGE_KEY, JSON.stringify(sessionData));
+  console.log('[Sola] Session written directly to AsyncStorage');
+
+  // Force the Supabase client to re-read from storage.
+  // getSession() reads from storage when its internal cache is empty/stale,
+  // and does NOT make network calls if the token hasn't expired.
+  const { data: { session: recovered } } = await supabase.auth.getSession();
+  if (!recovered) {
+    throw new Error('Session was written to storage but getSession() did not find it');
+  }
+
+  return { user: authData.user, session: authData, profile: authData.profile || null };
 }
 
 // ─── Google ──────────────────────────────────────────────────────────────────
@@ -158,6 +175,7 @@ export async function signInWithGoogle(): Promise<{
   // manages the session naturally — no manual setSession() needed.
   try {
     let sessionData: { user: any; session: any };
+    let proxyProfile: any = null; // Profile from proxy (avoids header-blocked query)
 
     if (Platform.OS === 'android') {
       // Try direct first — XHR-based fetch should handle custom headers
@@ -167,11 +185,14 @@ export async function signInWithGoogle(): Promise<{
       });
 
       if (!directError && directData?.user) {
+        console.log('[Sola] Direct signInWithIdToken succeeded');
         sessionData = directData;
       } else {
-        // Fallback: edge function proxy + manual setSession
+        // Fallback: edge function proxy + manual session storage
         console.warn('[Sola] Direct signInWithIdToken failed, using proxy:', directError?.message);
-        sessionData = await exchangeTokenViaProxy(idToken, 'google');
+        const proxyResult = await exchangeTokenViaProxy(idToken, 'google');
+        sessionData = proxyResult;
+        proxyProfile = proxyResult.profile;
       }
     } else {
       const { data, error } = await supabase.auth.signInWithIdToken({
@@ -185,12 +206,24 @@ export async function signInWithGoogle(): Promise<{
     }
 
     // Check if user has completed onboarding (not just profile existence,
-    // because the handle_new_user trigger auto-creates a profile row)
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('id, onboarding_completed_at')
-      .eq('id', sessionData.user.id)
-      .maybeSingle();
+    // because the handle_new_user trigger auto-creates a profile row).
+    // On Android proxy path, the edge function already fetched the profile
+    // so we use that to avoid a header-requiring client query.
+    let profile: any = proxyProfile;
+    if (!profile) {
+      try {
+        const { data } = await supabase
+          .from('profiles')
+          .select('id, onboarding_completed_at')
+          .eq('id', sessionData.user.id)
+          .maybeSingle();
+        profile = data;
+      } catch (err) {
+        // Profile query failed (e.g. headers blocked on Android).
+        // Treat as new user — worst case they see onboarding again.
+        console.warn('[Sola] Profile check failed, treating as new user:', err);
+      }
+    }
 
     const isNewUser = !profile || !profile.onboarding_completed_at;
 
@@ -210,6 +243,8 @@ export async function signInWithGoogle(): Promise<{
     if (err.message?.includes('Edge function')) throw err;
     if (err.message?.includes('Session setup failed')) throw err;
     if (err.message?.includes('Session was not established')) throw err;
+    if (err.message?.includes('Session was written')) throw err;
+    if (err.message?.includes('Proxy auth returned')) throw err;
     // Network error reaching Supabase
     const msg = err.message?.toLowerCase() ?? '';
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('unreachable')) {
