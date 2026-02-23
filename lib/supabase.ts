@@ -131,8 +131,33 @@ function xhrFetch(
   });
 }
 
+// ── Proxy mode ──────────────────────────────────────────────────────────────
+// On some Android devices (e.g. Vivo Android 15), ALL HTTP requests with
+// custom headers fail — both XHR and native fetch. When detected (warmup
+// failure or first request failure), we route all Supabase requests through
+// a headerless edge function proxy that adds headers server-side.
+let _proxyMode = false;
+
+/** Send a Supabase request through the android-proxy edge function (headerless). */
+function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
+  const headers = normalizeHeaders(init?.headers);
+  const body = JSON.stringify({
+    url,
+    method: init?.method ?? 'GET',
+    headers,
+    body: typeof init?.body === 'string' ? init.body : undefined,
+  });
+
+  // Use global fetch with NO custom headers — the whole point of the proxy
+  return fetch(`${supabaseUrl}/functions/v1/android-proxy`, {
+    method: 'POST',
+    body,
+  });
+}
+
 // ── Connection warmup ───────────────────────────────────────────────────────
 // Pre-warm connection to supabase.co on Android before any auth calls.
+// If warmup fails, enables proxy mode for all subsequent requests.
 let _warmupDone = false;
 let _warmupPromise: Promise<boolean> | null = null;
 
@@ -190,21 +215,30 @@ export function warmupConnection(): Promise<boolean> {
       }
     }
 
+    // Both XHR and fetch failed across all rounds — enable proxy mode
+    _proxyMode = true;
+    console.log('[Sola] Warmup failed — enabling proxy mode for all Supabase requests');
     return false;
   })();
 
   return _warmupPromise;
 }
 
-// ── Custom fetch: XHR-first on Android ──────────────────────────────────────
-// On Android, use XHR as primary (works with custom headers) and native fetch
-// as fallback. On iOS/web, use native fetch directly.
+// ── Custom fetch: XHR-first on Android, proxy fallback ──────────────────────
+// On Android, use XHR as primary, native fetch as fallback, and edge function
+// proxy as last resort (for devices where all custom-header requests fail).
 const supabaseFetch: typeof fetch = async (input, init) => {
   if (Platform.OS !== 'android') {
     return fetch(input, init);
   }
 
   const url = typeof input === 'string' ? input : (input as Request).url;
+  const isSupabaseUrl = url.startsWith(supabaseUrl);
+
+  // Fast path: if proxy mode is active, skip XHR/fetch entirely
+  if (_proxyMode && isSupabaseUrl) {
+    return proxyFetch(url, init);
+  }
 
   // Phase 1: XHR (primary on Android — bypasses TurboModule header bug)
   try {
@@ -214,26 +248,19 @@ const supabaseFetch: typeof fetch = async (input, init) => {
     console.log(`[Sola] XHR failed, trying native fetch: ${xhrError.message}`);
   }
 
-  // Phase 2: Native fetch with retries
-  const maxRetries = 3;
-  let lastError: any;
-
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fetch(url, init);
-    } catch (error: any) {
-      lastError = error;
-      if (attempt < maxRetries) {
-        await new Promise((r) => setTimeout(r, 300 * Math.pow(2, attempt)));
-      }
+  // Phase 2: Native fetch (single attempt — retries just waste time if broken)
+  try {
+    return await fetch(url, init);
+  } catch (fetchError: any) {
+    // Both XHR and native fetch failed
+    if (isSupabaseUrl) {
+      // Phase 3: Edge function proxy (headerless) — last resort
+      console.log('[Sola] XHR + fetch failed, routing through proxy');
+      _proxyMode = true;
+      return proxyFetch(url, init);
     }
+    throw fetchError;
   }
-
-  throw new TypeError(
-    `Supabase unreachable after XHR + ${maxRetries + 1} fetch retries. ` +
-      `XHR: ${lastError?.message ?? 'unknown'}. ` +
-      `[${url?.substring(0, 60)}]`,
-  );
 };
 
 // ── Supabase client ─────────────────────────────────────────────────────────
