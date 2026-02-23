@@ -63,12 +63,27 @@ export default function LoginScreen() {
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
+      // Verify session is actually established before navigating
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Sign-in succeeded but session was not saved. Please try again.');
+      }
+
       posthog.capture('auth_success', { provider, is_new_user: result.isNewUser });
       if (result.isNewUser) {
+        // Pre-populate onboarding store with OAuth metadata
+        if (result.userMetadata?.firstName) {
+          onboardingStore.set('firstName', result.userMetadata.firstName);
+        }
         router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home' as any);
+        // Defer navigation on Android — Expo Router bug with cross-group replace
+        if (Platform.OS === 'android') {
+          setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+        } else {
+          router.replace('/(tabs)/home' as any);
+        }
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
@@ -142,7 +157,12 @@ export default function LoginScreen() {
         router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home' as any);
+        // Defer navigation on Android — Expo Router bug with cross-group replace
+        if (Platform.OS === 'android') {
+          setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+        } else {
+          router.replace('/(tabs)/home' as any);
+        }
       }
     } catch (e: any) {
       const msg = e.message?.toLowerCase() ?? '';

@@ -67,14 +67,15 @@ export default function VerifyScreen() {
 
       posthog.capture('auth_success', { provider: 'magic_link', mode });
 
-      // Check if user has a profile (existing vs new user)
+      // Check if user has completed onboarding (not just profile existence,
+      // because the handle_new_user trigger auto-creates a profile row)
       const { data: profile } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, onboarding_completed_at')
         .eq('id', data.user.id)
         .maybeSingle();
 
-      if (!profile) {
+      if (!profile || !profile.onboarding_completed_at) {
         // New user — go through onboarding
         onboardingStore.set('email', email!);
 

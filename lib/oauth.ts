@@ -38,17 +38,15 @@ function getGoogleSignin() {
   return _googleSignin!;
 }
 
-// ─── Android auth proxy ─────────────────────────────────────────────────────
+// ─── Android auth proxy (fallback) ──────────────────────────────────────────
 // Calls the `android-auth` edge function with NO custom headers, bypassing
-// Android New Arch networking bug. The edge function proxies the token exchange
-// to Supabase Auth server-side where networking works perfectly.
+// Android New Arch networking bug. Used as fallback when direct signInWithIdToken
+// fails on Android.
 
 async function exchangeTokenViaProxy(
   idToken: string,
   provider: string,
 ): Promise<{ user: any; session: any }> {
-  // Use a headerless POST — send token as query param to avoid needing
-  // Content-Type header (which may also fail on broken Android networking)
   const proxyUrl =
     `${SUPABASE_URL}/functions/v1/android-auth` +
     `?id_token=${encodeURIComponent(idToken)}&provider=${provider}`;
@@ -70,12 +68,33 @@ async function exchangeTokenViaProxy(
     );
   }
 
-  // Set the session in the Supabase client so AuthContext picks it up
+  // Establish session in the Supabase client.
+  // setSession() calls _getUser() internally — an extra GET request that can
+  // fail on Android. If it fails, fall back to refreshSession() which uses a
+  // POST (no _getUser call) and is more reliable.
   if (authData.access_token && authData.refresh_token) {
-    await supabase.auth.setSession({
+    const { error: sessionError } = await supabase.auth.setSession({
       access_token: authData.access_token,
       refresh_token: authData.refresh_token,
     });
+
+    if (sessionError) {
+      console.warn('[Sola] setSession failed, trying refreshSession fallback:', sessionError.message);
+      const { error: refreshError } = await supabase.auth.refreshSession({
+        refresh_token: authData.refresh_token,
+      });
+      if (refreshError) {
+        throw new Error(
+          `Session setup failed: setSession: ${sessionError.message}, refreshSession: ${refreshError.message}`,
+        );
+      }
+    }
+  }
+
+  // Verify session is actually persisted
+  const { data: { session: currentSession } } = await supabase.auth.getSession();
+  if (!currentSession) {
+    throw new Error('Session was not established after proxy auth');
   }
 
   return { user: authData.user, session: authData };
@@ -133,14 +152,27 @@ export async function signInWithGoogle(): Promise<{
   }
 
   // Phase 2: Exchange ID token with Supabase
-  // On Android, use the edge function proxy (zero custom headers needed)
-  // to bypass New Architecture TurboModule networking bug.
-  // On iOS, use the direct Supabase client.
+  // On Android, try direct signInWithIdToken first (uses XHR-based fetch which
+  // bypasses the TurboModule header bug). Fall back to edge function proxy if
+  // the direct call fails. Direct call is preferred because the Supabase client
+  // manages the session naturally — no manual setSession() needed.
   try {
     let sessionData: { user: any; session: any };
 
     if (Platform.OS === 'android') {
-      sessionData = await exchangeTokenViaProxy(idToken, 'google');
+      // Try direct first — XHR-based fetch should handle custom headers
+      const { data: directData, error: directError } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: idToken,
+      });
+
+      if (!directError && directData?.user) {
+        sessionData = directData;
+      } else {
+        // Fallback: edge function proxy + manual setSession
+        console.warn('[Sola] Direct signInWithIdToken failed, using proxy:', directError?.message);
+        sessionData = await exchangeTokenViaProxy(idToken, 'google');
+      }
     } else {
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
@@ -176,6 +208,8 @@ export async function signInWithGoogle(): Promise<{
     // If it's already our error, rethrow
     if (err.message?.includes('Supabase could not verify')) throw err;
     if (err.message?.includes('Edge function')) throw err;
+    if (err.message?.includes('Session setup failed')) throw err;
+    if (err.message?.includes('Session was not established')) throw err;
     // Network error reaching Supabase
     const msg = err.message?.toLowerCase() ?? '';
     if (msg.includes('network') || msg.includes('fetch') || msg.includes('unreachable')) {

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import { supabase, warmupConnection } from '@/lib/supabase';
@@ -14,6 +14,13 @@ interface AuthContextValue {
   loading: boolean;
   /** Sign out and clear session. */
   signOut: () => Promise<void>;
+  /**
+   * Re-read session from Supabase storage and update React state.
+   * Returns true if a valid session was found.
+   * Use this before redirecting away from authenticated screens to avoid
+   * false redirects caused by stale React state.
+   */
+  recoverSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -23,9 +30,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Failsafe: never stay loading for more than 8 seconds
-    // (increased from 5s to allow for connection warmup on Android)
-    const timeout = setTimeout(() => setLoading(false), 8_000);
+    // Failsafe: never stay loading for more than 15 seconds
+    // (increased from 8s to allow for TLS provider install + warmup retry on Android)
+    const timeout = setTimeout(() => setLoading(false), 15_000);
 
     // On Android, warm up the OkHttp connection pool BEFORE making auth calls.
     // This prevents "Network request failed" errors caused by cold-start failures.
@@ -45,6 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         supabase.auth
           .getSession()
           .then(({ data: { session: s } }) => {
+            console.log('[Sola Auth] Initial getSession:', s ? `userId=${s.user.id.substring(0, 8)}` : 'null');
             setSession(s);
           })
           .catch((err) => {
@@ -60,7 +68,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes (sign in, sign out, token refresh)
     let subscription: { unsubscribe: () => void } | null = null;
     try {
-      const result = supabase.auth.onAuthStateChange((_event, s) => {
+      const result = supabase.auth.onAuthStateChange((event, s) => {
+        console.log(`[Sola Auth] Event: ${event}, hasSession: ${!!s}, userId: ${s?.user?.id?.substring(0, 8) ?? 'null'}`);
         setSession(s);
       });
       subscription = result.data.subscription;
@@ -79,6 +88,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession(null);
   };
 
+  const recoverSession = useCallback(async (): Promise<boolean> => {
+    try {
+      const { data: { session: s } } = await supabase.auth.getSession();
+      console.log('[Sola Auth] recoverSession:', s ? `userId=${s.user.id.substring(0, 8)}` : 'null');
+      if (s) {
+        setSession(s);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  }, []);
+
   return (
     <AuthContext.Provider
       value={{
@@ -87,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         loading,
         signOut,
+        recoverSession,
       }}
     >
       {children}

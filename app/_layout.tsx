@@ -11,7 +11,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, radius } from '@/constants/design';
 import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
@@ -116,7 +116,7 @@ const errorStyles = StyleSheet.create({
 function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
-  const { userId, loading: authLoading } = useAuth();
+  const { userId, loading: authLoading, recoverSession } = useAuth();
 
   usePushNotifications(userId);
 
@@ -145,8 +145,19 @@ function AuthGate() {
 
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
+    console.log(`[Sola AuthGate] group=${currentGroup}, userId=${userId?.substring(0, 8) ?? 'null'}, onboarded=${isOnboardingCompleted}`);
+
+    // Helper: replace to tabs with Android setTimeout workaround
+    const replaceToTabs = () => {
+      if (Platform.OS === 'android') {
+        setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+      } else {
+        router.replace('/(tabs)/home' as any);
+      }
+    };
+
     if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
-      router.replace('/(tabs)/home' as any);
+      replaceToTabs();
     } else if (currentGroup === '(onboarding)' && userId && !isOnboardingCompleted) {
       // Check DB in case onboarding was completed on another device
       supabase
@@ -157,13 +168,25 @@ function AuthGate() {
         .then(({ data }) => {
           if (data?.onboarding_completed_at) {
             onboardingStore.set('onboardingCompleted', true);
-            router.replace('/(tabs)/home' as any);
+            replaceToTabs();
           }
         });
     } else if (currentGroup === '(tabs)' && !userId) {
-      router.replace('/(onboarding)/welcome' as any);
+      // Session might exist in storage but React state hasn't updated yet
+      // (timing issue on Android where navigation triggers before auth state propagates).
+      // Verify session from storage before redirecting to avoid false logouts.
+      console.log('[Sola AuthGate] Tabs without userId — verifying session from storage...');
+      (async () => {
+        const recovered = await recoverSession();
+        if (!recovered) {
+          console.log('[Sola AuthGate] No session in storage — redirecting to welcome');
+          router.replace('/(onboarding)/welcome' as any);
+        } else {
+          console.log('[Sola AuthGate] Session recovered — staying on tabs');
+        }
+      })();
     }
-  }, [segments, router, userId, authLoading]);
+  }, [segments, router, userId, authLoading, recoverSession]);
 
   if (authLoading) {
     return (

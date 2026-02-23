@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import { signInWithGoogle } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
-import { warmupConnection } from '@/lib/supabase';
+import { supabase, warmupConnection } from '@/lib/supabase';
 import { colors, fonts, spacing } from '@/constants/design';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -37,12 +37,28 @@ export default function WelcomeScreen() {
     try {
       await warmupConnection();
       const result = await signInWithGoogle();
+
+      // Verify session is actually established before navigating
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('Sign-in succeeded but session was not saved. Please try again.');
+      }
+
       posthog.capture('auth_success', { provider: 'google', is_new_user: result.isNewUser });
       if (result.isNewUser) {
+        // Pre-populate onboarding store with Google metadata
+        if (result.userMetadata?.firstName) {
+          onboardingStore.set('firstName', result.userMetadata.firstName);
+        }
         router.push('/(onboarding)/profile' as any);
       } else {
         await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home' as any);
+        // Defer navigation on Android — Expo Router bug with cross-group replace
+        if (Platform.OS === 'android') {
+          setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+        } else {
+          router.replace('/(tabs)/home' as any);
+        }
       }
     } catch (e: any) {
       if (e.message?.includes('cancelled')) return;
