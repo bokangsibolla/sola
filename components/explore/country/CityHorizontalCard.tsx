@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import type { City } from '@/data/types';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
+import { BookmarkButton } from '@/components/ui/BookmarkButton';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.7;
 const COMPACT_WIDTH = Dimensions.get('window').width * 0.6;
@@ -50,6 +51,12 @@ export function CityHorizontalCard({ city, compact }: Props) {
         pointerEvents="none"
       />
 
+      <BookmarkButton
+        entityType="city"
+        entityId={city.id}
+        style={styles.bookmark}
+      />
+
       {city.bestFor && (
         <View style={styles.bestForContainer}>
           <Text style={styles.bestForText}>{city.bestFor}</Text>
@@ -83,6 +90,12 @@ const styles = StyleSheet.create({
   pressed: {
     opacity: pressedState.opacity,
     transform: [{ scale: 0.98 }],
+  },
+  bookmark: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    zIndex: 1,
   },
   gradient: {
     position: 'absolute',
