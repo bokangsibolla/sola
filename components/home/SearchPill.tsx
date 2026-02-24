@@ -21,7 +21,7 @@ export function SearchPill({ firstName }: SearchPillProps) {
         styles.pill,
         pressed && styles.pressed,
       ]}
-      onPress={() => router.push('/discover/search')}
+      onPress={() => router.push('/(tabs)/discover/search' as any)}
       accessibilityRole="button"
       accessibilityLabel="Search destinations"
     >

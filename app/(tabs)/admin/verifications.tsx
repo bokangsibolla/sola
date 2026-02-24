@@ -77,7 +77,25 @@ interface CardProps {
 function VerificationCard({ item, onApprove, onReject, busy }: CardProps) {
   return (
     <View style={styles.card}>
-      <SelfieImage path={item.verificationSelfieUrl} />
+      <View style={styles.photoCompare}>
+        <View style={styles.photoColumn}>
+          {item.avatarUrl ? (
+            <Image source={{ uri: item.avatarUrl }} style={styles.profileImage} />
+          ) : (
+            <View style={styles.profilePlaceholder}>
+              <Ionicons name="person-outline" size={28} color={colors.textMuted} />
+            </View>
+          )}
+          <Text style={styles.photoLabel}>Profile</Text>
+        </View>
+
+        <Ionicons name="arrow-forward" size={18} color={colors.textMuted} />
+
+        <View style={styles.photoColumn}>
+          <SelfieImage path={item.verificationSelfieUrl} />
+          <Text style={styles.photoLabel}>Selfie</Text>
+        </View>
+      </View>
 
       <View style={styles.cardInfo}>
         <Text style={styles.cardName}>{item.firstName}</Text>
@@ -212,7 +230,7 @@ export default function AdminVerificationsScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <NavigationHeader title="Review Verifications" parentTitle="Settings" />
+      <NavigationHeader title="Review Verifications" parentTitle="Admin" />
 
       {loading ? (
         <View style={styles.loadingContainer}>
@@ -238,7 +256,7 @@ export default function AdminVerificationsScreen() {
 // Styles
 // ---------------------------------------------------------------------------
 
-const SELFIE_SIZE = 160;
+const PHOTO_SIZE = 100;
 
 const styles = StyleSheet.create({
   container: {
@@ -307,16 +325,44 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
   },
 
-  // Selfie
+  // Photo comparison
+  photoCompare: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.lg,
+  },
+  photoColumn: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  photoLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  profileImage: {
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
+  },
+  profilePlaceholder: {
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
+    backgroundColor: colors.neutralFill,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   selfieImage: {
-    width: SELFIE_SIZE,
-    height: SELFIE_SIZE,
-    borderRadius: SELFIE_SIZE / 2,
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
   },
   selfiePlaceholder: {
-    width: SELFIE_SIZE,
-    height: SELFIE_SIZE,
-    borderRadius: SELFIE_SIZE / 2,
+    width: PHOTO_SIZE,
+    height: PHOTO_SIZE,
+    borderRadius: PHOTO_SIZE / 2,
     backgroundColor: colors.neutralFill,
     justifyContent: 'center',
     alignItems: 'center',

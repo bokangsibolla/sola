@@ -102,6 +102,22 @@ Source of truth: `constants/design.ts`. See `.claude/skills/sola-design-system.m
 - All migrations go in `supabase/migrations/` with `YYYYMMDD_` prefix.
 - Never store secrets in client code.
 
+#### Direct DB Access (psql)
+```bash
+PSQL=/opt/homebrew/Cellar/libpq/18.2/bin/psql
+DB_URL="postgresql://postgres:${SUPABASE_DB_PASSWORD}@db.bfyewxgdfkmkviajmfzp.supabase.co:5432/postgres"
+$PSQL "$DB_URL" -f supabase/migrations/MIGRATION_FILE.sql
+```
+- Password is `SUPABASE_DB_PASSWORD` in `.env`
+- Use direct connection (`db.PROJECT_REF.supabase.co:5432`), NOT the pooler
+- psql binary: `/opt/homebrew/Cellar/libpq/18.2/bin/psql`
+
+#### Applying Seed Migrations
+Data seed migrations (UPDATE/INSERT ON CONFLICT) are safe to re-run. Schema migrations (CREATE TABLE) are NOT — they'll fail if tables exist. When applying missing seed data:
+```bash
+$PSQL "$DB_URL" -f supabase/migrations/20260218_seed_city_page_data.sql
+```
+
 ## Pre-existing Issues (Ignore These)
 
 These TypeScript errors exist in files we don't own — don't fix them:

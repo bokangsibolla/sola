@@ -1,6 +1,7 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, spacing } from '@/constants/design';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface GoodToKnowProps {
   considerations: string[];
@@ -12,10 +13,15 @@ const GoodToKnow: React.FC<GoodToKnowProps> = ({ considerations }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.sectionLabel}>GOOD TO KNOW</Text>
-      <View style={styles.list}>
+      <View style={styles.card}>
         {considerations.map((item, index) => (
           <View key={index} style={styles.row}>
-            <View style={styles.dot} />
+            <Ionicons
+              name="information-circle-outline"
+              size={16}
+              color={colors.textMuted}
+              style={styles.icon}
+            />
             <Text style={styles.text}>{item}</Text>
           </View>
         ))}
@@ -37,20 +43,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.lg,
   },
-  list: {
+  card: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
     gap: spacing.md,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: colors.textMuted,
-    marginTop: 7,
+  icon: {
+    marginTop: 2,
   },
   text: {
     fontFamily: fonts.regular,

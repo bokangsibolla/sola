@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,35 +43,57 @@ export default function YoureInScreen() {
   const handleFinish = async () => {
     setSaving(true);
 
-    if (userId) {
-      const data = onboardingStore.getData();
-      const avatarUrl = await uploadAvatar(userId, data.photoUri).catch(() => null);
-
-      const { error: profileError } = await supabase.from('profiles').upsert({
-        id: userId,
-        first_name: data.firstName,
-        avatar_url: avatarUrl,
-        home_country_iso2: data.countryIso2 || null,
-        home_country_name: data.countryName || null,
-        nationality: data.countryName || null,
-        date_of_birth: data.dateOfBirth || null,
-        onboarding_completed_at: new Date().toISOString(),
-      });
-
-      if (profileError) {
-        setSaving(false);
-        Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
-        return;
+    // Check for an active session — try recovering from storage if context is stale
+    let activeUserId = userId;
+    if (!activeUserId) {
+      try {
+        const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+        activeUserId = recoveredSession?.user?.id ?? null;
+      } catch {
+        // Storage/network error — continue with null
       }
+    }
 
-      // Upload verification selfie if taken during onboarding
-      const verificationSelfieUri = data.verificationSelfieUri;
-      if (verificationSelfieUri) {
-        try {
-          await submitVerificationSelfie(userId, verificationSelfieUri);
-        } catch {
-          // Don't block onboarding if selfie upload fails — they can retry from settings
-        }
+    if (!activeUserId) {
+      setSaving(false);
+      Alert.alert(
+        'Session expired',
+        'Your sign-in session was lost. Please sign in again to save your profile.',
+        [{ text: 'OK', onPress: () => {
+          onboardingStore.reset();
+          router.replace('/(onboarding)/welcome' as any);
+        }}],
+      );
+      return;
+    }
+
+    const data = onboardingStore.getData();
+    const avatarUrl = await uploadAvatar(activeUserId, data.photoUri).catch(() => null);
+
+    const { error: profileError } = await supabase.from('profiles').upsert({
+      id: activeUserId,
+      first_name: data.firstName,
+      avatar_url: avatarUrl,
+      home_country_iso2: data.countryIso2 || null,
+      home_country_name: data.countryName || null,
+      nationality: data.countryName || null,
+      date_of_birth: data.dateOfBirth || null,
+      onboarding_completed_at: new Date().toISOString(),
+    });
+
+    if (profileError) {
+      setSaving(false);
+      Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
+      return;
+    }
+
+    // Upload verification selfie if taken during onboarding
+    const verificationSelfieUri = data.verificationSelfieUri;
+    if (verificationSelfieUri) {
+      try {
+        await submitVerificationSelfie(activeUserId, verificationSelfieUri);
+      } catch {
+        // Don't block onboarding if selfie upload fails — they can retry from settings
       }
     }
 
@@ -95,7 +117,19 @@ export default function YoureInScreen() {
     });
 
     setSaving(false);
-    router.replace('/(tabs)/home' as any);
+
+    console.log('[Sola youre-in] Navigating to tabs/home...');
+    // On Android, defer navigation to next event loop tick to work around
+    // Expo Router bug where router.replace across route groups can fail
+    // when called from within an async handler.
+    if (Platform.OS === 'android') {
+      setTimeout(() => {
+        console.log('[Sola youre-in] setTimeout navigation firing');
+        router.replace('/(tabs)/home' as any);
+      }, 50);
+    } else {
+      router.replace('/(tabs)/home' as any);
+    }
   };
 
   return (

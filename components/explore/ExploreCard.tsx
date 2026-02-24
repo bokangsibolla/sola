@@ -103,15 +103,6 @@ export default function ExploreCard({
             </Text>
           )}
 
-          {rating !== undefined && (
-            <View style={styles.ratingRow}>
-              <Ionicons name="star" size={14} color={colors.textPrimary} style={styles.starIcon} />
-              <Text style={styles.ratingText}>{rating.toFixed(2)}</Text>
-              {reviewCount !== undefined && (
-                <Text style={styles.reviewCount}>({reviewCount.toLocaleString()})</Text>
-              )}
-            </View>
-          )}
 
           {price && (
             <View style={styles.priceRow}>

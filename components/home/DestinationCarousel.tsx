@@ -24,7 +24,7 @@ export function DestinationCarousel({ cities, title }: DestinationCarouselProps)
     <View style={styles.container}>
       <SectionHeader
         title={title ?? 'Go Anywhere'}
-        onSeeAll={() => router.push('/discover/browse' as any)}
+        onSeeAll={() => router.push('/(tabs)/discover/all-destinations' as any)}
       />
       <FlatList
         data={cities}

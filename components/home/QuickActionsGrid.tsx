@@ -32,7 +32,7 @@ export function QuickActionsGrid({ activeTripId }: QuickActionsGridProps) {
       label: 'Safety Info',
       subtitle: 'Emergency help\n& local numbers',
       route: activeTripId
-        ? `/(tabs)/home/trips/${activeTripId}`
+        ? `/(tabs)/trips/${activeTripId}`
         : '/(tabs)/trips',
       iconName: 'shield-checkmark-outline',
       iconColor: colors.greenSoft,
@@ -49,7 +49,7 @@ export function QuickActionsGrid({ activeTripId }: QuickActionsGridProps) {
     {
       label: 'Community',
       subtitle: 'Questions from\nsolo travelers',
-      route: '/(tabs)/connect',
+      route: '/(tabs)/discussions',
       iconName: 'chatbubbles-outline',
       iconColor: colors.orange,
       iconBg: colors.orangeFill,

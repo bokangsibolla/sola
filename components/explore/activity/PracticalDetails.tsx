@@ -97,12 +97,12 @@ const PracticalDetails: React.FC<PracticalDetailsProps> = ({
           ]}
         >
           <Ionicons
-            name={saved ? 'heart' : 'heart-outline'}
+            name={saved ? 'checkmark-circle' : 'add-circle-outline'}
             size={20}
             color={colors.background}
           />
           <Text style={styles.saveBtnText}>
-            {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
+            {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Add to Trip'}
           </Text>
         </Pressable>
 
@@ -158,8 +158,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: 14,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     borderRadius: radius.full,
   },
   saveBtn: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
   },
   saveBtnText: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.background,
   },
   mapsBtn: {
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
   },
   mapsBtnText: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
 });

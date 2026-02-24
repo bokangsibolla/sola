@@ -37,7 +37,7 @@ export function TripCard({ trip, savedItemCount, cityImageUrl, status }: TripCar
         styles.container,
         pressed && styles.pressed,
       ]}
-      onPress={() => router.push(`/trips/${trip.id}`)}
+      onPress={() => router.push(`/(tabs)/trips/${trip.id}` as any)}
       accessibilityRole="button"
       accessibilityLabel={`${displayTitle} trip`}
     >

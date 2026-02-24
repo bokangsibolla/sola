@@ -22,8 +22,9 @@ import SegmentedControl from '@/components/trips/SegmentedControl';
 import { CountryOverviewTab } from '@/components/explore/country/CountryOverviewTab';
 import { CountryGuideTab } from '@/components/explore/country/CountryGuideTab';
 import { CountryBudgetTab } from '@/components/explore/country/CountryBudgetTab';
+import { DestinationsTab } from '@/components/explore/country/DestinationsTab';
 
-const TABS = ['Overview', 'Travel Guide', 'Budget'];
+const TABS = ['Overview', 'Destinations', 'Travel Guide', 'Budget'];
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -99,17 +100,25 @@ export default function CountryGuideScreen() {
           country={country}
           cities={cities ?? []}
           communityData={communityData}
+          onSwitchTab={setActiveTab}
         />
       )}
 
       {activeTab === 1 && (
+        <DestinationsTab
+          cities={cities ?? []}
+          countryName={country.name}
+        />
+      )}
+
+      {activeTab === 2 && (
         <CountryGuideTab
           country={country}
           healthPlaces={(healthPlaces ?? []) as PlaceWithCity[]}
         />
       )}
 
-      {activeTab === 2 && (
+      {activeTab === 3 && (
         <CountryBudgetTab
           country={country}
           emergency={emergency}

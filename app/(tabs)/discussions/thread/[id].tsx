@@ -23,7 +23,7 @@ import { castVote, createReply, reportContent } from '@/data/community/community
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { getProfileById } from '@/data/api';
-import { requireVerification } from '@/lib/verification';
+import { VerificationBanner } from '@/components/VerificationBanner';
 import { formatTimeAgo } from '@/utils/timeAgo';
 import { getFlag } from '@/data/trips/helpers';
 import type { ReplyWithAuthor } from '@/data/community/types';
@@ -153,7 +153,6 @@ export default function ThreadDetail() {
 
   const handleSubmitReply = useCallback(async () => {
     if (!userId || !replyText.trim() || !id) return;
-    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'reply to discussions')) return;
     setSubmitting(true);
     try {
       await createReply(userId, { threadId: id, body: replyText.trim() });
@@ -165,7 +164,7 @@ export default function ThreadDetail() {
     } finally {
       setSubmitting(false);
     }
-  }, [userId, replyText, id, refresh, userProfile]);
+  }, [userId, replyText, id, refresh]);
 
   const handleVoteThread = useCallback(async () => {
     if (!userId || !thread) return;
@@ -349,32 +348,41 @@ export default function ThreadDetail() {
       />
 
       {/* Reply input */}
-      <View style={[styles.replyInputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
-        <TextInput
-          style={styles.replyInput}
-          placeholder="Write an answer..."
-          placeholderTextColor={colors.textMuted}
-          value={replyText}
-          onChangeText={setReplyText}
-          multiline
-          maxLength={2000}
-        />
-        <Pressable
-          onPress={handleSubmitReply}
-          disabled={!replyText.trim() || submitting}
-          style={({ pressed }) => [
-            styles.sendButton,
-            (!replyText.trim() || submitting) && styles.sendButtonDisabled,
-            pressed && styles.pressed,
-          ]}
-        >
-          {submitting ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Feather name="send" size={18} color="#FFFFFF" />
-          )}
-        </Pressable>
-      </View>
+      {(userProfile?.verificationStatus ?? 'unverified') !== 'verified' ? (
+        <View style={[styles.replyInputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <VerificationBanner
+            verificationStatus={userProfile?.verificationStatus ?? 'unverified'}
+            featureLabel="reply to discussions"
+          />
+        </View>
+      ) : (
+        <View style={[styles.replyInputContainer, { paddingBottom: insets.bottom + spacing.sm }]}>
+          <TextInput
+            style={styles.replyInput}
+            placeholder="Write an answer..."
+            placeholderTextColor={colors.textMuted}
+            value={replyText}
+            onChangeText={setReplyText}
+            multiline
+            maxLength={2000}
+          />
+          <Pressable
+            onPress={handleSubmitReply}
+            disabled={!replyText.trim() || submitting}
+            style={({ pressed }) => [
+              styles.sendButton,
+              (!replyText.trim() || submitting) && styles.sendButtonDisabled,
+              pressed && styles.pressed,
+            ]}
+          >
+            {submitting ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <Feather name="send" size={18} color="#FFFFFF" />
+            )}
+          </Pressable>
+        </View>
+      )}
     </KeyboardAvoidingView>
   );
 }

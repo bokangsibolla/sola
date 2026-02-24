@@ -27,7 +27,7 @@ export function QuickLinksRow({ activeTripId }: QuickLinksRowProps) {
         ? 'Emergency numbers & contacts'
         : 'Set up your emergency contact',
       route: activeTripId
-        ? `/(tabs)/home/trips/${activeTripId}`
+        ? `/(tabs)/trips/${activeTripId}`
         : '/(tabs)/home/settings',
       bg: colors.greenFill,
       accentColor: colors.greenSoft,
@@ -35,14 +35,14 @@ export function QuickLinksRow({ activeTripId }: QuickLinksRowProps) {
     {
       label: 'Browse destinations',
       subtitle: 'Explore countries and cities',
-      route: '/discover/browse',
+      route: '/(tabs)/discover/all-destinations',
       bg: colors.blueFill,
       accentColor: colors.blueSoft,
     },
     {
       label: 'Community',
       subtitle: 'Ask real solo travelers',
-      route: '/(tabs)/connect',
+      route: '/(tabs)/discussions',
       bg: colors.orangeFill,
       accentColor: colors.orange,
     },

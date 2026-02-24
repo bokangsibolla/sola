@@ -17,7 +17,7 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import ScreenHeader from '@/components/ui/ScreenHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
-import { getVerificationStatus, submitVerificationSelfie } from '@/data/api';
+import { getProfileById, getVerificationStatus, submitVerificationSelfie } from '@/data/api';
 
 const POSE_PROMPTS = [
   'look slightly to your left',
@@ -40,6 +40,13 @@ export default function VerifyScreen() {
     () => userId ? getVerificationStatus(userId) : Promise.resolve('unverified' as const),
     ['verificationStatus', userId],
   );
+
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
+
+  const avatarUrl = profile?.avatarUrl;
 
   const [pose] = useState(getRandomPose);
   const [selfieUri, setSelfieUri] = useState<string | null>(null);
@@ -141,17 +148,37 @@ export default function VerifyScreen() {
 
       <View style={styles.content}>
         <Text style={styles.description}>
-          Take a quick selfie to verify your identity. This helps keep our community safe for everyone.
+          We'll match a live selfie to your profile photo to confirm you're a real person. No ID or passport needed.
         </Text>
 
         {isRejected && (
           <View style={styles.rejectedBanner}>
             <Ionicons name="alert-circle-outline" size={18} color={colors.emergency} />
             <Text style={styles.rejectedText}>
-              Your previous submission was not approved. Please try again with a clear, well-lit selfie.
+              Your previous selfie couldn't be matched. Try again with good lighting and a clear view of your face.
             </Text>
           </View>
         )}
+
+        {avatarUrl ? (
+          <View style={styles.matchRow}>
+            <View style={styles.matchPhotoContainer}>
+              <Image source={{ uri: avatarUrl }} style={styles.matchPhoto} contentFit="cover" />
+              <Text style={styles.matchPhotoLabel}>Profile photo</Text>
+            </View>
+            <Ionicons name="arrow-forward" size={20} color={colors.textMuted} />
+            <View style={styles.matchPhotoContainer}>
+              {selfieUri ? (
+                <Image source={{ uri: selfieUri }} style={styles.matchPhoto} contentFit="cover" />
+              ) : (
+                <View style={[styles.matchPhoto, styles.matchPhotoEmpty]}>
+                  <Ionicons name="camera-outline" size={24} color={colors.textMuted} />
+                </View>
+              )}
+              <Text style={styles.matchPhotoLabel}>Live selfie</Text>
+            </View>
+          </View>
+        ) : null}
 
         <View style={styles.poseCard}>
           <Text style={styles.poseLabel}>POSE</Text>
@@ -159,8 +186,7 @@ export default function VerifyScreen() {
         </View>
 
         {selfieUri ? (
-          <View style={styles.previewContainer}>
-            <Image source={{ uri: selfieUri }} style={styles.preview} contentFit="cover" />
+          <View style={styles.selfieActions}>
             <Pressable style={styles.retakeButton} onPress={() => setSelfieUri(null)}>
               <Ionicons name="refresh-outline" size={18} color={colors.textPrimary} />
               <Text style={styles.retakeText}>Retake</Text>
@@ -263,14 +289,38 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.orange,
   },
-  previewContainer: {
+  matchRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    justifyContent: 'center',
+    gap: spacing.lg,
+    marginBottom: spacing.xxl,
   },
-  preview: {
-    width: 200,
-    height: 200,
-    borderRadius: radius.card,
+  matchPhotoContainer: {
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  matchPhoto: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  matchPhotoEmpty: {
+    backgroundColor: colors.neutralFill,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: colors.borderDefault,
+  },
+  matchPhotoLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  selfieActions: {
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   retakeButton: {
     flexDirection: 'row',

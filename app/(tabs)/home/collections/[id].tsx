@@ -17,6 +17,7 @@ import {
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
+import BackButton from '@/components/ui/BackButton';
 import { useAuth } from '@/state/AuthContext';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { Place } from '@/data/types';
@@ -39,7 +40,7 @@ function PlaceRow({ place, userId, collectionId }: { place: Place; userId: strin
   return (
     <Pressable
       style={styles.placeCard}
-      onPress={() => router.push(`/discover/place-detail/${place.id}`)}
+      onPress={() => router.push(`/(tabs)/discover/place-detail/${place.id}` as any)}
     >
       {imageUrl && (
         <Image source={{ uri: imageUrl }} style={styles.placeImage} contentFit="cover" transition={200} />
@@ -107,9 +108,7 @@ export default function CollectionDetailScreen() {
     return (
       <View style={[styles.container, { paddingTop: insets.top }]}>
         <View style={styles.nav}>
-          <Pressable onPress={() => router.back()} hitSlop={12}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </Pressable>
+          <BackButton />
         </View>
         <Text style={styles.emptyText}>Collection not found</Text>
       </View>
@@ -120,9 +119,7 @@ export default function CollectionDetailScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
+        <BackButton />
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>

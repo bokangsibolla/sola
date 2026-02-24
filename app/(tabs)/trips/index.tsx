@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
@@ -52,7 +52,7 @@ export default function TripsScreen() {
       <AppScreen>
         <NavigationHeader
           title="Trips"
-          rightActions={<AvatarButton />}
+          rightActions={<HamburgerButton />}
         />
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
           <CurrentTripCard trip={trips.current} />
@@ -80,7 +80,7 @@ export default function TripsScreen() {
     <AppScreen>
       <NavigationHeader
         title="Trips"
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isEmpty ? (

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { useRouter } from 'expo-router';
 import { colors, fonts, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { getEventsByCity } from '@/data/api';
@@ -14,6 +15,7 @@ interface EventsTabProps {
 }
 
 export function EventsTab({ cityId, defaultMonth }: EventsTabProps) {
+  const router = useRouter();
   const [selectedMonth, setSelectedMonth] = useState(
     defaultMonth ?? new Date().getMonth() + 1,
   );
@@ -57,7 +59,11 @@ export function EventsTab({ cityId, defaultMonth }: EventsTabProps) {
       {/* Events list */}
       {filteredEvents.length > 0 ? (
         filteredEvents.map((event) => (
-          <EventCard key={event.id} event={event} />
+          <EventCard
+            key={event.id}
+            event={event}
+            onPress={() => router.push(`/(tabs)/discover/event/${event.slug}` as any)}
+          />
         ))
       ) : (
         <View style={styles.emptyContainer}>

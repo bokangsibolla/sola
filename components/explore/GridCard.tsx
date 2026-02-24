@@ -128,12 +128,6 @@ export default function GridCard({
                   {price.suffix && <Text style={styles.priceSuffix}> {price.suffix}</Text>}
                 </Text>
               )}
-              {showRating && (
-                <View style={styles.ratingContainer}>
-                  <Ionicons name="star" size={11} color={colors.textPrimary} />
-                  <Text style={styles.ratingText}>{rating.toFixed(1)}</Text>
-                </View>
-              )}
             </View>
           )}
         </View>

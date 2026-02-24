@@ -1,7 +1,13 @@
 import { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase, warmupConnection } from '@/lib/supabase';
+
+interface SignOutOptions {
+  /** Use revokeAccess instead of signOut for Google — forces account picker next time. */
+  revokeGoogle?: boolean;
+}
 
 interface AuthContextValue {
   /** Current authenticated user ID, or null if not signed in. */
@@ -12,8 +18,8 @@ interface AuthContextValue {
   session: Session | null;
   /** True while restoring session from storage. */
   loading: boolean;
-  /** Sign out and clear session. */
-  signOut: () => Promise<void>;
+  /** Sign out and clear session. Pass { revokeGoogle: true } for account deletion. */
+  signOut: (opts?: SignOutOptions) => Promise<void>;
   /**
    * Re-read session from Supabase storage and update React state.
    * Returns true if a valid session was found.
@@ -83,8 +89,35 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  const signOut = async () => {
-    await supabase.auth.signOut();
+  const signOut = async (opts?: SignOutOptions) => {
+    // Use 'local' scope — clears AsyncStorage first, then attempts API revocation.
+    // Default 'global' scope makes an API call first, and if it fails (e.g. network
+    // issues on Android), the local session is NOT cleared — causing auto-re-login.
+    try {
+      await supabase.auth.signOut({ scope: 'local' });
+    } catch {
+      // Even if signOut fails, force-clear the stored session
+      await AsyncStorage.removeItem('sb-bfyewxgdfkmkviajmfzp-auth-token');
+    }
+
+    // Clear Google cached credential so the account picker shows next time.
+    // Must configure first — GoogleSignin is a singleton that loses config on app restart.
+    try {
+      const { GoogleSignin } = require('@react-native-google-signin/google-signin');
+      GoogleSignin.configure({
+        webClientId: '234937383727-2oj58631smi815k534jn2k5lfdvlup06.apps.googleusercontent.com',
+      });
+      if (opts?.revokeGoogle) {
+        // revokeAccess disconnects the app entirely — forces account picker + consent.
+        // Use for account deletion where we want a clean break.
+        await GoogleSignin.revokeAccess();
+      } else {
+        await GoogleSignin.signOut();
+      }
+    } catch {
+      // Ignore — module may not be available or user didn't sign in with Google
+    }
+
     setSession(null);
   };
 

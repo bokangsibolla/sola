@@ -26,24 +26,50 @@ Deno.serve(async (req) => {
     });
   }
 
+  // Step 1: Parse the request body
+  let parsed: { url?: string; method?: string; headers?: Record<string, string>; body?: string };
   try {
-    const { url, method, headers, body } = await req.json();
-
-    if (!url) {
+    const rawBody = await req.text();
+    if (!rawBody) {
       return new Response(
-        JSON.stringify({ error: "url is required in body" }),
-        {
-          status: 400,
-          headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        },
+        JSON.stringify({ error: "Empty request body" }),
+        { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
       );
     }
+    parsed = JSON.parse(rawBody);
+  } catch (parseErr) {
+    return new Response(
+      JSON.stringify({ error: "Invalid JSON body", detail: String(parseErr) }),
+      { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
 
-    // Forward the request with all original headers (server-side, no issues)
+  const { url, method, headers, body } = parsed;
+
+  if (!url) {
+    return new Response(
+      JSON.stringify({ error: "url is required in body" }),
+      { status: 400, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
+    );
+  }
+
+  // Step 2: Forward the request with all original headers (server-side, no issues)
+  const fwdMethod = method || "GET";
+  const fwdBody = (fwdMethod === "GET" || fwdMethod === "HEAD") ? undefined : (body || undefined);
+
+  // Sanitize header values — Deno's fetch strictly rejects values containing
+  // newlines, carriage returns, or other control characters. Client-side
+  // environment variables or serialization can introduce these invisibly.
+  const fwdHeaders: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers || {})) {
+    fwdHeaders[k.trim()] = String(v).replace(/[\r\n]/g, "").trim();
+  }
+
+  try {
     const response = await fetch(url, {
-      method: method || "GET",
-      headers: headers || {},
-      body: body || undefined,
+      method: fwdMethod,
+      headers: fwdHeaders,
+      body: fwdBody,
     });
 
     const responseBody = await response.text();
@@ -68,13 +94,16 @@ Deno.serve(async (req) => {
       status: response.status,
       headers: responseHeaders,
     });
-  } catch (err) {
+  } catch (fetchErr) {
+    console.error(`[android-proxy] Fetch failed: ${String(fetchErr)}, url=${url.substring(0, 80)}, method=${fwdMethod}`);
     return new Response(
-      JSON.stringify({ error: "Proxy error", detail: String(err) }),
-      {
-        status: 500,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-      },
+      JSON.stringify({
+        error: "Proxy fetch failed",
+        detail: String(fetchErr),
+        target_url: url.substring(0, 80),
+        method: fwdMethod,
+      }),
+      { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );
   }
 });

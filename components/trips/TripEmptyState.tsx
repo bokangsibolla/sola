@@ -251,11 +251,6 @@ export default function TripEmptyState({ onPress }: TripEmptyStateProps) {
                           <Text style={styles.entryTagText}>
                             {TYPE_LABEL[place.placeType] ?? place.placeType}
                           </Text>
-                          {place.googleRating != null && place.googleRating > 0 && (
-                            <Text style={styles.ratingText}>
-                              {place.googleRating.toFixed(1)} \u2605
-                            </Text>
-                          )}
                           {MOCK_COST[place.placeType] && (
                             <Text style={styles.costHint}>
                               {MOCK_COST[place.placeType]}

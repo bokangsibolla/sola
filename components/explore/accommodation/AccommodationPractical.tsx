@@ -30,6 +30,7 @@ const AccommodationPractical: React.FC<AccommodationPracticalProps> = ({
   };
 
   const hasDetails =
+    accommodation.pricePerNight != null ||
     accommodation.address ||
     accommodation.checkInTime ||
     accommodation.checkOutTime ||
@@ -56,6 +57,15 @@ const AccommodationPractical: React.FC<AccommodationPracticalProps> = ({
       {/* Detail rows */}
       {hasDetails && (
         <View style={styles.detailsSection}>
+          {accommodation.pricePerNight != null && (
+            <View style={styles.detailRow}>
+              <Ionicons name="cash-outline" size={16} color={colors.textMuted} />
+              <Text style={styles.detailText}>
+                From ${Math.round(Number(accommodation.pricePerNight))}/night
+              </Text>
+            </View>
+          )}
+
           {accommodation.address && (
             <View style={styles.detailRow}>
               <Ionicons name="location-outline" size={16} color={colors.textMuted} />

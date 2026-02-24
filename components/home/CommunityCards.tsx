@@ -23,7 +23,7 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.sectionTitle}>From the community</Text>
-        <Pressable onPress={() => router.push('/(tabs)/connect' as any)} hitSlop={8}>
+        <Pressable onPress={() => router.push('/(tabs)/discussions' as any)} hitSlop={8}>
           <Text style={styles.seeAll}>See all</Text>
         </Pressable>
       </View>
@@ -41,7 +41,7 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
                 styles.imageCard,
                 pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
               ]}
-              onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
+              onPress={() => router.push(`/(tabs)/discussions/thread/${thread.id}` as any)}
             >
               <Image
                 source={{ uri: thread.cityImageUrl }}
@@ -72,7 +72,7 @@ export function CommunityCards({ threads }: CommunityCardsProps) {
                 styles.textCard,
                 pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
               ]}
-              onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
+              onPress={() => router.push(`/(tabs)/discussions/thread/${thread.id}` as any)}
             >
               <Text style={styles.textTitle} numberOfLines={3}>
                 {thread.title}

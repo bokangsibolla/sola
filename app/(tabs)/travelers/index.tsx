@@ -14,11 +14,11 @@ import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { usePostHog } from 'posthog-react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import PendingConnectionsBanner from '@/components/travelers/PendingConnectionsBanner';
@@ -26,7 +26,7 @@ import { useTravelersFeed } from '@/data/travelers/useTravelersFeed';
 import type { TravelerMatchSection } from '@/data/travelers/useTravelersFeed';
 import { useTravelerSearch } from '@/data/travelers/useTravelerSearch';
 import { getConnectionContext, getSharedInterests } from '@/data/travelers/connectionContext';
-import { sendConnectionRequest, getConnectionStatus } from '@/data/api';
+import { sendConnectionRequest, getConnectionStatus, getUserVisitedCountries } from '@/data/api';
 import { getImageUrl } from '@/lib/image';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
@@ -58,6 +58,14 @@ function TravelerCardWrapper({
     [userId, profile.id],
   );
 
+  const { data: visitedCountries } = useQuery({
+    queryKey: ['travelerCard', 'countries', profile.id],
+    queryFn: () => getUserVisitedCountries(profile.id),
+    staleTime: 5 * 60_000,
+  });
+
+  const countryIso2s = (visitedCountries ?? []).map((vc) => vc.countryIso2);
+
   const status = localStatus ?? fetchedStatus ?? 'none';
   const shared = userProfile ? getSharedInterests(userProfile, profile) : [];
   const contextLabel = userProfile ? getConnectionContext(userProfile, profile) : undefined;
@@ -81,6 +89,7 @@ function TravelerCardWrapper({
         connectionStatus={status}
         sharedInterests={shared}
         contextLabel={contextLabel}
+        visitedCountryIso2s={countryIso2s}
         onPress={() => {
           posthog.capture('traveler_profile_tapped', { profile_id: profile.id });
           router.push(`/travelers/user/${profile.id}` as any);
@@ -277,7 +286,7 @@ export default function TravelersScreen() {
       <AppScreen>
         <NavigationHeader
           title="Travelers"
-          rightActions={<AvatarButton />}
+          rightActions={<HamburgerButton />}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.orange} />
@@ -291,7 +300,7 @@ export default function TravelersScreen() {
       <AppScreen>
         <NavigationHeader
           title="Travelers"
-          rightActions={<AvatarButton />}
+          rightActions={<HamburgerButton />}
         />
         <ErrorScreen message="Something went wrong loading travelers. Pull to retry." onRetry={refetch} />
       </AppScreen>
@@ -302,7 +311,7 @@ export default function TravelersScreen() {
     <AppScreen>
       <NavigationHeader
         title="Travelers"
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
 
       {/* Search Bar */}

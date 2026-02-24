@@ -245,7 +245,7 @@ export default function PlanTab({ trip, savedItems, onRefresh }: PlanTabProps) {
           onPress={() => {
             const firstStop = (trip.stops ?? [])[0];
             if (firstStop?.cityId) {
-              router.push(`/discover/city/${firstStop.cityId}`);
+              router.push(`/(tabs)/discover/city/${firstStop.cityId}` as any);
             }
           }}
         >

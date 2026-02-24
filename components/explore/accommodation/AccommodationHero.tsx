@@ -11,14 +11,17 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
-import type { Place, PlaceMedia } from '@/data/types';
+import type { Place, PlaceMedia, Tag } from '@/data/types';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const HERO_HEIGHT = Math.round(SCREEN_HEIGHT * 0.45);
 
+const SIGNAL_FILTER_GROUPS = ['safety', 'vibe', 'good_for'];
+
 interface AccommodationHeroProps {
   accommodation: Place;
   media: PlaceMedia[];
+  tags: Tag[];
   cityName?: string;
   countryName?: string;
   saved: boolean;
@@ -30,9 +33,18 @@ function formatCategory(placeType: string): string {
   return placeType.replace(/_/g, ' ').toUpperCase();
 }
 
+/** Derive a short women-focused trust line from the available data. */
+function getTrustSignal(accommodation: Place): string | null {
+  if (accommodation.womenOnly) return 'Women-only space';
+  if (accommodation.soloFemaleReviews) return 'Reviewed by solo women';
+  if (accommodation.whySelected) return 'Curated for solo women';
+  return null;
+}
+
 const AccommodationHero: React.FC<AccommodationHeroProps> = ({
   accommodation,
   media,
+  tags,
   cityName,
   countryName,
   saved,
@@ -42,6 +54,10 @@ const AccommodationHero: React.FC<AccommodationHeroProps> = ({
   const [activeIndex, setActiveIndex] = useState(0);
   const images = media.filter((m) => m.mediaType === 'image');
   const location = [cityName, countryName].filter(Boolean).join(', ');
+  const trustSignal = getTrustSignal(accommodation);
+  const signalTags = tags
+    .filter((t) => SIGNAL_FILTER_GROUPS.includes(t.filterGroup))
+    .slice(0, 3);
 
   const handleScroll = useCallback(
     (e: { nativeEvent: { contentOffset: { x: number } } }) => {
@@ -111,21 +127,28 @@ const AccommodationHero: React.FC<AccommodationHeroProps> = ({
 
           {/* Overlay content */}
           <View style={styles.overlayContent}>
+            {/* Trust signal — leading element */}
+            {trustSignal && (
+              <View style={styles.trustBadge}>
+                <Ionicons name="shield-checkmark" size={13} color={colors.orange} />
+                <Text style={styles.trustText}>{trustSignal}</Text>
+              </View>
+            )}
+
             <Text style={styles.heroName}>{accommodation.name}</Text>
-            <View style={styles.metaRow}>
-              {accommodation.pricePerNight && (
-                <Text style={styles.heroPrice}>
-                  {accommodation.pricePerNight}/night
-                </Text>
-              )}
-              {location.length > 0 && (
-                <Text style={styles.heroLocation}>{location}</Text>
-              )}
-            </View>
-            {accommodation.womenOnly && (
-              <View style={styles.womenOnlyBadge}>
-                <Ionicons name="shield-checkmark" size={12} color={colors.greenSoft} />
-                <Text style={styles.womenOnlyText}>Women Only</Text>
+
+            {location.length > 0 && (
+              <Text style={styles.heroLocation}>{location}</Text>
+            )}
+
+            {/* Signal tags */}
+            {signalTags.length > 0 && (
+              <View style={styles.signalRow}>
+                {signalTags.map((tag) => (
+                  <View key={tag.id} style={styles.signalPill}>
+                    <Text style={styles.signalText}>{tag.label}</Text>
+                  </View>
+                ))}
               </View>
             )}
           </View>
@@ -204,42 +227,50 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xl,
   },
+  trustBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    alignSelf: 'flex-start',
+    marginBottom: spacing.sm,
+  },
+  trustText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    letterSpacing: 0.3,
+    color: colors.textOnImage,
+  },
   heroName: {
     fontFamily: fonts.semiBold,
     fontSize: 24,
     color: colors.textOnImage,
     marginBottom: spacing.xs,
   },
-  metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  heroPrice: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textOnImage,
-  },
   heroLocation: {
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textOnImageMuted,
   },
-  womenOnlyBadge: {
+  signalRow: {
     flexDirection: 'row',
-    alignItems: 'center',
+    flexWrap: 'wrap',
     gap: spacing.xs,
-    backgroundColor: colors.greenFill,
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.sm,
-    alignSelf: 'flex-start',
     marginTop: spacing.sm,
   },
-  womenOnlyText: {
+  signalPill: {
+    backgroundColor: 'rgba(255,255,255,0.15)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  signalText: {
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.greenSoft,
+    fontSize: 11,
+    color: colors.textOnImage,
   },
   placeholder: {
     width: SCREEN_WIDTH,

@@ -47,7 +47,7 @@ export function PersonalizedCarousel({ cities, isPersonalized = false }: Persona
                 styles.card,
                 pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
               ]}
-              onPress={() => router.push(`/discover/city/${item.slug}` as any)}
+              onPress={() => router.push(`/(tabs)/discover/city/${item.slug}` as any)}
             >
               {item.heroImageUrl ? (
                 <Image

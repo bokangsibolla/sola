@@ -9,7 +9,7 @@ export default function InboxButton() {
 
   return (
     <Pressable
-      onPress={() => router.push('/connect/dm')}
+      onPress={() => router.push('/(tabs)/travelers/dm' as any)}
       hitSlop={12}
       style={styles.container}
       accessibilityRole="button"

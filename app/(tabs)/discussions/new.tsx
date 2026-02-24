@@ -27,7 +27,7 @@ import {
 } from '@/data/community/communityApi';
 import { getProfileById } from '@/data/api';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
-import { requireVerification } from '@/lib/verification';
+import { VerificationBanner } from '@/components/VerificationBanner';
 import { useData } from '@/hooks/useData';
 import type { CommunityTopic } from '@/data/community/types';
 
@@ -100,7 +100,6 @@ export default function NewThread() {
 
   const handleSubmit = useCallback(async () => {
     if (!userId || !canSubmit) return;
-    if (!requireVerification(profile?.verificationStatus || 'unverified', 'post in the community')) return;
     setSubmitting(true);
     try {
       const threadId = await createThread(userId, {
@@ -118,7 +117,7 @@ export default function NewThread() {
     } finally {
       setSubmitting(false);
     }
-  }, [userId, canSubmit, title, body, selectedCountryId, selectedCityId, selectedTopicId, postType, router, markFirstPost, profile]);
+  }, [userId, canSubmit, title, body, selectedCountryId, selectedCityId, selectedTopicId, postType, router, markFirstPost]);
 
   const handleSelectPlace = useCallback((countryId: string | undefined, cityId: string | undefined, label: string) => {
     setSelectedCountryId(countryId);
@@ -153,98 +152,107 @@ export default function NewThread() {
         />
       </View>
 
-      <ScrollView
-        style={styles.scrollContent}
-        contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Title input */}
-        <TextInput
-          style={styles.titleInput}
-          placeholder={showGuidedComposer
-            ? "e.g. Is it safe to walk alone at night in Medellín?"
-            : "What's your question?"}
-          placeholderTextColor={colors.textMuted}
-          value={title}
-          onChangeText={setTitle}
-          maxLength={200}
-          multiline
-        />
-
-        {/* Body input */}
-        <TextInput
-          style={styles.bodyInput}
-          placeholder={showGuidedComposer
-            ? "Share context — where you're going, what you need help with"
-            : "Add details to help others understand your question..."}
-          placeholderTextColor={colors.textMuted}
-          value={body}
-          onChangeText={setBody}
-          maxLength={2000}
-          multiline
-          textAlignVertical="top"
-        />
-
-        {showGuidedComposer && (
-          <Text style={styles.guidedHint}>
-            Your question will be visible to women traveling to this place
-          </Text>
-        )}
-
-        {/* Title hint */}
-        {title.trim().length > 0 && title.trim().length < 10 && (
-          <Text style={styles.hintText}>Title needs at least 10 characters</Text>
-        )}
-
-        {/* Place selector */}
-        <Text style={styles.sectionLabel}>Destination</Text>
-        <Pressable
-          onPress={() => setShowPlaceSelector(true)}
-          style={({ pressed }) => [styles.placeSelector, pressed && styles.pressed]}
+      {(profile?.verificationStatus ?? 'unverified') !== 'verified' ? (
+        <View style={styles.bannerContainer}>
+          <VerificationBanner
+            verificationStatus={profile?.verificationStatus ?? 'unverified'}
+            featureLabel="post in the community"
+          />
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scrollContent}
+          contentContainerStyle={{ paddingBottom: insets.bottom + 40 }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Feather name="map-pin" size={16} color={placeLabel ? colors.orange : colors.textMuted} />
-          <Text style={[styles.placeSelectorText, placeLabel && styles.placeSelectorTextActive]}>
-            {placeLabel ?? 'Select a country or city'}
-          </Text>
-          {placeLabel && (
-            <Pressable onPress={() => handleSelectPlace(undefined, undefined, 'All places')} hitSlop={8}>
-              <Feather name="x" size={14} color={colors.textMuted} />
-            </Pressable>
+          {/* Title input */}
+          <TextInput
+            style={styles.titleInput}
+            placeholder={showGuidedComposer
+              ? "e.g. Is it safe to walk alone at night in Medellín?"
+              : "What's your question?"}
+            placeholderTextColor={colors.textMuted}
+            value={title}
+            onChangeText={setTitle}
+            maxLength={200}
+            multiline
+          />
+
+          {/* Body input */}
+          <TextInput
+            style={styles.bodyInput}
+            placeholder={showGuidedComposer
+              ? "Share context — where you're going, what you need help with"
+              : "Add details to help others understand your question..."}
+            placeholderTextColor={colors.textMuted}
+            value={body}
+            onChangeText={setBody}
+            maxLength={2000}
+            multiline
+            textAlignVertical="top"
+          />
+
+          {showGuidedComposer && (
+            <Text style={styles.guidedHint}>
+              Your question will be visible to women traveling to this place
+            </Text>
           )}
-        </Pressable>
 
-        {/* Topic selector */}
-        <Text style={styles.sectionLabel}>Topic</Text>
-        <View style={styles.topicRow}>
-          {topics.map((t) => (
-            <Pressable
-              key={t.id}
-              onPress={() => setSelectedTopicId(selectedTopicId === t.id ? undefined : t.id)}
-              style={[styles.topicPill, selectedTopicId === t.id && styles.topicPillActive]}
-            >
-              <Text style={[styles.topicPillText, selectedTopicId === t.id && styles.topicPillTextActive]}>
-                {t.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
+          {/* Title hint */}
+          {title.trim().length > 0 && title.trim().length < 10 && (
+            <Text style={styles.hintText}>Title needs at least 10 characters</Text>
+          )}
 
-        {/* Post type selector */}
-        <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Post type</Text>
-        <View style={styles.topicRow}>
-          {POST_TYPES.map((pt) => (
-            <Pressable
-              key={pt.key}
-              onPress={() => setPostType(postType === pt.key ? null : pt.key)}
-              style={[styles.topicPill, postType === pt.key && styles.topicPillActive]}
-            >
-              <Text style={[styles.topicPillText, postType === pt.key && styles.topicPillTextActive]}>
-                {pt.label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
+          {/* Place selector */}
+          <Text style={styles.sectionLabel}>Destination</Text>
+          <Pressable
+            onPress={() => setShowPlaceSelector(true)}
+            style={({ pressed }) => [styles.placeSelector, pressed && styles.pressed]}
+          >
+            <Feather name="map-pin" size={16} color={placeLabel ? colors.orange : colors.textMuted} />
+            <Text style={[styles.placeSelectorText, placeLabel && styles.placeSelectorTextActive]}>
+              {placeLabel ?? 'Select a country or city'}
+            </Text>
+            {placeLabel && (
+              <Pressable onPress={() => handleSelectPlace(undefined, undefined, 'All places')} hitSlop={8}>
+                <Feather name="x" size={14} color={colors.textMuted} />
+              </Pressable>
+            )}
+          </Pressable>
+
+          {/* Topic selector */}
+          <Text style={styles.sectionLabel}>Topic</Text>
+          <View style={styles.topicRow}>
+            {topics.map((t) => (
+              <Pressable
+                key={t.id}
+                onPress={() => setSelectedTopicId(selectedTopicId === t.id ? undefined : t.id)}
+                style={[styles.topicPill, selectedTopicId === t.id && styles.topicPillActive]}
+              >
+                <Text style={[styles.topicPillText, selectedTopicId === t.id && styles.topicPillTextActive]}>
+                  {t.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          {/* Post type selector */}
+          <Text style={[styles.sectionLabel, { marginTop: spacing.xl }]}>Post type</Text>
+          <View style={styles.topicRow}>
+            {POST_TYPES.map((pt) => (
+              <Pressable
+                key={pt.key}
+                onPress={() => setPostType(postType === pt.key ? null : pt.key)}
+                style={[styles.topicPill, postType === pt.key && styles.topicPillActive]}
+              >
+                <Text style={[styles.topicPillText, postType === pt.key && styles.topicPillTextActive]}>
+                  {pt.label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        </ScrollView>
+      )}
 
       {/* Place Selector Sheet */}
       <PlaceSelectorSheet
@@ -376,6 +384,13 @@ function PlaceSelectorSheet({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+
+  // Verification banner
+  bannerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.screenX,
+  },
 
   // Header
   header: {

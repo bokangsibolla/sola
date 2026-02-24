@@ -58,7 +58,7 @@ function buildForYouItems(
       id: place.placeId,
       name: place.placeName,
       imageUrl: place.imageUrl,
-      route: `/discover/place/${place.placeId}`,
+      route: `/(tabs)/discover/place-detail/${place.placeId}`,
     }));
   }
 
@@ -67,7 +67,7 @@ function buildForYouItems(
     id: city.cityId,
     name: city.cityName,
     imageUrl: city.heroImageUrl,
-    route: `/discover/city/${city.slug}`,
+    route: `/(tabs)/discover/city/${city.slug}`,
   }));
 }
 

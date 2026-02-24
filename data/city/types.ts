@@ -40,7 +40,7 @@ export const PLACE_CATEGORIES: PlaceCategoryDef[] = [
   },
   {
     key: 'nightlife',
-    label: 'Nightlife',
+    label: 'Going Out',
     emoji: '🌙',
     placeTypes: ['bar', 'club', 'rooftop'],
   },
@@ -52,7 +52,7 @@ export const PLACE_CATEGORIES: PlaceCategoryDef[] = [
   },
   {
     key: 'practical',
-    label: 'Practical',
+    label: 'Essentials',
     emoji: '🔑',
     placeTypes: ['coworking', 'transport', 'shop', 'laundry', 'pharmacy', 'clinic', 'hospital', 'atm', 'police'],
   },

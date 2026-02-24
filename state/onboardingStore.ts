@@ -63,8 +63,8 @@ const defaults: OnboardingData = {
   tripFlexibleDates: false,
   verificationSelfieUri: null,
   privacyDefaults: {
-    profileVisibility: 'private',
-    tripVisibility: 'private',
+    profileVisibility: 'public',
+    tripVisibility: 'public',
     locationPrecision: 'city',
   },
   // A/B Testing defaults

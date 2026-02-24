@@ -1,11 +1,12 @@
 // app/(tabs)/discover/accommodation/[slug].tsx
 import { useCallback, useEffect, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
-import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import { eventTracker } from '@/data/events/eventTracker';
-import { colors, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import {
@@ -20,18 +21,18 @@ import { AccommodationHero } from '@/components/explore/accommodation/Accommodat
 import { PositioningSummary } from '@/components/explore/accommodation/PositioningSummary';
 import { QuickTags } from '@/components/explore/accommodation/QuickTags';
 import { WhyWomenChoose } from '@/components/explore/accommodation/WhyWomenChoose';
+import { OurTake } from '@/components/explore/activity/OurTake';
+import { WomenRecommend } from '@/components/explore/activity/WomenRecommend';
 import { WhatStandsOut } from '@/components/explore/activity/WhatStandsOut';
 import { GoodToKnow } from '@/components/explore/activity/GoodToKnow';
 import { AccommodationPractical } from '@/components/explore/accommodation/AccommodationPractical';
 import { LocationContext } from '@/components/explore/accommodation/LocationContext';
-import { StickyBottomCTA } from '@/components/explore/accommodation/StickyBottomCTA';
 import { AccommodationSkeleton } from '@/components/explore/accommodation/AccommodationSkeleton';
 
 export default function AccommodationDetailScreen() {
   const posthog = usePostHog();
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { userId } = useAuth();
-  const insets = useSafeAreaInsets();
 
   // ---------------------------------------------------------------------------
   // Data fetching
@@ -153,9 +154,6 @@ export default function AccommodationDetailScreen() {
     );
   }
 
-  // Bottom CTA height for spacer
-  const CTA_HEIGHT = 70 + insets.bottom + spacing.sm;
-
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <NavigationHeader
@@ -170,6 +168,7 @@ export default function AccommodationDetailScreen() {
         <AccommodationHero
           accommodation={accommodation}
           media={media}
+          tags={tags}
           cityName={city?.name}
           countryName={country?.name}
           saved={saved}
@@ -179,42 +178,72 @@ export default function AccommodationDetailScreen() {
 
         {/* Sections with padding */}
         <View style={styles.content}>
-          {/* 2. Positioning Summary */}
-          <PositioningSummary text={accommodation.positioningSummary} />
+          {/* 2. About / Positioning — fall back to description */}
+          <PositioningSummary text={accommodation.positioningSummary ?? accommodation.description} />
 
-          {/* 3. Quick Tags — animated pill selector */}
+          {/* 3. Quick Tags — animated pill selector (hidden if < 3 tags) */}
           <QuickTags tags={tags} />
 
-          {/* 4. Why Women Choose This */}
+          {/* 4. Our Take — editorial why_selected */}
+          <OurTake bullets={[]} fallbackText={accommodation.whySelected} label="OUR TAKE" />
+
+          {/* 5. Why Women Choose This — fall back to solo_female_reviews */}
           <WhyWomenChoose text={accommodation.whyWomenChoose} />
 
-          {/* 5. What Stands Out (reused from activity) */}
+          {/* 5b. Women's Reviews — if whyWomenChoose is empty, show solo_female_reviews */}
+          {!accommodation.whyWomenChoose && (
+            <WomenRecommend
+              text={accommodation.soloFemaleReviews}
+              label="FROM WOMEN WHO'VE STAYED HERE"
+            />
+          )}
+
+          {/* 6. What Stands Out */}
           <WhatStandsOut highlights={accommodation.highlights ?? []} />
 
-          {/* 6. Good to Know (reused from activity) */}
+          {/* 7. Good to Know */}
           <GoodToKnow considerations={accommodation.considerations ?? []} />
 
-          {/* 7. Practical Details + Map */}
+          {/* 8. Practical Details + Map */}
           <AccommodationPractical
             accommodation={accommodation}
             onOpenMaps={handleOpenMaps}
           />
 
-          {/* 8. Neighborhood */}
+          {/* 9. Neighborhood */}
           <LocationContext text={accommodation.locationContext} />
+
+          {/* 10. Action buttons — inline at bottom */}
+          <View style={styles.actionRow}>
+            <Pressable
+              onPress={handleSave}
+              disabled={!canSave}
+              style={[
+                styles.actionBtn,
+                styles.saveBtn,
+                saved && styles.saveBtnSaved,
+                !canSave && styles.actionBtnDisabled,
+              ]}
+            >
+              <Ionicons
+                name={saved ? 'checkmark-circle' : 'add-circle-outline'}
+                size={18}
+                color={colors.background}
+              />
+              <Text style={styles.saveBtnText}>
+                {!canSave ? 'Sign in' : saved ? 'Saved' : 'Add to Trip'}
+              </Text>
+            </Pressable>
+
+            <Pressable onPress={handleOpenMaps} style={[styles.actionBtn, styles.mapsBtn]}>
+              <Ionicons name="map-outline" size={18} color={colors.textPrimary} />
+              <Text style={styles.mapsBtnText}>Maps</Text>
+            </Pressable>
+          </View>
         </View>
 
-        {/* Bottom spacer for sticky CTA */}
-        <View style={{ height: CTA_HEIGHT + spacing.xl }} />
+        <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
-
-      {/* Sticky bottom CTA — outside ScrollView */}
-      <StickyBottomCTA
-        saved={saved}
-        canSave={canSave}
-        onSave={handleSave}
-        onOpenMaps={handleOpenMaps}
-      />
 
       {/* Save to trip / collection sheet */}
       {userId && accommodation?.id && (
@@ -245,8 +274,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    fontFamily: 'PlusJakartaSans-Regular',
+    fontFamily: fonts.regular,
     fontSize: 15,
     color: colors.textMuted,
+  },
+  actionRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xxl,
+  },
+  actionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+  },
+  saveBtn: {
+    backgroundColor: colors.orange,
+  },
+  saveBtnSaved: {
+    backgroundColor: colors.greenSoft,
+  },
+  actionBtnDisabled: {
+    backgroundColor: colors.textMuted,
+  },
+  saveBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.background,
+  },
+  mapsBtn: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  mapsBtnText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.textPrimary,
   },
 });

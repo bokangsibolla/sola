@@ -30,7 +30,7 @@ export function DestinationCard({ city, width }: DestinationCardProps) {
         { width, height: CARD_HEIGHT },
         pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
       ]}
-      onPress={() => router.push(`/discover/city/${city.slug}` as any)}
+      onPress={() => router.push(`/(tabs)/discover/city/${city.slug}` as any)}
     >
       {city.heroImageUrl ? (
         <Image
