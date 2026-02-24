@@ -54,11 +54,15 @@ Deno.serve(async (req) => {
   }
 
   // Step 2: Forward the request with all original headers (server-side, no issues)
+  const fwdMethod = method || "GET";
+  const fwdHeaders = headers || {};
+  const fwdBody = (fwdMethod === "GET" || fwdMethod === "HEAD") ? undefined : (body || undefined);
+  console.log(`[android-proxy] Forwarding: ${fwdMethod} ${url.substring(0, 80)}`);
   try {
     const response = await fetch(url, {
-      method: method || "GET",
-      headers: headers || {},
-      body: body || undefined,
+      method: fwdMethod,
+      headers: fwdHeaders,
+      body: fwdBody,
     });
 
     const responseBody = await response.text();
@@ -84,11 +88,13 @@ Deno.serve(async (req) => {
       headers: responseHeaders,
     });
   } catch (fetchErr) {
+    console.error(`[android-proxy] Fetch failed: ${String(fetchErr)}, url=${url.substring(0, 80)}, method=${fwdMethod}`);
     return new Response(
       JSON.stringify({
         error: "Proxy fetch failed",
         detail: String(fetchErr),
         target_url: url.substring(0, 80),
+        method: fwdMethod,
       }),
       { status: 502, headers: { ...CORS_HEADERS, "Content-Type": "application/json" } },
     );

@@ -166,6 +166,12 @@ async function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
 
   if (_proxyCallCount <= 5) {
     console.log(`[Sola Proxy] #${_proxyCallCount} → ${response.status}`);
+    if (!response.ok) {
+      try {
+        const errBody = await response.clone().text();
+        console.log(`[Sola Proxy] #${_proxyCallCount} error body: ${errBody.substring(0, 200)}`);
+      } catch { /* ignore */ }
+    }
   }
 
   return response;
@@ -212,22 +218,20 @@ export function warmupConnection(): Promise<boolean> {
         // XHR failed, try native fetch as fallback
       }
 
-      // Native fetch fallback with retries
-      for (let i = 0; i < 3; i++) {
-        try {
-          const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 8_000);
-          await fetch(healthUrl, {
-            method: 'GET',
-            headers: healthHeaders,
-            signal: controller.signal,
-          });
-          clearTimeout(timer);
-          _warmupDone = true;
-          return true;
-        } catch {
-          await new Promise((r) => setTimeout(r, 500 * (i + 1)));
-        }
+      // Native fetch fallback (single attempt with short timeout)
+      try {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), 5_000);
+        await fetch(healthUrl, {
+          method: 'GET',
+          headers: healthHeaders,
+          signal: controller.signal,
+        });
+        clearTimeout(timer);
+        _warmupDone = true;
+        return true;
+      } catch {
+        // Native fetch also failed
       }
     }
 
@@ -264,9 +268,13 @@ const supabaseFetch: typeof fetch = async (input, init) => {
     console.log(`[Sola] XHR failed, trying native fetch: ${xhrError.message}`);
   }
 
-  // Phase 2: Native fetch (single attempt — retries just waste time if broken)
+  // Phase 2: Native fetch (single attempt with timeout — hangs forever on some devices)
   try {
-    return await fetch(url, init);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 5_000);
+    const response = await fetch(url, { ...init, signal: controller.signal });
+    clearTimeout(timer);
+    return response;
   } catch (fetchError: any) {
     // Both XHR and native fetch failed
     if (isSupabaseUrl) {
