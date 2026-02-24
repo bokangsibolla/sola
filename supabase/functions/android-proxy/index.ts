@@ -55,9 +55,16 @@ Deno.serve(async (req) => {
 
   // Step 2: Forward the request with all original headers (server-side, no issues)
   const fwdMethod = method || "GET";
-  const fwdHeaders = headers || {};
   const fwdBody = (fwdMethod === "GET" || fwdMethod === "HEAD") ? undefined : (body || undefined);
-  console.log(`[android-proxy] Forwarding: ${fwdMethod} ${url.substring(0, 80)}`);
+
+  // Sanitize header values — Deno's fetch strictly rejects values containing
+  // newlines, carriage returns, or other control characters. Client-side
+  // environment variables or serialization can introduce these invisibly.
+  const fwdHeaders: Record<string, string> = {};
+  for (const [k, v] of Object.entries(headers || {})) {
+    fwdHeaders[k.trim()] = String(v).replace(/[\r\n]/g, "").trim();
+  }
+
   try {
     const response = await fetch(url, {
       method: fwdMethod,
