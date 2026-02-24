@@ -7,8 +7,8 @@ import { useFocusEffect } from '@react-navigation/native';
 import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import { TimelineBlockCard } from '@/components/trips/TimelineBlockCard';
-import type { BlockProgressStatus } from '@/components/trips/TimelineBlockCard';
+import { DayTimelineCard } from '@/components/trips/DayTimelineCard';
+import { SmartSearchSheet } from '@/components/trips/SmartSearchSheet';
 import { TodayBadge } from '@/components/trips/TripMode/TodayBadge';
 import { SuggestionCard } from '@/components/trips/SuggestionCard';
 import { AddStopSheet } from '@/components/trips/AddStopSheet';
@@ -43,12 +43,18 @@ import type {
 } from '@/data/trips/itineraryTypes';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
-// ── Inline insert button ──────────────────────────────────────────────────
+type BlockProgressStatus = 'completed' | 'current' | 'upcoming' | undefined;
 
-const InsertButton: React.FC<{ onPress: () => void }> = ({ onPress }) => (
-  <Pressable onPress={onPress} style={styles.insertButton}>
-    <Ionicons name="add-circle-outline" size={20} color={colors.textMuted} />
-  </Pressable>
+// ── Connector between timeline cards ──────────────────────────────────────
+
+const ConnectorWithAdd: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <View style={styles.connector}>
+    <View style={styles.connectorLine} />
+    <Pressable onPress={onPress} style={styles.connectorPlus} hitSlop={12}>
+      <Ionicons name="add-circle-outline" size={20} color={colors.textMuted} />
+    </Pressable>
+    <View style={styles.connectorLine} />
+  </View>
 );
 
 // ── Date formatting ───────────────────────────────────────────────────────
@@ -124,6 +130,8 @@ export default function DayTimelineScreen() {
   const [previewPlace, setPreviewPlace] = useState<Place | null>(null);
   const [addDaysPlace, setAddDaysPlace] = useState<Place | null>(null);
   const [addDaysVisible, setAddDaysVisible] = useState(false);
+  const [smartSearchVisible, setSmartSearchVisible] = useState(false);
+  const [smartSearchInsertIndex, setSmartSearchInsertIndex] = useState(0);
 
   // Refetch on screen focus (returning from elsewhere)
   useFocusEffect(
@@ -196,6 +204,11 @@ export default function DayTimelineScreen() {
   const handleInsert = (afterOrderIndex: number) => {
     setInsertAfterIndex(afterOrderIndex);
     setShowAddStop(true);
+  };
+
+  const handleInsertSmart = (afterOrderIndex: number) => {
+    setSmartSearchInsertIndex(afterOrderIndex);
+    setSmartSearchVisible(true);
   };
 
   const handleFabPress = () => {
@@ -347,23 +360,40 @@ export default function DayTimelineScreen() {
 
         {/* ── Timeline blocks (non-accommodation) ─────────────────────── */}
         {timelineBlocks.length > 0 ? (
-          <View style={styles.timelineContainer}>
-            {timelineBlocks.map((block, index) => (
-              <React.Fragment key={block.id}>
-                <TimelineBlockCard
-                  block={block}
-                  isLast={
-                    index === timelineBlocks.length - 1 && !topSuggestion
-                  }
-                  onPress={() => handleBlockPress(block.id)}
-                  progressStatus={getBlockProgressStatus(block, isToday)}
-                />
-                <InsertButton
-                  onPress={() => handleInsert(block.orderIndex)}
-                />
-              </React.Fragment>
-            ))}
-          </View>
+          <>
+            <View style={styles.timelineContainer}>
+              {timelineBlocks.map((block, index) => (
+                <React.Fragment key={block.id}>
+                  <View style={styles.timelineCardWrapper}>
+                    <DayTimelineCard
+                      block={block}
+                      onPress={() => handleBlockPress(block.id)}
+                      isDone={getBlockProgressStatus(block, isToday) === 'completed'}
+                      isCurrent={getBlockProgressStatus(block, isToday) === 'current'}
+                    />
+                  </View>
+                  {index < timelineBlocks.length - 1 && (
+                    <ConnectorWithAdd onPress={() => handleInsertSmart(block.orderIndex)} />
+                  )}
+                </React.Fragment>
+              ))}
+            </View>
+            <Pressable
+              onPress={() => {
+                const lastIdx = timelineBlocks.length > 0
+                  ? timelineBlocks[timelineBlocks.length - 1].orderIndex
+                  : 0;
+                handleInsertSmart(lastIdx);
+              }}
+              style={({ pressed }) => [
+                styles.addToDayButton,
+                pressed && { opacity: 0.8 },
+              ]}
+            >
+              <Ionicons name="add" size={18} color={colors.orange} />
+              <Text style={styles.addToDayText}>Add to this day</Text>
+            </Pressable>
+          </>
         ) : (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No stops yet</Text>
@@ -465,6 +495,23 @@ export default function DayTimelineScreen() {
         onViewDetails={handleViewDetails}
         onClose={() => setPreviewPlace(null)}
       />
+
+      {/* ── SmartSearchSheet ─────────────────────────────────────────── */}
+      {dayCityId != null && (
+        <SmartSearchSheet
+          visible={smartSearchVisible}
+          onClose={() => setSmartSearchVisible(false)}
+          cityId={dayCityId}
+          tripId={day.tripId}
+          dayId={day.id}
+          insertAfterIndex={smartSearchInsertIndex}
+          existingBlockPlaceIds={Array.from(addedPlaceIds)}
+          onPlaceAdded={() => {
+            refetch();
+            setSmartSearchVisible(false);
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -512,11 +559,46 @@ const styles = StyleSheet.create({
     paddingTop: spacing.sm,
   },
 
-  // ── Insert button ───────────────────────────────────────────────────────
-  insertButton: {
+  // ── Timeline card wrapper ──────────────────────────────────────────────
+  timelineCardWrapper: {
+    marginHorizontal: spacing.screenX,
+  },
+
+  // ── Connector ──────────────────────────────────────────────────────────
+  connector: {
+    flexDirection: 'row',
     alignItems: 'center',
+    paddingHorizontal: spacing.screenX,
     paddingVertical: spacing.xs,
+  },
+  connectorLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: colors.borderSubtle,
+  },
+  connectorPlus: {
+    paddingHorizontal: spacing.sm,
     opacity: 0.6,
+  },
+
+  // ── Add to day button ─────────────────────────────────────────────────
+  addToDayButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
+    marginHorizontal: spacing.screenX,
+    marginTop: spacing.md,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.card,
+    borderStyle: 'dashed',
+  },
+  addToDayText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
   },
 
   // ── Empty state ─────────────────────────────────────────────────────────
