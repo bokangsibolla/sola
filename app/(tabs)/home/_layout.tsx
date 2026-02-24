@@ -12,7 +12,6 @@ export default function HomeLayout() {
       <Stack.Screen name="saved" />
       <Stack.Screen name="notifications" />
       <Stack.Screen name="collections/[id]" />
-      <Stack.Screen name="admin-verifications" />
     </Stack>
   );
 }
