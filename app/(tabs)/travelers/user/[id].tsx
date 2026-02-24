@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -18,15 +18,16 @@ import { useTravelerProfile } from '@/data/travelers/useTravelerProfile';
 import { getFlag } from '@/data/trips/helpers';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
-import CredibilityStats from '@/components/travelers/CredibilityStats';
-import ProfileTripCard from '@/components/travelers/ProfileTripCard';
-import VisitedCountries from '@/components/travelers/VisitedCountries';
+import ProfileTripCard from '@/components/profile/ProfileTripCard';
+import { FlagGrid } from '@/components/profile/FlagGrid';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
 import { VerificationBanner } from '@/components/VerificationBanner';
 import type { ConnectionStatus } from '@/data/types';
+
+const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -38,6 +39,8 @@ export default function UserProfileScreen() {
   const [actionLoading, setActionLoading] = useState(false);
   const [localStatus, setLocalStatus] = useState<ConnectionStatus | null>(null);
   const [showPastTrips, setShowPastTrips] = useState(false);
+
+  const isOwn = !!userId && userId === id;
 
   useEffect(() => {
     if (id) {
@@ -64,9 +67,22 @@ export default function UserProfileScreen() {
 
   const status = localStatus ?? fetchedStatus;
   const connectionStatus = status ?? 'none';
-  const showBio = connectionStatus !== 'none';
-  const showExtended = connectionStatus === 'connected';
+  const showExtended = connectionStatus === 'connected' || isOwn;
   const isVerified = (userProfile?.verificationStatus ?? 'unverified') === 'verified';
+
+  // Merge trip-derived and user-managed countries into deduplicated ISO2 array
+  const allCountryIso2s = useMemo(() => {
+    const set = new Set<string>();
+    for (const vc of visitedCountries) set.add(vc.countryIso2);
+    for (const umc of userManagedCountries) {
+      if (umc.countryIso2) set.add(umc.countryIso2);
+    }
+    return Array.from(set);
+  }, [visitedCountries, userManagedCountries]);
+
+  const countriesCount = allCountryIso2s.length;
+  const joinedDate = profile ? new Date(profile.createdAt) : null;
+  const joinedLabel = joinedDate ? `Joined ${MONTHS[joinedDate.getMonth()]} ${joinedDate.getFullYear()}` : '';
 
   const doConnect = useCallback(async (message?: string) => {
     try {
@@ -252,22 +268,28 @@ export default function UserProfileScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <NavigationHeader
-        title={profile?.firstName ?? 'Traveler'}
+        title={isOwn ? 'Profile' : (profile?.firstName ?? 'Traveler')}
         parentTitle="Travelers"
         backHref="/(tabs)/travelers"
         rightActions={
-          <Pressable onPress={handleMoreMenu} hitSlop={12}>
-            <Feather name="more-horizontal" size={24} color={colors.textPrimary} />
-          </Pressable>
+          isOwn ? (
+            <Pressable onPress={() => router.push('/(tabs)/home/settings')} hitSlop={12}>
+              <Feather name="settings" size={22} color={colors.textPrimary} />
+            </Pressable>
+          ) : (
+            <Pressable onPress={handleMoreMenu} hitSlop={12}>
+              <Feather name="more-horizontal" size={24} color={colors.textPrimary} />
+            </Pressable>
+          )
         }
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* Identity Layer */}
+        {/* 1. Profile Header */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
             <Image
-              source={{ uri: getImageUrl(profile.avatarUrl, { width: 192, height: 192 }) ?? undefined }}
+              source={{ uri: getImageUrl(profile.avatarUrl, { width: 176, height: 176 }) ?? undefined }}
               style={styles.avatar}
               contentFit="cover"
               transition={200}
@@ -277,17 +299,22 @@ export default function UserProfileScreen() {
               <Feather name="user" size={36} color={colors.textMuted} />
             </View>
           )}
-          <Text style={styles.name}>{profile.firstName}</Text>
+
+          <View style={styles.nameRow}>
+            <Text style={styles.name}>
+              {profile.firstName} {profile.homeCountryIso2 ? getFlag(profile.homeCountryIso2) : ''}
+            </Text>
+            {profile.verificationStatus === 'verified' && (
+              <Ionicons name="checkmark-circle" size={18} color={colors.greenSoft} style={{ marginLeft: 4 }} />
+            )}
+          </View>
+
           {profile.username && (
             <Text style={styles.username}>@{profile.username}</Text>
           )}
-          {(profile.homeCountryName || profile.nationality) && (
-            <Text style={styles.origin}>
-              {profile.homeCountryIso2 ? getFlag(profile.homeCountryIso2) + ' ' : ''}
-              {profile.homeCountryName}
-              {profile.nationality ? ` \u00b7 ${profile.nationality}` : ''}
-            </Text>
-          )}
+
+          {profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+
           {profile.locationSharingEnabled && profile.locationCityName && (
             <View style={styles.locationRow}>
               <Feather name="map-pin" size={14} color={colors.orange} />
@@ -296,6 +323,7 @@ export default function UserProfileScreen() {
               </Text>
             </View>
           )}
+
           {contextLabel && (
             <View style={styles.contextBadge}>
               <Text style={styles.contextBadgeText}>{contextLabel}</Text>
@@ -303,19 +331,47 @@ export default function UserProfileScreen() {
           )}
         </View>
 
-        {/* Credibility Stats */}
-        <CredibilityStats
-          countriesCount={visitedCountries.length}
-          tripCount={totalTripCount}
-          memberSince={profile.createdAt}
-        />
+        {/* 2. Stats Row */}
+        <View style={styles.statsRow}>
+          {countriesCount > 0 && (
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{countriesCount}</Text>
+              <Text style={styles.statLabel}>{countriesCount === 1 ? 'country' : 'countries'}</Text>
+            </View>
+          )}
+          {totalTripCount > 0 && (
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{totalTripCount}</Text>
+              <Text style={styles.statLabel}>{totalTripCount === 1 ? 'trip' : 'trips'}</Text>
+            </View>
+          )}
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>{joinedLabel}</Text>
+          </View>
+        </View>
 
-        {/* Bio */}
-        {showBio && profile.bio && <Text style={styles.bio}>{profile.bio}</Text>}
+        {/* 3. Action Area — Edit profile for isOwn */}
+        {isOwn && (
+          <Pressable
+            style={({ pressed }) => [styles.editButton, pressed && { opacity: 0.7 }]}
+            onPress={() => router.push('/(tabs)/home/edit-profile')}
+          >
+            <Feather name="edit-2" size={16} color={colors.textPrimary} />
+            <Text style={styles.editButtonText}>Edit profile</Text>
+          </Pressable>
+        )}
 
-        {/* Interests */}
-        {showExtended && (profile.interests ?? []).length > 0 && (
-          <>
+        {/* 4. Countries Visited */}
+        {(isOwn || showExtended) && allCountryIso2s.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Countries visited</Text>
+            <FlagGrid countries={allCountryIso2s} />
+          </View>
+        )}
+
+        {/* 5. Interests */}
+        {(isOwn || showExtended) && (profile.interests ?? []).length > 0 && (
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interests</Text>
             <View style={styles.tags}>
               {(profile.interests ?? []).map((interest) => (
@@ -331,67 +387,50 @@ export default function UserProfileScreen() {
                 </View>
               ))}
             </View>
-          </>
+          </View>
         )}
 
-        {/* Trips Section */}
-        {showExtended && hasTrips && (
-          <>
+        {/* 6. Trips */}
+        {(isOwn || showExtended) && (
+          <View style={styles.section}>
             <Text style={styles.sectionTitle}>Trips</Text>
 
             {trips.current && (
-              <ProfileTripCard trip={trips.current} overlapLabel={tripOverlaps.get(trips.current.id)} />
+              <ProfileTripCard trip={trips.current} overlapLabel={tripOverlaps.get(trips.current.id)} isOwn={isOwn} />
             )}
-
             {trips.upcoming.map((trip) => (
-              <ProfileTripCard key={trip.id} trip={trip} overlapLabel={tripOverlaps.get(trip.id)} />
+              <ProfileTripCard key={trip.id} trip={trip} overlapLabel={tripOverlaps.get(trip.id)} isOwn={isOwn} />
             ))}
 
             {trips.past.length > 0 && (
               <>
-                <Pressable
-                  style={styles.pastHeader}
-                  onPress={() => setShowPastTrips(!showPastTrips)}
-                  hitSlop={8}
-                >
-                  <Text style={styles.pastHeaderText}>
-                    Past trips ({trips.past.length})
-                  </Text>
-                  <Feather
-                    name={showPastTrips ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color={colors.textMuted}
-                  />
+                <Pressable style={styles.pastHeader} onPress={() => setShowPastTrips(!showPastTrips)} hitSlop={8}>
+                  <Text style={styles.pastHeaderText}>Past trips ({trips.past.length})</Text>
+                  <Feather name={showPastTrips ? 'chevron-up' : 'chevron-down'} size={16} color={colors.textMuted} />
                 </Pressable>
                 {showPastTrips && trips.past.map((trip) => (
-                  <ProfileTripCard key={trip.id} trip={trip} />
+                  <ProfileTripCard key={trip.id} trip={trip} isOwn={isOwn} />
                 ))}
               </>
             )}
-          </>
-        )}
 
-        {/* Visited Countries (from trips) */}
-        {showExtended && <VisitedCountries countries={visitedCountries} />}
-
-        {/* User-listed countries (self-reported) */}
-        {showExtended && userManagedCountries.length > 0 && (
-          <View style={styles.userCountriesSection}>
-            <Text style={styles.sectionTitle}>Countries visited</Text>
-            <View style={styles.tags}>
-              {userManagedCountries.map((vc) => (
-                <View key={vc.countryId} style={styles.tag}>
-                  <Text style={styles.tagText}>
-                    {vc.countryIso2 ? getFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            {isOwn && !hasTrips && (
+              <View>
+                <Text style={styles.noTripsText}>No trips yet</Text>
+                <Pressable
+                  style={({ pressed }) => [styles.tripsCta, pressed && { opacity: 0.7 }]}
+                  onPress={() => router.push('/(tabs)/trips/new')}
+                >
+                  <Feather name="plus" size={16} color={colors.orange} />
+                  <Text style={styles.tripsCtaText}>Plan your first trip</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
         )}
 
-        {/* Locked section for non-connected users */}
-        {!showExtended && (
+        {/* 7. Locked Section — only for non-own, non-connected */}
+        {!isOwn && !showExtended && (
           <View style={styles.lockedSection}>
             <Ionicons name="lock-closed-outline" size={24} color={colors.textMuted} />
             <Text style={styles.lockedTitle}>Full profile</Text>
@@ -400,69 +439,71 @@ export default function UserProfileScreen() {
         )}
       </ScrollView>
 
-      {/* Connection Bottom Bar */}
-      <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
-        {!isVerified && (
-          <View style={{ marginBottom: spacing.md }}>
-            <VerificationBanner
-              verificationStatus={userProfile?.verificationStatus ?? 'unverified'}
-              featureLabel="connect with travelers"
-            />
-          </View>
-        )}
-        {status === 'none' && (
-          <View>
+      {/* Connection Bottom Bar — only for non-own */}
+      {!isOwn && (
+        <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+          {!isVerified && (
+            <View style={{ marginBottom: spacing.md }}>
+              <VerificationBanner
+                verificationStatus={userProfile?.verificationStatus ?? 'unverified'}
+                featureLabel="connect with travelers"
+              />
+            </View>
+          )}
+          {status === 'none' && (
+            <View>
+              <Pressable
+                style={[styles.connectButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
+                onPress={handleConnect}
+                disabled={actionLoading || !isVerified}
+              >
+                <Feather name="user-plus" size={18} color={colors.background} />
+                <Text style={styles.connectButtonText}>Connect</Text>
+              </Pressable>
+              {contextLabel && (
+                <Text style={styles.connectContext}>{contextLabel}</Text>
+              )}
+            </View>
+          )}
+          {status === 'pending_sent' && (
+            <View style={styles.pendingBar}>
+              <Feather name="clock" size={16} color={colors.textMuted} />
+              <Text style={styles.pendingText}>Connection request sent</Text>
+            </View>
+          )}
+          {status === 'pending_received' && (
+            <View style={styles.respondRow}>
+              <Pressable
+                style={[styles.acceptButton, actionLoading && { opacity: 0.6 }]}
+                onPress={handleAccept}
+                disabled={actionLoading}
+              >
+                <Feather name="check" size={16} color={colors.background} />
+                <Text style={styles.acceptButtonText}>Accept</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.declineButton, actionLoading && { opacity: 0.6 }]}
+                onPress={handleDecline}
+                disabled={actionLoading}
+              >
+                <Text style={styles.declineButtonText}>Decline</Text>
+              </Pressable>
+            </View>
+          )}
+          {status === 'connected' && (
             <Pressable
-              style={[styles.connectButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
-              onPress={handleConnect}
+              style={[styles.messageButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
+              onPress={handleMessage}
               disabled={actionLoading || !isVerified}
             >
-              <Feather name="user-plus" size={18} color={colors.background} />
-              <Text style={styles.connectButtonText}>Connect</Text>
+              <Feather name="message-circle" size={18} color={colors.background} />
+              <Text style={styles.messageButtonText}>
+                {actionLoading ? 'Opening...' : 'Message'}
+              </Text>
             </Pressable>
-            {contextLabel && (
-              <Text style={styles.connectContext}>{contextLabel}</Text>
-            )}
-          </View>
-        )}
-        {status === 'pending_sent' && (
-          <View style={styles.pendingBar}>
-            <Feather name="clock" size={16} color={colors.textMuted} />
-            <Text style={styles.pendingText}>Connection request sent</Text>
-          </View>
-        )}
-        {status === 'pending_received' && (
-          <View style={styles.respondRow}>
-            <Pressable
-              style={[styles.acceptButton, actionLoading && { opacity: 0.6 }]}
-              onPress={handleAccept}
-              disabled={actionLoading}
-            >
-              <Feather name="check" size={16} color={colors.background} />
-              <Text style={styles.acceptButtonText}>Accept</Text>
-            </Pressable>
-            <Pressable
-              style={[styles.declineButton, actionLoading && { opacity: 0.6 }]}
-              onPress={handleDecline}
-              disabled={actionLoading}
-            >
-              <Text style={styles.declineButtonText}>Decline</Text>
-            </Pressable>
-          </View>
-        )}
-        {status === 'connected' && (
-          <Pressable
-            style={[styles.messageButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
-            onPress={handleMessage}
-            disabled={actionLoading || !isVerified}
-          >
-            <Feather name="message-circle" size={18} color={colors.background} />
-            <Text style={styles.messageButtonText}>
-              {actionLoading ? 'Opening...' : 'Message'}
-            </Text>
-          </Pressable>
-        )}
-      </View>
+          )}
+        </View>
+      )}
     </View>
   );
 }
@@ -482,13 +523,15 @@ const styles = StyleSheet.create({
   scroll: {
     paddingBottom: spacing.xxl,
   },
+
+  // Profile header
   profileHeader: {
     alignItems: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.md,
   },
   avatar: {
-    width: 96,
-    height: 96,
+    width: 88,
+    height: 88,
     borderRadius: radius.full,
     marginBottom: spacing.md,
   },
@@ -496,6 +539,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  nameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   name: {
     ...typography.h2,
@@ -507,10 +554,11 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: 2,
   },
-  origin: {
+  bio: {
     ...typography.body,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
   locationRow: {
     flexDirection: 'row',
@@ -535,10 +583,50 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.orange,
   },
-  bio: {
-    ...typography.body,
+
+  // Stats row
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: spacing.xxl,
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  statItem: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
     color: colors.textPrimary,
-    textAlign: 'center',
+  },
+  statLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginTop: 1,
+  },
+
+  // Edit button
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.button,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.xl,
+  },
+  editButtonText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+
+  // Sections
+  section: {
     marginBottom: spacing.xl,
   },
   sectionTitle: {
@@ -546,11 +634,12 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     marginBottom: spacing.sm,
   },
+
+  // Interest tags
   tags: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
-    marginBottom: spacing.xl,
   },
   tag: {
     backgroundColor: colors.neutralFill,
@@ -569,9 +658,41 @@ const styles = StyleSheet.create({
   tagTextShared: {
     color: colors.orange,
   },
-  userCountriesSection: {
-    marginBottom: spacing.xl,
+
+  // Trips
+  pastHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
   },
+  pastHeaderText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  noTripsText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.md,
+  },
+  tripsCta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: spacing.md,
+  },
+  tripsCtaText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.orange,
+  },
+
+  // Locked
   lockedSection: {
     alignItems: 'center' as const,
     paddingVertical: spacing.xxxl,
@@ -587,18 +708,8 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     color: colors.textMuted,
   },
-  pastHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.md,
-    marginBottom: spacing.sm,
-  },
-  pastHeaderText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
+
+  // Bottom bar
   bottomBar: {
     paddingTop: spacing.md,
     borderTopWidth: 1,
