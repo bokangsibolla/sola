@@ -75,6 +75,11 @@ export default function CreateAccountScreen() {
         }
         router.push('/(onboarding)/profile' as any);
       } else {
+        // Existing user tapped "Create Account" with OAuth — let them know
+        Alert.alert(
+          'Welcome back',
+          'You already have an account. Taking you to your home screen.',
+        );
         await onboardingStore.set('onboardingCompleted', true);
         // Defer navigation on Android — Expo Router bug with cross-group replace
         if (Platform.OS === 'android') {

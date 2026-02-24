@@ -17,6 +17,7 @@ import * as Sentry from '@sentry/react-native';
 import { useAuth } from '@/state/AuthContext';
 import { clearLocalData } from '@/lib/clearLocalData';
 import { deleteAccount } from '@/data/api';
+import BackButton from '@/components/ui/BackButton';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 // Local color overrides for this screen
@@ -57,8 +58,8 @@ export default function DeleteAccountScreen() {
               posthog.capture('account_deletion_completed');
               posthog.reset();
 
-              // Sign out and clear all local state
-              await signOut();
+              // Sign out and clear all local state (revoke Google to force account picker)
+              await signOut({ revokeGoogle: true });
               queryClient.clear();
               await clearLocalData('delete');
 
@@ -81,11 +82,9 @@ export default function DeleteAccountScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.nav}>
-        <Pressable onPress={() => router.back()} hitSlop={12}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </Pressable>
+        <BackButton />
         <Text style={styles.navTitle}>Delete Account</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView

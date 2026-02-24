@@ -2672,6 +2672,7 @@ export async function deleteAccount(userId: string): Promise<void> {
       interests: null,
       travel_style: null,
       is_online: false,
+      onboarding_completed_at: null,
     })
     .eq('id', userId);
 
@@ -2688,6 +2689,14 @@ export async function deleteAccount(userId: string): Promise<void> {
     }
   } catch {
     // Storage deletion is best-effort
+  }
+
+  // 14. Delete the auth user via RPC (SECURITY DEFINER function — auth.uid() = self only)
+  const { error: rpcError } = await supabase.rpc('delete_own_auth_user');
+  if (rpcError) {
+    console.warn('[Sola] delete_own_auth_user RPC failed:', rpcError.message);
+    // Don't throw — profile is already anonymized with onboarding_completed_at cleared,
+    // so even if auth deletion fails, re-login will go through onboarding to reset profile.
   }
 }
 
