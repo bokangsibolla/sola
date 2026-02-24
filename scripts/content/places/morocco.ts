@@ -37,7 +37,7 @@ export const moroccoPlaces = [
     website: null,
     price_level: 1,
     hours_text: 'Open 24/7, busiest 5pm-11pm',
-    description: 'The beating heart of Marrakech—a UNESCO-recognized square filled with storytellers, snake charmers, orange juice stands, and food stalls at night. It\'s chaotic, loud, and exhilarating. Go during the day first to get oriented, then return at sunset when it transforms. As a solo woman, I stayed aware but felt safe in the crowds. Rooftop cafes around the square offer great views if you need a breather.',
+    description: 'The beating heart of Marrakech—a UNESCO-recognized square filled with storytellers, snake charmers, orange juice stands, and food stalls at night. It\'s intense, loud, and exhilarating. Go during the day first to get oriented, then return at sunset when it transforms. As a solo woman, I stayed aware but felt safe in the crowds. Rooftop cafes around the square offer great views if you need a breather.',
     is_active: true,
   },
   {

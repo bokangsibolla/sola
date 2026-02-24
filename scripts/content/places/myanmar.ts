@@ -191,7 +191,7 @@ export const myanmarPlaces = [
     website: null,
     price_level: 1,
     hours_text: '6am-3pm daily',
-    description: 'Famous for Shan-style noodles in a no-frills setting. Solo diners fit right in at communal tables. Order the noodle soup or dry noodles with chicken. Cheap, filling, and authentic.',
+    description: 'Famous for Shan-style noodles in a no-frills setting. Solo diners fit right in at communal tables. Order the noodle soup or dry noodles with chicken. Filling and authentic.',
     is_active: true,
   },
   {
@@ -326,7 +326,7 @@ export const myanmarPlaces = [
     website: null,
     price_level: 1,
     hours_text: '7am-10pm daily',
-    description: 'Local favorite with massive portions and friendly service. Solo travelers love the communal vibe. Try the Shan-style rice, stir-fried veggies, and avocado salad. Cheap and filling.',
+    description: 'Local favorite with massive portions and friendly service. Solo travelers love the communal vibe. Try the Shan-style rice, stir-fried veggies, and avocado salad. Filling and satisfying.',
     is_active: true,
   },
   {

@@ -113,7 +113,7 @@ export const vietnamPlaces = [
     website: null,
     price_level: 1,
     hours_text: '6pm - 2am daily',
-    description: 'Backpacker party street with cheap beer and rooftop bars. Stick to well-lit spots, keep your phone close, and grab a banh mi from the street vendors at midnight.',
+    description: 'Backpacker party street with affordable beer and rooftop bars. Stick to well-lit spots, keep your phone close, and grab a banh mi from the street vendors at midnight.',
     is_active: true,
   },
   {
@@ -442,7 +442,7 @@ export const vietnamPlaces = [
     website: null,
     price_level: 1,
     hours_text: '10am - 9pm daily',
-    description: 'Local spot for fish cake noodle soup that Da Nang is famous for. No English menu but the auntie will guide you, and it\'s cheap enough to order extra spring rolls.',
+    description: 'Local spot for fish cake noodle soup that Da Nang is famous for. No English menu but the auntie will guide you, and it\'s affordable enough to order extra spring rolls.',
     is_active: true,
   },
   {
@@ -596,7 +596,7 @@ export const vietnamPlaces = [
     website: null,
     price_level: 1,
     hours_text: '5pm - 11pm daily',
-    description: 'Night market with grilled corn, strawberries, and local snacks perfect for a solo dinner crawl. The atmosphere is lively but not chaotic, and vendors are friendlier than in bigger cities.',
+    description: 'Night market with grilled corn, strawberries, and local snacks perfect for a solo dinner crawl. The atmosphere is lively but not overwhelming, and vendors are friendlier than in bigger cities.',
     is_active: true,
   },
   {

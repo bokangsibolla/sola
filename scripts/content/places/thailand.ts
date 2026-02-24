@@ -18,7 +18,7 @@ export const thailandPlaces = [
     website: null,
     price_level: 2,
     hours_text: '24/7',
-    description: 'Modern design hostel with women-only dorms that actually feel safe and clean. The rooftop bar is perfect for meeting other solo travelers without the sketchy hostel party vibe.',
+    description: 'Modern design hostel with women-only dorms that actually feel safe and clean. The rooftop bar is perfect for meeting other solo travelers without the rowdy hostel party vibe.',
     is_active: true,
   },
   {
@@ -94,7 +94,7 @@ export const thailandPlaces = [
     website: null,
     price_level: 1,
     hours_text: '6pm - midnight daily',
-    description: 'Classic backpacker street with cheap pad thai and questionable buckets. It\'s touristy but fun for people-watching, just keep your valuables close and trust your gut.',
+    description: 'Classic backpacker street with pad thai stalls and questionable buckets. It\'s touristy but fun for people-watching, just keep your valuables close and trust your gut.',
     is_active: true,
   },
   {
@@ -113,7 +113,7 @@ export const thailandPlaces = [
     website: null,
     price_level: 2,
     hours_text: '9am - 11pm daily',
-    description: 'Legitimate spa chain with professional therapists and no sketchy vibes. Book the traditional Thai massage and prepare to be stretched like never before.',
+    description: 'Legitimate spa chain with professional therapists and no pressure. Book the traditional Thai massage and prepare to be stretched like never before.',
     is_active: true,
   },
 
@@ -134,7 +134,7 @@ export const thailandPlaces = [
     website: null,
     price_level: 1,
     hours_text: '24/7',
-    description: 'Social hostel where it\'s easy to meet people for temple-hopping or motorbike adventures. The common areas buzz without being chaotic, and the beds actually have good curtains.',
+    description: 'Social hostel where it\'s easy to meet people for temple-hopping or motorbike adventures. The common areas buzz without being overwhelming, and the beds actually have good curtains.',
     is_active: true,
   },
   {

@@ -151,7 +151,7 @@ export const japanPlaces = [
     website: null,
     price_level: 1,
     hours_text: 'Daily 11:30am-4am',
-    description: 'Cult-favorite gyoza spot with just a few menu items—all delicious. Counter seating wraps around the open kitchen where you watch them cook. Perfect for solo dining, cheap, fast, and tasty. The queue moves quickly. Open late if you need a post-karaoke bite. Casual and safe.',
+    description: 'Cult-favorite gyoza spot with just a few menu items—all delicious. Counter seating wraps around the open kitchen where you watch them cook. Perfect for solo dining, fast, satisfying, and affordable. The queue moves quickly. Open late if you need a post-karaoke bite. Casual and safe.',
     is_active: true,
   },
 
@@ -345,7 +345,7 @@ export const japanPlaces = [
     website: null,
     price_level: 2,
     hours_text: 'Most shops 11am-11pm',
-    description: 'Osaka\'s neon-lit food paradise along the canal. Try takoyaki, okonomiyaki, kushikatsu—all the hits. The energy is electric and slightly chaotic but thrilling. Lots of solo diners at counter-style spots. Felt safe even at night with the crowds. The giant signs (Glico Man!) are pure Osaka energy.',
+    description: 'Osaka\'s neon-lit food paradise along the canal. Try takoyaki, okonomiyaki, kushikatsu—all the hits. The energy is electric and slightly frantic but thrilling. Lots of solo diners at counter-style spots. Felt safe even at night with the crowds. The giant signs (Glico Man!) are pure Osaka energy.',
     is_active: true,
   },
   {

@@ -70,11 +70,11 @@ const countryContent = [
     good_for_interests: ['food', 'culture', 'beaches', 'adventure', 'history', 'digital nomad'],
     getting_there_md: 'Main international airports in Hanoi (HAN) and Ho Chi Minh City (SGN). Direct flights from across Asia, with connections from Europe, Australia, and North America.',
     visa_entry_md: 'E-visa available for most nationalities (25 USD for 30 days). Some nationalities get visa-free entry for 15-45 days depending on passport.',
-    sim_connectivity_md: 'Good coverage with cheap tourist SIM cards from Viettel, Vinaphone, or Mobifone. Available at airports and phone shops. 4G widely available.',
+    sim_connectivity_md: 'Good coverage with affordable tourist SIM cards from Viettel, Vinaphone, or Mobifone. Available at airports and phone shops. 4G widely available.',
     money_md: 'Vietnamese Dong (VND). Millions of dong can be confusing at first. ATMs widely available. Credit cards accepted in cities, but cash is king elsewhere.',
     culture_etiquette_md: 'Remove shoes before entering homes and some restaurants. Dress modestly at temples and pagodas. Bargaining is expected at markets. It\'s polite to use both hands when giving or receiving items. Avoid public displays of affection.',
     safety_women_md: 'Motorbike bag-snatching happens in cities, so wearing bags across your body and on the side away from the street is standard practice. Crossing streets takes a specific technique — walk at a steady pace and let traffic flow around you. Persistent vendors in tourist areas respond to a firm but friendly "khong, cam on." Grab is reliable for getting around cities at any hour. If renting a motorbike, city traffic is intense and requires experience.',
-    transport_md: 'Domestic flights are cheap. Overnight buses and trains connect major cities (book sleeper berths). Within cities, use Grab or traditional taxis. Motorbike rentals popular but traffic is intense.',
+    transport_md: 'Domestic flights are affordable. Overnight buses and trains connect major cities (book sleeper berths). Within cities, use Grab or traditional taxis. Motorbike rentals popular but traffic is intense.',
     top_things_to_do: [
       'Cruise Ha Long Bay and explore Cat Ba Island',
       'Wander the ancient town of Hoi An and get clothes tailored',
@@ -122,7 +122,7 @@ const countryContent = [
     money_md: 'Indonesian Rupiah (IDR). Lots of zeros to get used to. ATMs common in tourist areas. Credit cards accepted in established businesses, but cash needed elsewhere.',
     culture_etiquette_md: 'Indonesia is predominantly Muslim (except Hindu Bali), so dress modestly outside beach areas. Remove shoes in homes and mosques. Use right hand for eating and greeting. During Ramadan, be respectful about eating/drinking in public. In Bali, respect temple ceremonies and dress codes (sarong and sash required).',
     safety_women_md: 'Bali and established tourist areas have well-trodden infrastructure for solo travelers. Keep valuables in accommodation safes and use zipped bags in markets. In party areas like Seminyak and Gili T, keeping your own drinks in hand is standard practice. Scooter accidents are the most common issue — helmets are essential and road conditions vary. Outside Bali, areas like Aceh and rural Sumatra are more conservative, so researching local customs for specific regions helps you pack and plan accordingly.',
-    transport_md: 'Domestic flights essential for island hopping (Lion Air, Garuda, Citilink). In Bali, rent a scooter or use Grab/Gojek. Boats connect islands. Traffic can be chaotic.',
+    transport_md: 'Domestic flights essential for island hopping (Lion Air, Garuda, Citilink). In Bali, rent a scooter or use Grab/Gojek. Boats connect islands. Traffic moves fast.',
     top_things_to_do: [
       'Explore Ubud\'s rice terraces, temples, and yoga studios',
       'Surf or learn to surf in Canggu or Uluwatu',
@@ -500,7 +500,7 @@ const countryContent = [
     english_friendliness: 'high',
     solo_level: 'beginner',
     good_for_interests: ['beaches', 'surfing', 'food', 'digital nomad', 'culture', 'wine', 'urban exploration'],
-    getting_there_md: 'Lisbon Portela Airport (LIS) and Porto Airport (OPO) have excellent European connections and some long-haul flights. Budget airlines make European travel cheap.',
+    getting_there_md: 'Lisbon Portela Airport (LIS) and Porto Airport (OPO) have excellent European connections and some long-haul flights. Budget airlines make European travel affordable.',
     visa_entry_md: 'Schengen visa rules apply. Many nationalities get 90 days in 180 days visa-free. Portugal offers a digital nomad visa for longer stays.',
     sim_connectivity_md: 'Excellent coverage with Vodafone, MEO, or NOS. EU roaming applies for EU visitors. Tourist SIM cards available. 4G widely available, 5G in cities.',
     money_md: 'Euro (EUR). Cards widely accepted. ATMs everywhere. Contactless payment common. Still affordable compared to Northern Europe.',
@@ -891,7 +891,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Thai Baht (THB). ATMs plentiful, cards accepted in most places.',
     culture_etiquette_md: 'More conservative than Bangkok. Dress modestly at temples. Respect monk customs.',
     safety_women_md: 'The Old City and Nimman areas are well-lit and have consistent foot traffic into the evening. Songthaews (red trucks) and Grab are available for getting around after dark. The overall atmosphere is laid-back and community-oriented.',
-    transport_md: 'Songthaews (red trucks) are cheap shared taxis. Grab available. Rent scooters carefully.',
+    transport_md: 'Songthaews (red trucks) are affordable shared taxis. Grab available. Rent scooters carefully.',
     top_things_to_do: [
       'Take a Thai cooking class',
       'Visit Doi Suthep temple at sunset',
@@ -1006,7 +1006,7 @@ const cityContent: typeof countryContent = [
     scope: 'city',
     title: 'Ho Chi Minh City',
     hero_image_url: 'https://images.unsplash.com/photo-1583417319070-4a69db38a482?w=1200&q=80',
-    summary_md: 'Ho Chi Minh City (Saigon) is Vietnam\'s energetic southern hub. Chaotic traffic, amazing street food, and French colonial architecture create an intoxicating urban experience.',
+    summary_md: 'Ho Chi Minh City (Saigon) is Vietnam\'s energetic southern hub. Fast-moving traffic, amazing street food, and French colonial architecture create an intoxicating urban experience.',
     why_we_love_md: `- **Best street food in Vietnam** with incredible diversity
 - **Buzzing energy** that\'s infectious and exciting
 - **Rich history** from colonial era to Vietnam War`,
@@ -1022,7 +1022,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Vietnamese Dong (VND). Millions can be confusing. ATMs everywhere.',
     culture_etiquette_md: 'Remove shoes indoors. Bargain at markets. Use both hands when giving items.',
     safety_women_md: 'Motorbike bag-snatching is the main thing to watch for — wear bags cross-body on the side away from the street. Crossing streets takes practice; walk at a steady pace and traffic flows around you. District 1 stays busy and well-lit in the evening, with Bui Vien Street being the main backpacker strip. Grab is reliable for getting around at any hour.',
-    transport_md: 'Grab bikes and cars are cheap and easy. Walking can be challenging due to traffic and sidewalk obstacles.',
+    transport_md: 'Grab bikes and cars are affordable and easy. Walking can be challenging due to traffic and sidewalk obstacles.',
     top_things_to_do: [
       'Take a street food tour in District 1',
       'Visit War Remnants Museum and Cu Chi Tunnels',
@@ -1060,7 +1060,7 @@ const cityContent: typeof countryContent = [
       'Eat pho ga at Pho Bat Dan',
       'Watch water puppet show',
       'Walk around Hoan Kiem Lake',
-      'Explore the chaotic Old Quarter streets',
+      'Explore the layered Old Quarter streets',
       'Day trip to Ha Long Bay or Ninh Binh'
     ],
   },
@@ -1338,7 +1338,7 @@ const cityContent: typeof countryContent = [
     scope: 'city',
     title: 'Manila',
     hero_image_url: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?w=1200&q=80',
-    summary_md: "The Philippines' bustling capital is a chaotic blend of Spanish colonial history, modern malls, and vibrant street life. Most travelers use it as a gateway, but the city rewards those who explore beyond the airport.",
+    summary_md: "The Philippines' bustling capital is a dense blend of Spanish colonial history, modern malls, and vibrant street life. Most travelers use it as a gateway, but the city rewards those who explore beyond the airport.",
     why_we_love_md: `- **Historic Intramuros** offers centuries-old Spanish colonial charm with cobblestone streets and Fort Santiago
 - **Food scene** ranges from world-class fine dining to incredible street food in Binondo, the world\'s oldest Chinatown
 - **Nightlife in Poblacion** rivals any major Asian city with rooftop bars and creative cocktail scenes`,
@@ -1512,11 +1512,11 @@ const cityContent: typeof countryContent = [
     good_for_interests: ['food', 'city', 'digital-nomad', 'shopping', 'nightlife'],
     getting_there_md: 'KLIA is a major Southeast Asian hub with excellent international connections. The KLIA Ekspres train gets you downtown in 30 minutes.',
     visa_entry_md: 'Most nationalities get 90 days visa-free. Malaysia is generous with visa policies, making it ideal for longer stays.',
-    sim_connectivity_md: 'Excellent 4G/5G coverage with Maxis, Celcom, or Digi. SIM cards available at the airport. Unlimited data plans are cheap.',
+    sim_connectivity_md: 'Excellent 4G/5G coverage with Maxis, Celcom, or Digi. SIM cards available at the airport. Unlimited data plans are affordable.',
     money_md: 'Malaysian Ringgit (MYR). ATMs everywhere, cards widely accepted. Hawker stalls and markets prefer cash.',
     culture_etiquette_md: 'Malaysia is predominantly Muslim—dress modestly, especially when visiting mosques or rural areas. Remove shoes when entering homes and some shops. The left hand is considered unclean. Public displays of affection are frowned upon.',
     safety_women_md: 'KL\'s LRT, MRT, and monorail system is modern, clean, and runs until around midnight. Women-only train cars are available during peak hours. Grab is affordable and reliable for transport at any hour. Areas like KLCC, Bukit Bintang, and Bangsar stay busy and well-lit into the evening with food stalls and restaurants.',
-    transport_md: 'Excellent public transport with LRT, MRT, and monorail systems. Grab is ubiquitous and cheap. KL is walkable in certain neighborhoods but spread out overall.',
+    transport_md: 'Excellent public transport with LRT, MRT, and monorail systems. Grab is ubiquitous and affordable. KL is walkable in certain neighborhoods but spread out overall.',
     top_things_to_do: [
       'Visit the Petronas Towers and walk the skybridge',
       'Eat your way through Jalan Alor night market',
@@ -1708,7 +1708,7 @@ const cityContent: typeof countryContent = [
     good_for_interests: ['history', 'culture', 'photography', 'food', 'adventure'],
     getting_there_md: 'Siem Reap International Airport has flights from regional hubs. Buses connect from Phnom Penh (6 hours) and the Thai border.',
     visa_entry_md: 'Most nationalities can get a visa on arrival (30 USD) or e-visa online. Extensions available for 30 USD per month.',
-    sim_connectivity_md: 'Smart and Cellcard offer good coverage. SIM cards cheap and easy to get at the airport or in town. 4G works well in the city.',
+    sim_connectivity_md: 'Smart and Cellcard offer good coverage. SIM cards affordable and easy to get at the airport or in town. 4G works well in the city.',
     money_md: 'US Dollars are widely used alongside Cambodian Riel. ATMs dispense USD. Carry small bills—change can be hard to come by.',
     culture_etiquette_md: 'Cambodia is predominantly Buddhist. Dress modestly at temples—cover shoulders and knees. Remove shoes before entering temples and homes. The head is sacred, feet are lowly—avoid pointing feet at people or Buddha images.',
     safety_women_md: 'Pub Street and the Old Market area stay lively and well-lit into the evening. PassApp (local ride-hailing) and tuk-tuks are reliable for getting around at any hour. Temple complexes are well-patrolled — hiring official guides through your hotel helps with navigation and avoids unofficial touts at entrances.',
@@ -1740,11 +1740,11 @@ const cityContent: typeof countryContent = [
     good_for_interests: ['history', 'city', 'digital-nomad', 'food', 'nightlife'],
     getting_there_md: 'Phnom Penh International Airport serves regional flights. Buses connect to Siem Reap, Sihanoukville, and the Vietnamese border.',
     visa_entry_md: 'Visa on arrival or e-visa (30 USD). Easy to extend monthly. Many nomads base here long-term on business visas.',
-    sim_connectivity_md: 'Good 4G coverage with Smart, Cellcard, or Metfone. SIM cards are cheap and easy to purchase.',
+    sim_connectivity_md: 'Good 4G coverage with Smart, Cellcard, or Metfone. SIM cards are affordable and easy to purchase.',
     money_md: 'US Dollars and Riel both used. ATMs dispense USD. Street vendors prefer cash, modern cafes accept cards.',
     culture_etiquette_md: 'Dress modestly at the Royal Palace and pagodas. The Khmer Rouge history is recent and sensitive—approach historical sites with respect. Bargaining is common in markets but be fair.',
     safety_women_md: 'Bag snatching from passing motos is the main thing to watch for — wear bags cross-body on the side away from the road. The riverside (Sisowath Quay) and BKK1 neighborhood stay lively and well-lit in the evenings with restaurants and cafes. PassApp and tuk-tuks are reliable for door-to-door transport at any hour.',
-    transport_md: 'Tuk-tuks and PassApp rides are cheap. The city is too spread out to walk everywhere. Traffic is chaotic—be cautious if renting a scooter.',
+    transport_md: 'Tuk-tuks and PassApp rides are affordable. The city is too spread out to walk everywhere. Traffic moves fast—be cautious if renting a scooter.',
     top_things_to_do: [
       'Visit the Royal Palace and Silver Pagoda',
       'Learn about Khmer Rouge history at Tuol Sleng and the Killing Fields',
@@ -1940,7 +1940,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Myanmar Kyat (MMK). Cash economy—bring clean, crisp USD bills to exchange. ATMs exist but are unreliable. Credit cards rarely accepted.',
     culture_etiquette_md: 'Myanmar is deeply Buddhist. Remove shoes when entering any religious site. Dress modestly—cover shoulders and knees. Don\'t point your feet at Buddha images. The political situation is sensitive—avoid discussing politics.',
     safety_women_md: 'The ongoing political crisis means conditions change rapidly — checking travel advisories and registering with your embassy before and during travel is essential. Protests and military zones should be avoided entirely. Internet access is restricted, so downloading VPN, offline maps, and translation tools before arrival is critical. Connecting with current travelers through forums provides the most up-to-date ground-level information.',
-    transport_md: 'Grab operates in Yangon. Taxis are cheap but negotiate beforehand. The circular train offers a scenic local experience around the city.',
+    transport_md: 'Grab operates in Yangon. Taxis are affordable but negotiate beforehand. The circular train offers a scenic local experience around the city.',
     top_things_to_do: [
       'Visit Shwedagon Pagoda at sunset',
       'Explore colonial buildings in downtown Yangon',
@@ -2145,7 +2145,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Euro currency. Cards widely accepted but carry cash for trams, small cafes, and markets. ATMs everywhere with reasonable fees.',
     culture_etiquette_md: 'Portuguese are warm and welcoming but appreciate basic Portuguese greetings (olá, obrigada). Dinner starts late, around 8-9pm. Tipping 5-10% is appreciated but not mandatory. Siesta culture means some shops close 1-3pm. Fado music is sacred — listen respectfully in silence.',
     safety_women_md: 'Pickpocketing happens in tourist-heavy areas like Bairro Alto, Alfama, and on tram 28 — front pockets and zipped bags are practical. Central neighborhoods like Chiado and Principe Real stay lively and well-lit into the evening. The expat and digital nomad community is large and welcoming, with regular meetups and coworking events that make it easy to connect with people. Uber and metro cover the city well at any hour.',
-    transport_md: 'Trams, metro, and buses cover the city. Buy a rechargeable Viva Viagem card. Iconic tram 28 is touristy but fun. Ubers are cheap and abundant. Hills make walking challenging but rewarding.',
+    transport_md: 'Trams, metro, and buses cover the city. Buy a rechargeable Viva Viagem card. Iconic tram 28 is touristy but fun. Ubers are affordable and abundant. Hills make walking challenging but rewarding.',
     top_things_to_do: [
       'Ride tram 28 through Alfama\'s winding streets',
       'Watch sunset from Miradouro da Senhora do Monte',
@@ -2180,7 +2180,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Euro currency. Cards accepted widely, but traditional restaurants and markets prefer cash. ATMs readily available throughout the city.',
     culture_etiquette_md: 'More traditional and reserved than Lisbon. Greet shopkeepers and restaurant staff warmly. Late dining culture (8-9pm). Sunday lunches are family time — restaurants get packed. Port wine tours require advanced booking. Locals appreciate attempts at Portuguese language.',
     safety_women_md: 'The compact size makes the city easy to navigate on foot. Riverside areas and Ribeira get crowded with tourists during the day but stay lively and well-lit in the evening. Central neighborhoods like Cedofeita and Foz have a relaxed, residential feel with consistent foot traffic. Locals are helpful and respectful, and the expat community is growing with regular social events.',
-    transport_md: 'Compact city walkable on foot (though hilly). Metro, buses, and historic trams available. Get an Andante card for public transport. Ubers are cheap. Walking across Dom Luís I bridge to Vila Nova de Gaia is a must.',
+    transport_md: 'Compact city walkable on foot (though hilly). Metro, buses, and historic trams available. Get an Andante card for public transport. Ubers are affordable. Walking across Dom Luís I bridge to Vila Nova de Gaia is a must.',
     top_things_to_do: [
       'Tour port wine cellars in Vila Nova de Gaia',
       'Wander the colorful Ribeira waterfront',
@@ -2217,7 +2217,7 @@ const cityContent: typeof countryContent = [
     money_md: 'Moroccan dirham (MAD). Withdraw cash from ATMs — haggling in souks requires cash. Some riads and upscale restaurants take cards. Exchange rates at official bureaus are better than hotels.',
     culture_etiquette_md: 'Morocco is a Muslim country — dress modestly (cover shoulders and knees) especially in medina. Remove shoes when entering homes or mosques. Right hand for eating and handshakes. Haggling is expected in souks, start at 30-50% of asking price. Ramadan affects restaurant hours and public eating. Be respectful during call to prayer.',
     safety_women_md: 'Street attention and catcalling are common — walking with purpose and not engaging is the standard approach. Conservative dress (covering shoulders, knees, and avoiding tight clothing) significantly reduces unwanted attention. Many riads offer airport pickup and medina navigation help, which is valuable for your first day. The medina is a maze — hiring a guide initially and dropping GPS pins on your riad helps you build a mental map. Jemaa el-Fnaa and main souks stay bustling until late evening. Group tours for desert trips and day excursions are a natural way to meet other travelers. Downloading offline maps before entering the medina is essential since signal can be weak in narrow alleys.',
-    transport_md: 'The medina is walkable but confusing — download offline maps and drop pins. Petits taxis (small red cabs) are cheap for getting around the ville nouvelle. Agree on price before entering or insist on meter.',
+    transport_md: 'The medina is walkable but confusing — download offline maps and drop pins. Petits taxis (small red cabs) are affordable for getting around the ville nouvelle. Agree on price before entering or insist on meter.',
     top_things_to_do: [
       'Get lost in the souks shopping for spices, lamps, and rugs',
       'Watch sunset and snake charmers in Jemaa el-Fnaa square',
