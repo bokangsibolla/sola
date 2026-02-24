@@ -24,6 +24,7 @@ import { onboardingStore } from '@/state/onboardingStore';
 import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
 import { countries } from '@/data/geo';
 import { getCurrencyForCountry } from '@/lib/currency';
+import { validateUsernameFormat, checkUsernameAvailability } from '@/data/api';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 
 const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
@@ -55,6 +56,8 @@ export default function ProfileScreen() {
   const [dateOfBirth, setDateOfBirth] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [confirmedWoman, setConfirmedWoman] = useState(false);
+  const [username, setUsername] = useState('');
+  const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
 
   // A/B Testing: Check which optional fields to show
   const showPhoto = onboardingStore.shouldShowQuestion('photo');
@@ -63,6 +66,28 @@ export default function ProfileScreen() {
   useEffect(() => {
     trackScreenView('profile');
   }, [trackScreenView]);
+
+  // Auto-suggest username when firstName changes
+  useEffect(() => {
+    if (firstName.trim().length > 0 && username === '') {
+      const base = firstName.trim().toLowerCase().replace(/[^a-z0-9]/g, '');
+      const suffix = Math.floor(Math.random() * 900) + 100;
+      setUsername(`${base}${suffix}`);
+    }
+  }, [firstName]);
+
+  // Validate username on change (debounced)
+  useEffect(() => {
+    if (username.length === 0) { setUsernameStatus('idle'); return; }
+    const validation = validateUsernameFormat(username);
+    if (!validation.valid) { setUsernameStatus('invalid'); return; }
+    setUsernameStatus('checking');
+    const timer = setTimeout(async () => {
+      const result = await checkUsernameAvailability(username);
+      setUsernameStatus(result.available ? 'available' : 'taken');
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [username]);
 
   const isSearching = search.length >= 2;
 
@@ -83,6 +108,8 @@ export default function ProfileScreen() {
 
   const canContinue =
     firstName.trim().length > 0 &&
+    username.trim().length >= 3 &&
+    usernameStatus === 'available' &&
     selectedCountry.length > 0 &&
     dateOfBirth !== null &&
     confirmedWoman;
@@ -151,6 +178,7 @@ export default function ProfileScreen() {
   const handleContinue = () => {
     const country = countries.find((c) => c.iso2 === selectedCountry);
     onboardingStore.set('firstName', firstName.trim());
+    onboardingStore.set('username', username.trim());
     onboardingStore.set('photoUri', photoUri);
     onboardingStore.set('countryIso2', selectedCountry);
     onboardingStore.set('countryName', country?.name ?? '');
@@ -215,6 +243,30 @@ export default function ProfileScreen() {
             onChangeText={setFirstName}
             autoFocus={false}
           />
+
+          {/* Username */}
+          <Text style={[styles.sectionLabel, { marginTop: spacing.xxl }]}>Choose a username</Text>
+          <View style={styles.usernameContainer}>
+            <Text style={styles.usernamePrefix}>@</Text>
+            <TextInput
+              style={styles.usernameInput}
+              placeholder="username"
+              placeholderTextColor={colors.textMuted}
+              value={username}
+              onChangeText={(text) => setUsername(text.toLowerCase().replace(/[^a-z0-9_.]/g, ''))}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </View>
+          {usernameStatus === 'available' && (
+            <Text style={styles.usernameAvailable}>Available</Text>
+          )}
+          {usernameStatus === 'taken' && (
+            <Text style={styles.usernameTaken}>Taken — try another</Text>
+          )}
+          {usernameStatus === 'invalid' && (
+            <Text style={styles.usernameTaken}>3-30 characters, letters, numbers, underscore</Text>
+          )}
 
           {/* Divider */}
           <View style={styles.divider} />
@@ -386,6 +438,41 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 16,
     color: colors.textPrimary,
+  },
+
+  // Username
+  usernameContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    height: 48,
+    borderRadius: radius.input,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    paddingHorizontal: 16,
+  },
+  usernamePrefix: {
+    fontFamily: fonts.medium,
+    fontSize: 16,
+    color: colors.textMuted,
+    marginRight: 2,
+  },
+  usernameInput: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  usernameAvailable: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.greenSoft,
+    marginTop: 4,
+  },
+  usernameTaken: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.emergency,
+    marginTop: 4,
   },
 
   // Section divider

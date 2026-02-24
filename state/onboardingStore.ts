@@ -7,6 +7,7 @@ interface OnboardingData {
   onboardingCompleted: boolean;
   email: string;
   firstName: string;
+  username: string;
   bio: string;
   photoUri: string | null;
   countryIso2: string;
@@ -44,6 +45,7 @@ const defaults: OnboardingData = {
   onboardingCompleted: false,
   email: '',
   firstName: '',
+  username: '',
   bio: '',
   photoUri: null,
   countryIso2: '',
