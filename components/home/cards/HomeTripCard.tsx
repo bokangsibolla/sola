@@ -4,12 +4,15 @@ import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
+import { useData } from '@/hooks/useData';
+import { getCityById } from '@/data/api';
 
-interface HomeTripCardProps {
+export interface HomeTripCardProps {
   trip: {
     id: string;
     title?: string | null;
     destinationName: string;
+    destinationCityId?: string | null;
     coverImageUrl?: string | null;
     arriving?: string | null;
     leaving?: string | null;
@@ -18,8 +21,23 @@ interface HomeTripCardProps {
   variant: 'active' | 'upcoming' | 'recap';
 }
 
+function formatShortDate(iso: string): string {
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
 export function HomeTripCard({ trip, variant }: HomeTripCardProps) {
   const router = useRouter();
+
+  const { data: city } = useData(
+    () =>
+      !trip.coverImageUrl && trip.destinationCityId
+        ? getCityById(trip.destinationCityId)
+        : Promise.resolve(undefined),
+    ['trip-card-city', trip.destinationCityId ?? ''],
+  );
+
+  const imageUrl = trip.coverImageUrl || city?.heroImageUrl || null;
 
   const label =
     variant === 'active'
@@ -35,9 +53,9 @@ export function HomeTripCard({ trip, variant }: HomeTripCardProps) {
       style={({ pressed }) => [styles.card, pressed && styles.pressed]}
       onPress={() => router.push(`/(tabs)/trips/${trip.id}` as any)}
     >
-      {trip.coverImageUrl ? (
+      {imageUrl ? (
         <Image
-          source={{ uri: trip.coverImageUrl }}
+          source={{ uri: imageUrl }}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
           transition={200}
@@ -56,7 +74,7 @@ export function HomeTripCard({ trip, variant }: HomeTripCardProps) {
         </Text>
         {trip.arriving && trip.leaving && (
           <Text style={styles.dates}>
-            {trip.arriving} — {trip.leaving}
+            {formatShortDate(trip.arriving)} - {formatShortDate(trip.leaving)}
           </Text>
         )}
         <View style={styles.ctaRow}>

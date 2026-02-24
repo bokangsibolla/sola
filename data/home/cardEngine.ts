@@ -112,7 +112,7 @@ export function assembleCards({
         cards.push({
           type: 'upcoming_trip',
           key: 'upcoming_trip',
-          data: { tripId: upcoming.id } as Record<string, unknown>,
+          data: upcoming as unknown as Record<string, unknown>,
         });
       }
       cards.push({ type: 'recommended_city', key: 'rec_city_1' });
@@ -127,7 +127,7 @@ export function assembleCards({
         cards.push({
           type: 'active_trip',
           key: 'active_trip',
-          data: { tripId: grouped.current.id } as Record<string, unknown>,
+          data: grouped.current as unknown as Record<string, unknown>,
         });
       }
       cards.push({ type: 'trending_thread', key: 'trending_1' });
@@ -141,7 +141,7 @@ export function assembleCards({
         cards.push({
           type: 'trip_recap',
           key: 'trip_recap',
-          data: { tripId: recent.id } as Record<string, unknown>,
+          data: recent as unknown as Record<string, unknown>,
         });
       }
       if (allTrips.length > 0) {

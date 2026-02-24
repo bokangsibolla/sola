@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, StyleSheet } from 'react-native';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
@@ -8,7 +8,7 @@ import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { VerificationNudge } from '@/components/home/VerificationNudge';
 import { AvatarNudge } from '@/components/home/AvatarNudge';
 import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
-import { HomeTripCard } from '@/components/home/cards/HomeTripCard';
+import { HomeTripCard, type HomeTripCardProps } from '@/components/home/cards/HomeTripCard';
 import { TravelMapCard } from '@/components/home/cards/TravelMapCard';
 import { StatsCard } from '@/components/home/cards/StatsCard';
 import { ProfileProgressCard } from '@/components/home/cards/ProfileProgressCard';
@@ -25,17 +25,17 @@ let discoveryIndex = 0;
 function renderCard(card: FeedCard): React.ReactElement | null {
   switch (card.type) {
     case 'active_trip':
-      return <HomeTripCard key={card.key} trip={card.data as any} variant="active" />;
+      return <HomeTripCard key={card.key} trip={card.data as HomeTripCardProps['trip']} variant="active" />;
     case 'upcoming_trip':
-      return <HomeTripCard key={card.key} trip={card.data as any} variant="upcoming" />;
+      return <HomeTripCard key={card.key} trip={card.data as HomeTripCardProps['trip']} variant="upcoming" />;
     case 'trip_recap':
-      return <HomeTripCard key={card.key} trip={card.data as any} variant="recap" />;
+      return <HomeTripCard key={card.key} trip={card.data as HomeTripCardProps['trip']} variant="recap" />;
     case 'travel_map':
       return <TravelMapCard key={card.key} />;
     case 'stats_snapshot':
-      return <StatsCard key={card.key} tripCount={(card.data as any)?.tripCount ?? 0} />;
+      return <StatsCard key={card.key} tripCount={(card.data as { tripCount?: number })?.tripCount ?? 0} />;
     case 'profile_progress':
-      return <ProfileProgressCard key={card.key} {...(card.data as any)} />;
+      return <ProfileProgressCard key={card.key} {...(card.data as { hasAvatar: boolean; hasInterests: boolean; hasBio: boolean })} />;
     case 'avatar_nudge':
       return <AvatarNudge key={card.key} />;
     case 'interests_nudge':
@@ -92,11 +92,7 @@ export default function HomeScreen() {
           {/* Always show verification nudge at top — it self-hides when not needed */}
           <VerificationNudge />
 
-          {cards.map((card) => (
-            <View key={card.key} style={styles.cardWrapper}>
-              {renderCard(card)}
-            </View>
-          ))}
+          {cards.map((card) => renderCard(card)).filter(Boolean)}
         </ScrollView>
       )}
     </AppScreen>
@@ -108,8 +104,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xxl,
     gap: spacing.md,
-  },
-  cardWrapper: {
-    // Cards handle their own internal spacing/padding
   },
 });

@@ -12,40 +12,34 @@ export function CommunityBannerCard() {
   const router = useRouter();
 
   return (
-    <View style={styles.wrapper}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.card,
-          pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
-        ]}
-        onPress={() => router.push('/(tabs)/discussions' as any)}
-        accessibilityRole="button"
-        accessibilityLabel="Go to community"
-      >
-        <Image
-          source={COMMUNITY_IMAGE}
-          style={StyleSheet.absoluteFillObject}
-          contentFit="cover"
-          transition={200}
-        />
-        <LinearGradient
-          colors={['transparent', colors.overlaySoft]}
-          style={StyleSheet.absoluteFillObject}
-        />
-        <View style={styles.content}>
-          <Text style={styles.title}>Real stories from solo women</Text>
-          <Text style={styles.subtitle}>{'Join the conversation  \u2192'}</Text>
-        </View>
-      </Pressable>
-    </View>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
+      ]}
+      onPress={() => router.push('/(tabs)/discussions' as any)}
+      accessibilityRole="button"
+      accessibilityLabel="Go to community"
+    >
+      <Image
+        source={COMMUNITY_IMAGE}
+        style={StyleSheet.absoluteFillObject}
+        contentFit="cover"
+        transition={200}
+      />
+      <LinearGradient
+        colors={['transparent', colors.overlaySoft]}
+        style={StyleSheet.absoluteFillObject}
+      />
+      <View style={styles.content}>
+        <Text style={styles.title}>Real stories from solo women</Text>
+        <Text style={styles.subtitle}>{'Join the conversation  \u2192'}</Text>
+      </View>
+    </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
-  wrapper: {
-    paddingHorizontal: spacing.screenX,
-    marginTop: spacing.xxl,
-  },
   card: {
     height: CARD_HEIGHT,
     borderRadius: radius.module,
