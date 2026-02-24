@@ -15,16 +15,23 @@ import { useFocusEffect } from '@react-navigation/native';
 
 import { useTripDetail } from '@/data/trips/useTripDetail';
 import { useTripItinerary } from '@/data/trips/useItinerary';
-import { deleteTrip } from '@/data/trips/tripApi';
-import { generateDaysFromTrip } from '@/data/trips/itineraryApi';
+import { deleteTrip, removeTripSavedItem } from '@/data/trips/tripApi';
+import { generateDaysFromTrip, createBlock } from '@/data/trips/itineraryApi';
 import { getFlag, getCityIdForDay } from '@/data/trips/helpers';
 import { openTripRoute } from '@/data/trips/mapsLinks';
+import { buildAutoFillItinerary } from '@/data/trips/autoFillEngine';
+import type { AutoFillPlace } from '@/data/trips/autoFillEngine';
+import { getPlaceById } from '@/data/api';
 import type { TripDayWithBlocks } from '@/data/trips/itineraryTypes';
 import type { TripAccommodation, TripTransport, TripSavedItem, TripEntry } from '@/data/trips/types';
 
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
+import { PlanningBoard } from '@/components/trips/PlanningBoard';
+import { DaySelector } from '@/components/trips/DaySelector';
+import { DayTimelineCard } from '@/components/trips/DayTimelineCard';
+import { SmartSearchSheet } from '@/components/trips/SmartSearchSheet';
 import { TripDayRow } from '@/components/trips/TripDayRow';
 import { TripStopHeader } from '@/components/trips/TripStopHeader';
 import { TripHeader } from '@/components/trips/TripOverview/TripHeader';
@@ -38,9 +45,20 @@ import { colors, elevation, fonts, spacing } from '@/constants/design';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface PlaceDisplay {
+  id: string;
+  entityId: string;
+  name: string;
+  placeType: string;
+  imageUrl: string | null;
+}
+
 type ListItem =
   | { type: 'header'; key: string }
   | { type: 'stats'; key: string }
+  | { type: 'planning-board'; key: string }
+  | { type: 'day-selector'; key: string }
+  | { type: 'day-timeline-card'; key: string; block: TripDayWithBlocks['blocks'][number]; isDone: boolean; isCurrent: boolean }
   | { type: 'stop-header'; key: string; cityName: string; startDate: string | null; endDate: string | null }
   | { type: 'transport-card'; key: string; transport: TripTransport }
   | { type: 'transport-placeholder'; key: string; fromCity: string; toCity: string; fromOrder: number; toOrder: number }
@@ -75,6 +93,10 @@ export default function TripDetailScreen() {
 
   const [showMenu, setShowMenu] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [building, setBuilding] = useState(false);
+  const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
+  const [searchSheetVisible, setSearchSheetVisible] = useState(false);
+  const [enrichedPlaces, setEnrichedPlaces] = useState<PlaceDisplay[]>([]);
 
   const didAutoGenerate = useRef(false);
   const flatListRef = useRef<FlatList>(null);
@@ -102,6 +124,132 @@ export default function TripDetailScreen() {
       .finally(() => setGenerating(false));
   }, [trip, days.length, generating, itinLoading, refetchItinerary]);
 
+  // Enrich saved place items with place details for PlanningBoard
+  useEffect(() => {
+    const placeItems = savedItems.filter((item) => item.entityType === 'place');
+    if (placeItems.length === 0) {
+      setEnrichedPlaces([]);
+      return;
+    }
+
+    let cancelled = false;
+    const fetchPlaces = async () => {
+      const results: PlaceDisplay[] = [];
+      for (const item of placeItems) {
+        try {
+          const place = await getPlaceById(item.entityId);
+          if (place && !cancelled) {
+            results.push({
+              id: item.id,
+              entityId: item.entityId,
+              name: place.name,
+              placeType: place.placeType,
+              imageUrl: place.imageUrlCached,
+            });
+          }
+        } catch {
+          // Skip places that fail to fetch
+        }
+      }
+      if (!cancelled) setEnrichedPlaces(results);
+    };
+
+    fetchPlaces();
+    return () => { cancelled = true; };
+  }, [savedItems]);
+
+  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
+
+  // Determine itinerary state
+  const hasDays = !!(itinerary && itinerary.days.length > 0);
+  const hasBlocks = hasDays && itinerary!.days.some((d) => d.blocks.length > 0);
+
+  // Default selectedDayId to today's day or first day
+  useEffect(() => {
+    if (!hasDays || selectedDayId) return;
+    const todayDay = itinerary!.days.find((d) => d.date === todayStr);
+    setSelectedDayId(todayDay?.id ?? itinerary!.days[0].id);
+  }, [hasDays, itinerary, todayStr, selectedDayId]);
+
+  // Selected day's blocks for timeline view
+  const selectedDayBlocks = useMemo(() => {
+    if (!hasBlocks || !selectedDayId) return [];
+    const day = itinerary!.days.find((d) => d.id === selectedDayId);
+    return day?.blocks ?? [];
+  }, [hasBlocks, selectedDayId, itinerary]);
+
+  // Existing block place IDs for the SmartSearchSheet
+  const existingBlockPlaceIds = useMemo(() => {
+    if (!hasBlocks || !selectedDayId) return [];
+    const day = itinerary!.days.find((d) => d.id === selectedDayId);
+    return (day?.blocks ?? []).filter((b) => b.placeId).map((b) => b.placeId!);
+  }, [hasBlocks, selectedDayId, itinerary]);
+
+  // Auto-fill handler: convert saved items into itinerary blocks
+  const handleBuildItinerary = async () => {
+    if (!trip || building) return;
+    setBuilding(true);
+    try {
+      // Generate days from trip dates
+      const generatedDays = await generateDaysFromTrip(trip.id);
+      if (generatedDays.length === 0) return;
+
+      // Convert saved place items to AutoFillPlace format
+      const placeItems = savedItems.filter((item) => item.entityType === 'place');
+
+      if (placeItems.length > 0) {
+        const places: AutoFillPlace[] = [];
+        for (const item of placeItems) {
+          const enriched = enrichedPlaces.find((e) => e.entityId === item.entityId);
+          places.push({
+            id: item.entityId,
+            name: enriched?.name ?? item.notes ?? 'Place',
+            placeType: enriched?.placeType ?? item.category ?? 'place',
+            cityAreaId: null,
+            locationLat: null,
+            locationLng: null,
+            costEstimate: null,
+          });
+        }
+
+        const result = buildAutoFillItinerary(
+          places,
+          generatedDays.length,
+          trip.id,
+          generatedDays.map((d) => d.id),
+        );
+
+        for (const [, blocks] of Array.from(result.dayBlocks.entries())) {
+          for (const block of blocks) {
+            await createBlock(block);
+          }
+        }
+      }
+
+      // Refetch everything
+      refetchAll();
+      refetchItinerary();
+    } catch (err) {
+      console.warn('Auto-fill failed:', err);
+    } finally {
+      setBuilding(false);
+    }
+  };
+
+  const handleRemoveSavedPlace = async (entityId: string) => {
+    if (!trip) return;
+    try {
+      await removeTripSavedItem(trip.id, 'place', entityId);
+      refetchAll();
+    } catch {
+      // Silently fail
+    }
+  };
+
+  const handleSavedPlacePress = (entityId: string) => {
+    router.push(`/discover/place-detail/${entityId}`);
+  };
+
   // Computed stats
   const stats = useMemo(() => {
     let spotCount = 0;
@@ -120,7 +268,6 @@ export default function TripDetailScreen() {
   }, [days, trip, accommodations]);
 
   const tripStops = trip?.stops ?? [];
-  const todayStr = useMemo(() => new Date().toISOString().split('T')[0], []);
 
   // Build the unified list of items for the FlatList
   const listItems = useMemo((): ListItem[] => {
@@ -134,8 +281,28 @@ export default function TripDetailScreen() {
       items.push({ type: 'stats', key: 'stats' });
     }
 
-    // 3. Itinerary — days grouped by destination with transport between groups
-    if (days.length > 0) {
+    // 3A. Planning Board — saved items exist but no blocks yet
+    if (!hasBlocks && enrichedPlaces.length > 0) {
+      items.push({ type: 'planning-board', key: 'planning-board' });
+    }
+
+    // 3B. Itinerary with blocks — show day selector + timeline cards
+    if (hasBlocks && selectedDayId) {
+      items.push({ type: 'day-selector', key: 'day-selector' });
+
+      for (const block of selectedDayBlocks) {
+        items.push({
+          type: 'day-timeline-card',
+          key: `timeline-${block.id}`,
+          block,
+          isDone: block.status === 'done',
+          isCurrent: false, // TODO: detect current time block
+        });
+      }
+    }
+
+    // 3C. Day rows fallback — days exist but no blocks and no saved items
+    if (days.length > 0 && !hasBlocks && enrichedPlaces.length === 0) {
       const isMultiCity = tripStops.length > 1;
       let lastCityId: string | null = null;
       let lastStopOrder = -1;
@@ -199,8 +366,8 @@ export default function TripDetailScreen() {
     // 4. Accommodation section
     items.push({ type: 'accommodation-section', key: 'accommodation' });
 
-    // 5. Saved items section
-    if (savedItems.length > 0) {
+    // 5. Saved items section (only show when NOT in planning board mode)
+    if (savedItems.length > 0 && hasBlocks) {
       items.push({ type: 'saved-items-section', key: 'saved-items' });
     }
 
@@ -210,7 +377,7 @@ export default function TripDetailScreen() {
     }
 
     return items;
-  }, [days, tripStops, todayStr, transports, accommodations, savedItems, entries]);
+  }, [days, tripStops, todayStr, transports, accommodations, savedItems, entries, hasBlocks, enrichedPlaces, selectedDayId, selectedDayBlocks]);
 
   // Auto-scroll to today
   useEffect(() => {
@@ -325,6 +492,42 @@ export default function TripDetailScreen() {
             accommodationTotal={stats.accommodationTotal}
             stopCount={stats.stopCount}
           />
+        );
+
+      case 'planning-board':
+        return (
+          <PlanningBoard
+            places={enrichedPlaces}
+            onRemovePlace={handleRemoveSavedPlace}
+            onPlacePress={handleSavedPlacePress}
+            onAddMore={() => setSearchSheetVisible(true)}
+            onBuildItinerary={handleBuildItinerary}
+            building={building}
+          />
+        );
+
+      case 'day-selector':
+        return (
+          <DaySelector
+            days={itinerary?.days ?? []}
+            selectedDayId={selectedDayId ?? ''}
+            onSelectDay={setSelectedDayId}
+            todayDayId={itinerary?.days.find((d) => d.date === todayStr)?.id ?? null}
+          />
+        );
+
+      case 'day-timeline-card':
+        return (
+          <View style={styles.timelineCardWrapper}>
+            <DayTimelineCard
+              block={item.block}
+              onPress={() => {
+                // TODO: Open block detail/edit
+              }}
+              isDone={item.isDone}
+              isCurrent={item.isCurrent}
+            />
+          </View>
         );
 
       case 'stop-header':
@@ -448,7 +651,7 @@ export default function TripDetailScreen() {
           <ActivityIndicator size="small" color={colors.orange} />
           <Text style={styles.generatingText}>Setting up your itinerary...</Text>
         </View>
-      ) : days.length > 0 || accommodations.length > 0 || entries.length > 0 ? (
+      ) : days.length > 0 || accommodations.length > 0 || entries.length > 0 || enrichedPlaces.length > 0 ? (
         <FlatList
           ref={flatListRef}
           data={listItems}
@@ -478,12 +681,28 @@ export default function TripDetailScreen() {
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.md) }]}>
         <Pressable
           style={({ pressed }) => [styles.addButton, pressed && { opacity: 0.9 }]}
-          onPress={handleAddSavedItem}
+          onPress={() => setSearchSheetVisible(true)}
         >
           <Ionicons name="add" size={20} color={colors.background} />
           <Text style={styles.addButtonText}>Add to itinerary</Text>
         </Pressable>
       </View>
+
+      {/* Smart Search Sheet */}
+      <SmartSearchSheet
+        visible={searchSheetVisible}
+        onClose={() => setSearchSheetVisible(false)}
+        cityId={trip?.destinationCityId ?? trip?.stops?.[0]?.cityId ?? ''}
+        tripId={trip?.id ?? ''}
+        dayId={selectedDayId ?? itinerary?.days?.[0]?.id ?? ''}
+        insertAfterIndex={selectedDayBlocks.length}
+        existingBlockPlaceIds={existingBlockPlaceIds}
+        onPlaceAdded={() => {
+          setSearchSheetVisible(false);
+          refetchAll();
+          refetchItinerary();
+        }}
+      />
     </View>
   );
 }
@@ -532,6 +751,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+
+  // Timeline card wrapper
+  timelineCardWrapper: {
+    paddingHorizontal: spacing.screenX,
+    marginBottom: spacing.md,
   },
 
   // Empty / generating
