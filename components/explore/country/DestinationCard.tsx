@@ -2,6 +2,7 @@ import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
+import { BookmarkButton } from '@/components/ui/BookmarkButton';
 import type { City, PlaceKind } from '@/data/types';
 
 interface DestinationCardProps {
@@ -38,6 +39,7 @@ export function DestinationCard({ city, showBorder = true }: DestinationCardProp
         <Text style={styles.name} numberOfLines={1}>{city.name}</Text>
         <Text style={styles.kindLabel} numberOfLines={1}>{displayKindLabel(city)}</Text>
       </View>
+      <BookmarkButton entityType="city" entityId={city.id} size={18} />
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
     </Pressable>
   );

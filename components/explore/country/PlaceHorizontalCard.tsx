@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { usePostHog } from 'posthog-react-native';
 import type { PlaceWithCity } from '@/data/types';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
+import { BookmarkButton } from '@/components/ui/BookmarkButton';
 
 const CARD_WIDTH = Dimensions.get('window').width * 0.6;
 const COMPACT_WIDTH = Dimensions.get('window').width * 0.5;
@@ -62,6 +63,11 @@ export function PlaceHorizontalCard({ place, compact }: Props) {
           style={styles.gradient}
           pointerEvents="none"
         />
+        <BookmarkButton
+          entityType="place"
+          entityId={place.id}
+          style={styles.bookmark}
+        />
         {place.badgeLabel && (
           <View style={styles.badgeContainer}>
             <Text style={styles.badgeText}>{place.badgeLabel}</Text>
@@ -104,6 +110,12 @@ const styles = StyleSheet.create({
   },
   imageContainerCompact: {
     height: COMPACT_IMAGE_HEIGHT,
+  },
+  bookmark: {
+    position: 'absolute',
+    top: spacing.sm,
+    right: spacing.sm,
+    zIndex: 1,
   },
   gradient: {
     position: 'absolute',
