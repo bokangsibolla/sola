@@ -11,7 +11,7 @@ import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
 import TripListCard from '@/components/trips/TripListCard';
-import TripEmptyState from '@/components/trips/TripEmptyState';
+import { TripsEmptyStateV2 } from '@/components/trips/TripsEmptyStateV2';
 import { useTrips } from '@/data/trips/useTrips';
 import { deleteTrip } from '@/data/trips/tripApi';
 import { useAppMode } from '@/state/AppModeContext';
@@ -84,7 +84,7 @@ export default function TripsScreen() {
       />
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         {isEmpty ? (
-          <TripEmptyState onPress={() => router.push('/trips/new')} />
+          <TripsEmptyStateV2 onCreateTrip={() => router.push('/trips/new')} />
         ) : (
           <>
             {/* Current trip */}

@@ -327,7 +327,7 @@ export async function getPopularCitiesWithCountry(
 ): Promise<CityWithCountry[]> {
   const { data, error } = await supabase
     .from('cities')
-    .select('*, countries(name, slug)')
+    .select('*, countries(name, slug, iso2)')
     .eq('is_active', true)
     .order('is_featured', { ascending: false })
     .order('order_index')
@@ -341,6 +341,7 @@ export async function getPopularCitiesWithCountry(
       ...city,
       countryName: row.countries?.name ?? '',
       countrySlug: row.countries?.slug ?? '',
+      countryIso2: row.countries?.iso2 ?? '',
     };
   });
 }

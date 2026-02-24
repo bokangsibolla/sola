@@ -4,6 +4,7 @@ import type { Country, City, Place, ExploreCollectionWithItems, DiscoveryLens } 
 export interface CityWithCountry extends City {
   countryName: string;
   countrySlug: string;
+  countryIso2?: string;
 }
 
 export interface ActivityWithCity extends Place {
