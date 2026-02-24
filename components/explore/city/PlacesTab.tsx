@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -15,6 +18,8 @@ import { getPlaceTagsBatch } from '@/data/city/cityApi';
 import { PLACE_CATEGORIES, PLACE_TYPE_TO_CATEGORY, PLACE_TYPE_LABELS } from '@/data/city/types';
 import type { PlaceCategoryKey, CategoryCount } from '@/data/city/types';
 import type { Place, CityArea, Tag } from '@/data/types';
+import NavigationHero from '@/components/NavigationHero';
+import SegmentedControl from '@/components/trips/SegmentedControl';
 import { CompactPlaceCard } from './CompactPlaceCard';
 
 // ---------------------------------------------------------------------------
@@ -74,13 +79,36 @@ const STAY_FILTERS: StayFilter[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Constants
 // ---------------------------------------------------------------------------
+
+const HERO_HEIGHT = 260;
+
+// ---------------------------------------------------------------------------
+// Types
+// ---------------------------------------------------------------------------
+
+interface HeroProps {
+  imageUrl?: string | null;
+  title: string;
+  label?: string;
+  subtitle?: string;
+  onBack: () => void;
+}
 
 interface PlacesTabProps {
   cityId: string;
   areas: CityArea[];
+  heroProps: HeroProps;
+  tabs: string[];
+  activeTabIndex: number;
+  onTabPress: (index: number) => void;
+  onScrollPastHero: (pastHero: boolean) => void;
 }
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
 
 function buildCategoryCounts(places: Place[]): CategoryCount[] {
   const countMap = new Map<PlaceCategoryKey, number>();
@@ -116,7 +144,15 @@ function buildSubTypeCounts(
 // Component
 // ---------------------------------------------------------------------------
 
-export function PlacesTab({ cityId, areas }: PlacesTabProps) {
+export function PlacesTab({
+  cityId,
+  areas,
+  heroProps,
+  tabs,
+  activeTabIndex,
+  onTabPress,
+  onScrollPastHero,
+}: PlacesTabProps) {
   const { data: allPlaces, loading } = useData(
     () => getPlacesByCity(cityId),
     ['placesByCity', cityId],
@@ -130,8 +166,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
   const [activeCategory, setActiveCategory] = useState<PlaceCategoryKey | null>(null);
   const [activeSubType, setActiveSubType] = useState<Place['placeType'] | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
-  const [openDropdown, setOpenDropdown] = useState<'type' | 'area' | null>(null);
+  const [openDropdown, setOpenDropdown] = useState<'type' | 'area' | 'stay' | null>(null);
   const [activeStayFilters, setActiveStayFilters] = useState<Set<string>>(new Set());
+  const pastHeroRef = useRef(false);
 
   useEffect(() => {
     if (categoryCounts.length > 0 && !activeCategory)
@@ -154,13 +191,11 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     return PLACE_CATEGORIES.find((c) => c.key === activeCategory)?.placeTypes ?? [];
   }, [activeCategory]);
 
-  // Base set: places in the active category
   const categoryPlaces = useMemo(() => {
     if (!allPlaces || activePlaceTypes.length === 0) return [];
     return allPlaces.filter((p) => activePlaceTypes.includes(p.placeType));
   }, [allPlaces, activePlaceTypes]);
 
-  // Count how many accommodation places match each stay filter
   const stayFilterCounts = useMemo(() => {
     if (!isStayCategory) return {};
     const counts: Record<string, number> = {};
@@ -170,15 +205,13 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     return counts;
   }, [isStayCategory, categoryPlaces]);
 
-  // Sub-type counts cross-filtered by area
   const subTypeCounts = useMemo(() => {
     const pool = selectedAreaId
-      ? categoryPlaces.filter((p) => p.cityAreaId === selectedAreaId)
+      ? categoryPlaces.filter((p) => p.cityAreaId === selectedAreaId || !p.cityAreaId)
       : categoryPlaces;
     return buildSubTypeCounts(pool, activePlaceTypes);
   }, [categoryPlaces, activePlaceTypes, selectedAreaId]);
 
-  // Area options cross-filtered by sub-type, only areas with places
   const areaOptions = useMemo(() => {
     const pool = activeSubType
       ? categoryPlaces.filter((p) => p.placeType === activeSubType)
@@ -192,14 +225,12 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
       .map((a) => ({ id: a.id, name: a.name, count: countMap.get(a.id) ?? 0 }));
   }, [categoryPlaces, activeSubType, areas]);
 
-  // Reset area if it no longer has places after sub-type change
   useEffect(() => {
     if (selectedAreaId && areaOptions.length > 0 && !areaOptions.find((a) => a.id === selectedAreaId)) {
       setSelectedAreaId(null);
     }
   }, [areaOptions, selectedAreaId]);
 
-  // Reset sub-type if it no longer has places after area change
   useEffect(() => {
     if (activeSubType && subTypeCounts.length > 0 && !subTypeCounts.find((s) => s.type === activeSubType)) {
       setActiveSubType(null);
@@ -209,8 +240,7 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
   const filteredPlaces = useMemo(() => {
     const types = activeSubType ? [activeSubType] : activePlaceTypes;
     let result = categoryPlaces.filter((p) => types.includes(p.placeType));
-    if (selectedAreaId) result = result.filter((p) => p.cityAreaId === selectedAreaId);
-    // Apply stay filters (AND logic — place must match ALL active filters)
+    if (selectedAreaId) result = result.filter((p) => p.cityAreaId === selectedAreaId || !p.cityAreaId);
     if (isStayCategory && activeStayFilters.size > 0) {
       const activeFilterDefs = STAY_FILTERS.filter((f) => activeStayFilters.has(f.key));
       result = result.filter((p) => activeFilterDefs.every((f) => f.test(p)));
@@ -241,14 +271,29 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
     const tags = tagMap?.get(item.id) ?? [];
     const areaName = item.cityAreaId ? areaNameMap.get(item.cityAreaId) ?? null : null;
     return (
-      <CompactPlaceCard
-        place={{ ...item, imageUrl: item.imageUrlCached ?? null, areaName }}
-        tags={tags}
-      />
+      <View style={styles.cardWrapper}>
+        <CompactPlaceCard
+          place={{ ...item, imageUrl: item.imageUrlCached ?? null, areaName }}
+          tags={tags}
+        />
+      </View>
     );
   }, [tagMap, areaNameMap]);
 
   const keyExtractor = useCallback((item: Place) => item.id, []);
+
+  // ── Scroll tracking ──
+  const handleScroll = useCallback(
+    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
+      const y = e.nativeEvent.contentOffset.y;
+      const isPast = y >= HERO_HEIGHT;
+      if (isPast !== pastHeroRef.current) {
+        pastHeroRef.current = isPast;
+        onScrollPastHero(isPast);
+      }
+    },
+    [onScrollPastHero],
+  );
 
   if (loading) {
     return <View style={styles.centered}><ActivityIndicator color={colors.orange} /></View>;
@@ -265,15 +310,38 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
   const activeAreaLabel = selectedAreaId
     ? areaNameMap.get(selectedAreaId) ?? 'Area'
     : 'All areas';
+  const hasActiveStayFilters = activeStayFilters.size > 0;
 
   // -------------------------------------------------------------------------
-  // Header
+  // Header (hero + segmented + compact filters)
   // -------------------------------------------------------------------------
 
   const ListHeader = (
     <View>
-      {/* ── Category bar ── */}
-      <View style={styles.catBar}>
+      {/* ── Hero (scrolls away with content) ── */}
+      <NavigationHero
+        imageUrl={heroProps.imageUrl}
+        title={heroProps.title}
+        label={heroProps.label}
+        subtitle={heroProps.subtitle}
+        onBack={heroProps.onBack}
+        height={HERO_HEIGHT}
+      />
+
+      {/* ── Segmented control (scrolls away — sticky clone in CityScreen) ── */}
+      <SegmentedControl
+        tabs={tabs}
+        activeIndex={activeTabIndex}
+        onTabPress={onTabPress}
+      />
+
+      {/* ── Category tabs (horizontal scroll, pure text) ── */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        style={styles.catBar}
+        contentContainerStyle={styles.catBarContent}
+      >
         {categoryCounts.map((cat) => {
           const active = cat.key === activeCategory;
           return (
@@ -286,25 +354,20 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
                 setOpenDropdown(null);
                 if (cat.key !== 'accommodation') setActiveStayFilters(new Set());
               }}
-              style={styles.catItem}
+              style={styles.catTab}
             >
-              <Text style={styles.catEmoji}>{cat.emoji}</Text>
-              <Text
-                style={[styles.catLabel, active && styles.catLabelActive]}
-                numberOfLines={1}
-              >
+              <Text style={[styles.catLabel, active && styles.catLabelActive]}>
                 {cat.label}
               </Text>
               {active && <View style={styles.catUnderline} />}
             </Pressable>
           );
         })}
-      </View>
-      <View style={styles.catBorder} />
+      </ScrollView>
 
-      {/* ── Dropdown buttons row ── */}
-      {(showSubTypes || showAreaFilter) && (
-        <View style={styles.dropdownRow}>
+      {/* ── Compact filter row (type + area + funnel + count) ── */}
+      <View style={styles.filterRow}>
+        <View style={styles.filterLeft}>
           {showSubTypes && (
             <Pressable
               onPress={() => setOpenDropdown(openDropdown === 'type' ? null : 'type')}
@@ -337,8 +400,24 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
               </Text>
             </Pressable>
           )}
+          {isStayCategory && (
+            <Pressable
+              onPress={() => setOpenDropdown(openDropdown === 'stay' ? null : 'stay')}
+              style={[styles.funnelBtn, openDropdown === 'stay' && styles.dropdownBtnOpen]}
+            >
+              <Ionicons
+                name="funnel-outline"
+                size={14}
+                color={hasActiveStayFilters ? colors.orange : colors.textSecondary}
+              />
+              {hasActiveStayFilters && <View style={styles.funnelDot} />}
+            </Pressable>
+          )}
         </View>
-      )}
+        <Text style={styles.resultCount}>
+          {filteredPlaces.length} {filteredPlaces.length === 1 ? 'place' : 'places'}
+        </Text>
+      </View>
 
       {/* ── Type dropdown panel ── */}
       {openDropdown === 'type' && (
@@ -414,9 +493,9 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
         </View>
       )}
 
-      {/* ── Stay filters — compact inline pills ── */}
-      {isStayCategory && (
-        <View style={styles.stayFilterRow}>
+      {/* ── Stay filters dropdown panel ── */}
+      {openDropdown === 'stay' && (
+        <View style={styles.dropdownPanel}>
           {STAY_FILTERS.map((f) => {
             const count = stayFilterCounts[f.key] ?? 0;
             const isActive = activeStayFilters.has(f.key);
@@ -425,38 +504,38 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
               <Pressable
                 key={f.key}
                 onPress={() => toggleStayFilter(f.key)}
-                style={[
-                  styles.stayChip,
-                  isActive && { backgroundColor: f.bg, borderColor: f.color },
-                  isEmpty && !isActive && styles.stayChipEmpty,
-                ]}
+                style={[styles.dropdownOption, isActive && styles.dropdownOptionActive]}
               >
-                <Ionicons
-                  name={f.icon as any}
-                  size={12}
-                  color={isActive ? f.color : isEmpty ? colors.textMuted : colors.textSecondary}
-                />
-                <Text
-                  style={[
-                    styles.stayChipText,
-                    isActive && { color: f.color, fontFamily: fonts.semiBold },
-                    isEmpty && !isActive && { color: colors.textMuted },
-                  ]}
-                >
-                  {f.label}
-                </Text>
+                <View style={styles.stayOptionLeft}>
+                  <Ionicons
+                    name={f.icon as any}
+                    size={14}
+                    color={isActive ? f.color : isEmpty ? colors.textMuted : colors.textSecondary}
+                  />
+                  <Text
+                    style={[
+                      styles.dropdownOptionText,
+                      isActive && { color: f.color, fontFamily: fonts.semiBold },
+                      isEmpty && !isActive && { color: colors.textMuted },
+                    ]}
+                  >
+                    {f.label}
+                  </Text>
+                </View>
+                <Text style={styles.dropdownOptionCount}>{count}</Text>
               </Pressable>
             );
           })}
+          {hasActiveStayFilters && (
+            <Pressable
+              onPress={() => { setActiveStayFilters(new Set()); setOpenDropdown(null); }}
+              style={styles.clearStayBtn}
+            >
+              <Text style={styles.clearStayText}>Clear filters</Text>
+            </Pressable>
+          )}
         </View>
       )}
-
-      {/* ── Result count ── */}
-      <View style={styles.resultRow}>
-        <Text style={styles.resultCount}>
-          {filteredPlaces.length} {filteredPlaces.length === 1 ? 'place' : 'places'}
-        </Text>
-      </View>
     </View>
   );
 
@@ -468,8 +547,10 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
       ListHeaderComponent={ListHeader}
       contentContainerStyle={styles.listContent}
       showsVerticalScrollIndicator={false}
+      onScroll={handleScroll}
+      scrollEventThrottle={16}
       ListEmptyComponent={
-        <View style={styles.centered}>
+        <View style={[styles.centered, styles.cardWrapper]}>
           <Ionicons
             name={isStayCategory ? 'bed-outline' : 'search-outline'}
             size={28}
@@ -496,26 +577,25 @@ export function PlacesTab({ cityId, areas }: PlacesTabProps) {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  // ── Category bar ──
+  // ── Category tabs (pure text, horizontal scroll) ──
   catBar: {
-    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  catBarContent: {
+    paddingLeft: spacing.screenX,
+    paddingRight: spacing.md,
     paddingTop: spacing.lg,
-    paddingBottom: spacing.sm,
+    gap: spacing.xl,
   },
-  catItem: {
-    flex: 1,
+  catTab: {
     alignItems: 'center',
-    paddingVertical: spacing.sm,
-  },
-  catEmoji: {
-    fontSize: 20,
-    marginBottom: 4,
+    paddingBottom: spacing.md,
   },
   catLabel: {
     fontFamily: fonts.medium,
-    fontSize: 10,
+    fontSize: 14,
     color: colors.textMuted,
-    textAlign: 'center',
   },
   catLabelActive: {
     color: colors.orange,
@@ -524,34 +604,40 @@ const styles = StyleSheet.create({
   catUnderline: {
     position: 'absolute',
     bottom: 0,
-    left: 12,
-    right: 12,
+    left: 0,
+    right: 0,
     height: 2,
     backgroundColor: colors.orange,
     borderRadius: 1,
   },
-  catBorder: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
+
+  // ── Compact filter row ──
+  filterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xs,
+  },
+  filterLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
   },
 
   // ── Dropdown buttons ──
-  dropdownRow: {
-    flexDirection: 'row',
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
-    gap: spacing.sm,
-  },
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: radius.full,
     borderWidth: 1,
     borderColor: colors.borderDefault,
     backgroundColor: colors.background,
-    gap: 6,
+    gap: 4,
   },
   dropdownBtnOpen: {
     borderColor: colors.orange,
@@ -559,15 +645,44 @@ const styles = StyleSheet.create({
   },
   dropdownBtnText: {
     fontFamily: fonts.medium,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textSecondary,
   },
   dropdownBtnTextActive: {
     color: colors.orange,
   },
   dropdownChevron: {
-    fontSize: 8,
+    fontSize: 7,
     color: colors.textMuted,
+  },
+
+  // ── Funnel button ──
+  funnelBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  funnelDot: {
+    position: 'absolute',
+    top: 4,
+    right: 4,
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: colors.orange,
+  },
+
+  // ── Result count ──
+  resultCount: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+    marginLeft: spacing.sm,
   },
 
   // ── Dropdown panel ──
@@ -607,50 +722,30 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
 
-  // ── Stay filter pills ──
-  stayFilterRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.sm,
-    gap: 6,
-  },
-  stayChip: {
+  // ── Stay filter dropdown extras ──
+  stayOptionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
+    gap: spacing.sm,
   },
-  stayChipEmpty: {
-    opacity: 0.4,
+  clearStayBtn: {
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderDefault,
   },
-  stayChipText: {
+  clearStayText: {
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textSecondary,
-  },
-
-  // ── Result count ──
-  resultRow: {
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.md,
-    paddingBottom: spacing.xs,
-  },
-  resultCount: {
-    fontFamily: fonts.regular,
     fontSize: 13,
-    color: colors.textMuted,
+    color: colors.orange,
   },
 
   // ── List ──
   listContent: {
-    paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.xxxxl,
+  },
+  cardWrapper: {
+    paddingHorizontal: spacing.screenX,
   },
   centered: {
     alignItems: 'center',
