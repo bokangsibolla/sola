@@ -8,6 +8,8 @@ export default function TravelersLayout() {
       <Stack.Screen name="connections" />
       <Stack.Screen name="dm/index" />
       <Stack.Screen name="dm/[id]" />
+      <Stack.Screen name="together/[postId]" />
+      <Stack.Screen name="together/new" />
     </Stack>
   );
 }

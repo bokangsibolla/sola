@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   Keyboard,
 } from 'react-native';
+import { TogetherFeed } from '@/components/together/TogetherFeed';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
@@ -236,10 +237,13 @@ function NoMatchesYet() {
 // Main Screen
 // ---------------------------------------------------------------------------
 
+type ActiveTab = 'travelers' | 'together';
+
 export default function TravelersScreen() {
   const router = useRouter();
   const { userId } = useAuth();
   const posthog = usePostHog();
+  const [activeTab, setActiveTab] = useState<ActiveTab>('travelers');
 
   const { query, setQuery, results: searchResults, isSearching, search, clear } =
     useTravelerSearch(userId ?? undefined);
@@ -281,6 +285,43 @@ export default function TravelersScreen() {
 
   const nonEmptySections = sections.filter((s) => s.data.length > 0);
 
+  // ─── Segmented Control ──────────────────────────────────────
+  const renderSegmentedControl = () => (
+    <View style={styles.segmentedContainer}>
+      <Pressable
+        style={[styles.segment, activeTab === 'travelers' && styles.segmentActive]}
+        onPress={() => setActiveTab('travelers')}
+      >
+        <Text style={[styles.segmentText, activeTab === 'travelers' && styles.segmentTextActive]}>
+          Travelers
+        </Text>
+      </Pressable>
+      <Pressable
+        style={[styles.segment, activeTab === 'together' && styles.segmentActive]}
+        onPress={() => setActiveTab('together')}
+      >
+        <Text style={[styles.segmentText, activeTab === 'together' && styles.segmentTextActive]}>
+          Together
+        </Text>
+      </Pressable>
+    </View>
+  );
+
+  // ─── Together tab ──────────────────────────────────────────
+  if (activeTab === 'together') {
+    return (
+      <AppScreen>
+        <NavigationHeader
+          title="Travelers"
+          rightActions={<HamburgerButton />}
+        />
+        {renderSegmentedControl()}
+        <TogetherFeed />
+      </AppScreen>
+    );
+  }
+
+  // ─── Travelers tab (original) ──────────────────────────────
   if (isLoading) {
     return (
       <AppScreen>
@@ -288,6 +329,7 @@ export default function TravelersScreen() {
           title="Travelers"
           rightActions={<HamburgerButton />}
         />
+        {renderSegmentedControl()}
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.orange} />
         </View>
@@ -302,6 +344,7 @@ export default function TravelersScreen() {
           title="Travelers"
           rightActions={<HamburgerButton />}
         />
+        {renderSegmentedControl()}
         <ErrorScreen message="Something went wrong loading travelers. Pull to retry." onRetry={refetch} />
       </AppScreen>
     );
@@ -313,6 +356,7 @@ export default function TravelersScreen() {
         title="Travelers"
         rightActions={<HamburgerButton />}
       />
+      {renderSegmentedControl()}
 
       {/* Search Bar */}
       <View style={styles.searchContainer}>
@@ -420,6 +464,37 @@ export default function TravelersScreen() {
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
+  // Segmented Control
+  segmentedContainer: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.screenX,
+    marginBottom: spacing.md,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    padding: 3,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 32,
+    borderRadius: radius.full,
+  },
+  segmentActive: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  segmentText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textMuted,
+  },
+  segmentTextActive: {
+    color: colors.textPrimary,
+    fontFamily: fonts.semiBold,
+  },
+
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
