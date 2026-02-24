@@ -396,3 +396,87 @@ export async function respondToRequest(
     .eq('id', requestId);
   if (error) throw error;
 }
+
+export async function cancelJoinRequest(requestId: string): Promise<void> {
+  const { error } = await supabase
+    .from('together_requests')
+    .update({ status: 'cancelled' })
+    .eq('id', requestId);
+  if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// My Posts
+// ---------------------------------------------------------------------------
+
+export async function getMyTogetherPosts(
+  userId: string,
+): Promise<TogetherPostWithAuthor[]> {
+  const { data, error } = await supabase
+    .from('together_posts')
+    .select('*')
+    .eq('user_id', userId)
+    .neq('status', 'cancelled')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  const postIds = rows.map((r: any) => r.id as string);
+  const cityIds = rows.map((r: any) => r.city_id as string).filter(Boolean);
+  const iso2Codes = rows.map((r: any) => r.country_iso2 as string).filter(Boolean);
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+
+  const [authors, cityNames, countryNames, requestInfo] = await Promise.all([
+    batchFetchAuthors([userId]),
+    batchFetchCityNames(cityIds),
+    batchFetchCountryNames(iso2Codes),
+    batchFetchRequestInfo(postIds, userId),
+  ]);
+
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  return rows.map((row: any) => {
+    const info = requestInfo.get(row.id);
+    return {
+      ...toCamel<TogetherPost>(row),
+      author: authors.get(row.user_id) ?? fallbackAuthor(row.user_id),
+      cityName: row.city_id ? (cityNames.get(row.city_id) ?? null) : null,
+      countryName: row.country_iso2 ? (countryNames.get(row.country_iso2) ?? null) : null,
+      requestCount: info?.requestCount ?? 0,
+      acceptedCount: info?.acceptedCount ?? 0,
+      userRequestStatus: null,
+      userRequestId: null,
+    };
+  });
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+}
+
+// ---------------------------------------------------------------------------
+// Post Management
+// ---------------------------------------------------------------------------
+
+export async function closeTogetherPost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('together_posts')
+    .update({ status: 'closed', updated_at: new Date().toISOString() })
+    .eq('id', postId);
+  if (error) throw error;
+}
+
+export async function cancelTogetherPost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('together_posts')
+    .update({ status: 'cancelled', updated_at: new Date().toISOString() })
+    .eq('id', postId);
+  if (error) throw error;
+}
+
+export async function deleteTogetherPost(postId: string): Promise<void> {
+  const { error } = await supabase
+    .from('together_posts')
+    .delete()
+    .eq('id', postId);
+  if (error) throw error;
+}
