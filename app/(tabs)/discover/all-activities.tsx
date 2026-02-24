@@ -115,7 +115,7 @@ export default function AllActivitiesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <NavigationHeader title="All Activities" parentTitle="Discover" />
+      <NavigationHeader title="All Activities" parentTitle="Discover" backHref="/(tabs)/discover" />
 
       {/* Search */}
       <View style={styles.searchContainer}>

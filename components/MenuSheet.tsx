@@ -58,7 +58,7 @@ export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps)
 
   const handlePress = (route: string) => {
     onClose();
-    router.push(route as any);
+    router.navigate(route as any);
   };
 
   return (

@@ -66,7 +66,7 @@ export default function AllDestinationsScreen() {
   if (isLoading && continents.length === 0) {
     return (
       <AppScreen>
-        <NavigationHeader title="All Destinations" parentTitle="Discover" />
+        <NavigationHeader title="All Destinations" parentTitle="Discover" backHref="/(tabs)/discover" />
         <LoadingScreen />
       </AppScreen>
     );
@@ -75,7 +75,7 @@ export default function AllDestinationsScreen() {
   if (error && continents.length === 0) {
     return (
       <AppScreen>
-        <NavigationHeader title="All Destinations" parentTitle="Discover" />
+        <NavigationHeader title="All Destinations" parentTitle="Discover" backHref="/(tabs)/discover" />
         <ErrorScreen message="Could not load destinations" onRetry={refresh} />
       </AppScreen>
     );
@@ -89,7 +89,7 @@ export default function AllDestinationsScreen() {
 
   return (
     <AppScreen>
-      <NavigationHeader title="All Destinations" parentTitle="Discover" />
+      <NavigationHeader title="All Destinations" parentTitle="Discover" backHref="/(tabs)/discover" />
 
       <ScrollView
         showsVerticalScrollIndicator={false}
