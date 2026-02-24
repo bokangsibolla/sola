@@ -301,7 +301,7 @@ export default function TravelersScreen() {
         onPress={() => setActiveTab('together')}
       >
         <Text style={[styles.segmentText, activeTab === 'together' && styles.segmentTextActive]}>
-          Together
+          Activities
         </Text>
       </Pressable>
     </View>

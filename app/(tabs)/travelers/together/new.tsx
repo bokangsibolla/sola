@@ -214,7 +214,7 @@ export default function NewTogetherPost() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
-      <NavigationHeader title="New Activity" parentTitle="Together" />
+      <NavigationHeader title="New Activity" parentTitle="Activities" />
 
       <ScrollView
         style={styles.scroll}

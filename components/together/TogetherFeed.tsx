@@ -1,11 +1,11 @@
 /**
- * TogetherFeed — the main Together activity feed with Feed / My Posts toggle.
+ * TogetherFeed — the main Activities feed with Feed / My Posts toggle.
  *
- * "Feed" shows other travelers' open posts (with filter pills).
- * "My Posts" shows the current user's own posts (no filters, no FAB).
+ * "Feed" shows other travelers' open posts, filterable by city (from user's trips).
+ * "My Posts" shows the current user's own posts.
  */
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
@@ -14,6 +14,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -27,18 +28,24 @@ import {
   typography,
 } from '@/constants/design';
 import { TogetherCard } from './TogetherCard';
-import { TogetherFilterPills } from './TogetherFilterPills';
 import { TogetherEmptyState } from './TogetherEmptyState';
 import { useTogetherFeed } from '@/data/together/useTogetherFeed';
 import { useMyTogetherPosts } from '@/data/together/useTogetherPost';
+import { useTrips } from '@/data/trips/useTrips';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
-import type { TogetherPostWithAuthor, ActivityCategory } from '@/data/together/types';
+import type { TogetherPostWithAuthor } from '@/data/together/types';
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 type FeedTab = 'feed' | 'my_posts';
+
+interface CityOption {
+  cityId: string;
+  cityName: string;
+  countryIso2: string | null;
+}
 
 // ---------------------------------------------------------------------------
 // Segmented Toggle
@@ -116,6 +123,111 @@ const toggleStyles = StyleSheet.create({
   segmentTextActive: {
     color: colors.textPrimary,
     fontFamily: fonts.semiBold,
+  },
+});
+
+// ---------------------------------------------------------------------------
+// City Filter Pills
+// ---------------------------------------------------------------------------
+
+interface CityFilterProps {
+  cities: CityOption[];
+  selectedCityId: string | undefined;
+  onCityChange: (cityId: string | undefined) => void;
+}
+
+const CityFilter: React.FC<CityFilterProps> = ({
+  cities,
+  selectedCityId,
+  onCityChange,
+}) => {
+  if (cities.length === 0) return null;
+
+  return (
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={cityFilterStyles.scrollContent}
+      style={cityFilterStyles.container}
+    >
+      <Pressable
+        style={[
+          cityFilterStyles.pill,
+          !selectedCityId ? cityFilterStyles.pillActive : cityFilterStyles.pillInactive,
+        ]}
+        onPress={() => onCityChange(undefined)}
+      >
+        <Text
+          style={[
+            cityFilterStyles.pillText,
+            !selectedCityId ? cityFilterStyles.pillTextActive : cityFilterStyles.pillTextInactive,
+          ]}
+        >
+          All
+        </Text>
+      </Pressable>
+      {cities.map((city) => {
+        const isActive = selectedCityId === city.cityId;
+        return (
+          <Pressable
+            key={city.cityId}
+            style={[
+              cityFilterStyles.pill,
+              isActive ? cityFilterStyles.pillActive : cityFilterStyles.pillInactive,
+            ]}
+            onPress={() => onCityChange(isActive ? undefined : city.cityId)}
+          >
+            <Text
+              style={[
+                cityFilterStyles.pillText,
+                isActive ? cityFilterStyles.pillTextActive : cityFilterStyles.pillTextInactive,
+              ]}
+            >
+              {city.cityName}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+};
+
+const cityFilterStyles = StyleSheet.create({
+  container: {
+    flexGrow: 0,
+  },
+  scrollContent: {
+    paddingHorizontal: spacing.screenX,
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  pill: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    minHeight: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillActive: {
+    backgroundColor: colors.orangeFill,
+    borderColor: colors.orange,
+  },
+  pillInactive: {
+    backgroundColor: colors.neutralFill,
+    borderColor: colors.borderDefault,
+  },
+  pillText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  pillTextActive: {
+    color: colors.orange,
+  },
+  pillTextInactive: {
+    color: colors.textSecondary,
   },
 });
 
@@ -243,26 +355,42 @@ export const TogetherFeed: React.FC = () => {
   // My posts data
   const myPosts = useMyTogetherPosts();
 
-  // Filter state (only for feed tab)
-  const [selectedCategory, setSelectedCategory] = useState<
-    ActivityCategory | undefined
-  >(undefined);
-  const [selectedTimeframe, setSelectedTimeframe] = useState<
-    'today' | 'this_week' | 'flexible' | 'all' | undefined
-  >(undefined);
+  // User's trips for city filter options
+  const { trips } = useTrips();
 
-  const handleCategoryChange = useCallback(
-    (cat: ActivityCategory | undefined) => {
-      setSelectedCategory(cat);
-      feed.setFilters({ category: cat });
-    },
-    [feed],
-  );
+  // Extract unique cities from current + upcoming trips
+  const tripCities = useMemo<CityOption[]>(() => {
+    const seen = new Set<string>();
+    const cities: CityOption[] = [];
 
-  const handleTimeframeChange = useCallback(
-    (tf: 'today' | 'this_week' | 'flexible' | 'all' | undefined) => {
-      setSelectedTimeframe(tf);
-      feed.setFilters({ timeframe: tf });
+    const allTrips = [
+      ...(trips?.current ? [trips.current] : []),
+      ...(trips?.upcoming ?? []),
+    ];
+
+    for (const trip of allTrips) {
+      for (const stop of trip.stops ?? []) {
+        if (stop.cityId && stop.cityName && !seen.has(stop.cityId)) {
+          seen.add(stop.cityId);
+          cities.push({
+            cityId: stop.cityId,
+            cityName: stop.cityName,
+            countryIso2: stop.countryIso2 ?? null,
+          });
+        }
+      }
+    }
+
+    return cities;
+  }, [trips]);
+
+  // City filter state
+  const [selectedCityId, setSelectedCityId] = useState<string | undefined>(undefined);
+
+  const handleCityChange = useCallback(
+    (cityId: string | undefined) => {
+      setSelectedCityId(cityId);
+      feed.setFilters({ cityId });
     },
     [feed],
   );
@@ -283,6 +411,12 @@ export const TogetherFeed: React.FC = () => {
   const posts = isFeedTab ? feed.posts : myPosts.posts;
   const loading = isFeedTab ? feed.loading : myPosts.loading;
   const refreshing = isFeedTab ? feed.refreshing : false;
+
+  // Selected city name for empty state
+  const selectedCityName = useMemo(() => {
+    if (!selectedCityId) return undefined;
+    return tripCities.find((c) => c.cityId === selectedCityId)?.cityName;
+  }, [selectedCityId, tripCities]);
 
   const handleRefresh = useCallback(() => {
     if (isFeedTab) {
@@ -306,30 +440,22 @@ export const TogetherFeed: React.FC = () => {
     [],
   );
 
-  // Header component includes the toggle + optional filter pills
+  // Header: toggle + optional city filter pills
   const ListHeader = useCallback(
     () => (
       <View>
         <SegmentedToggle activeTab={activeTab} onTabChange={setActiveTab} />
-        {isFeedTab && (
-          <TogetherFilterPills
-            selectedCategory={selectedCategory}
-            selectedTimeframe={selectedTimeframe}
-            onCategoryChange={handleCategoryChange}
-            onTimeframeChange={handleTimeframeChange}
+        {isFeedTab && tripCities.length > 0 && (
+          <CityFilter
+            cities={tripCities}
+            selectedCityId={selectedCityId}
+            onCityChange={handleCityChange}
           />
         )}
         <View style={styles.listHeaderSpacer} />
       </View>
     ),
-    [
-      activeTab,
-      isFeedTab,
-      selectedCategory,
-      selectedTimeframe,
-      handleCategoryChange,
-      handleTimeframeChange,
-    ],
+    [activeTab, isFeedTab, tripCities, selectedCityId, handleCityChange],
   );
 
   // Empty component
@@ -342,10 +468,15 @@ export const TogetherFeed: React.FC = () => {
       );
     }
     if (isFeedTab) {
-      return <TogetherEmptyState onCreatePost={handleCreatePost} />;
+      return (
+        <TogetherEmptyState
+          cityName={selectedCityName}
+          onCreatePost={handleCreatePost}
+        />
+      );
     }
     return <MyPostsEmpty onCreatePost={handleCreatePost} />;
-  }, [loading, isFeedTab, handleCreatePost]);
+  }, [loading, isFeedTab, handleCreatePost, selectedCityName]);
 
   return (
     <View style={styles.container}>

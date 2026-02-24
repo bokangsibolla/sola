@@ -228,7 +228,7 @@ export const OpenPlanSheet: React.FC<OpenPlanSheetProps> = ({
             <View style={styles.handle} />
 
             {/* Title */}
-            <Text style={styles.title}>Open to Together</Text>
+            <Text style={styles.title}>Share as Activity</Text>
 
             {/* Pre-filled info (read-only) */}
             <View style={styles.prefilledSection}>
@@ -379,7 +379,7 @@ export const OpenPlanSheet: React.FC<OpenPlanSheetProps> = ({
                 <ActivityIndicator size="small" color="#FFFFFF" />
               ) : (
                 <Text style={styles.submitButtonText}>
-                  Post to Together
+                  Post Activity
                 </Text>
               )}
             </Pressable>
