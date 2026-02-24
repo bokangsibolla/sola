@@ -44,6 +44,7 @@ import { initI18n } from '@/lib/i18n';
 import { supabase } from '@/lib/supabase';
 import { captureAttribution, persistAttribution, getAttributionForPostHog } from '@/lib/attribution';
 import OfflineBanner from '@/components/OfflineBanner';
+import LoadingScreen from '@/components/LoadingScreen';
 import { eventTracker } from '@/data/events/eventTracker';
 
 // Global error handler: ensures splash screen hides even on uncaught JS errors.
@@ -71,10 +72,18 @@ export const unstable_settings = {
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
   return (
     <View style={errorStyles.container}>
-      <Text style={errorStyles.title}>Something went wrong</Text>
-      <Text style={errorStyles.message}>{error.message}</Text>
-      <Pressable style={errorStyles.button} onPress={retry}>
-        <Text style={errorStyles.buttonText}>Try again</Text>
+      <View style={errorStyles.iconCircle}>
+        <Ionicons name="compass-outline" size={32} color={colors.orange} />
+      </View>
+      <Text style={errorStyles.title}>We seem to have gotten a little lost</Text>
+      <Text style={errorStyles.subtitle}>
+        Something unexpected happened, but it's nothing to worry about.
+      </Text>
+      <Pressable
+        style={({ pressed }) => [errorStyles.button, pressed && errorStyles.buttonPressed]}
+        onPress={retry}
+      >
+        <Text style={errorStyles.buttonText}>Take me back</Text>
       </Pressable>
     </View>
   );
@@ -86,29 +95,47 @@ const errorStyles = StyleSheet.create({
     backgroundColor: colors.background,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.xl,
+    paddingHorizontal: spacing.xxxl,
+  },
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.xl,
   },
   title: {
+    fontFamily: 'PlusJakartaSans-SemiBold',
     fontSize: 20,
-    fontWeight: '600',
+    lineHeight: 28,
     color: colors.textPrimary,
+    textAlign: 'center',
     marginBottom: spacing.sm,
   },
-  message: {
-    fontSize: 14,
+  subtitle: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textMuted,
     textAlign: 'center',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.xxl,
   },
   button: {
     backgroundColor: colors.orange,
-    paddingHorizontal: spacing.xl,
-    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xxl,
+    paddingVertical: 14,
     borderRadius: radius.button,
   },
+  buttonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
+  },
   buttonText: {
-    fontSize: 15,
-    fontWeight: '600',
+    fontFamily: 'PlusJakartaSans-SemiBold',
+    fontSize: 16,
+    lineHeight: 24,
     color: colors.background,
   },
 });
@@ -189,11 +216,7 @@ function AuthGate() {
   }, [segments, router, userId, authLoading, recoverSession]);
 
   if (authLoading) {
-    return (
-      <View style={{ flex: 1, backgroundColor: '#FFFFFF' }}>
-        <StatusBar style="auto" />
-      </View>
-    );
+    return <LoadingScreen branded />;
   }
 
   return (

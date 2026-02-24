@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,6 +20,7 @@ import type { Place } from '@/data/types';
 
 interface ActivityRow extends Place {
   cityName: string;
+  imageUrl: string | null;
 }
 
 export default function AllActivitiesScreen() {
@@ -46,6 +48,7 @@ export default function AllActivitiesScreen() {
           allActivities.map((activity) => ({
             ...activity,
             cityName: cityMap.get(activity.cityId) ?? '',
+            imageUrl: activity.imageUrl ?? null,
           }))
         );
       } catch (err) {
@@ -74,6 +77,14 @@ export default function AllActivitiesScreen() {
         onPress={() => router.push(`/discover/activity/${item.slug}`)}
       >
         <View style={styles.listImageContainer}>
+          {item.imageUrl ? (
+            <Image
+              source={{ uri: item.imageUrl }}
+              style={styles.listImage}
+              contentFit="cover"
+              transition={200}
+            />
+          ) : null}
           {item.highlights && item.highlights.length > 0 && (
             <View style={styles.highlightBadge}>
               <Text style={styles.highlightText} numberOfLines={1}>
@@ -180,6 +191,10 @@ const styles = StyleSheet.create({
     borderRadius: radius.card,
     backgroundColor: colors.neutralFill,
     overflow: 'hidden',
+  },
+  listImage: {
+    width: 100,
+    height: 100,
   },
   highlightBadge: {
     position: 'absolute',

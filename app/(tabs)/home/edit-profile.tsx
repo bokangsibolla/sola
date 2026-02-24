@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
 import { getProfileById, checkUsernameAvailability, validateUsernameFormat, getUserVisitedCountries, setVisitedCountries as saveVisitedCountries } from '@/data/api';
@@ -48,6 +49,7 @@ export default function EditProfileScreen() {
   const insets = useSafeAreaInsets();
   const { userId } = useAuth();
   const posthog = usePostHog();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     posthog.capture('edit_profile_screen_viewed');
@@ -218,6 +220,8 @@ export default function EditProfileScreen() {
         return;
       }
       await saveVisitedCountries(userId, visitedCountryIds);
+      // Invalidate all profile-related caches so avatar updates everywhere immediately
+      queryClient.invalidateQueries({ queryKey: ['useData', userId] });
       posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length, visited_countries_count: visitedCountryIds.length });
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },

@@ -18,7 +18,9 @@
  */
 
 import { supabase, did } from './seed-utils';
-import { ACCOMMODATIONS_TO_SEED as ACCOMMODATIONS, type AccommodationEntry } from './content/accommodations-to-seed';
+import { ACCOMMODATIONS_TO_SEED } from './content/accommodations-to-seed';
+import { ACCOMMODATIONS as ACCOMMODATIONS_RESEARCHED } from './content/accommodations-researched';
+import type { AccommodationEntry } from './content/accommodations-to-seed';
 import 'dotenv/config';
 
 // Rate limiting
@@ -310,6 +312,7 @@ async function main() {
   const countryFilter = args.includes('--country') ? args[args.indexOf('--country') + 1] : undefined;
   const limit = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') + 1], 10) : undefined;
   const dryRun = args.includes('--dry-run');
+  const source = args.includes('--source') ? args[args.indexOf('--source') + 1] : 'to-seed';
 
   console.log('🌱 Sola Accommodation Seeding');
   console.log('─'.repeat(50));
@@ -319,8 +322,14 @@ async function main() {
     process.exit(1);
   }
 
+  // Select source
+  const sourceData = source === 'researched'
+    ? ACCOMMODATIONS_RESEARCHED as unknown as AccommodationEntry[]
+    : ACCOMMODATIONS_TO_SEED;
+  console.log(`📂 Source: ${source === 'researched' ? 'accommodations-researched.ts' : 'accommodations-to-seed.ts'}`);
+
   // Filter accommodations
-  let entries = [...ACCOMMODATIONS];
+  let entries = [...sourceData];
   if (cityFilter) {
     entries = entries.filter(e => e.citySlug === cityFilter);
     console.log(`📍 Filtering to city: ${cityFilter}`);

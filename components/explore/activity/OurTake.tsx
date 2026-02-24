@@ -1,13 +1,20 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, spacing } from '@/constants/design';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface OurTakeProps {
   bullets: string[];
   fallbackText: string | null;
+  /** Override the section label. Defaults to "WHY WE INCLUDE THIS" */
+  label?: string;
 }
 
-const OurTake: React.FC<OurTakeProps> = ({ bullets, fallbackText }) => {
+const OurTake: React.FC<OurTakeProps> = ({
+  bullets,
+  fallbackText,
+  label = 'WHY WE INCLUDE THIS',
+}) => {
   const hasBullets = bullets && bullets.length > 0;
   const hasFallback = fallbackText && fallbackText.trim().length > 0;
 
@@ -15,22 +22,24 @@ const OurTake: React.FC<OurTakeProps> = ({ bullets, fallbackText }) => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>WHY WE INCLUDE THIS</Text>
-      {hasBullets ? (
-        <View style={styles.bulletList}>
-          {bullets.slice(0, 6).map((bullet, index) => (
-            <View key={index} style={styles.bulletRow}>
-              <View style={styles.bulletDot} />
-              <Text style={styles.bulletText}>{bullet}</Text>
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.card}>
+        <View style={styles.accentBar} />
+        <View style={styles.cardContent}>
+          {hasBullets ? (
+            <View style={styles.bulletList}>
+              {bullets.slice(0, 6).map((bullet, index) => (
+                <View key={index} style={styles.bulletRow}>
+                  <View style={styles.bulletDot} />
+                  <Text style={styles.bulletText}>{bullet}</Text>
+                </View>
+              ))}
             </View>
-          ))}
+          ) : (
+            <Text style={styles.proseText}>{fallbackText}</Text>
+          )}
         </View>
-      ) : (
-        <View style={styles.accentRow}>
-          <View style={styles.accentBar} />
-          <Text style={styles.proseText}>{fallbackText}</Text>
-        </View>
-      )}
+      </View>
     </View>
   );
 };
@@ -47,6 +56,21 @@ const styles = StyleSheet.create({
     letterSpacing: 1.5,
     color: colors.textMuted,
     marginBottom: spacing.lg,
+  },
+  card: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    flexDirection: 'row',
+  },
+  accentBar: {
+    width: 3,
+    backgroundColor: colors.orange,
+    borderRadius: 1.5,
+    marginRight: spacing.lg,
+  },
+  cardContent: {
+    flex: 1,
   },
   bulletList: {
     gap: spacing.md,
@@ -70,23 +94,10 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     flex: 1,
   },
-  accentRow: {
-    flexDirection: 'row',
-  },
-  accentBar: {
-    width: 2,
-    backgroundColor: colors.orange,
-    opacity: 0.3,
-    borderRadius: 1,
-    marginRight: spacing.md,
-    marginTop: 2,
-    marginBottom: 2,
-  },
   proseText: {
     fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textSecondary,
-    flex: 1,
   },
 });

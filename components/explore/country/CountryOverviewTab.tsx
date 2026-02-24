@@ -1,16 +1,16 @@
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, Country } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
 import { mapSoloLevel } from '@/components/explore/country/mappings';
-import { CityHorizontalCard } from './CityHorizontalCard';
+import { DestinationCard } from './DestinationCard';
 import { CommunityThreadRows } from './CommunityThreadRows';
 
 interface Props {
   country: Country;
   cities: City[];
   communityData: { threads: ThreadWithAuthor[]; totalCount: number } | null;
+  onSwitchTab?: (index: number) => void;
 }
 
 // -- Quick Context Grid (matches city's QuickContextGrid) -----------------
@@ -44,8 +44,7 @@ function GridCell({ data, isRight, isBottom }: { data: CellData; isRight: boolea
 
 // -- Main Component -------------------------------------------------------
 
-export function CountryOverviewTab({ country, cities, communityData }: Props) {
-  const router = useRouter();
+export function CountryOverviewTab({ country, cities, communityData, onSwitchTab }: Props) {
 
   const introText = country.introMd
     ? country.introMd.replace(/^#+\s.*/gm, '').replace(/\*\*/g, '').trim()
@@ -137,32 +136,20 @@ export function CountryOverviewTab({ country, cities, communityData }: Props) {
       {/* Divider */}
       <View style={styles.divider} />
 
-      {/* Cities -- horizontal scroll */}
+      {/* Where to go — slim teaser (top 3 destinations) */}
       {cities.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
-            <Text style={styles.heading}>Cities</Text>
+            <Text style={styles.heading}>Where to go</Text>
             {cities.length > 3 && (
-              <Pressable hitSlop={8} onPress={() => {
-                router.push({
-                  pathname: '/(tabs)/discover/country/cities' as any,
-                  params: { countryId: country.id, countryName: country.name, countrySlug: country.slug },
-                });
-              }}>
-                <Text style={styles.seeAll}>All {cities.length} cities</Text>
+              <Pressable hitSlop={8} onPress={() => onSwitchTab?.(1)}>
+                <Text style={styles.seeAll}>All {cities.length} destinations</Text>
               </Pressable>
             )}
           </View>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.horizontalScroll}
-            style={styles.horizontalScrollOuter}
-          >
-            {cities.map((city) => (
-              <CityHorizontalCard key={city.slug} city={city} compact />
-            ))}
-          </ScrollView>
+          {cities.slice(0, 3).map((city, i) => (
+            <DestinationCard key={city.slug} city={city} showBorder={i < 2} />
+          ))}
         </View>
       )}
 
@@ -395,13 +382,4 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Horizontal scroll
-  horizontalScrollOuter: {
-    marginHorizontal: -spacing.screenX,
-    paddingLeft: spacing.screenX,
-  },
-  horizontalScroll: {
-    paddingRight: spacing.screenX,
-    paddingLeft: spacing.screenX,
-  },
 });

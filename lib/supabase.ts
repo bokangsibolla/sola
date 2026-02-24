@@ -25,25 +25,31 @@ export function getConfigDigest(): string {
 }
 
 // ── Storage adapter ─────────────────────────────────────────────────────────
+const hasLocalStorage =
+  Platform.OS === 'web' && typeof localStorage !== 'undefined';
+
 const AsyncStorageAdapter = {
   getItem: async (key: string): Promise<string | null> => {
-    if (Platform.OS === 'web') {
+    if (hasLocalStorage) {
       return localStorage.getItem(key);
     }
+    if (Platform.OS === 'web') return null; // SSR — no storage available
     return AsyncStorage.getItem(key);
   },
   setItem: async (key: string, value: string): Promise<void> => {
-    if (Platform.OS === 'web') {
+    if (hasLocalStorage) {
       localStorage.setItem(key, value);
       return;
     }
+    if (Platform.OS === 'web') return; // SSR
     await AsyncStorage.setItem(key, value);
   },
   removeItem: async (key: string): Promise<void> => {
-    if (Platform.OS === 'web') {
+    if (hasLocalStorage) {
       localStorage.removeItem(key);
       return;
     }
+    if (Platform.OS === 'web') return; // SSR
     await AsyncStorage.removeItem(key);
   },
 };

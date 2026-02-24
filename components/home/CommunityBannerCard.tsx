@@ -18,7 +18,7 @@ export function CommunityBannerCard() {
           styles.card,
           pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
         ]}
-        onPress={() => router.push('/(tabs)/connect' as any)}
+        onPress={() => router.push('/(tabs)/discussions' as any)}
         accessibilityRole="button"
         accessibilityLabel="Go to community"
       >

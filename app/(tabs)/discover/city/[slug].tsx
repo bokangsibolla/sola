@@ -8,10 +8,12 @@ import { colors, fonts, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHero from '@/components/NavigationHero';
+import BackButton from '@/components/ui/BackButton';
 import { useNavContext } from '@/hooks/useNavContext';
 import { useData } from '@/hooks/useData';
 import {
   getCityBySlug,
+  getCityById,
   getAreasByCity,
   getCountryById,
   getUpcomingTripForCity,
@@ -31,14 +33,17 @@ export default function CityScreen() {
   const posthog = usePostHog();
   const { userId } = useAuth();
   const [activeTab, setActiveTab] = useState(0);
+  const [showStickySegmented, setShowStickySegmented] = useState(false);
 
   // ---------------------------------------------------------------------------
   // Data fetching (screen-level, passed as props)
   // ---------------------------------------------------------------------------
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(slug ?? '');
+
   const { data: city, loading, error, refetch } = useData(
-    () => getCityBySlug(slug ?? ''),
-    ['cityBySlug', slug],
+    () => isUuid ? getCityById(slug ?? '') : getCityBySlug(slug ?? ''),
+    ['city', slug],
   );
 
   const { data: country } = useData(
@@ -60,7 +65,6 @@ export default function CityScreen() {
     ['cityAreas', city?.id],
   );
 
-  // Smart default month for Events tab (from upcoming trip)
   const { data: upcomingTrip } = useData(
     () => (userId && city?.id) ? getUpcomingTripForCity(userId, city.id) : Promise.resolve(null),
     ['upcomingTripForCity', userId, city?.id],
@@ -97,6 +101,11 @@ export default function CityScreen() {
     }
   }, [city?.id]);
 
+  // Reset sticky header when switching away from Places tab
+  useEffect(() => {
+    if (activeTab !== 1) setShowStickySegmented(false);
+  }, [activeTab]);
+
   // ---------------------------------------------------------------------------
   // Loading & error states
   // ---------------------------------------------------------------------------
@@ -115,25 +124,43 @@ export default function CityScreen() {
   // Render
   // ---------------------------------------------------------------------------
 
+  const isPlacesTab = activeTab === 1;
+
   return (
     <View style={styles.container}>
-      {/* Hero — shared above tabs */}
-      <NavigationHero
-        imageUrl={city.heroImageUrl}
-        title={city.name}
-        label={country?.name}
-        subtitle={city.positioningLine ?? undefined}
-        parentTitle={parentTitle}
-        ancestors={ancestors}
-        onBack={handleBack}
-      />
+      {/* Hero + Segmented — only rendered here for non-Places tabs */}
+      {!isPlacesTab && (
+        <>
+          <NavigationHero
+            imageUrl={city.heroImageUrl}
+            title={city.name}
+            label={country?.name}
+            subtitle={city.positioningLine ?? undefined}
+            parentTitle={parentTitle}
+            ancestors={ancestors}
+            onBack={handleBack}
+          />
+          <SegmentedControl
+            tabs={TABS}
+            activeIndex={activeTab}
+            onTabPress={setActiveTab}
+          />
+        </>
+      )}
 
-      {/* Tab bar */}
-      <SegmentedControl
-        tabs={TABS}
-        activeIndex={activeTab}
-        onTabPress={setActiveTab}
-      />
+      {/* Sticky header — appears when Places hero scrolls away */}
+      {isPlacesTab && showStickySegmented && (
+        <View style={[styles.stickyHeader, { paddingTop: insets.top }]}>
+          <View style={styles.stickyBackRow}>
+            <BackButton onPress={handleBack} />
+          </View>
+          <SegmentedControl
+            tabs={TABS}
+            activeIndex={activeTab}
+            onTabPress={setActiveTab}
+          />
+        </View>
+      )}
 
       {/* Tab content */}
       {activeTab === 0 && (
@@ -147,6 +174,17 @@ export default function CityScreen() {
         <PlacesTab
           cityId={city.id}
           areas={areas ?? []}
+          heroProps={{
+            imageUrl: city.heroImageUrl,
+            title: city.name,
+            label: country?.name,
+            subtitle: city.positioningLine ?? undefined,
+            onBack: handleBack,
+          }}
+          tabs={TABS}
+          activeTabIndex={activeTab}
+          onTabPress={setActiveTab}
+          onScrollPastHero={setShowStickySegmented}
         />
       )}
 
@@ -170,5 +208,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xxl,
+  },
+  stickyHeader: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 100,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderDefault,
+  },
+  stickyBackRow: {
+    paddingHorizontal: spacing.screenX,
+    paddingBottom: spacing.sm,
   },
 });

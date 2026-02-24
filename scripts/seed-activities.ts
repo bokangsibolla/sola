@@ -18,7 +18,9 @@
  */
 
 import { supabase, did } from './seed-utils';
-import { ACTIVITIES_TO_SEED as ACTIVITIES, type ActivityEntry } from './content/activities-to-seed';
+import { ACTIVITIES_TO_SEED } from './content/activities-to-seed';
+import { ACTIVITIES as ACTIVITIES_RESEARCHED } from './content/activities-researched';
+import type { ActivityEntry } from './content/activities-to-seed';
 import 'dotenv/config';
 
 // Rate limiting
@@ -422,6 +424,7 @@ async function main() {
   const countryFilter = args.includes('--country') ? args[args.indexOf('--country') + 1] : undefined;
   const limit = args.includes('--limit') ? parseInt(args[args.indexOf('--limit') + 1], 10) : undefined;
   const dryRun = args.includes('--dry-run');
+  const source = args.includes('--source') ? args[args.indexOf('--source') + 1] : 'to-seed';
 
   console.log('🎯 Sola Activity Seeding');
   console.log('─'.repeat(50));
@@ -431,6 +434,12 @@ async function main() {
     process.exit(1);
   }
 
+  // Select source
+  const sourceData = source === 'researched'
+    ? ACTIVITIES_RESEARCHED as unknown as ActivityEntry[]
+    : ACTIVITIES_TO_SEED;
+  console.log(`📂 Source: ${source === 'researched' ? 'activities-researched.ts' : 'activities-to-seed.ts'}`);
+
   // Ensure activity tags exist
   if (!dryRun) {
     console.log('📋 Ensuring activity tags exist...');
@@ -438,7 +447,7 @@ async function main() {
   }
 
   // Filter activities
-  let entries = [...ACTIVITIES];
+  let entries = [...sourceData];
   if (cityFilter) {
     entries = entries.filter(e => e.citySlug === cityFilter);
     console.log(`📍 Filtering to city: ${cityFilter}`);

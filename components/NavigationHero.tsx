@@ -1,16 +1,15 @@
 import React from 'react';
 import {
-  Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { NavCrumb } from '@/hooks/useNavContext';
+import BackButton from '@/components/ui/BackButton';
 import { colors, fonts, spacing } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -93,16 +92,10 @@ const NavigationHero: React.FC<NavigationHeroProps> = ({
         style={styles.gradient}
       />
 
-      {/* ── Frosted back button ────────────────────────────────── */}
-      <Pressable
-        onPress={handleBack}
-        style={[styles.heroBackButton, { top: insets.top + spacing.sm }]}
-        hitSlop={8}
-        accessibilityRole="button"
-        accessibilityLabel={`Go back to ${parentTitle ?? 'previous page'}`}
-      >
-        <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-      </Pressable>
+      {/* ── Back button ────────────────────────────────────────── */}
+      <View style={[styles.heroBackButtonWrapper, { top: insets.top + spacing.sm }]}>
+        <BackButton onPress={handleBack} />
+      </View>
 
       {/* ── Right actions on hero ──────────────────────────────── */}
       {rightActions && (
@@ -149,15 +142,9 @@ const styles = StyleSheet.create({
   gradient: {
     ...StyleSheet.absoluteFillObject,
   },
-  heroBackButton: {
+  heroBackButtonWrapper: {
     position: 'absolute',
     left: spacing.screenX,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
     zIndex: 10,
   },
   heroActions: {

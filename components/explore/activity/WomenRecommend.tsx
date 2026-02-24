@@ -1,21 +1,32 @@
 import React, { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, spacing } from '@/constants/design';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface WomenRecommendProps {
   text: string | null;
+  /** Override the section label. Defaults to "FROM WOMEN WHO'VE DONE THIS" */
+  label?: string;
 }
 
-const WomenRecommend: React.FC<WomenRecommendProps> = ({ text }) => {
+const WomenRecommend: React.FC<WomenRecommendProps> = ({
+  text,
+  label = "FROM WOMEN WHO'VE DONE THIS",
+}) => {
   const [expanded, setExpanded] = useState(false);
 
   if (!text || text.trim().length === 0) return null;
 
   return (
     <View style={styles.container}>
-      <Text style={styles.sectionLabel}>FROM WOMEN WHO'VE DONE THIS</Text>
-      <View style={styles.accentRow}>
-        <View style={styles.accentBar} />
+      <Text style={styles.sectionLabel}>{label}</Text>
+      <View style={styles.card}>
+        <Ionicons
+          name="chatbubble-ellipses-outline"
+          size={18}
+          color={colors.orange}
+          style={styles.icon}
+        />
         <View style={styles.textContainer}>
           <Text
             style={styles.quoteText}
@@ -49,17 +60,16 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginBottom: spacing.lg,
   },
-  accentRow: {
+  card: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
     flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.md,
   },
-  accentBar: {
-    width: 2,
-    backgroundColor: colors.orange,
-    opacity: 0.3,
-    borderRadius: 1,
-    marginRight: spacing.md,
+  icon: {
     marginTop: 2,
-    marginBottom: 2,
   },
   textContainer: {
     flex: 1,

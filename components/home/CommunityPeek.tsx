@@ -45,7 +45,7 @@ export function CommunityPeek({ threads, title }: CommunityPeekProps) {
     <View style={styles.wrapper}>
       <SectionHeader
         title={title ?? 'From the community'}
-        onSeeAll={() => router.push('/(tabs)/connect' as any)}
+        onSeeAll={() => router.push('/(tabs)/discussions' as any)}
       />
       <View style={styles.list}>
         {threads.map((thread, index) => (
@@ -56,7 +56,7 @@ export function CommunityPeek({ threads, title }: CommunityPeekProps) {
                 styles.row,
                 pressed && { opacity: pressedState.opacity },
               ]}
-              onPress={() => router.push(`/(tabs)/connect/thread/${thread.id}` as any)}
+              onPress={() => router.push(`/(tabs)/discussions/thread/${thread.id}` as any)}
             >
               {/* Avatar */}
               {thread.author.avatarUrl ? (

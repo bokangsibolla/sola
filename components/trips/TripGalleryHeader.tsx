@@ -1,7 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
-import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
@@ -39,11 +38,6 @@ export const TripGalleryHeader: React.FC<TripGalleryHeaderProps> = ({
       s.lat != null && s.lng != null,
   );
 
-  // Compute map region that fits all markers
-  const mapRegion = validStops.length > 0
-    ? computeRegion(validStops)
-    : null;
-
   return (
     <View>
       {/* ── Photo grid ──────────────────────────────────────── */}
@@ -65,33 +59,14 @@ export const TripGalleryHeader: React.FC<TripGalleryHeaderProps> = ({
       </View>
 
       {/* ── Map strip ───────────────────────────────────────── */}
-      {mapRegion ? (
-        <View style={styles.mapContainer}>
-          <MapView
-            style={styles.map}
-            initialRegion={mapRegion}
-            scrollEnabled={false}
-            zoomEnabled={false}
-            rotateEnabled={false}
-            pitchEnabled={false}
-            pointerEvents="none"
-          >
-            {validStops.map((stop, idx) => (
-              <Marker
-                key={`${stop.name}-${idx}`}
-                coordinate={{ latitude: stop.lat, longitude: stop.lng }}
-                title={stop.name}
-              />
-            ))}
-          </MapView>
-          <View style={styles.mapOverlay} />
-        </View>
-      ) : (
-        <View style={styles.mapPlaceholder}>
-          <Ionicons name="map-outline" size={20} color={colors.textMuted} />
-          <Text style={styles.mapPlaceholderText}>Map preview</Text>
-        </View>
-      )}
+      <View style={styles.mapPlaceholder}>
+        <Ionicons name="map-outline" size={20} color={colors.textMuted} />
+        <Text style={styles.mapPlaceholderText}>
+          {validStops.length > 0
+            ? `${validStops.length} stop${validStops.length > 1 ? 's' : ''} planned`
+            : 'Map preview'}
+        </Text>
+      </View>
 
       {/* ── Title section ───────────────────────────────────── */}
       <View style={styles.titleSection}>
@@ -109,32 +84,6 @@ export const TripGalleryHeader: React.FC<TripGalleryHeaderProps> = ({
     </View>
   );
 };
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function computeRegion(coords: { lat: number; lng: number }[]) {
-  let minLat = coords[0].lat;
-  let maxLat = coords[0].lat;
-  let minLng = coords[0].lng;
-  let maxLng = coords[0].lng;
-
-  for (const c of coords) {
-    if (c.lat < minLat) minLat = c.lat;
-    if (c.lat > maxLat) maxLat = c.lat;
-    if (c.lng < minLng) minLng = c.lng;
-    if (c.lng > maxLng) maxLng = c.lng;
-  }
-
-  const latDelta = Math.max((maxLat - minLat) * 1.5, 0.02);
-  const lngDelta = Math.max((maxLng - minLng) * 1.5, 0.02);
-
-  return {
-    latitude: (minLat + maxLat) / 2,
-    longitude: (minLng + maxLng) / 2,
-    latitudeDelta: latDelta,
-    longitudeDelta: lngDelta,
-  };
-}
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 
@@ -160,17 +109,6 @@ const styles = StyleSheet.create({
   },
 
   // Map
-  mapContainer: {
-    height: MAP_HEIGHT,
-    position: 'relative',
-  },
-  map: {
-    width: '100%',
-    height: MAP_HEIGHT,
-  },
-  mapOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
   mapPlaceholder: {
     height: MAP_HEIGHT,
     backgroundColor: colors.neutralFill,

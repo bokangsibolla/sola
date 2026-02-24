@@ -7,6 +7,8 @@ interface Props {
   budget: BudgetBreakdownType;
   moneyMd?: string | null;
   cashVsCard?: string | null;
+  /** When true, hide the heading and section wrapper — used for inline embedding. */
+  headless?: boolean;
 }
 
 interface RowData {
@@ -69,7 +71,7 @@ function BudgetRow({ data, isLast }: { data: RowData; isLast: boolean }) {
   );
 }
 
-export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
+export function BudgetBreakdown({ budget, moneyMd, cashVsCard, headless }: Props) {
   const rows = buildRows(budget);
   const total = computeDailyTotal(budget);
 
@@ -77,8 +79,8 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
     || (moneyMd ? extractLeadSentence(moneyMd) : null);
 
   return (
-    <View style={styles.section}>
-      <Text style={styles.heading}>Budget</Text>
+    <View style={headless ? undefined : styles.section}>
+      {!headless && <Text style={styles.heading}>Budget</Text>}
 
       {/* Daily total summary */}
       <View style={styles.summaryBar}>
@@ -94,7 +96,7 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard }: Props) {
       </View>
 
       {/* Money tip */}
-      {moneyTip && (
+      {!headless && moneyTip && (
         <View style={styles.tipRow}>
           <Text style={styles.tipEmoji}>{'\u{1F4A1}'}</Text>
           <Text style={styles.tipText}>{moneyTip}</Text>

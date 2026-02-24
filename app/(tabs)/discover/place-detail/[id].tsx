@@ -11,14 +11,14 @@ import {
 import { Image } from 'expo-image';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useNavContext } from '@/hooks/useNavContext';
 import { usePostHog } from 'posthog-react-native';
 import * as Sentry from '@sentry/react-native';
 import { eventTracker } from '@/data/events/eventTracker';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
-import LoadingScreen from '@/components/LoadingScreen';
+import { ActivitySkeleton } from '@/components/explore/activity/ActivitySkeleton';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useData } from '@/hooks/useData';
 import {
@@ -31,6 +31,7 @@ import {
   isPlaceSaved,
 } from '@/data/api';
 import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
+import { MapPreview } from '@/components/explore/activity/MapPreview';
 import { useAuth } from '@/state/AuthContext';
 import type { Place, Tag } from '@/data/types';
 
@@ -38,33 +39,16 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const CAROUSEL_HEIGHT = 300;
 
 // ---------------------------------------------------------------------------
-// Tag colors
-// ---------------------------------------------------------------------------
-
-function tagColors(filterGroup: Tag['filterGroup']): { bg: string; fg: string } {
-  switch (filterGroup) {
-    case 'vibe':
-      return { bg: colors.orangeFill, fg: colors.orange };
-    case 'safety':
-      return { bg: colors.greenFill, fg: colors.greenSoft };
-    case 'good_for':
-      return { bg: colors.blueFill, fg: colors.blueSoft };
-    default:
-      return { bg: colors.borderSubtle, fg: colors.textSecondary };
-  }
-}
-
-// ---------------------------------------------------------------------------
-// Tag group config
+// Tag group labels
 // ---------------------------------------------------------------------------
 
 const TAG_GROUP_CONFIG: Record<string, string> = {
-  vibe: 'VIBE',
-  safety: 'SAFETY',
-  good_for: 'GOOD FOR',
-  amenity: 'AMENITIES',
-  cuisine: 'CUISINE',
-  style: 'STYLE',
+  vibe: 'Vibe',
+  safety: 'Safety',
+  good_for: 'For',
+  amenity: 'Amenities',
+  cuisine: 'Cuisine',
+  style: 'Style',
 };
 
 // ---------------------------------------------------------------------------
@@ -216,7 +200,6 @@ function AtAGlance({ place }: { place: Place }) {
 export default function PlaceDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
-  const insets = useSafeAreaInsets();
   const posthog = usePostHog();
 
   useEffect(() => {
@@ -342,14 +325,29 @@ export default function PlaceDetailScreen() {
     return `Based on your preferences, this place matches your interest in ${tagStr}.`;
   }, [tags, profile]);
 
-  if (loading) return <LoadingScreen />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <NavigationHeader
+          title=""
+          parentTitle={parentTitle ?? 'Discover'}
+          onBack={handleBack}
+        />
+        <ActivitySkeleton />
+      </SafeAreaView>
+    );
+  }
+
   if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
 
   if (!place) {
     return (
-      <View style={[styles.container, { paddingTop: insets.top }]}>
-        <Text style={styles.notFound}>Place not found</Text>
-      </View>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <NavigationHeader title="Place" parentTitle={parentTitle ?? 'Discover'} onBack={handleBack} />
+        <View style={styles.emptyState}>
+          <Text style={styles.notFound}>Place not found</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
@@ -364,7 +362,7 @@ export default function PlaceDetailScreen() {
   const useSerifName = false;
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Header */}
       <NavigationHeader
         title={place.name}
@@ -496,29 +494,18 @@ export default function PlaceDetailScreen() {
             </View>
           )}
 
-          {/* Tags grouped */}
+          {/* Tags — inline text grouped by type */}
           {Object.keys(groupedTags).length > 0 && (
             <View style={styles.tagsSection}>
+              <Text style={styles.sectionLabel}>CHARACTERISTICS</Text>
               {Object.entries(groupedTags).map(([group, groupTags]) => (
-                <View key={group} style={styles.tagGroup}>
-                  <Text style={styles.tagGroupLabel}>
-                    {TAG_GROUP_CONFIG[group] ?? group.toUpperCase()}
+                <View key={group} style={styles.tagInlineRow}>
+                  <Text style={styles.tagGroupInlineLabel}>
+                    {TAG_GROUP_CONFIG[group] ?? group.charAt(0).toUpperCase() + group.slice(1)}
                   </Text>
-                  <View style={styles.tagRow}>
-                    {groupTags.map((tag) => {
-                      const tc = tagColors(tag.filterGroup);
-                      return (
-                        <View
-                          key={tag.id}
-                          style={[styles.tagPill, { backgroundColor: tc.bg }]}
-                        >
-                          <Text style={[styles.tagText, { color: tc.fg }]}>
-                            {tag.label}
-                          </Text>
-                        </View>
-                      );
-                    })}
-                  </View>
+                  <Text style={styles.tagInlineText}>
+                    {groupTags.map((t) => t.label).join(' · ')}
+                  </Text>
                 </View>
               ))}
             </View>
@@ -571,40 +558,43 @@ export default function PlaceDetailScreen() {
             </View>
           )}
 
-          {/* Action Buttons */}
-          <View style={styles.actionButtons}>
-            <Pressable
-              onPress={handleSave}
-              disabled={!canSave}
-              style={[
-                styles.actionBtn,
-                styles.saveBtn,
-                saved && styles.saveBtnSaved,
-                !canSave && styles.actionBtnDisabled,
-              ]}
-            >
-              <Ionicons
-                name={saved ? 'bookmark' : 'bookmark-outline'}
-                size={20}
-                color={colors.background}
+          {/* Map preview */}
+          {(place.lat || place.address) && (
+            <View style={styles.mapSection}>
+              <MapPreview
+                lat={place.lat ?? null}
+                lng={place.lng ?? null}
+                name={place.name}
+                address={place.address ?? null}
+                onPress={handleOpenMaps}
               />
-              <Text style={styles.actionBtnText}>
-                {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
-              </Text>
-            </Pressable>
+            </View>
+          )}
 
-            <Pressable
-              onPress={handleOpenMaps}
-              style={[styles.actionBtn, styles.mapsBtn]}
-            >
-              <Ionicons name="map-outline" size={20} color={colors.textPrimary} />
-              <Text style={styles.mapsBtnText}>View on Maps</Text>
-            </Pressable>
-          </View>
+          {/* Save button */}
+          <Pressable
+            onPress={handleSave}
+            disabled={!canSave}
+            style={[
+              styles.actionBtn,
+              styles.saveBtn,
+              saved && styles.saveBtnSaved,
+              !canSave && styles.actionBtnDisabled,
+            ]}
+          >
+            <Ionicons
+              name={saved ? 'checkmark-circle' : 'add-circle-outline'}
+              size={20}
+              color={colors.background}
+            />
+            <Text style={styles.actionBtnText}>
+              {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Add to Trip'}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Bottom spacing */}
-        <View style={{ height: insets.bottom + spacing.xxl }} />
+        <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
 
       {/* Save to trip / collection sheet */}
@@ -618,7 +608,7 @@ export default function PlaceDetailScreen() {
           userId={userId}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -631,11 +621,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
   },
+  emptyState: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   notFound: {
     ...typography.body,
     color: colors.textMuted,
     textAlign: 'center',
-    marginTop: spacing.xxl,
   },
 
   // Carousel
@@ -846,34 +840,27 @@ const styles = StyleSheet.create({
     lineHeight: 20,
   },
 
-  // Tags
+  // Tags (inline text)
   tagsSection: {
     marginTop: spacing.xxl,
-    gap: spacing.md,
   },
-  tagGroup: {
-    gap: spacing.xs,
-  },
-  tagGroupLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    letterSpacing: 1.5,
-    color: colors.textMuted,
-  },
-  tagRow: {
+  tagInlineRow: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginTop: spacing.xs,
+    marginBottom: spacing.sm,
   },
-  tagPill: {
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: radius.pill,
+  tagGroupInlineLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textSecondary,
+    width: 64,
+    marginRight: spacing.sm,
   },
-  tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
+  tagInlineText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    flex: 1,
+    lineHeight: 18,
   },
 
   // Details
@@ -913,20 +900,20 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // Action buttons
-  actionButtons: {
-    flexDirection: 'row',
-    gap: spacing.md,
+  // Map section
+  mapSection: {
     marginTop: spacing.xxl,
   },
+
+  // Action button
   actionBtn: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: 14,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     borderRadius: radius.full,
+    marginTop: spacing.xxl,
   },
   saveBtn: {
     backgroundColor: colors.orange,
@@ -939,17 +926,7 @@ const styles = StyleSheet.create({
   },
   actionBtnText: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.background,
-  },
-  mapsBtn: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-  },
-  mapsBtnText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
   },
 });

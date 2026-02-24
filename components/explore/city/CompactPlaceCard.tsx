@@ -135,7 +135,7 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
   );
 }
 
-const IMAGE_HEIGHT = 140;
+const IMAGE_HEIGHT = 100;
 
 const styles = StyleSheet.create({
   card: {
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.cardLg,
     overflow: 'hidden',
     backgroundColor: colors.background,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   cardPressed: {
     opacity: pressedState.opacity,

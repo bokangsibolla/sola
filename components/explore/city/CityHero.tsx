@@ -1,9 +1,9 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import BackButton from '@/components/ui/BackButton';
 import { colors, fonts, spacing } from '@/constants/design';
 import type { City } from '@/data/types';
 
@@ -36,13 +36,9 @@ export function CityHero({ city, countryName }: CityHeroProps) {
       />
 
       {/* Back button */}
-      <Pressable
-        onPress={() => router.back()}
-        style={[styles.backButton, { top: insets.top + spacing.sm }]}
-        hitSlop={8}
-      >
-        <Ionicons name="arrow-back" size={22} color="#FFFFFF" />
-      </Pressable>
+      <View style={[styles.backButtonWrapper, { top: insets.top + spacing.sm }]}>
+        <BackButton />
+      </View>
 
       {/* City name + country + positioning line */}
       <View style={styles.overlay}>
@@ -73,15 +69,9 @@ const styles = StyleSheet.create({
   gradient: {
     ...StyleSheet.absoluteFillObject,
   },
-  backButton: {
+  backButtonWrapper: {
     position: 'absolute',
-    left: spacing.lg,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    alignItems: 'center',
-    justifyContent: 'center',
+    left: spacing.screenX,
     zIndex: 10,
   },
   overlay: {

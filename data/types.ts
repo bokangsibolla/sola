@@ -186,6 +186,10 @@ export interface CityArea {
   positioningLine: string | null;
   whoItSuits: string | null;
   heroImageUrl: string | null;
+  // Area enrichment (Feb 2026)
+  vibeDescription: string | null;
+  crowdVibe: string | null;
+  practicalInfo: Record<string, string> | null;
 }
 
 export interface PlaceCategory {

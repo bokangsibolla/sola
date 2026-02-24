@@ -37,12 +37,12 @@ const StickyBottomCTA: React.FC<StickyBottomCTAProps> = ({
         ]}
       >
         <Ionicons
-          name={saved ? 'heart' : 'heart-outline'}
+          name={saved ? 'checkmark-circle' : 'add-circle-outline'}
           size={20}
           color={colors.background}
         />
         <Text style={styles.saveText}>
-          {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Save'}
+          {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Add to Trip'}
         </Text>
       </Pressable>
 
@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: 14,
+    gap: spacing.xs,
+    paddingVertical: spacing.md,
     borderRadius: radius.full,
   },
   saveButton: {
@@ -91,7 +91,7 @@ const styles = StyleSheet.create({
   },
   saveText: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.background,
   },
   mapsButton: {
@@ -101,7 +101,7 @@ const styles = StyleSheet.create({
   },
   mapsText: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
 });

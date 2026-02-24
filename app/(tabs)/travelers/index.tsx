@@ -18,7 +18,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { colors, fonts, spacing, radius, typography } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import PendingConnectionsBanner from '@/components/travelers/PendingConnectionsBanner';
@@ -277,7 +277,7 @@ export default function TravelersScreen() {
       <AppScreen>
         <NavigationHeader
           title="Travelers"
-          rightActions={<AvatarButton />}
+          rightActions={<HamburgerButton />}
         />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.orange} />
@@ -291,7 +291,7 @@ export default function TravelersScreen() {
       <AppScreen>
         <NavigationHeader
           title="Travelers"
-          rightActions={<AvatarButton />}
+          rightActions={<HamburgerButton />}
         />
         <ErrorScreen message="Something went wrong loading travelers. Pull to retry." onRetry={refetch} />
       </AppScreen>
@@ -302,7 +302,7 @@ export default function TravelersScreen() {
     <AppScreen>
       <NavigationHeader
         title="Travelers"
-        rightActions={<AvatarButton />}
+        rightActions={<HamburgerButton />}
       />
 
       {/* Search Bar */}

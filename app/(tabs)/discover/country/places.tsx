@@ -15,6 +15,7 @@ import { getTopPlacesByCountry } from '@/data/api';
 import type { PlaceWithCity } from '@/data/types';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
+import NavigationHeader from '@/components/NavigationHeader';
 import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 
 // ---------------------------------------------------------------------------
@@ -275,19 +276,10 @@ export default function CountryPlacesScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
-      <View style={styles.nav}>
-        <Pressable
-          onPress={() => router.back()}
-          hitSlop={12}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={20} color={colors.textPrimary} />
-          <Text style={styles.backLabel}>{countryName || 'Back'}</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.screenTitle}>
-        {isStay ? 'Where to Stay' : 'Things to Do'}
-      </Text>
+      <NavigationHeader
+        title={isStay ? 'Where to Stay' : 'Things to Do'}
+        parentTitle={countryName || 'Back'}
+      />
 
       {/* Category tabs */}
       <View style={styles.tabs}>
@@ -395,27 +387,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
-  },
-  nav: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-  },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  backLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  screenTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 22,
-    color: colors.textPrimary,
-    paddingHorizontal: spacing.lg,
-    marginBottom: spacing.lg,
   },
   tabs: {
     flexDirection: 'row',
