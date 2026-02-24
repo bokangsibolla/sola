@@ -106,6 +106,8 @@ export interface BudgetTip {
   level: 'essential' | 'insider';
 }
 
+export type PlaceKind = 'city' | 'island' | 'town' | 'beach_town' | 'mountain_town' | 'village' | 'region';
+
 export interface City {
   id: string;
   countryId: string;
@@ -164,6 +166,9 @@ export interface City {
   experiencePillars: { title: string; descriptor: string }[] | null;
   howWomenUse: { summary: string; bullets: string[] } | null;
   awareness: { summary: string; bullets: string[] } | null;
+  // Place kind (country destinations grouping)
+  placeKind: PlaceKind;
+  placeKindDescriptor: string | null;
 }
 
 export interface CityArea {
@@ -475,6 +480,14 @@ export interface CityEvent {
   orderIndex: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface CityEventWithLocation extends CityEvent {
+  cityName: string;
+  citySlug: string;
+  countryName: string;
+  countrySlug: string;
+  countryId: string;
 }
 
 export interface TripPlace {

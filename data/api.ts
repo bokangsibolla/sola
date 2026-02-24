@@ -18,6 +18,7 @@ import type {
   Trip,
   TripPlace,
   CityEvent,
+  CityEventWithLocation,
   Conversation,
   Message,
   DestinationTag,
@@ -217,6 +218,9 @@ export function mapCity(row: Record<string, any>): City {
     experiencePillars: row.experience_pillars ?? null,
     howWomenUse: row.how_women_use ?? null,
     awareness: row.awareness ?? null,
+    // Place kind (country destinations grouping)
+    placeKind: row.place_kind ?? 'city',
+    placeKindDescriptor: row.place_kind_descriptor ?? null,
   };
 }
 
@@ -1344,6 +1348,60 @@ export async function getEventsByCity(
   }
 
   return events;
+}
+
+/**
+ * Get a single event by slug, including city and country info.
+ */
+export async function getEventBySlug(
+  slug: string,
+): Promise<CityEventWithLocation | null> {
+  const { data, error } = await supabase
+    .from('city_events')
+    .select('*, cities!inner(name, slug, country_id, countries!inner(name, slug))')
+    .eq('slug', slug)
+    .eq('is_active', true)
+    .single();
+
+  if (error) {
+    if (error.code === 'PGRST116') return null; // not found
+    throw error;
+  }
+  if (!data) return null;
+
+  const city = (data as any).cities;
+  const country = city?.countries;
+  const base = mapCityEvent(data);
+
+  return {
+    ...base,
+    cityName: city?.name ?? '',
+    citySlug: city?.slug ?? '',
+    countryName: country?.name ?? '',
+    countrySlug: country?.slug ?? '',
+    countryId: city?.country_id ?? '',
+  };
+}
+
+/**
+ * Get more events in the same city (excludes one event by ID).
+ */
+export async function getMoreEventsInCity(
+  cityId: string,
+  excludeEventId: string,
+  limit = 4,
+): Promise<CityEvent[]> {
+  const { data, error } = await supabase
+    .from('city_events')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .neq('id', excludeEventId)
+    .order('order_index')
+    .limit(limit);
+
+  if (error) throw error;
+  return (data ?? []).map(mapCityEvent);
 }
 
 /**

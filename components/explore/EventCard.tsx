@@ -1,4 +1,4 @@
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -17,9 +17,10 @@ const EVENT_TYPE_LABELS: Record<CityEvent['eventType'], string> = {
 
 interface EventCardProps {
   event: CityEvent;
+  onPress?: () => void;
 }
 
-export function EventCard({ event }: EventCardProps) {
+export function EventCard({ event, onPress }: EventCardProps) {
   const dateLabel = event.specificDates
     ? event.specificDates
     : event.startMonth === event.endMonth
@@ -27,7 +28,14 @@ export function EventCard({ event }: EventCardProps) {
       : `${MONTH_LABELS[event.startMonth - 1]}\u2013${MONTH_LABELS[event.endMonth - 1]}`;
 
   return (
-    <View style={styles.card}>
+    <Pressable
+      style={({ pressed }) => [
+        styles.card,
+        pressed && onPress ? styles.cardPressed : undefined,
+      ]}
+      onPress={onPress}
+      disabled={!onPress}
+    >
       {event.heroImageUrl ? (
         <Image
           source={{ uri: event.heroImageUrl }}
@@ -63,7 +71,7 @@ export function EventCard({ event }: EventCardProps) {
           </View>
         )}
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -76,6 +84,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     marginBottom: spacing.md,
     backgroundColor: colors.background,
+  },
+  cardPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.98 }],
   },
   cardImage: {
     width: 88,
