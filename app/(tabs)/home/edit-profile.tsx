@@ -21,8 +21,10 @@ import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
-import { getProfileById, checkUsernameAvailability, validateUsernameFormat, getUserVisitedCountries, setVisitedCountries as saveVisitedCountries } from '@/data/api';
+import { getProfileById, checkUsernameAvailability, validateUsernameFormat, getUserVisitedCountries, setVisitedCountries as saveVisitedCountries, getProfileTags, setProfileTags } from '@/data/api';
 import VisitedCountriesEditor from '@/components/travelers/VisitedCountriesEditor';
+import { InterestPicker } from '@/components/profile/InterestPicker';
+import { ALL_INTERESTS } from '@/constants/interests';
 import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -32,16 +34,6 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 
 const BIO_MAX = 140;
-const ALL_INTERESTS = [
-  'food',
-  'outdoors',
-  'culture',
-  'nightlife',
-  'wellness',
-  'photography',
-  'hidden gems',
-  'history',
-];
 const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
 
 export default function EditProfileScreen() {
@@ -64,7 +56,7 @@ export default function EditProfileScreen() {
   const [firstName, setFirstName] = useState('');
   const [bio, setBio] = useState('');
   const [selectedCountry, setSelectedCountry] = useState('');
-  const [interests, setInterests] = useState<string[]>([]);
+  const [selectedTagSlugs, setSelectedTagSlugs] = useState<string[]>([]);
   const [initialized, setInitialized] = useState(false);
   const [username, setUsername] = useState('');
   const [usernameStatus, setUsernameStatus] = useState<'idle' | 'checking' | 'available' | 'taken' | 'invalid'>('idle');
@@ -73,6 +65,12 @@ export default function EditProfileScreen() {
   const [countrySearch, setCountrySearch] = useState('');
   const [saving, setSaving] = useState(false);
 
+  // Fetch existing profile tags
+  const { data: existingTags } = useData(
+    () => (userId ? getProfileTags(userId) : Promise.resolve([])),
+    [userId],
+  );
+
   // Populate form once profile loads
   useEffect(() => {
     if (profile && !initialized) {
@@ -80,11 +78,17 @@ export default function EditProfileScreen() {
       setFirstName(profile.firstName);
       setBio(profile.bio ?? '');
       setSelectedCountry(profile.homeCountryIso2 ?? '');
-      setInterests([...(profile.interests ?? [])]);
       setUsername(profile.username ?? '');
       setInitialized(true);
     }
   }, [profile, initialized]);
+
+  // Seed selected tags from existing profile tags
+  useEffect(() => {
+    if (existingTags && existingTags.length > 0 && selectedTagSlugs.length === 0) {
+      setSelectedTagSlugs(existingTags.map((t) => t.tagSlug));
+    }
+  }, [existingTags]);
 
   // Debounced username availability check
   useEffect(() => {
@@ -143,8 +147,6 @@ export default function EditProfileScreen() {
   const counterColor =
     remaining <= 10 ? '#E53E3E' : remaining <= 30 ? colors.orange : colors.textMuted;
 
-  const availableInterests = ALL_INTERESTS.filter((i) => !interests.includes(i));
-
   // Image picker with permission handling
   const pickImage = async (fromCamera: boolean) => {
     // Request permission first
@@ -193,12 +195,6 @@ export default function EditProfileScreen() {
     if (text.length <= BIO_MAX) setBio(text);
   };
 
-  const toggleInterest = (item: string) => {
-    setInterests((prev) =>
-      prev.includes(item) ? prev.filter((i) => i !== item) : [...prev, item],
-    );
-  };
-
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
@@ -212,17 +208,26 @@ export default function EditProfileScreen() {
         avatar_url: avatarUrl,
         home_country_iso2: selectedCountry || null,
         home_country_name: country?.name ?? null,
-        interests,
         username: username.trim() || null,
       });
       if (upsertError) {
         Alert.alert('Save failed', upsertError.message);
         return;
       }
+      // Save profile tags
+      const tagsToSave = selectedTagSlugs.map((slug) => {
+        const option = ALL_INTERESTS.find((o) => o.slug === slug);
+        return {
+          tagSlug: slug,
+          tagLabel: option?.label ?? slug,
+          tagGroup: option?.group ?? '',
+        };
+      });
+      await setProfileTags(userId, tagsToSave);
       await saveVisitedCountries(userId, visitedCountryIds);
       // Invalidate all profile-related caches so avatar updates everywhere immediately
       queryClient.invalidateQueries({ queryKey: ['useData', userId] });
-      posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: interests.length, visited_countries_count: visitedCountryIds.length });
+      posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: selectedTagSlugs.length, visited_countries_count: visitedCountryIds.length });
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
@@ -350,35 +355,10 @@ export default function EditProfileScreen() {
 
         {/* Interests */}
         <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Interests</Text>
-        {interests.length > 0 && (
-          <View style={styles.pillGrid}>
-            {interests.map((item) => (
-              <Pressable
-                key={item}
-                style={[styles.pill, styles.pillSelected]}
-                onPress={() => toggleInterest(item)}
-              >
-                <Text style={[styles.pillText, styles.pillTextSelected]}>
-                  {item}
-                </Text>
-                <Ionicons name="close" size={14} color={colors.background} style={{ marginLeft: 4 }} />
-              </Pressable>
-            ))}
-          </View>
-        )}
-        {availableInterests.length > 0 && (
-          <View style={[styles.pillGrid, { marginTop: spacing.sm }]}>
-            {availableInterests.map((item) => (
-              <Pressable
-                key={item}
-                style={styles.pill}
-                onPress={() => toggleInterest(item)}
-              >
-                <Text style={styles.pillText}>{item}</Text>
-              </Pressable>
-            ))}
-          </View>
-        )}
+        <InterestPicker
+          selected={selectedTagSlugs}
+          onChange={setSelectedTagSlugs}
+        />
 
         {/* Countries visited */}
         <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Countries I've visited</Text>

@@ -314,6 +314,14 @@ export interface Tag {
   createdAt: string;
 }
 
+export interface ProfileTag {
+  profileId: string;
+  tagSlug: string;
+  tagLabel: string;
+  tagGroup: string;
+  createdAt: string;
+}
+
 export interface PlaceTag {
   placeId: string;
   tagId: string;
