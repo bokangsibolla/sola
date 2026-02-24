@@ -16,15 +16,15 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { usePostHog } from 'posthog-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, fonts, spacing, radius, typography } from '@/constants/design';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import PendingConnectionsBanner from '@/components/travelers/PendingConnectionsBanner';
-import { useTravelersFeed } from '@/data/travelers/useTravelersFeed';
-import type { TravelerMatchSection } from '@/data/travelers/useTravelersFeed';
+import { useTravelersFeedV2 } from '@/data/travelers/useTravelersFeedV2';
+import type { TravelerSection } from '@/data/travelers/useTravelersFeedV2';
 import { useTravelerSearch } from '@/data/travelers/useTravelerSearch';
 import { getConnectionContext, getSharedInterests } from '@/data/travelers/connectionContext';
 import { sendConnectionRequest, getConnectionStatus, getUserVisitedCountries } from '@/data/api';
@@ -38,15 +38,62 @@ import type { Profile, ConnectionStatus } from '@/data/types';
 const CARD_WIDTH = 260;
 
 // ---------------------------------------------------------------------------
+// Section Context Labels
+// ---------------------------------------------------------------------------
+
+function getSectionContextLabel(
+  section: TravelerSection,
+  profile: Profile,
+  userProfile: Profile | null,
+): string | undefined {
+  switch (section.contextType) {
+    case 'near-you':
+      if (profile.homeCountryName) {
+        return `Visiting from ${profile.homeCountryName}`;
+      }
+      return undefined;
+
+    case 'same-country-location':
+      return profile.locationCityName ? `In ${profile.locationCityName}` : undefined;
+
+    case 'trip-overlap':
+      return 'Overlapping dates';
+
+    case 'shared-countries': {
+      const names = section.meta?.get(profile.id) ?? [];
+      if (names.length === 0) return undefined;
+      if (names.length <= 2) return `Also visited ${names.join(', ')}`;
+      return `Also visited ${names[0]}, ${names[1]} +${names.length - 2}`;
+    }
+
+    case 'home-country':
+      return profile.locationCityName ?? profile.currentCityName ?? undefined;
+
+    case 'shared-interests': {
+      const shared = (userProfile?.interests ?? []).filter((i) =>
+        (profile.interests ?? []).includes(i),
+      );
+      if (shared.length === 0) return undefined;
+      return shared.slice(0, 3).join(', ');
+    }
+
+    default:
+      return undefined;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Traveler Card Wrapper — handles connection state
 // ---------------------------------------------------------------------------
 
 function TravelerCardWrapper({
   profile,
   userProfile,
+  section,
 }: {
   profile: Profile;
   userProfile: Profile | null;
+  section?: TravelerSection;
 }) {
   const router = useRouter();
   const posthog = usePostHog();
@@ -69,7 +116,11 @@ function TravelerCardWrapper({
 
   const status = localStatus ?? fetchedStatus ?? 'none';
   const shared = userProfile ? getSharedInterests(userProfile, profile) : [];
-  const contextLabel = userProfile ? getConnectionContext(userProfile, profile) : undefined;
+  const contextLabel = section
+    ? getSectionContextLabel(section, profile, userProfile)
+    : userProfile
+      ? getConnectionContext(userProfile, profile)
+      : undefined;
 
   const handleConnect = useCallback(async () => {
     if (!userId) return;
@@ -109,14 +160,14 @@ function HorizontalSection({
   section,
   userProfile,
 }: {
-  section: TravelerMatchSection;
+  section: TravelerSection;
   userProfile: Profile | null;
 }) {
   const renderItem = useCallback(
     ({ item }: { item: Profile }) => (
-      <TravelerCardWrapper profile={item} userProfile={userProfile} />
+      <TravelerCardWrapper profile={item} userProfile={userProfile} section={section} />
     ),
-    [userProfile],
+    [userProfile, section],
   );
 
   return (
@@ -142,93 +193,28 @@ function HorizontalSection({
 }
 
 // ---------------------------------------------------------------------------
-// Connected User Row — compact row for empty state
+// Profile Incomplete State — encourages profile completion
 // ---------------------------------------------------------------------------
 
-function ConnectedUserRow({ profile }: { profile: Profile }) {
-  const router = useRouter();
-  const posthog = usePostHog();
-
-  return (
-    <Pressable
-      style={({ pressed }) => [styles.connectedRow, pressed && styles.connectedRowPressed]}
-      onPress={() => {
-        posthog.capture('connected_user_tapped', { profile_id: profile.id });
-        router.push(`/travelers/user/${profile.id}` as any);
-      }}
-    >
-      {profile.avatarUrl ? (
-        <Image
-          source={{ uri: getImageUrl(profile.avatarUrl, { width: 80, height: 80 }) ?? undefined }}
-          style={styles.connectedAvatar}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={[styles.connectedAvatar, styles.connectedAvatarPlaceholder]}>
-          <Feather name="user" size={16} color={colors.textMuted} />
-        </View>
-      )}
-      <View style={styles.connectedInfo}>
-        <Text style={styles.connectedName}>{profile.firstName}</Text>
-        {profile.username && (
-          <Text style={styles.connectedUsername}>@{profile.username}</Text>
-        )}
-      </View>
-      {profile.homeCountryIso2 && (
-        <Text style={styles.connectedFlag}>{getFlag(profile.homeCountryIso2)}</Text>
-      )}
-      <Feather name="chevron-right" size={16} color={colors.textMuted} />
-    </Pressable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Empty State — trip-gated discovery locked
-// ---------------------------------------------------------------------------
-
-function EmptyState({ connectedProfiles }: { connectedProfiles: Profile[] }) {
+function ProfileIncompleteState() {
   const router = useRouter();
 
   return (
     <View style={styles.emptyContainer}>
       <View style={styles.emptyIllustration}>
-        <Feather name="map-pin" size={48} color={colors.textMuted} />
+        <Feather name="users" size={48} color={colors.textMuted} />
       </View>
-      <Text style={styles.emptyTitle}>Plan a trip to discover travelers heading your way</Text>
+      <Text style={styles.emptyTitle}>Discover solo women travelers</Text>
       <Text style={styles.emptySubtitle}>
-        Once you have an upcoming trip, we'll match you with women traveling to the same places
+        Complete your profile to get matched with travelers who share your interests and destinations
       </Text>
       <Pressable
         style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaButtonPressed]}
-        onPress={() => router.push('/(tabs)/trips/new')}
+        onPress={() => router.push('/(tabs)/home/profile' as any)}
       >
-        <Feather name="plus" size={16} color={colors.background} />
-        <Text style={styles.ctaButtonText}>Plan a trip</Text>
+        <Feather name="edit-3" size={16} color={colors.background} />
+        <Text style={styles.ctaButtonText}>Complete profile</Text>
       </Pressable>
-
-      {connectedProfiles.length > 0 && (
-        <View style={styles.connectedSection}>
-          <Text style={styles.connectedSectionTitle}>Your connections</Text>
-          {connectedProfiles.map((profile) => (
-            <ConnectedUserRow key={profile.id} profile={profile} />
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// All Sections Empty
-// ---------------------------------------------------------------------------
-
-function NoMatchesYet() {
-  return (
-    <View style={styles.noMatchesContainer}>
-      <Feather name="clock" size={36} color={colors.textMuted} />
-      <Text style={styles.noMatchesText}>
-        No matches yet — check back as your trip dates approach
-      </Text>
     </View>
   );
 }
@@ -251,7 +237,6 @@ export default function TravelersScreen() {
   const [searchTriggered, setSearchTriggered] = useState(false);
 
   const {
-    hasQualifyingTrip,
     sections,
     connectedProfiles,
     pendingReceived,
@@ -259,7 +244,7 @@ export default function TravelersScreen() {
     isLoading,
     error,
     refetch,
-  } = useTravelersFeed();
+  } = useTravelersFeedV2();
 
   useEffect(() => {
     posthog.capture('travelers_screen_viewed');
@@ -282,8 +267,6 @@ export default function TravelersScreen() {
     setSearchTriggered(false);
     Keyboard.dismiss();
   }, [clear]);
-
-  const nonEmptySections = sections.filter((s) => s.data.length > 0);
 
   // ─── Segmented Control ──────────────────────────────────────
   const renderSegmentedControl = () => (
@@ -439,11 +422,9 @@ export default function TravelersScreen() {
             onPress={() => router.push('/travelers/connections' as any)}
           />
 
-          {/* Trip-gated content */}
-          {!hasQualifyingTrip ? (
-            <EmptyState connectedProfiles={connectedProfiles} />
-          ) : nonEmptySections.length > 0 ? (
-            nonEmptySections.map((section) => (
+          {/* Discovery sections */}
+          {sections.length > 0 ? (
+            sections.map((section) => (
               <HorizontalSection
                 key={section.key}
                 section={section}
@@ -451,7 +432,7 @@ export default function TravelersScreen() {
               />
             ))
           ) : (
-            <NoMatchesYet />
+            <ProfileIncompleteState />
           )}
         </ScrollView>
       )}
@@ -661,71 +642,4 @@ const styles = StyleSheet.create({
     color: colors.background,
   },
 
-  // Connected users (empty state)
-  connectedSection: {
-    width: '100%',
-    marginTop: spacing.xxl,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
-    paddingTop: spacing.xl,
-  },
-  connectedSectionTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    color: colors.textPrimary,
-    marginBottom: spacing.md,
-  },
-  connectedRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    gap: spacing.md,
-  },
-  connectedRowPressed: {
-    opacity: 0.9,
-  },
-  connectedAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
-  },
-  connectedAvatarPlaceholder: {
-    backgroundColor: colors.neutralFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  connectedInfo: {
-    flex: 1,
-  },
-  connectedName: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  connectedUsername: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-  connectedFlag: {
-    fontSize: 18,
-  },
-
-  // No matches
-  noMatchesContainer: {
-    alignItems: 'center',
-    paddingVertical: spacing.xxl * 2,
-    paddingHorizontal: spacing.xl,
-    gap: spacing.md,
-  },
-  noMatchesText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
-  },
 });

@@ -3104,6 +3104,85 @@ export async function getTravelersWithSharedInterests(
   return rowsToCamel<Profile>(data ?? []);
 }
 
+/**
+ * Find travelers who have visited the same countries as the user.
+ * Returns profiles with an attached `sharedCountryNames` array for context labels.
+ * Sorted by overlap count (most shared countries first).
+ */
+export async function getTravelersWithSharedCountries(
+  userId: string,
+  userCountryIds: string[],
+  blockedIds: string[],
+  limit: number = 15,
+): Promise<Array<Profile & { sharedCountryNames: string[] }>> {
+  if (userCountryIds.length === 0) return [];
+  const excluded = [userId].concat(Array.isArray(blockedIds) ? blockedIds : []).filter(Boolean);
+
+  // Find other users who visited any of the same countries
+  const { data: matches, error } = await supabase
+    .from('user_visited_countries')
+    .select('user_id, country_id, countries(name)')
+    .in('country_id', userCountryIds)
+    .not('user_id', 'in', `(${excluded})`);
+
+  if (error) throw error;
+  if (!matches || matches.length === 0) return [];
+
+  // Group by user_id, count overlaps, collect country names
+  const userMap = new Map<string, string[]>();
+  for (const row of matches as any[]) {
+    const uid = row.user_id as string;
+    const name = row.countries?.name as string;
+    if (!userMap.has(uid)) userMap.set(uid, []);
+    if (name) userMap.get(uid)!.push(name);
+  }
+
+  // Sort by overlap count descending, take top N
+  const sorted = Array.from(userMap.entries())
+    .sort((a, b) => b[1].length - a[1].length)
+    .slice(0, limit);
+
+  const userIds = sorted.map(([uid]) => uid);
+  if (userIds.length === 0) return [];
+
+  const { data: profiles } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', userIds)
+    .eq('is_discoverable', true);
+
+  if (!profiles) return [];
+
+  // Attach shared country names to each profile
+  const countryMap = new Map(sorted);
+  return rowsToCamel<Profile>(profiles).map((p) => ({
+    ...p,
+    sharedCountryNames: countryMap.get(p.id) ?? [],
+  }));
+}
+
+/**
+ * Find discoverable travelers from the same home country.
+ */
+export async function getTravelersFromHomeCountry(
+  userId: string,
+  countryIso2: string,
+  blockedIds: string[],
+  limit: number = 15,
+): Promise<Profile[]> {
+  if (!countryIso2) return [];
+  const excluded = [userId].concat(Array.isArray(blockedIds) ? blockedIds : []).filter(Boolean);
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('home_country_iso2', countryIso2)
+    .eq('is_discoverable', true)
+    .not('id', 'in', `(${excluded})`)
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
 export async function getSuggestedTravelers(
   userId: string,
   excludeIds: string[],
