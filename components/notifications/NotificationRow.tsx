@@ -25,13 +25,13 @@ export function NotificationRow({ notification }: NotificationRowProps) {
 
     switch (notification.targetType) {
       case 'thread':
-        router.push(`/(tabs)/connect/thread/${notification.targetId}` as any);
+        router.push(`/(tabs)/discussions/thread/${notification.targetId}` as any);
         break;
       case 'conversation':
-        router.push(`/(tabs)/connect/dm/${notification.targetId}` as any);
+        router.push(`/(tabs)/travelers/dm/${notification.targetId}` as any);
         break;
       case 'profile':
-        router.push(`/connect/user/${notification.targetId}` as any);
+        router.push(`/(tabs)/travelers/user/${notification.targetId}` as any);
         break;
     }
   };

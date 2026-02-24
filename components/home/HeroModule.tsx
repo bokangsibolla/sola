@@ -66,9 +66,9 @@ export function HeroModule({ hero }: HeroModuleProps) {
 
   const handlePress = () => {
     if (hero.kind === 'active' || hero.kind === 'upcoming') {
-      router.push(`/trips/${hero.trip.id}` as any);
+      router.push(`/(tabs)/trips/${hero.trip.id}` as any);
     } else {
-      router.push(`/discover/city/${hero.city.slug}` as any);
+      router.push(`/(tabs)/discover/city/${hero.city.slug}` as any);
     }
   };
 

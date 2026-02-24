@@ -26,6 +26,7 @@ interface MenuItem {
   icon: keyof typeof Feather.glyphMap;
   route: string;
   showDot?: boolean;
+  dividerBefore?: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -40,13 +41,17 @@ export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps)
     {
       label: 'Messages',
       icon: 'message-circle',
-      route: '/connect/dm',
+      route: '/(tabs)/travelers/dm',
       showDot: unreadCount > 0,
     },
-    { label: 'Profile', icon: 'user', route: '/home/profile' },
-    { label: 'Saved Places', icon: 'bookmark', route: '/home/profile' },
-    { label: 'Safety Info', icon: 'shield', route: '/home/sos' },
-    { label: 'Settings', icon: 'settings', route: '/home/settings' },
+    { label: 'Profile', icon: 'user', route: '/(tabs)/home/profile' },
+    { label: 'Saved Places', icon: 'bookmark', route: '/(tabs)/home/profile' },
+    { label: 'Countries', icon: 'globe', route: '/(tabs)/discover/all-countries', dividerBefore: true },
+    { label: 'Destinations', icon: 'map-pin', route: '/(tabs)/discover/all-destinations' },
+    { label: 'Experiences', icon: 'compass', route: '/(tabs)/discover/all-activities' },
+    { label: 'Search', icon: 'search', route: '/(tabs)/discover/search' },
+    { label: 'Safety Info', icon: 'shield', route: '/(tabs)/home/settings', dividerBefore: true },
+    { label: 'Settings', icon: 'settings', route: '/(tabs)/home/settings' },
   ];
 
   const handlePress = (route: string) => {
@@ -62,18 +67,20 @@ export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps)
           <View style={styles.handle} />
 
           {menuItems.map((item) => (
-            <Pressable
-              key={item.label}
-              style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-              onPress={() => handlePress(item.route)}
-            >
-              <View style={styles.iconCircle}>
-                <Feather name={item.icon} size={18} color={colors.textPrimary} />
-                {item.showDot && <View style={styles.dot} />}
-              </View>
-              <Text style={styles.rowLabel}>{item.label}</Text>
-              <Feather name="chevron-right" size={18} color={colors.textMuted} />
-            </Pressable>
+            <React.Fragment key={item.label}>
+              {item.dividerBefore && <View style={styles.divider} />}
+              <Pressable
+                style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
+                onPress={() => handlePress(item.route)}
+              >
+                <View style={styles.iconCircle}>
+                  <Feather name={item.icon} size={18} color={colors.textPrimary} />
+                  {item.showDot && <View style={styles.dot} />}
+                </View>
+                <Text style={styles.rowLabel}>{item.label}</Text>
+                <Feather name="chevron-right" size={18} color={colors.textMuted} />
+              </Pressable>
+            </React.Fragment>
           ))}
         </View>
       </View>
@@ -135,6 +142,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.orange,
     borderWidth: 1.5,
     borderColor: colors.background,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.borderSubtle,
+    marginVertical: spacing.xs,
   },
   rowLabel: {
     flex: 1,

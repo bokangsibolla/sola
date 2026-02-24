@@ -26,7 +26,7 @@ export function TripPromptCard({ onDismiss }: TripPromptCardProps) {
       </Text>
 
       <Pressable
-        onPress={() => router.push('/trips/new')}
+        onPress={() => router.push('/(tabs)/trips/new' as any)}
         style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
       >
         <Text style={styles.ctaText}>Log a trip</Text>

@@ -47,7 +47,7 @@ export function DashboardHeader({ firstName, heroState }: DashboardHeaderProps) 
 
       <Pressable
         style={({ pressed }) => [styles.searchPill, pressed && styles.searchPressed]}
-        onPress={() => router.push('/discover/search')}
+        onPress={() => router.push('/(tabs)/discover/search' as any)}
         accessibilityRole="button"
         accessibilityLabel="Search destinations"
       >

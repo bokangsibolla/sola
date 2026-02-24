@@ -207,7 +207,7 @@ export default function ProfileScreen() {
             style={styles.actionButton}
             onPress={() => {
               posthog.capture('messages_tapped', { source: 'profile' });
-              router.push('/connect/dm');
+              router.push('/(tabs)/travelers/dm' as any);
             }}
           >
             <Ionicons name="chatbubbles-outline" size={18} color={colors.orange} />

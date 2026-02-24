@@ -44,7 +44,7 @@ export function ModeSwitchSheet({ visible, onClose }: ModeSwitchSheetProps) {
       onClose();
     } else {
       onClose();
-      router.push('/trips/new');
+      router.push('/(tabs)/trips/new' as any);
     }
   };
 

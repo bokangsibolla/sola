@@ -95,13 +95,11 @@ export function useNavContext(options: UseNavContextOptions): NavContext {
 
     // ── Smart back ────────────────────────────────────────────
     const handleBack = () => {
-      if (router.canGoBack()) {
-        router.back();
-      } else if (parentPath) {
-        // Deep link — no history. Navigate to logical parent.
+      if (parentPath) {
+        // Always go to logical parent — ensures correct hierarchy
+        // whether arriving from another tab, deep link, or organic nav.
         (router as any).replace(parentPath);
-      } else {
-        // Ultimate fallback — go to tab root
+      } else if (router.canGoBack()) {
         router.back();
       }
     };

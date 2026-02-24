@@ -53,7 +53,7 @@ function PlaceRow({
   return (
     <Pressable
       style={({ pressed }) => [styles.placeRow, pressed && { opacity: pressedState.opacity }]}
-      onPress={() => router.push(`/discover/place-detail/${place.placeId}`)}
+      onPress={() => router.push(`/(tabs)/discover/place-detail/${place.placeId}` as any)}
     >
       {place.imageUrl ? (
         <Image

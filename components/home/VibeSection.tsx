@@ -103,7 +103,7 @@ function ActivityRow({ activities }: { activities: ActivityItem[] }) {
               styles.activityCard,
               pressed && { opacity: pressedState.opacity, transform: pressedState.transform },
             ]}
-            onPress={() => router.push(`/discover/activity/${activity.slug}` as any)}
+            onPress={() => router.push(`/(tabs)/discover/activity/${activity.slug}` as any)}
           >
             {activity.imageUrl ? (
               <Image
@@ -150,13 +150,13 @@ export default function VibeSection({ title, cities, countries, activities }: Vi
         name: c.name,
         subtitle: c.countryName,
         imageUrl: c.heroImageUrl ?? null,
-        route: `/discover/city/${c.slug}`,
+        route: `/(tabs)/discover/city/${c.slug}`,
       }))
     : (countries ?? []).map((c) => ({
         id: c.id,
         name: c.name,
         imageUrl: c.heroImageUrl ?? null,
-        route: `/discover/country/${c.slug}`,
+        route: `/(tabs)/discover/country/${c.slug}`,
       }));
 
   if (allItems.length === 0) return null;

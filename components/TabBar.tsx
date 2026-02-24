@@ -3,6 +3,7 @@ import { View, Pressable, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
+import { StackActions } from '@react-navigation/native';
 import { colors, spacing } from '@/constants/design';
 import { useAuth } from '@/state/AuthContext';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
@@ -13,14 +14,16 @@ import { getNewCommunityActivity } from '@/data/community/communityApi';
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   home: 'home-outline',
   discover: 'search-outline',
-  connect: 'people-outline',
+  discussions: 'newspaper-outline',
+  travelers: 'people-outline',
   trips: 'airplane-outline',
 };
 
 const TAB_ICONS_ACTIVE: Record<string, keyof typeof Ionicons.glyphMap> = {
   home: 'home',
   discover: 'search',
-  connect: 'people',
+  discussions: 'newspaper',
+  travelers: 'people',
   trips: 'airplane',
 };
 
@@ -76,7 +79,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
   const insets = useSafeAreaInsets();
   const bottomInset = Math.max(insets.bottom, spacing.xs);
   const { userId } = useAuth();
-  const [connectHasNew, setConnectHasNew] = useState(false);
+  const [discussionsHasNew, setDiscussionsHasNew] = useState(false);
 
   // Check for new community activity on mount
   useEffect(() => {
@@ -88,7 +91,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
         const lastVisit = await getCommunityLastVisit();
         if (!lastVisit) return;
         const activity = await getNewCommunityActivity(uid, lastVisit);
-        setConnectHasNew(activity.newReplyCount > 0);
+        setDiscussionsHasNew(activity.newReplyCount > 0);
       } catch {
         // Non-critical
       }
@@ -97,10 +100,10 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
     checkActivity();
   }, [userId]);
 
-  // Clear badge when Connect tab is focused
+  // Clear badge when Discussions tab is focused
   useEffect(() => {
-    if (state.routes[state.index]?.name === 'connect') {
-      setConnectHasNew(false);
+    if (state.routes[state.index]?.name === 'discussions') {
+      setDiscussionsHasNew(false);
       setCommunityLastVisit();
     }
   }, [state.index]);
@@ -119,8 +122,19 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
               target: route.key,
               canPreventDefault: true,
             });
-            if (!isFocused && !event.defaultPrevented) {
+            if (event.defaultPrevented) return;
+
+            if (!isFocused) {
               navigation.navigate(route.name, route.params);
+            } else {
+              // Already on this tab — pop to root of the nested stack
+              const nestedState = state.routes[index]?.state;
+              if (nestedState?.key && typeof nestedState.index === 'number' && nestedState.index > 0) {
+                navigation.dispatch({
+                  ...StackActions.popToTop(),
+                  target: nestedState.key,
+                });
+              }
             }
           };
 
@@ -136,7 +150,7 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
               label={label}
               onPress={onPress}
               onLongPress={onLongPress}
-              showBadge={route.name === 'connect' && connectHasNew && !isFocused}
+              showBadge={route.name === 'discussions' && discussionsHasNew && !isFocused}
             />
           );
         })}
@@ -149,10 +163,6 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
 
 const styles = StyleSheet.create({
   wrapper: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     backgroundColor: colors.background,
     // Subtle upward shadow for separation from content
     ...Platform.select({
