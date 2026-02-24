@@ -104,6 +104,9 @@ const CATEGORY_MAP: Record<string, string> = {
   cafe: did('cat-cafe'),
   bar: did('cat-nightlife'),
   club: did('cat-nightlife'),
+  volunteer: did('cat-activity'),
+  shop: did('cat-activity'),
+  coworking: did('cat-activity'),
 };
 
 // ═══════════════════════════════════════════════════════════════════
@@ -126,6 +129,9 @@ const BASE_TAGS: Record<string, string[]> = {
   cafe: ['tag-work-friendly', 'tag-fast-wifi', 'tag-power-outlets'],
   bar: ['tag-drinks-conversation', 'tag-lively'],
   club: ['tag-drinks-conversation', 'tag-lively', 'tag-dancing'],
+  volunteer: ['tag-learning-culture', 'tag-meeting-people'],
+  shop: ['tag-local-feel'],
+  coworking: ['tag-work-friendly', 'tag-fast-wifi', 'tag-power-outlets'],
 };
 
 const VIBE_ROTATION: Record<string, string[]> = {
@@ -141,6 +147,9 @@ const VIBE_ROTATION: Record<string, string[]> = {
   wellness: ['tag-quiet', 'tag-chill', 'tag-nature', 'tag-cozy'],
   spa: ['tag-quiet', 'tag-chill', 'tag-nature', 'tag-cozy'],
   tour: ['tag-easy', 'tag-moderate', 'tag-challenging', 'tag-easy'],
+  volunteer: ['tag-lively', 'tag-nature', 'tag-cozy', 'tag-local-feel'],
+  shop: ['tag-lively', 'tag-local-feel', 'tag-aesthetic', 'tag-trendy'],
+  coworking: ['tag-quiet', 'tag-trendy', 'tag-aesthetic', 'tag-chill'],
 };
 
 const KEYWORD_TAGS: [RegExp, string[]][] = [
@@ -272,6 +281,18 @@ function getHighlights(place: Place): string[] {
       hl.push('Reliable WiFi for working remotely');
       hl.push('Comfortable seating and good coffee');
       break;
+    case 'volunteer':
+      hl.push('Meaningful community engagement');
+      hl.push('Meet like-minded travelers');
+      break;
+    case 'shop':
+      hl.push('Local goods and unique finds');
+      if (/market/i.test(text)) hl.push('Vibrant market atmosphere');
+      break;
+    case 'coworking':
+      hl.push('Reliable high-speed WiFi');
+      hl.push('Community of digital nomads and remote workers');
+      break;
     case 'bar':
     case 'club':
       hl.push('Friendly, social atmosphere');
@@ -357,6 +378,18 @@ function getConsiderations(place: Place): string[] {
       cons.push('Outlets may be limited — bring a power bank');
       cons.push('Buy something every couple of hours as courtesy');
       break;
+    case 'volunteer':
+      cons.push('Research the organization beforehand');
+      cons.push('Some programs require advance registration');
+      break;
+    case 'shop':
+      cons.push('Bargaining is expected at markets');
+      cons.push('Carry cash for smaller vendors');
+      break;
+    case 'coworking':
+      cons.push('Day passes available at most spaces');
+      cons.push('Book in advance during peak season');
+      break;
     case 'bar':
     case 'club':
       cons.push('Keep an eye on your drink at all times');
@@ -384,6 +417,7 @@ function inferBestTimeOfDay(place: Place): string | null {
   if (/surf/i.test(text)) return 'morning';
   if (/safari|game\s*drive/i.test(text)) return 'morning';
   if (/night\s*market/i.test(text)) return 'evening';
+  if (type === 'coworking') return 'morning';
 
   return null;
 }
@@ -414,6 +448,9 @@ function inferEstimatedDuration(place: Place): string | null {
   if (type === 'activity') return '2-3 hours';
   if (type === 'restaurant') return '1-2 hours';
   if (['wellness', 'spa'].includes(type)) return '1-2 hours';
+  if (type === 'volunteer') return 'Half day';
+  if (type === 'coworking') return 'Full day';
+  if (type === 'shop') return '1-2 hours';
 
   return null;
 }
