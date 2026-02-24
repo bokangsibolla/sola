@@ -25,7 +25,7 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
-import { requireVerification } from '@/lib/verification';
+import { VerificationBanner } from '@/components/VerificationBanner';
 import type { ConnectionStatus } from '@/data/types';
 
 export default function UserProfileScreen() {
@@ -66,6 +66,7 @@ export default function UserProfileScreen() {
   const connectionStatus = status ?? 'none';
   const showBio = connectionStatus !== 'none';
   const showExtended = connectionStatus === 'connected';
+  const isVerified = (userProfile?.verificationStatus ?? 'unverified') === 'verified';
 
   const doConnect = useCallback(async (message?: string) => {
     try {
@@ -80,7 +81,6 @@ export default function UserProfileScreen() {
 
   const handleConnect = useCallback(async () => {
     if (!userId || !id) return;
-    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'connect with travelers')) return;
     posthog.capture('connection_request_sent', { recipient_id: id });
 
     Alert.prompt(
@@ -94,7 +94,7 @@ export default function UserProfileScreen() {
       '',
       'default',
     );
-  }, [userId, id, contextLabel, posthog, doConnect, userProfile]);
+  }, [userId, id, contextLabel, posthog, doConnect]);
 
   const handleAccept = useCallback(async () => {
     if (!incomingRequest) return;
@@ -126,7 +126,6 @@ export default function UserProfileScreen() {
 
   const handleMessage = useCallback(async () => {
     if (!userId || !id) return;
-    if (!requireVerification(userProfile?.verificationStatus || 'unverified', 'send messages')) return;
     posthog.capture('message_button_tapped', { recipient_id: id });
     setActionLoading(true);
     try {
@@ -138,7 +137,7 @@ export default function UserProfileScreen() {
     } finally {
       setActionLoading(false);
     }
-  }, [userId, id, posthog, router, userProfile]);
+  }, [userId, id, posthog, router]);
 
   const handleMoreMenu = useCallback(() => {
     if (!userId || !id) return;
@@ -403,12 +402,20 @@ export default function UserProfileScreen() {
 
       {/* Connection Bottom Bar */}
       <View style={[styles.bottomBar, { paddingBottom: Math.max(insets.bottom, spacing.lg) }]}>
+        {!isVerified && (
+          <View style={{ marginBottom: spacing.md }}>
+            <VerificationBanner
+              verificationStatus={userProfile?.verificationStatus ?? 'unverified'}
+              featureLabel="connect with travelers"
+            />
+          </View>
+        )}
         {status === 'none' && (
           <View>
             <Pressable
-              style={[styles.connectButton, actionLoading && { opacity: 0.6 }]}
+              style={[styles.connectButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
               onPress={handleConnect}
-              disabled={actionLoading}
+              disabled={actionLoading || !isVerified}
             >
               <Feather name="user-plus" size={18} color={colors.background} />
               <Text style={styles.connectButtonText}>Connect</Text>
@@ -445,9 +452,9 @@ export default function UserProfileScreen() {
         )}
         {status === 'connected' && (
           <Pressable
-            style={[styles.messageButton, actionLoading && { opacity: 0.6 }]}
+            style={[styles.messageButton, (actionLoading || !isVerified) && { opacity: 0.4 }]}
             onPress={handleMessage}
-            disabled={actionLoading}
+            disabled={actionLoading || !isVerified}
           >
             <Feather name="message-circle" size={18} color={colors.background} />
             <Text style={styles.messageButtonText}>
