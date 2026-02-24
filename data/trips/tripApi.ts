@@ -12,7 +12,6 @@ import type {
   CreateTripInput,
   CreateEntryInput,
   TripOverlapMatch,
-  TripKind,
   TripAccommodation,
   CreateAccommodationInput,
   UpdateAccommodationInput,
@@ -135,11 +134,13 @@ export async function getTripOverlapMatches(tripId: string, userId: string): Pro
 
 // ── Write ────────────────────────────────────────────────────────
 
-function statusFromKind(kind?: TripKind, hasDates?: boolean): string {
-  if (kind === 'currently_traveling') return 'active';
-  if (kind === 'past_trip') return 'completed';
-  if (hasDates) return 'planned';
-  return 'draft';
+/** Infer trip status from dates instead of TripKind. */
+function inferStatusFromDates(arriving: string | undefined, leaving: string | undefined): string {
+  if (!arriving && !leaving) return 'draft';
+  const today = new Date().toISOString().slice(0, 10);
+  if (leaving && leaving < today) return 'completed';
+  if (arriving && arriving <= today) return 'active';
+  return 'planned';
 }
 
 export async function createTrip(userId: string, input: CreateTripInput): Promise<string> {
@@ -152,7 +153,7 @@ export async function createTrip(userId: string, input: CreateTripInput): Promis
     ? nightsBetween(input.arriving, input.leaving)
     : 0;
 
-  const status = statusFromKind(input.tripKind, !!(input.arriving && input.leaving));
+  const status = inferStatusFromDates(input.arriving, input.leaving);
 
   const { data, error } = await supabase
     .from('trips')

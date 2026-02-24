@@ -1,7 +1,6 @@
-import React, { useState, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   Alert,
-  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -19,7 +18,6 @@ import { searchDestinations } from '@/data/api';
 import type { DestinationResult } from '@/data/api';
 import { createTrip } from '@/data/trips/tripApi';
 import { getFlag } from '@/data/trips/helpers';
-import type { TripKind } from '@/data/trips/types';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -43,30 +41,6 @@ interface PickerTarget {
   field: 'start' | 'end';
 }
 
-const TRIP_KINDS: { key: TripKind; title: string; detail: string }[] = [
-  {
-    key: 'plan_future',
-    title: 'Plan a future trip',
-    detail: 'Set dates and build your itinerary',
-  },
-  {
-    key: 'currently_traveling',
-    title: 'Currently traveling',
-    detail: 'Track your trip in real time',
-  },
-  {
-    key: 'past_trip',
-    title: 'Log a past trip',
-    detail: 'Record a trip you already took',
-  },
-];
-
-const KIND_LABELS: Record<TripKind, string> = {
-  plan_future: 'Planning ahead',
-  currently_traveling: 'Traveling now',
-  past_trip: 'Past trip',
-};
-
 function formatDate(date: Date): string {
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   return `${date.getDate()} ${months[date.getMonth()]} ${date.getFullYear()}`;
@@ -83,10 +57,6 @@ export default function NewTripScreen() {
   const posthog = usePostHog();
   const scrollRef = useRef<ScrollView>(null);
 
-  // Trip kind bottom sheet
-  const [showKindSheet, setShowKindSheet] = useState(true);
-  const [tripKind, setTripKind] = useState<TripKind | null>(null);
-
   // Destinations (each stop carries its own dates)
   const [stops, setStops] = useState<SelectedStop[]>([]);
   const [search, setSearch] = useState('');
@@ -96,7 +66,6 @@ export default function NewTripScreen() {
 
   // Date picker target
   const today = new Date();
-  const tomorrow = new Date(Date.now() + DAY_MS);
   const [pickerTarget, setPickerTarget] = useState<PickerTarget | null>(null);
 
   // Trip name
@@ -137,13 +106,13 @@ export default function NewTripScreen() {
 
   const isMultiStop = stops.length > 1;
 
-  // ── Handlers ─────────────────────────────────────────────────────────────────
+  const autoName = useMemo(() => {
+    if (stops.length === 0) return '';
+    if (stops.length === 1) return stops[0].cityName ?? '';
+    return stops.map((s) => s.cityName).filter(Boolean).join(' \u00b7 ');
+  }, [stops]);
 
-  const handleSelectKind = (kind: TripKind) => {
-    setTripKind(kind);
-    setShowKindSheet(false);
-    posthog.capture('create_trip_kind_selected', { kind });
-  };
+  // ── Handlers ─────────────────────────────────────────────────────────────────
 
   const handleSelectStop = (result: DestinationResult) => {
     if (!result.countryIso2) return;
@@ -184,12 +153,6 @@ export default function NewTripScreen() {
     }
     setPickerTarget({ stopIndex, field });
   };
-
-  const getMinDate = useCallback(() => {
-    if (tripKind === 'past_trip') return undefined;
-    if (tripKind === 'currently_traveling') return undefined;
-    return tomorrow;
-  }, [tripKind, tomorrow]);
 
   const handleDateChange = (event: DateTimePickerEvent, date?: Date) => {
     if (Platform.OS === 'android') setPickerTarget(null);
@@ -243,13 +206,11 @@ export default function NewTripScreen() {
 
   const handleCreate = async () => {
     if (!userId || stops.length === 0) return;
-    if (!tripKind) return;
 
     setSaving(true);
     try {
       const tripId = await createTrip(userId, {
-        title: tripName.trim() || undefined,
-        tripKind,
+        title: tripName.trim() || autoName || undefined,
         stops: stops.map((s) => ({
           countryIso2: s.countryIso2,
           cityId: s.cityId,
@@ -264,7 +225,6 @@ export default function NewTripScreen() {
         buddyUserIds: [],
       });
       posthog.capture('create_trip_completed', {
-        kind: tripKind,
         stops_count: stops.length,
         has_dates: !flexibleDates && !!tripDates.arriving,
         flexible_dates: flexibleDates,
@@ -278,12 +238,12 @@ export default function NewTripScreen() {
     }
   };
 
-  const canCreate = stops.length > 0 && tripKind !== null;
+  const canCreate = stops.length > 0;
 
   // Current picker values
   const pickerStop = pickerTarget ? stops[pickerTarget.stopIndex] : null;
   const pickerValue = (() => {
-    if (!pickerTarget || !pickerStop) return tomorrow;
+    if (!pickerTarget || !pickerStop) return today;
     if (pickerTarget.field === 'start') {
       if (pickerStop.startDate) return pickerStop.startDate;
       // Default to previous stop's end/start date for chained stops
@@ -292,21 +252,20 @@ export default function NewTripScreen() {
         const prevDate = prev?.endDate ?? prev?.startDate;
         if (prevDate) return prevDate;
       }
-      return tripKind === 'past_trip' ? today : tomorrow;
+      return today;
     }
     return pickerStop.endDate || new Date((pickerStop.startDate?.getTime() || Date.now()) + DAY_MS);
   })();
   const pickerMinDate = (() => {
     if (!pickerTarget || !pickerStop) return undefined;
     if (pickerTarget.field === 'start') {
-      const baseMin = getMinDate();
       // Chain: start date of stop N must be >= end date (or start date) of stop N-1
       if (pickerTarget.stopIndex > 0) {
         const prev = stops[pickerTarget.stopIndex - 1];
         const prevDate = prev?.endDate ?? prev?.startDate;
-        if (prevDate && (!baseMin || prevDate > baseMin)) return prevDate;
+        if (prevDate) return prevDate;
       }
-      return baseMin;
+      return undefined;
     }
     return pickerStop.startDate ? new Date(pickerStop.startDate.getTime() + DAY_MS) : undefined;
   })();
@@ -371,15 +330,6 @@ export default function NewTripScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 }}
       >
-        {/* ── Trip Kind Badge ────────────────────────────────── */}
-        {tripKind && (
-          <View style={styles.kindBadgeRow}>
-            <View style={styles.kindBadgeInline}>
-              <Text style={styles.kindBadgeInlineText}>{KIND_LABELS[tripKind]}</Text>
-            </View>
-          </View>
-        )}
-
         {/* ── Destinations ────────────────────────────────────── */}
         <View style={styles.section}>
           <View style={styles.sectionCard}>
@@ -511,7 +461,7 @@ export default function NewTripScreen() {
                         mode="date"
                         display="inline"
                         minimumDate={pickerMinDate}
-                        maximumDate={tripKind === 'past_trip' ? today : undefined}
+                        maximumDate={undefined}
                         onChange={handleDateChange}
                         accentColor={colors.orange}
                       />
@@ -535,7 +485,7 @@ export default function NewTripScreen() {
               </View>
               <TextInput
                 style={styles.textInput}
-                placeholder={stops[0]?.cityName || 'Give your trip a name'}
+                placeholder={autoName || 'Give your trip a name'}
                 placeholderTextColor={colors.textMuted}
                 value={tripName}
                 onChangeText={(text) => setTripName(text.slice(0, NAME_MAX))}
@@ -564,39 +514,6 @@ export default function NewTripScreen() {
         </Pressable>
       </View>
 
-      {/* ── Trip Kind Bottom Sheet ─────────────────────────── */}
-      <Modal visible={showKindSheet} transparent animationType="slide">
-        <View style={styles.sheetOverlay}>
-          <Pressable style={styles.sheetBackdrop} onPress={() => router.back()} />
-          <View style={[styles.sheetContainer, { paddingBottom: insets.bottom + spacing.lg }]}>
-            <View style={styles.sheetHandle} />
-            <Text style={styles.sheetTitle}>What kind of trip?</Text>
-
-            {TRIP_KINDS.map((kind, idx) => (
-              <Pressable
-                key={kind.key}
-                style={({ pressed }) => [
-                  styles.kindOption,
-                  idx === TRIP_KINDS.length - 1 && styles.kindOptionLast,
-                  pressed && styles.kindOptionPressed,
-                ]}
-                onPress={() => handleSelectKind(kind.key)}
-              >
-                <Text style={styles.kindTitle}>{kind.title}</Text>
-                <Text style={styles.kindDetail}>{kind.detail}</Text>
-              </Pressable>
-            ))}
-
-            <Pressable
-              style={({ pressed }) => [styles.sheetCancel, pressed && { opacity: 0.6 }]}
-              onPress={() => router.back()}
-            >
-              <Text style={styles.sheetCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
-
       {/* Android date picker modal */}
       {Platform.OS === 'android' && pickerTarget && (
         <DateTimePicker
@@ -604,7 +521,7 @@ export default function NewTripScreen() {
           mode="date"
           display="default"
           minimumDate={pickerMinDate}
-          maximumDate={tripKind === 'past_trip' ? today : undefined}
+          maximumDate={undefined}
           onChange={handleDateChange}
         />
       )}
@@ -619,27 +536,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
-  },
-
-  // ── Kind Badge ──
-  kindBadgeRow: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  kindBadgeInline: {
-    alignSelf: 'flex-start',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  kindBadgeInlineText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.orange,
   },
 
   // ── Sections ──
@@ -942,68 +838,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 16,
     color: '#FFFFFF',
-  },
-
-  // ── Trip Kind Sheet ──
-  sheetOverlay: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheetBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetContainer: {
-    backgroundColor: colors.background,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    paddingTop: spacing.md,
-    paddingHorizontal: spacing.screenX,
-  },
-  sheetHandle: {
-    width: 36,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.borderDefault,
-    alignSelf: 'center',
-    marginBottom: spacing.xl,
-  },
-  sheetTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 22,
-    color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  kindOption: {
-    paddingVertical: spacing.lg,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  kindOptionLast: {
-    borderBottomWidth: 0,
-  },
-  kindOptionPressed: {
-    opacity: 0.6,
-  },
-  kindTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 16,
-    color: colors.textPrimary,
-  },
-  kindDetail: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 3,
-  },
-  sheetCancel: {
-    alignItems: 'center',
-    paddingVertical: spacing.xl,
-    marginTop: spacing.sm,
-  },
-  sheetCancelText: {
-    fontFamily: fonts.medium,
-    fontSize: 16,
-    color: colors.textMuted,
   },
 });

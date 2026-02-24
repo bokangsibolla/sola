@@ -114,7 +114,6 @@ export interface GroupedTrips {
 export interface CreateTripInput {
   title?: string;
   summary?: string;
-  tripKind?: TripKind;
   stops: {
     countryIso2: string;
     cityId?: string;
