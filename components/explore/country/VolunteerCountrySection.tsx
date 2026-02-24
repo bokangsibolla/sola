@@ -54,7 +54,7 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
   },
   seeAll: {

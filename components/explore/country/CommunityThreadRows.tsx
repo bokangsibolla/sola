@@ -2,7 +2,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import type { ThreadWithAuthor } from '@/data/community/types';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 
 interface Props {
   threads: ThreadWithAuthor[];
@@ -21,7 +21,7 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.heading}>What Solo Women Are Asking</Text>
+        <Text style={styles.heading}>Women are asking</Text>
         {showSeeAll && (
           <Pressable
             onPress={() => router.push({
@@ -34,31 +34,33 @@ export function CommunityThreadRows({ threads, totalCount, countryId, countryNam
           </Pressable>
         )}
       </View>
-      {threads.map((thread, index) => {
-        const isLast = index === threads.length - 1;
-        const meta = [
-          `${thread.replyCount} ${thread.replyCount === 1 ? 'reply' : 'replies'}`,
-          thread.topicLabel,
-        ].filter(Boolean).join('  \u00B7  ');
+      <View style={styles.card}>
+        {threads.map((thread, index) => {
+          const isLast = index === threads.length - 1;
+          const meta = [
+            `${thread.replyCount} ${thread.replyCount === 1 ? 'reply' : 'replies'}`,
+            thread.topicLabel,
+          ].filter(Boolean).join('  \u00B7  ');
 
-        return (
-          <Pressable
-            key={thread.id}
-            onPress={() => router.push(`/(tabs)/discussions/thread/${thread.id}` as any)}
-            style={({ pressed }) => [
-              styles.row,
-              !isLast && styles.rowBorder,
-              pressed && styles.rowPressed,
-            ]}
-          >
-            <View style={styles.rowBody}>
-              <Text style={styles.threadTitle} numberOfLines={2}>{thread.title}</Text>
-              <Text style={styles.threadMeta}>{meta}</Text>
-            </View>
-            <Ionicons name="chevron-forward" size={16} color={colors.borderDefault} />
-          </Pressable>
-        );
-      })}
+          return (
+            <Pressable
+              key={thread.id}
+              onPress={() => router.push(`/(tabs)/discussions/thread/${thread.id}` as any)}
+              style={({ pressed }) => [
+                styles.row,
+                !isLast && styles.rowBorder,
+                pressed && styles.rowPressed,
+              ]}
+            >
+              <View style={styles.rowBody}>
+                <Text style={styles.threadTitle} numberOfLines={2}>{thread.title}</Text>
+                <Text style={styles.threadMeta}>{meta}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={14} color={colors.orange} />
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   heading: {
     fontFamily: fonts.semiBold,
@@ -83,14 +85,20 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: colors.orange,
   },
+  card: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   rowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    borderBottomColor: 'rgba(229,101,58,0.08)',
   },
   rowPressed: {
     opacity: 0.7,
@@ -101,14 +109,14 @@ const styles = StyleSheet.create({
   },
   threadTitle: {
     fontFamily: fonts.medium,
-    fontSize: 15,
-    lineHeight: 20,
+    fontSize: 14,
+    lineHeight: 19,
     color: colors.textPrimary,
   },
   threadMeta: {
     fontFamily: fonts.regular,
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textMuted,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
 });

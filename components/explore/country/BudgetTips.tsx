@@ -6,18 +6,9 @@ interface BudgetTipsProps {
   tips: BudgetTip[];
 }
 
-const CATEGORY_EMOJI: Record<string, string> = {
-  accommodation: '\u{1F3E0}',
-  transport: '\u{1F695}',
-  food: '\u{1F37D}\uFE0F',
-  activities: '\u{1F3AF}',
-  general: '\u{1F4A1}',
-};
-
 function TipRow({ tip, isLast }: { tip: BudgetTip; isLast: boolean }) {
   return (
     <View style={[styles.tipRow, !isLast && styles.tipRowBorder]}>
-      <Text style={styles.tipEmoji}>{CATEGORY_EMOJI[tip.category] || '\u{1F4A1}'}</Text>
       <View style={styles.tipContent}>
         <Text style={styles.tipText}>{tip.tip}</Text>
         {tip.level === 'insider' && (
@@ -77,9 +68,9 @@ const styles = StyleSheet.create({
   },
   groupTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 17,
+    fontSize: 16,
     color: colors.textPrimary,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   card: {
     backgroundColor: colors.neutralFill,
@@ -87,19 +78,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tipRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
   tipRowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
-  },
-  tipEmoji: {
-    fontSize: 16,
-    marginRight: spacing.md,
-    marginTop: 2,
   },
   tipContent: {
     flex: 1,

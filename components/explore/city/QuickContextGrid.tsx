@@ -9,7 +9,6 @@ interface Props {
 }
 
 interface CellData {
-  emoji: string;
   label: string;
   value: string;
 }
@@ -18,29 +17,29 @@ function buildCells(city: City): CellData[] {
   const cells: CellData[] = [];
 
   if (city.soloLevel) {
-    cells.push({ emoji: '🛡️', label: 'Solo level', value: mapSoloLevel(city.soloLevel) });
+    cells.push({ label: 'Solo level', value: mapSoloLevel(city.soloLevel) });
   }
 
   if (city.budgetTier) {
-    cells.push({ emoji: '💰', label: 'Budget', value: mapBudgetTier(city.budgetTier) });
+    cells.push({ label: 'Budget', value: mapBudgetTier(city.budgetTier) });
   } else if (city.avgDailyBudgetUsd != null) {
-    cells.push({ emoji: '💰', label: 'Avg daily budget', value: `~$${city.avgDailyBudgetUsd}/day` });
+    cells.push({ label: 'Avg daily budget', value: `~$${city.avgDailyBudgetUsd}/day` });
   }
 
   if (city.bestTimeToVisit || city.bestMonths) {
-    cells.push({ emoji: '📅', label: 'Best time', value: city.bestTimeToVisit || city.bestMonths || '' });
+    cells.push({ label: 'Best time', value: city.bestTimeToVisit || city.bestMonths || '' });
   }
 
   if (city.vibe) {
-    cells.push({ emoji: '✨', label: 'Vibe', value: city.vibe });
+    cells.push({ label: 'Vibe', value: city.vibe });
   }
 
   if (city.walkability) {
-    cells.push({ emoji: '🚶‍♀️', label: 'Walkability', value: mapWalkability(city.walkability) });
+    cells.push({ label: 'Walkability', value: mapWalkability(city.walkability) });
   }
 
   if (city.transitEase) {
-    cells.push({ emoji: '🚇', label: 'Transit', value: mapTransitEase(city.transitEase) });
+    cells.push({ label: 'Transit', value: mapTransitEase(city.transitEase) });
   }
 
   return cells;
@@ -49,7 +48,6 @@ function buildCells(city: City): CellData[] {
 function Cell({ data, isRight, isBottom }: { data: CellData; isRight: boolean; isBottom: boolean }) {
   return (
     <View style={[styles.cell, !isRight && styles.cellBorderRight, !isBottom && styles.cellBorderBottom]}>
-      <Text style={styles.cellEmoji}>{data.emoji}</Text>
       <Text style={styles.cellLabel}>{data.label}</Text>
       <Text style={styles.cellValue} numberOfLines={2}>{data.value}</Text>
     </View>
@@ -89,16 +87,16 @@ export function QuickContextGrid({ city }: Props) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   grid: {
-    backgroundColor: colors.neutralFill,
+    backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     overflow: 'hidden',
   },
@@ -115,23 +113,19 @@ const styles = StyleSheet.create({
   },
   cellBorderRight: {
     borderRightWidth: 1,
-    borderRightColor: colors.borderSubtle,
+    borderRightColor: 'rgba(229,101,58,0.1)',
   },
   cellBorderBottom: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  cellEmoji: {
-    fontSize: 18,
-    marginBottom: spacing.xs,
+    borderBottomColor: 'rgba(229,101,58,0.1)',
   },
   cellLabel: {
     fontFamily: fonts.medium,
     fontSize: 12,
-    color: colors.textMuted,
+    color: colors.orange,
     marginBottom: 2,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   cellValue: {
     fontFamily: fonts.semiBold,

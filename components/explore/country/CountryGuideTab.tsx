@@ -19,11 +19,7 @@ export function CountryGuideTab({ country, healthPlaces }: Props) {
     >
       <WhyWomenLoveIt country={country} />
 
-      <View style={styles.divider} />
-
       <TravelFitSection country={country} />
-
-      <View style={styles.divider} />
 
       <KnowBeforeYouGoAccordion country={country} healthPlaces={healthPlaces} />
     </ScrollView>
@@ -35,11 +31,5 @@ const styles = StyleSheet.create({
   content: {
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxxxl,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginHorizontal: spacing.screenX,
-    marginBottom: spacing.xl,
   },
 });

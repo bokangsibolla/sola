@@ -7,7 +7,6 @@ import {
 } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import NavigationHero from '@/components/NavigationHero';
@@ -21,14 +20,14 @@ import {
 import type { Place } from '@/data/types';
 import { CompactPlaceCard } from '@/components/explore/city/CompactPlaceCard';
 
-/** Maps practical_info keys to display labels and icons */
-const practicalKeyMeta: Record<string, { label: string; icon: string }> = {
-  getting_around: { label: 'Getting around', icon: 'walk-outline' },
-  wifi: { label: 'WiFi', icon: 'wifi-outline' },
-  atms: { label: 'ATMs', icon: 'card-outline' },
-  sim_cards: { label: 'SIM cards', icon: 'phone-portrait-outline' },
-  budget_note: { label: 'Budget', icon: 'cash-outline' },
-  nearest_hospital: { label: 'Nearest hospital', icon: 'medkit-outline' },
+/** Maps practical_info keys to display labels */
+const practicalKeyMeta: Record<string, { label: string }> = {
+  getting_around: { label: 'Getting around' },
+  wifi: { label: 'WiFi' },
+  atms: { label: 'ATMs' },
+  sim_cards: { label: 'SIM cards' },
+  budget_note: { label: 'Budget' },
+  nearest_hospital: { label: 'Nearest hospital' },
 };
 
 /** Ordered keys for consistent display */
@@ -121,7 +120,6 @@ export default function AreaDetailScreen() {
       .map((key) => ({
         key,
         label: practicalKeyMeta[key]?.label ?? key,
-        icon: practicalKeyMeta[key]?.icon ?? 'information-circle-outline',
         value: area.practicalInfo![key],
       }));
   }, [area?.practicalInfo]);
@@ -172,15 +170,22 @@ export default function AreaDetailScreen() {
       {/* Vibe description */}
       {area.vibeDescription && (
         <View style={styles.vibeSection}>
-          <Text style={styles.vibeText}>{area.vibeDescription}</Text>
+          <View style={styles.vibeCard}>
+            <View style={styles.vibeAccent} />
+            <View style={styles.vibeBody}>
+              <Text style={styles.vibeText}>{area.vibeDescription}</Text>
+            </View>
+          </View>
         </View>
       )}
 
       {/* Crowd vibe */}
       {area.crowdVibe && (
         <View style={styles.crowdSection}>
-          <Text style={styles.crowdLabel}>Who you'll find here</Text>
-          <Text style={styles.crowdText}>{area.crowdVibe}</Text>
+          <View style={styles.crowdCard}>
+            <Text style={styles.crowdLabel}>Who you'll find here</Text>
+            <Text style={styles.crowdText}>{area.crowdVibe}</Text>
+          </View>
         </View>
       )}
 
@@ -188,27 +193,20 @@ export default function AreaDetailScreen() {
       {practicalRows.length > 0 && (
         <View style={styles.practicalSection}>
           <Text style={styles.practicalTitle}>Practical info</Text>
-          {practicalRows.map((row, i) => (
-            <View
-              key={row.key}
-              style={[
-                styles.practicalRow,
-                i < practicalRows.length - 1 && styles.practicalRowBorder,
-              ]}
-            >
-              <View style={styles.practicalIconCol}>
-                <Ionicons
-                  name={row.icon as any}
-                  size={18}
-                  color={colors.textSecondary}
-                />
-              </View>
-              <View style={styles.practicalContent}>
+          <View style={styles.practicalCard}>
+            {practicalRows.map((row, i) => (
+              <View
+                key={row.key}
+                style={[
+                  styles.practicalRow,
+                  i < practicalRows.length - 1 && styles.practicalRowBorder,
+                ]}
+              >
                 <Text style={styles.practicalLabel}>{row.label}</Text>
                 <Text style={styles.practicalValue}>{row.value}</Text>
               </View>
-            </View>
-          ))}
+            ))}
+          </View>
         </View>
       )}
 
@@ -306,10 +304,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
   },
+  vibeCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  vibeAccent: {
+    width: 3,
+    backgroundColor: colors.orange,
+  },
+  vibeBody: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
   vibeText: {
     fontFamily: fonts.regular,
-    fontSize: 16,
-    lineHeight: 26,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textPrimary,
   },
 
@@ -318,17 +331,25 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
   },
+  crowdCard: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+  },
   crowdLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 15,
-    color: colors.textPrimary,
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    color: colors.orange,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: spacing.xs,
   },
   crowdText: {
     fontFamily: fonts.regular,
     fontSize: 15,
     lineHeight: 22,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
 
   // Practical info
@@ -341,34 +362,34 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  practicalCard: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
   },
   practicalRow: {
-    flexDirection: 'row',
+    paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
   },
   practicalRowBorder: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  practicalIconCol: {
-    width: 28,
-    paddingTop: 2,
-  },
-  practicalContent: {
-    flex: 1,
+    borderBottomColor: 'rgba(229,101,58,0.08)',
   },
   practicalLabel: {
     fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
+    fontSize: 11,
+    color: colors.orange,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 2,
   },
   practicalValue: {
     fontFamily: fonts.regular,
     fontSize: 14,
     lineHeight: 20,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
 
   // Places
@@ -385,7 +406,7 @@ const styles = StyleSheet.create({
   },
   sectionTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
   },
   placesCount: {

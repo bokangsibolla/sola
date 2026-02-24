@@ -14,10 +14,7 @@ export function HowWomenUseCity({ city }: Props) {
 
   return (
     <View style={styles.section}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerEmoji}>🧭</Text>
-        <Text style={styles.heading}>Solo in {city.name}</Text>
-      </View>
+      <Text style={styles.heading}>Solo in {city.name}</Text>
 
       {summary && (
         <Text style={styles.summaryText}>{summary}</Text>
@@ -26,7 +23,7 @@ export function HowWomenUseCity({ city }: Props) {
       {bullets.length > 0 && (
         <View style={styles.bulletList}>
           {bullets.map((bullet, i) => (
-            <View key={i} style={styles.bulletRow}>
+            <View key={i} style={[styles.bulletRow, i < bullets.length - 1 && styles.bulletBorder]}>
               <View style={styles.bulletDot} />
               <Text style={styles.bulletText}>{bullet}</Text>
             </View>
@@ -39,29 +36,20 @@ export function HowWomenUseCity({ city }: Props) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: spacing.xxl,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  headerEmoji: {
-    fontSize: 20,
-    marginRight: spacing.sm,
+    marginBottom: spacing.xl,
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    flex: 1,
+    marginBottom: spacing.md,
   },
   summaryText: {
     fontFamily: fonts.regular,
     fontSize: 15,
     color: colors.textSecondary,
     lineHeight: 24,
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   bulletList: {
     backgroundColor: colors.orangeFill,
@@ -74,13 +62,17 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
     paddingVertical: spacing.sm,
   },
+  bulletBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(229,101,58,0.08)',
+  },
   bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: colors.orange,
     marginRight: spacing.sm,
-    marginTop: 8,
+    marginTop: 7,
   },
   bulletText: {
     fontFamily: fonts.medium,

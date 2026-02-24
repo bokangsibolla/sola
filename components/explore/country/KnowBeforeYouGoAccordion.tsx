@@ -178,12 +178,12 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   card: {
-    backgroundColor: colors.neutralFill,
+    backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     overflow: 'hidden',
   },
@@ -241,7 +241,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.borderSubtle,
+    backgroundColor: 'rgba(229,101,58,0.08)',
     marginHorizontal: spacing.lg,
   },
 });

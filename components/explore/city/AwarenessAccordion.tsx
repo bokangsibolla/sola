@@ -117,10 +117,7 @@ export function AwarenessAccordion({ city }: Props) {
 
   return (
     <View style={styles.section}>
-      <View style={styles.headerRow}>
-        <Text style={styles.headerEmoji}>⚡</Text>
-        <Text style={styles.heading}>Things to be aware of</Text>
-      </View>
+      <Text style={styles.heading}>Things to be aware of</Text>
       <View style={styles.card}>
         {items.map((item, index) => (
           <View key={item.key}>
@@ -135,24 +132,16 @@ export function AwarenessAccordion({ city }: Props) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: spacing.xxl,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  headerEmoji: {
-    fontSize: 20,
-    marginRight: spacing.sm,
+    marginBottom: spacing.xl,
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
+    marginBottom: spacing.md,
   },
   card: {
-    backgroundColor: colors.neutralFill,
+    backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     overflow: 'hidden',
   },
@@ -199,13 +188,13 @@ const styles = StyleSheet.create({
   bulletText: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
     lineHeight: 22,
     flex: 1,
   },
   divider: {
     height: 1,
-    backgroundColor: colors.borderSubtle,
+    backgroundColor: 'rgba(229,101,58,0.08)',
     marginHorizontal: spacing.lg,
   },
 });

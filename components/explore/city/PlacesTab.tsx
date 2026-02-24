@@ -19,7 +19,7 @@ import { PLACE_CATEGORIES, PLACE_TYPE_TO_CATEGORY, PLACE_TYPE_LABELS } from '@/d
 import type { PlaceCategoryKey, CategoryCount } from '@/data/city/types';
 import type { Place, CityArea, Tag } from '@/data/types';
 import NavigationHero from '@/components/NavigationHero';
-import SegmentedControl from '@/components/trips/SegmentedControl';
+import { CountryTabBar } from '@/components/explore/country/CountryTabBar';
 import { CompactPlaceCard } from './CompactPlaceCard';
 
 // ---------------------------------------------------------------------------
@@ -100,7 +100,7 @@ interface PlacesTabProps {
   cityId: string;
   areas: CityArea[];
   heroProps: HeroProps;
-  tabs: string[];
+  tabs: { label: string }[];
   activeTabIndex: number;
   onTabPress: (index: number) => void;
   onScrollPastHero: (pastHero: boolean) => void;
@@ -329,7 +329,7 @@ export function PlacesTab({
       />
 
       {/* ── Segmented control (scrolls away — sticky clone in CityScreen) ── */}
-      <SegmentedControl
+      <CountryTabBar
         tabs={tabs}
         activeIndex={activeTabIndex}
         onTabPress={onTabPress}

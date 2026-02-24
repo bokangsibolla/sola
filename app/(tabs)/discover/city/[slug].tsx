@@ -20,12 +20,12 @@ import {
 } from '@/data/api';
 import { useAuth } from '@/state/AuthContext';
 import { setRecentCity } from '@/data/explore/recentBrowsing';
-import SegmentedControl from '@/components/trips/SegmentedControl';
+import { CountryTabBar } from '@/components/explore/country/CountryTabBar';
 import { OverviewTab } from '@/components/explore/city/OverviewTab';
 import { PlacesTab } from '@/components/explore/city/PlacesTab';
 import { EventsTab } from '@/components/explore/city/EventsTab';
 
-const TABS = ['Overview', 'Places', 'Events'];
+const TABS = [{ label: 'Overview' }, { label: 'Places' }, { label: 'Events' }];
 
 export default function CityScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -140,7 +140,7 @@ export default function CityScreen() {
             ancestors={ancestors}
             onBack={handleBack}
           />
-          <SegmentedControl
+          <CountryTabBar
             tabs={TABS}
             activeIndex={activeTab}
             onTabPress={setActiveTab}
@@ -154,7 +154,7 @@ export default function CityScreen() {
           <View style={styles.stickyBackRow}>
             <BackButton onPress={handleBack} />
           </View>
-          <SegmentedControl
+          <CountryTabBar
             tabs={TABS}
             activeIndex={activeTab}
             onTabPress={setActiveTab}

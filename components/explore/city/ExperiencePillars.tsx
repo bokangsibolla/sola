@@ -32,7 +32,6 @@ export function ExperiencePillars({ city }: Props) {
       <View style={styles.grid}>
         {pillars.map((pillar, i) => (
           <View key={i} style={styles.cell}>
-            <View style={styles.accentDot} />
             <Text style={styles.cellTitle}>{pillar.title}</Text>
             {pillar.descriptor ? (
               <Text style={styles.cellDescriptor}>{pillar.descriptor}</Text>
@@ -46,13 +45,13 @@ export function ExperiencePillars({ city }: Props) {
 
 const styles = StyleSheet.create({
   section: {
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   grid: {
     flexDirection: 'row',
@@ -63,15 +62,8 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-  },
-  accentDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.orange,
-    marginBottom: spacing.sm,
   },
   cellTitle: {
     fontFamily: fonts.semiBold,

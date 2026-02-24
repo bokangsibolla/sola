@@ -18,13 +18,18 @@ import {
 import type { PlaceWithCity } from '@/data/types';
 import { getEmergencyNumbers } from '@/data/safety';
 import { getCountryThreadPreviews } from '@/data/community/communityApi';
-import SegmentedControl from '@/components/trips/SegmentedControl';
+import { CountryTabBar } from '@/components/explore/country/CountryTabBar';
 import { CountryOverviewTab } from '@/components/explore/country/CountryOverviewTab';
 import { CountryGuideTab } from '@/components/explore/country/CountryGuideTab';
 import { CountryBudgetTab } from '@/components/explore/country/CountryBudgetTab';
 import { DestinationsTab } from '@/components/explore/country/DestinationsTab';
 
-const TABS = ['Overview', 'Destinations', 'Travel Guide', 'Budget'];
+const TABS = [
+  { label: 'Overview' },
+  { label: 'Destinations' },
+  { label: 'Guide' },
+  { label: 'Budget' },
+];
 
 export default function CountryGuideScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
@@ -89,7 +94,7 @@ export default function CountryGuideScreen() {
         onBack={handleBack}
       />
 
-      <SegmentedControl
+      <CountryTabBar
         tabs={TABS}
         activeIndex={activeTab}
         onTabPress={setActiveTab}

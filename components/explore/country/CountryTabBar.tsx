@@ -1,69 +1,94 @@
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRef, useEffect } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, spacing } from '@/constants/design';
 
-export type CountryTab = 'overview' | 'guide' | 'budget';
-
-interface CountryTabBarProps {
-  activeTab: CountryTab;
-  onTabChange: (tab: CountryTab) => void;
+interface Tab {
+  label: string;
 }
 
-const TABS: { key: CountryTab; label: string }[] = [
-  { key: 'overview', label: 'Overview' },
-  { key: 'guide', label: 'Travel Guide' },
-  { key: 'budget', label: 'Budget & Practical' },
-];
+interface CountryTabBarProps {
+  tabs: Tab[];
+  activeIndex: number;
+  onTabPress: (index: number) => void;
+}
 
-export function CountryTabBar({ activeTab, onTabChange }: CountryTabBarProps) {
+export function CountryTabBar({ tabs, activeIndex, onTabPress }: CountryTabBarProps) {
+  const scrollRef = useRef<ScrollView>(null);
+  const tabXRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const x = tabXRef.current[activeIndex];
+    if (x != null && scrollRef.current) {
+      scrollRef.current.scrollTo({ x: Math.max(0, x - spacing.screenX), animated: true });
+    }
+  }, [activeIndex]);
+
   return (
-    <View style={styles.container}>
-      {TABS.map((tab) => {
-        const isActive = activeTab === tab.key;
-        return (
-          <Pressable
-            key={tab.key}
-            style={styles.tab}
-            onPress={() => onTabChange(tab.key)}
-          >
-            <Text style={[styles.label, isActive && styles.labelActive]}>
-              {tab.label}
-            </Text>
-            {isActive && <View style={styles.underline} />}
-          </Pressable>
-        );
-      })}
+    <View style={styles.wrapper}>
+      <ScrollView
+        ref={scrollRef}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.container}
+      >
+        {tabs.map((tab, index) => {
+          const isActive = index === activeIndex;
+          return (
+            <Pressable
+              key={tab.label}
+              style={styles.tab}
+              onPress={() => onTabPress(index)}
+              onLayout={(e) => {
+                tabXRef.current[index] = e.nativeEvent.layout.x;
+              }}
+            >
+              <Text style={[styles.label, isActive && styles.labelActive]}>
+                {tab.label}
+              </Text>
+              {isActive && <View style={styles.indicator} />}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      <View style={styles.border} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    paddingHorizontal: spacing.screenX,
+  wrapper: {
     backgroundColor: colors.background,
   },
+  container: {
+    paddingHorizontal: spacing.screenX,
+    gap: 20,
+  },
   tab: {
-    paddingVertical: spacing.md,
-    marginRight: spacing.xl,
+    paddingVertical: 14,
     position: 'relative',
   },
   label: {
     fontFamily: fonts.medium,
-    fontSize: 15,
-    color: colors.textSecondary,
+    fontSize: 14,
+    color: colors.textMuted,
+    lineHeight: 18,
   },
   labelActive: {
     fontFamily: fonts.semiBold,
     color: colors.textPrimary,
   },
-  underline: {
+  indicator: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     height: 2,
     backgroundColor: colors.orange,
+    borderTopLeftRadius: 1,
+    borderTopRightRadius: 1,
+  },
+  border: {
+    height: 1,
+    backgroundColor: colors.borderSubtle,
   },
 });

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
 import type { Country } from '@/data/types';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import { StructuredContent } from './StructuredContent';
 
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -34,7 +34,12 @@ export function WhyWomenLoveIt({ country }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>Why women love it</Text>
-      <StructuredContent markdown={displayText} maxItems={expanded ? 8 : 4} />
+      <View style={styles.card}>
+        <View style={styles.accentBar} />
+        <View style={styles.cardBody}>
+          <StructuredContent markdown={displayText} maxItems={expanded ? 8 : 4} />
+        </View>
+      </View>
       {hasMore && !expanded && (
         <Pressable onPress={toggle} hitSlop={8}>
           <Text style={styles.readMore}>Read full overview</Text>
@@ -55,9 +60,23 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
+  },
+  card: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    flexDirection: 'row',
+    overflow: 'hidden',
+  },
+  accentBar: {
+    width: 3,
+    backgroundColor: colors.orange,
+  },
+  cardBody: {
+    flex: 1,
+    padding: spacing.lg,
   },
   readMore: {
     fontFamily: fonts.medium,

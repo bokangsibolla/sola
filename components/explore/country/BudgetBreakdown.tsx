@@ -12,7 +12,6 @@ interface Props {
 }
 
 interface RowData {
-  emoji: string;
   label: string;
   range: string;
   note: string;
@@ -21,25 +20,21 @@ interface RowData {
 function buildRows(budget: BudgetBreakdownType): RowData[] {
   return [
     {
-      emoji: '\u{1F3E0}',
       label: 'Accommodation',
       range: `$${budget.accommodation.low}\u2013$${budget.accommodation.high}/night`,
       note: budget.accommodation.note,
     },
     {
-      emoji: '\u{1F37D}\uFE0F',
       label: 'Food & Drink',
       range: `$${budget.food.low}\u2013$${budget.food.high}/day`,
       note: budget.food.note,
     },
     {
-      emoji: '\u{1F695}',
       label: 'Transport',
       range: `$${budget.transport.low}\u2013$${budget.transport.high}/day`,
       note: budget.transport.note,
     },
     {
-      emoji: '\u{1F3AF}',
       label: 'Activities',
       range: `$${budget.activities.low}\u2013$${budget.activities.high}`,
       note: budget.activities.note,
@@ -57,16 +52,11 @@ function computeDailyTotal(budget: BudgetBreakdownType): { low: number; high: nu
 function BudgetRow({ data, isLast }: { data: RowData; isLast: boolean }) {
   return (
     <View style={[styles.row, !isLast && styles.rowBorder]}>
-      <View style={styles.rowLeft}>
-        <Text style={styles.emoji}>{data.emoji}</Text>
-        <View style={styles.rowText}>
-          <View style={styles.rowTopLine}>
-            <Text style={styles.rowLabel}>{data.label}</Text>
-            <Text style={styles.rowRange}>{data.range}</Text>
-          </View>
-          <Text style={styles.rowNote}>{data.note}</Text>
-        </View>
+      <View style={styles.rowTopLine}>
+        <Text style={styles.rowLabel}>{data.label}</Text>
+        <Text style={styles.rowRange}>{data.range}</Text>
       </View>
+      <Text style={styles.rowNote}>{data.note}</Text>
     </View>
   );
 }
@@ -82,8 +72,8 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard, headless }: Props
     <View style={headless ? undefined : styles.section}>
       {!headless && <Text style={styles.heading}>Budget</Text>}
 
-      {/* Daily total summary */}
-      <View style={styles.summaryBar}>
+      {/* Daily total — warm highlight */}
+      <View style={styles.summaryCard}>
         <Text style={styles.summaryLabel}>Daily budget</Text>
         <Text style={styles.summaryAmount}>{`$${total.low}\u2013$${total.high}`}</Text>
       </View>
@@ -95,10 +85,10 @@ export function BudgetBreakdown({ budget, moneyMd, cashVsCard, headless }: Props
         ))}
       </View>
 
-      {/* Money tip */}
+      {/* Money tip — warm callout */}
       {!headless && moneyTip && (
-        <View style={styles.tipRow}>
-          <Text style={styles.tipEmoji}>{'\u{1F4A1}'}</Text>
+        <View style={styles.tipCard}>
+          <Text style={styles.tipLabel}>Tip</Text>
           <Text style={styles.tipText}>{moneyTip}</Text>
         </View>
       )}
@@ -117,30 +107,31 @@ const styles = StyleSheet.create({
   },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
 
-  // Daily total summary
-  summaryBar: {
+  // Daily total — warm highlight card
+  summaryCard: {
     flexDirection: 'row',
     alignItems: 'baseline',
     justifyContent: 'space-between',
     marginBottom: spacing.md,
-    paddingBottom: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   summaryLabel: {
     fontFamily: fonts.medium,
     fontSize: 15,
-    color: colors.textSecondary,
+    color: colors.textPrimary,
   },
   summaryAmount: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: colors.textPrimary,
+    fontSize: 22,
+    color: colors.orange,
   },
 
   // Category card
@@ -150,27 +141,12 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
   rowBorder: {
     borderBottomWidth: 1,
     borderBottomColor: colors.borderSubtle,
-  },
-  rowLeft: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  emoji: {
-    fontSize: 18,
-    marginRight: spacing.md,
-    marginTop: 1,
-  },
-  rowText: {
-    flex: 1,
   },
   rowTopLine: {
     flexDirection: 'row',
@@ -194,27 +170,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
 
-  // Money tip
-  tipRow: {
+  // Money tip — warm callout
+  tipCard: {
     flexDirection: 'row',
     alignItems: 'flex-start',
-    marginTop: spacing.lg,
-    paddingHorizontal: spacing.sm,
+    marginTop: spacing.md,
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
-  tipEmoji: {
-    fontSize: 14,
+  tipLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 12,
+    color: colors.orange,
     marginRight: spacing.sm,
     marginTop: 2,
+    lineHeight: 18,
   },
   tipText: {
     flex: 1,
     fontFamily: fonts.regular,
-    fontSize: 14,
-    color: colors.textSecondary,
-    lineHeight: 20,
+    fontSize: 13,
+    color: colors.textPrimary,
+    lineHeight: 18,
   },
 
   // Currency footer
@@ -222,7 +204,7 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 12,
     color: colors.textMuted,
-    marginTop: spacing.md,
+    marginTop: spacing.sm,
     textAlign: 'right',
   },
 });

@@ -1,5 +1,5 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { colors, fonts, spacing } from '@/constants/design';
+import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, CityArea } from '@/data/types';
 import { QuickContextGrid } from './QuickContextGrid';
 import { WomenShouldKnow } from './WomenShouldKnow';
@@ -24,27 +24,24 @@ export function OverviewTab({ city, areas }: OverviewTabProps) {
       contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
     >
-      {/* Intro paragraph */}
+      {/* Intro callout */}
       {introText && (
-        <View style={styles.introSection}>
-          <Text style={styles.introText} numberOfLines={4}>{introText}</Text>
+        <View style={styles.introCard}>
+          <View style={styles.introAccent} />
+          <View style={styles.introBody}>
+            <Text style={styles.introText} numberOfLines={4}>{introText}</Text>
+          </View>
         </View>
       )}
 
       {/* Quick context grid: solo level, budget, vibe, walkability, transit */}
       <QuickContextGrid city={city} />
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
       {/* What brings women here (experience pillars) */}
       <ExperiencePillars city={city} />
 
       {/* How women use this city */}
       <HowWomenUseCity city={city} />
-
-      {/* Divider */}
-      <View style={styles.divider} />
 
       {/* Neighborhoods */}
       <AreaCardsRow areas={areas} />
@@ -70,18 +67,26 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxxxl,
   },
-  introSection: {
+  introCard: {
+    flexDirection: 'row',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
     marginBottom: spacing.xl,
+  },
+  introAccent: {
+    width: 3,
+    backgroundColor: colors.orange,
+  },
+  introBody: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
   introText: {
     fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 23,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginBottom: spacing.xl,
+    color: colors.textPrimary,
+    lineHeight: 22,
   },
 });

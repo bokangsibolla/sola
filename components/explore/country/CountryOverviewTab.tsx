@@ -1,4 +1,5 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useState } from 'react';
+import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, Country } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
@@ -7,6 +8,10 @@ import { DestinationCard } from './DestinationCard';
 import { VolunteerCountrySection } from './VolunteerCountrySection';
 import { CommunityThreadRows } from './CommunityThreadRows';
 
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 interface Props {
   country: Country;
   cities: City[];
@@ -14,36 +19,107 @@ interface Props {
   onSwitchTab?: (index: number) => void;
 }
 
-// -- Quick Context Grid (matches city's QuickContextGrid) -----------------
+// -- At a glance grid -------------------------------------------------------
 
 interface CellData {
-  emoji: string;
   label: string;
   value: string;
 }
 
 function buildCells(country: Country): CellData[] {
   const cells: CellData[] = [];
-  if (country.soloLevel) cells.push({ emoji: '\u{1F6E1}\uFE0F', label: 'Solo level', value: mapSoloLevel(country.soloLevel) });
-  if (country.avgDailyBudgetUsd) cells.push({ emoji: '\u{1F4B0}', label: 'Daily budget', value: `~$${country.avgDailyBudgetUsd}/day` });
-  if (country.bestMonths) cells.push({ emoji: '\u{1F4C5}', label: 'Best time', value: country.bestMonths });
-  if (country.vibeSummary) cells.push({ emoji: '\u2728', label: 'Vibe', value: country.vibeSummary });
-  if (country.internetQuality) cells.push({ emoji: '\u{1F4F6}', label: 'Internet', value: country.internetQuality.charAt(0).toUpperCase() + country.internetQuality.slice(1) });
-  if (country.cashVsCard) cells.push({ emoji: '\u{1F4B3}', label: 'Payments', value: country.cashVsCard });
+  if (country.soloLevel) cells.push({ label: 'Solo level', value: mapSoloLevel(country.soloLevel) });
+  if (country.avgDailyBudgetUsd) cells.push({ label: 'Daily budget', value: `~$${country.avgDailyBudgetUsd}/day` });
+  if (country.bestMonths) cells.push({ label: 'Best time', value: country.bestMonths });
+  if (country.vibeSummary) cells.push({ label: 'Vibe', value: country.vibeSummary });
+  if (country.internetQuality) cells.push({ label: 'Internet', value: country.internetQuality.charAt(0).toUpperCase() + country.internetQuality.slice(1) });
+  if (country.cashVsCard) cells.push({ label: 'Payments', value: country.cashVsCard });
   return cells;
 }
 
 function GridCell({ data, isRight, isBottom }: { data: CellData; isRight: boolean; isBottom: boolean }) {
   return (
     <View style={[cellStyles.cell, !isRight && cellStyles.borderRight, !isBottom && cellStyles.borderBottom]}>
-      <Text style={cellStyles.emoji}>{data.emoji}</Text>
       <Text style={cellStyles.label}>{data.label}</Text>
       <Text style={cellStyles.value} numberOfLines={2}>{data.value}</Text>
     </View>
   );
 }
 
-// -- Main Component -------------------------------------------------------
+// -- Expandable intro -------------------------------------------------------
+
+function IntroCallout({ text }: { text: string }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = text.length > 120;
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(!expanded);
+  };
+
+  return (
+    <View style={introStyles.card}>
+      <View style={introStyles.accent} />
+      <View style={introStyles.body}>
+        <Text style={introStyles.text} numberOfLines={expanded ? undefined : 3}>
+          {text}
+        </Text>
+        {isLong && (
+          <Pressable onPress={toggle} hitSlop={8}>
+            <Text style={introStyles.toggle}>
+              {expanded ? 'Show less' : 'Read more'}
+            </Text>
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+// -- Collapsible bullet list ------------------------------------------------
+
+const COLLAPSED_COUNT = 3;
+
+function CollapsibleBullets({ items, variant }: { items: string[]; variant: 'warm' | 'neutral' }) {
+  const [expanded, setExpanded] = useState(false);
+  const needsExpand = items.length > COLLAPSED_COUNT;
+  const visible = expanded ? items : items.slice(0, COLLAPSED_COUNT);
+
+  const toggle = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded(!expanded);
+  };
+
+  const isWarm = variant === 'warm';
+
+  return (
+    <View>
+      <View style={[bulletStyles.card, bulletStyles.cardWarm]}>
+        {visible.map((bullet, i) => (
+          <View key={i} style={[bulletStyles.row, i < visible.length - 1 && bulletStyles.rowBorder]}>
+            {isWarm ? (
+              <View style={bulletStyles.dot} />
+            ) : (
+              <View style={bulletStyles.indexBadge}>
+                <Text style={bulletStyles.indexText}>{i + 1}</Text>
+              </View>
+            )}
+            <Text style={bulletStyles.text}>{bullet}</Text>
+          </View>
+        ))}
+      </View>
+      {needsExpand && (
+        <Pressable onPress={toggle} hitSlop={8} style={bulletStyles.toggleBtn}>
+          <Text style={bulletStyles.toggleText}>
+            {expanded ? 'Show less' : `Show all ${items.length}`}
+          </Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+// -- Main Component ---------------------------------------------------------
 
 export function CountryOverviewTab({ country, cities, communityData, onSwitchTab }: Props) {
 
@@ -57,20 +133,31 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
     cellRows.push(cells.slice(i, i + 2));
   }
 
-  // Build "highlights" as experience pillars style
   const highlights = country.destinationHighlights ?? [];
+
+  const soloItems = country.bestForMd
+    ? country.bestForMd
+        .split('\n')
+        .map(l => l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'))
+        .slice(0, 6)
+    : [];
+
+  const knowItems = country.mightStruggleMd
+    ? country.mightStruggleMd
+        .split('\n')
+        .map(l => l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim())
+        .filter(l => l.length > 0 && !l.startsWith('#'))
+        .slice(0, 6)
+    : [];
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
-      {/* Intro */}
-      {introText && (
-        <View style={styles.introSection}>
-          <Text style={styles.introText}>{introText}</Text>
-        </View>
-      )}
+      {/* Intro — warm callout with left accent bar */}
+      {introText && <IntroCallout text={introText} />}
 
-      {/* At a glance grid -- matches city's QuickContextGrid */}
+      {/* At a glance — warm grid */}
       {cells.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.heading}>At a glance</Text>
@@ -92,17 +179,13 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
         </View>
       )}
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* What brings women here -- orangeFill cards like city's ExperiencePillars */}
+      {/* What brings women here */}
       {highlights.length > 0 && (
         <View style={styles.section}>
           <Text style={styles.heading}>What brings women here</Text>
           <View style={styles.pillarGrid}>
             {highlights.slice(0, 4).map((h, i) => (
               <View key={i} style={styles.pillarCell}>
-                <View style={styles.accentDot} />
                 <Text style={styles.pillarTitle}>{h.label}</Text>
                 <Text style={styles.pillarDesc}>{h.tagline}</Text>
               </View>
@@ -111,40 +194,22 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
         </View>
       )}
 
-      {/* Solo in [Country] -- orangeFill bullet card like city's HowWomenUseCity */}
-      {country.bestForMd && (
+      {/* Solo in [Country] — warm collapsible */}
+      {soloItems.length > 0 && (
         <View style={styles.section}>
-          <View style={styles.headerRow}>
-            <Text style={styles.headerEmoji}>{'\u{1F9ED}'}</Text>
-            <Text style={styles.heading}>Solo in {country.name}</Text>
-          </View>
-          <View style={styles.bulletCard}>
-            {country.bestForMd
-              .split('\n')
-              .map(l => l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim())
-              .filter(l => l.length > 0 && !l.startsWith('#'))
-              .slice(0, 5)
-              .map((bullet, i) => (
-                <View key={i} style={styles.bulletRow}>
-                  <View style={styles.bulletDot} />
-                  <Text style={styles.bulletText}>{bullet}</Text>
-                </View>
-              ))}
-          </View>
+          <Text style={styles.heading}>Solo in {country.name}</Text>
+          <CollapsibleBullets items={soloItems} variant="warm" />
         </View>
       )}
 
-      {/* Divider */}
-      <View style={styles.divider} />
-
-      {/* Where to go — slim teaser (top 3 destinations) */}
+      {/* Where to go */}
       {cities.length > 0 && (
         <View style={styles.section}>
           <View style={styles.sectionHeaderRow}>
             <Text style={styles.heading}>Where to go</Text>
             {cities.length > 3 && (
               <Pressable hitSlop={8} onPress={() => onSwitchTab?.(1)}>
-                <Text style={styles.seeAll}>All {cities.length} destinations</Text>
+                <Text style={styles.seeAll}>All {cities.length}</Text>
               </Pressable>
             )}
           </View>
@@ -154,33 +219,18 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
         </View>
       )}
 
-      {/* Women should know -- numbered list like city's WomenShouldKnow */}
-      {country.mightStruggleMd && (
+      {/* Good to know — warm collapsible */}
+      {knowItems.length > 0 && (
         <View style={styles.section}>
-          <View style={styles.headerRow}>
-            <Text style={styles.headerEmoji}>{'\u{1F4A1}'}</Text>
-            <Text style={styles.heading}>Good to know</Text>
-          </View>
-          <View style={styles.numberedCard}>
-            {country.mightStruggleMd
-              .split('\n')
-              .map(l => l.replace(/^[-*]\s*/, '').replace(/\*\*/g, '').trim())
-              .filter(l => l.length > 0 && !l.startsWith('#'))
-              .slice(0, 5)
-              .map((bullet, i) => (
-                <View key={i} style={[styles.numberedRow, i < 4 && styles.numberedBorder]}>
-                  <Text style={styles.numberedIdx}>{i + 1}</Text>
-                  <Text style={styles.numberedText}>{bullet}</Text>
-                </View>
-              ))}
-          </View>
+          <Text style={styles.heading}>Good to know</Text>
+          <CollapsibleBullets items={knowItems} variant="neutral" />
         </View>
       )}
 
       {/* Volunteer opportunities */}
       <VolunteerCountrySection countryId={country.id} countryName={country.name} />
 
-      {/* Community threads */}
+      {/* Community threads — warm card */}
       {communityData && communityData.threads.length > 0 && (
         <View style={styles.section}>
           <CommunityThreadRows
@@ -195,11 +245,44 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
   );
 }
 
-// -- Cell styles (matches city QuickContextGrid exactly) ------------------
+// -- Intro styles -----------------------------------------------------------
+
+const introStyles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    overflow: 'hidden',
+    marginBottom: spacing.xl,
+  },
+  accent: {
+    width: 3,
+    backgroundColor: colors.orange,
+  },
+  body: {
+    flex: 1,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  text: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+    lineHeight: 22,
+  },
+  toggle: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+    marginTop: spacing.xs,
+  },
+});
+
+// -- Cell styles (warm grid) ------------------------------------------------
 
 const cellStyles = StyleSheet.create({
   grid: {
-    backgroundColor: colors.neutralFill,
+    backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     overflow: 'hidden',
   },
@@ -208,7 +291,7 @@ const cellStyles = StyleSheet.create({
   },
   cell: {
     flex: 1,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
   },
   emptyCell: {
@@ -216,33 +299,90 @@ const cellStyles = StyleSheet.create({
   },
   borderRight: {
     borderRightWidth: 1,
-    borderRightColor: colors.borderSubtle,
+    borderRightColor: 'rgba(229,101,58,0.1)',
   },
   borderBottom: {
     borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  emoji: {
-    fontSize: 18,
-    marginBottom: spacing.xs,
+    borderBottomColor: 'rgba(229,101,58,0.1)',
   },
   label: {
     fontFamily: fonts.medium,
-    fontSize: 12,
-    color: colors.textMuted,
+    fontSize: 11,
+    color: colors.orange,
     marginBottom: 2,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   value: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 19,
   },
 });
 
-// -- Main styles ----------------------------------------------------------
+// -- Bullet styles ----------------------------------------------------------
+
+const bulletStyles = StyleSheet.create({
+  card: {
+    borderRadius: radius.card,
+    overflow: 'hidden',
+  },
+  cardWarm: {
+    backgroundColor: colors.orangeFill,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+  },
+  rowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(229,101,58,0.08)',
+  },
+  dot: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    backgroundColor: colors.orange,
+    marginRight: spacing.sm,
+    marginTop: 7,
+  },
+  indexBadge: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(229,101,58,0.15)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.sm,
+    marginTop: 1,
+  },
+  indexText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: colors.orange,
+    lineHeight: 14,
+  },
+  text: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textPrimary,
+    lineHeight: 20,
+    flex: 1,
+  },
+  toggleBtn: {
+    marginTop: spacing.sm,
+  },
+  toggleText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+});
+
+// -- Main styles ------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
@@ -251,39 +391,18 @@ const styles = StyleSheet.create({
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxxxl,
   },
-  introSection: { marginBottom: spacing.xl },
-  introText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 23,
-  },
-  section: { marginBottom: spacing.xxl },
+  section: { marginBottom: spacing.xl },
   heading: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    marginBottom: spacing.lg,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.borderSubtle,
-    marginBottom: spacing.xl,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.lg,
-  },
-  headerEmoji: {
-    fontSize: 20,
-    marginRight: spacing.sm,
+    marginBottom: spacing.md,
   },
   sectionHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   seeAll: {
     fontFamily: fonts.medium,
@@ -291,7 +410,7 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
 
-  // Experience pillars (matches city ExperiencePillars)
+  // Experience pillars
   pillarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -301,89 +420,20 @@ const styles = StyleSheet.create({
     width: '48%',
     backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
-    paddingVertical: spacing.lg,
+    paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-  },
-  accentDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.orange,
-    marginBottom: spacing.sm,
   },
   pillarTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
-    lineHeight: 20,
+    lineHeight: 19,
   },
   pillarDesc: {
     fontFamily: fonts.regular,
     fontSize: 13,
     color: colors.textSecondary,
     lineHeight: 18,
-    marginTop: spacing.xs,
+    marginTop: 2,
   },
-
-  // orangeFill bullet card (matches city HowWomenUseCity)
-  bulletCard: {
-    backgroundColor: colors.orangeFill,
-    borderRadius: radius.card,
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.md,
-  },
-  bulletRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    paddingVertical: spacing.sm,
-  },
-  bulletDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.orange,
-    marginRight: spacing.sm,
-    marginTop: 8,
-  },
-  bulletText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textPrimary,
-    lineHeight: 22,
-    flex: 1,
-  },
-
-  // Numbered card (matches city WomenShouldKnow)
-  numberedCard: {
-    backgroundColor: colors.background,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    overflow: 'hidden',
-  },
-  numberedRow: {
-    flexDirection: 'row',
-    paddingVertical: spacing.md + 2,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'flex-start',
-  },
-  numberedBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  numberedIdx: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: colors.orange,
-    width: 22,
-    lineHeight: 22,
-  },
-  numberedText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textSecondary,
-    lineHeight: 22,
-    flex: 1,
-  },
-
 });
