@@ -31,6 +31,7 @@ import type {
   ConnectionRequest,
   ConnectionStatus,
   PendingVerification,
+  ProfileTag,
 } from './types';
 import type { CityWithCountry } from './explore/types';
 
@@ -2153,6 +2154,60 @@ export async function getCountriesList(): Promise<{ id: string; iso2: string; na
     .order('name');
   if (error) throw error;
   return data ?? [];
+}
+
+// ---------------------------------------------------------------------------
+// Profile Tags (Interests)
+// ---------------------------------------------------------------------------
+
+/** Fetch all profile tags for a user */
+export async function getProfileTags(userId: string): Promise<ProfileTag[]> {
+  const { data, error } = await supabase
+    .from('profile_tags')
+    .select('profile_id, tag_slug, tag_label, tag_group, created_at')
+    .eq('profile_id', userId)
+    .order('tag_group')
+    .order('created_at');
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    profileId: row.profile_id,
+    tagSlug: row.tag_slug,
+    tagLabel: row.tag_label,
+    tagGroup: row.tag_group,
+    createdAt: row.created_at,
+  }));
+}
+
+/** Replace all profile tags for the current user */
+export async function setProfileTags(
+  userId: string,
+  tags: { tagSlug: string; tagLabel: string; tagGroup: string }[],
+): Promise<void> {
+  // Delete existing tags
+  const { error: deleteError } = await supabase
+    .from('profile_tags')
+    .delete()
+    .eq('profile_id', userId);
+
+  if (deleteError) throw deleteError;
+
+  if (tags.length === 0) return;
+
+  // Insert new tags
+  const rows = tags.map((t) => ({
+    profile_id: userId,
+    tag_slug: t.tagSlug,
+    tag_label: t.tagLabel,
+    tag_group: t.tagGroup,
+  }));
+
+  const { error: insertError } = await supabase
+    .from('profile_tags')
+    .insert(rows);
+
+  if (insertError) throw insertError;
 }
 
 // ---------------------------------------------------------------------------
