@@ -5,8 +5,9 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import LoadingScreen from '@/components/LoadingScreen';
 import NavigationHero from '@/components/NavigationHero';
@@ -20,10 +21,28 @@ import {
 import type { Place } from '@/data/types';
 import { CompactPlaceCard } from '@/components/explore/city/CompactPlaceCard';
 
+/** Maps practical_info keys to display labels and icons */
+const practicalKeyMeta: Record<string, { label: string; icon: string }> = {
+  getting_around: { label: 'Getting around', icon: 'walk-outline' },
+  wifi: { label: 'WiFi', icon: 'wifi-outline' },
+  atms: { label: 'ATMs', icon: 'card-outline' },
+  sim_cards: { label: 'SIM cards', icon: 'phone-portrait-outline' },
+  budget_note: { label: 'Budget', icon: 'cash-outline' },
+  nearest_hospital: { label: 'Nearest hospital', icon: 'medkit-outline' },
+};
+
+/** Ordered keys for consistent display */
+const practicalKeyOrder = [
+  'getting_around',
+  'wifi',
+  'atms',
+  'sim_cards',
+  'budget_note',
+  'nearest_hospital',
+];
 
 export default function AreaDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   // Fetch area
@@ -94,6 +113,19 @@ export default function AreaDetailScreen() {
     }));
   }, [places]);
 
+  // Practical info rows (only show keys that have values)
+  const practicalRows = useMemo(() => {
+    if (!area?.practicalInfo) return [];
+    return practicalKeyOrder
+      .filter((key) => area.practicalInfo?.[key])
+      .map((key) => ({
+        key,
+        label: practicalKeyMeta[key]?.label ?? key,
+        icon: practicalKeyMeta[key]?.icon ?? 'information-circle-outline',
+        value: area.practicalInfo![key],
+      }));
+  }, [area?.practicalInfo]);
+
   const renderItem = useCallback(({ item }: { item: Place }) => {
     return (
       <CompactPlaceCard
@@ -127,38 +159,68 @@ export default function AreaDetailScreen() {
         height={240}
       />
 
-      {/* Summary section */}
-      <View style={styles.summarySection}>
-        {area.whoItSuits && (
-          <View style={styles.whoItSuitsCard}>
-            <Text style={styles.whoItSuitsLabel}>BEST FOR</Text>
-            <Text style={styles.whoItSuitsText}>{area.whoItSuits}</Text>
-          </View>
-        )}
-
-        {/* Quick stats */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{places?.length ?? 0}</Text>
-            <Text style={styles.statLabel}>Places</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{grouped.length}</Text>
-            <Text style={styles.statLabel}>Categories</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{area.areaKind}</Text>
-            <Text style={styles.statLabel}>Type</Text>
+      {/* Best for pill */}
+      {area.whoItSuits && (
+        <View style={styles.bestForSection}>
+          <View style={styles.bestForPill}>
+            <Text style={styles.bestForLabel}>BEST FOR</Text>
+            <Text style={styles.bestForText}>{area.whoItSuits}</Text>
           </View>
         </View>
-      </View>
+      )}
 
-      {/* Section headers for grouped places */}
+      {/* Vibe description */}
+      {area.vibeDescription && (
+        <View style={styles.vibeSection}>
+          <Text style={styles.vibeText}>{area.vibeDescription}</Text>
+        </View>
+      )}
+
+      {/* Crowd vibe */}
+      {area.crowdVibe && (
+        <View style={styles.crowdSection}>
+          <Text style={styles.crowdLabel}>Who you'll find here</Text>
+          <Text style={styles.crowdText}>{area.crowdVibe}</Text>
+        </View>
+      )}
+
+      {/* Practical info */}
+      {practicalRows.length > 0 && (
+        <View style={styles.practicalSection}>
+          <Text style={styles.practicalTitle}>Practical info</Text>
+          {practicalRows.map((row, i) => (
+            <View
+              key={row.key}
+              style={[
+                styles.practicalRow,
+                i < practicalRows.length - 1 && styles.practicalRowBorder,
+              ]}
+            >
+              <View style={styles.practicalIconCol}>
+                <Ionicons
+                  name={row.icon as any}
+                  size={18}
+                  color={colors.textSecondary}
+                />
+              </View>
+              <View style={styles.practicalContent}>
+                <Text style={styles.practicalLabel}>{row.label}</Text>
+                <Text style={styles.practicalValue}>{row.value}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Places header */}
       {grouped.length > 0 && (
         <View style={styles.placesHeader}>
-          <Text style={styles.sectionTitle}>Places in {area.name}</Text>
+          <Text style={styles.sectionTitle}>
+            Places in {area.name}
+          </Text>
+          <Text style={styles.placesCount}>
+            {places?.length ?? 0} places
+          </Text>
         </View>
       )}
 
@@ -212,20 +274,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.xxl,
   },
-  // Summary
-  summarySection: {
+
+  // Best for pill
+  bestForSection: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.lg,
   },
-  whoItSuitsCard: {
+  bestForPill: {
     backgroundColor: colors.orangeFill,
     borderRadius: radius.card,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    marginBottom: spacing.lg,
   },
-  whoItSuitsLabel: {
+  bestForLabel: {
     fontFamily: fonts.medium,
     fontSize: 11,
     color: colors.orange,
@@ -233,51 +294,104 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 4,
   },
-  whoItSuitsText: {
+  bestForText: {
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.textPrimary,
     lineHeight: 22,
   },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.neutralFill,
-    borderRadius: radius.card,
-    paddingVertical: spacing.lg,
+
+  // Vibe description
+  vibeSection: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.xl,
   },
-  statItem: {
-    flex: 1,
-    alignItems: 'center',
+  vibeText: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 26,
+    color: colors.textPrimary,
   },
-  statValue: {
+
+  // Crowd vibe
+  crowdSection: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.xl,
+  },
+  crowdLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    marginBottom: spacing.xs,
+  },
+  crowdText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textSecondary,
+  },
+
+  // Practical info
+  practicalSection: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.md,
+  },
+  practicalTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 18,
     color: colors.textPrimary,
+    marginBottom: spacing.lg,
   },
-  statLabel: {
+  practicalRow: {
+    flexDirection: 'row',
+    paddingVertical: spacing.md,
+  },
+  practicalRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  practicalIconCol: {
+    width: 28,
+    paddingTop: 2,
+  },
+  practicalContent: {
+    flex: 1,
+  },
+  practicalLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textPrimary,
+    marginBottom: 2,
+  },
+  practicalValue: {
     fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 20,
+    color: colors.textSecondary,
   },
-  statDivider: {
-    width: 1,
-    height: 32,
-    backgroundColor: colors.borderSubtle,
-  },
+
   // Places
   placesHeader: {
     paddingHorizontal: spacing.screenX,
     paddingBottom: spacing.md,
     borderTopWidth: 1,
     borderTopColor: colors.borderSubtle,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.xxl,
+    marginTop: spacing.xl,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'baseline',
   },
   sectionTitle: {
     fontFamily: fonts.semiBold,
     fontSize: 20,
     color: colors.textPrimary,
+  },
+  placesCount: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
   },
   groupSection: {
     paddingHorizontal: spacing.screenX,
