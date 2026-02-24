@@ -34,3 +34,56 @@ export async function getAdminPendingCounts(): Promise<AdminPendingCounts> {
     total: verifications + contentReports + userReports,
   };
 }
+
+// ---------------------------------------------------------------------------
+// Content Reports
+// ---------------------------------------------------------------------------
+
+export interface ContentReport {
+  id: string;
+  reporterId: string;
+  reporterName: string;
+  targetType: 'thread' | 'reply';
+  targetId: string;
+  reason: string;
+  details: string | null;
+  status: string;
+  createdAt: string;
+}
+
+export async function getContentReports(): Promise<ContentReport[]> {
+  const { data, error } = await supabase
+    .from('content_reports')
+    .select(`
+      id, reporter_id, target_type, target_id, reason, details, status, created_at,
+      profiles:reporter_id(first_name)
+    `)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id,
+    reporterId: row.reporter_id,
+    reporterName: row.profiles?.first_name ?? 'Unknown',
+    targetType: row.target_type,
+    targetId: row.target_id,
+    reason: row.reason,
+    details: row.details,
+    status: row.status,
+    createdAt: row.created_at,
+  }));
+}
+
+export async function resolveContentReport(
+  reportId: string,
+  status: 'resolved' | 'dismissed',
+): Promise<void> {
+  const { error } = await supabase
+    .from('content_reports')
+    .update({ status })
+    .eq('id', reportId);
+
+  if (error) throw error;
+}
