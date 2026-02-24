@@ -502,10 +502,7 @@ export const TogetherFeed: React.FC = () => {
         }
       />
 
-      {/* FAB — only on Feed tab */}
-      {isFeedTab && (
-        <CreatePostFAB onPress={handleCreatePost} bottomInset={insets.bottom} />
-      )}
+      {/* Post button lives in the empty state — no FAB needed */}
     </View>
   );
 };
