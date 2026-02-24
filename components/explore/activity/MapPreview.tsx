@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -35,6 +35,7 @@ const MapPreview: React.FC<MapPreviewProps> = ({
               latitudeDelta: 0.008,
               longitudeDelta: 0.008,
             }}
+            liteMode={Platform.OS === 'android'}
             scrollEnabled={false}
             zoomEnabled={false}
             rotateEnabled={false}
