@@ -1,12 +1,10 @@
 import { supabase } from './supabase';
-import { Platform } from 'react-native';
-import * as FileSystem from 'expo-file-system';
-import { decode } from 'base64-arraybuffer';
 
 const BUCKET = 'avatars';
 
 /**
  * Upload a local image URI to Supabase Storage and return the public URL.
+ * Uses FormData with the file URI — the most reliable approach on React Native.
  * If the URI is already a remote URL (http/https), returns it unchanged.
  * Returns null if no URI is provided.
  */
@@ -28,21 +26,36 @@ export async function uploadAvatar(
   const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
   const filePath = `${userId}/avatar.${ext}`;
 
-  // Read file as base64 and convert to ArrayBuffer for reliable RN upload
-  const base64 = await FileSystem.readAsStringAsync(localUri, {
-    encoding: 'base64',
-  });
+  // Get a fresh access token
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error('No auth session');
 
-  const { error } = await supabase.storage
-    .from(BUCKET)
-    .upload(filePath, decode(base64), {
-      contentType,
-      upsert: true,
-    });
+  // Upload via REST API with FormData — most reliable on React Native
+  const formData = new FormData();
+  formData.append('', {
+    uri: localUri,
+    name: `avatar.${ext}`,
+    type: contentType,
+  } as any);
 
-  if (error) throw error;
+  const supabaseUrl = 'https://bfyewxgdfkmkviajmfzp.supabase.co';
+  const uploadResponse = await fetch(
+    `${supabaseUrl}/storage/v1/object/${BUCKET}/${filePath}`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        'x-upsert': 'true',
+      },
+      body: formData,
+    },
+  );
+
+  if (!uploadResponse.ok) {
+    const body = await uploadResponse.text();
+    throw new Error(`Storage upload failed (${uploadResponse.status}): ${body}`);
+  }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
-  // Append cache-buster so the CDN serves the fresh image after re-upload
   return `${data.publicUrl}?t=${Date.now()}`;
 }

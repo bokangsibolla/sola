@@ -35,7 +35,6 @@ import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 
 const BIO_MAX = 140;
-const POPULAR_ISO = ['US', 'GB', 'AU', 'DE', 'FR', 'BR', 'TH', 'JP', 'ES', 'IT'];
 
 export default function EditProfileScreen() {
   const router = useRouter();
@@ -50,7 +49,7 @@ export default function EditProfileScreen() {
 
   const { data: profile, loading, error, refetch } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
-    [userId],
+    ['edit-profile', userId],
   );
 
   const [photoUri, setPhotoUri] = useState<string | null>(null);
@@ -69,7 +68,7 @@ export default function EditProfileScreen() {
   // Fetch existing profile tags
   const { data: existingTags } = useData(
     () => (userId ? getProfileTags(userId) : Promise.resolve([])),
-    [userId],
+    ['edit-profile-tags', userId],
   );
 
   // Populate form once profile loads
@@ -132,13 +131,9 @@ export default function EditProfileScreen() {
   }, [userId]);
 
   const displayedCountries = useMemo(() => {
-    if (countrySearch.length < 2) {
-      return POPULAR_ISO
-        .map((iso) => countries.find((c) => c.iso2 === iso))
-        .filter(Boolean) as typeof countries;
-    }
-    const q = countrySearch.toLowerCase();
-    return countries.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 12);
+    const q = countrySearch.trim().toLowerCase();
+    if (q.length < 2) return [];
+    return countries.filter((c) => c.name.toLowerCase().includes(q)).slice(0, 8);
   }, [countrySearch]);
 
   if (loading) return <LoadingScreen />;
@@ -200,6 +195,9 @@ export default function EditProfileScreen() {
     if (!userId) return;
     setSaving(true);
 
+    // 0. Refresh auth session to avoid expired JWT / RLS silent failures
+    await supabase.auth.refreshSession();
+
     // 1. Upload avatar separately — don't block profile save if photo fails
     let avatarUrl = photoUri;
     if (photoUri && !photoUri.startsWith('http')) {
@@ -207,25 +205,28 @@ export default function EditProfileScreen() {
         avatarUrl = await uploadAvatar(userId, photoUri);
       } catch (err: any) {
         console.warn('[edit-profile] Avatar upload failed:', err.message);
-        // Keep going — save the rest of the profile
         avatarUrl = profile?.avatarUrl ?? null; // fallback to existing
       }
     }
 
-    // 2. Save profile
+    // 2. Save profile via update (not upsert) so we detect RLS failures
     try {
       const country = countries.find((c) => c.iso2 === selectedCountry);
-      const { error: upsertError } = await supabase.from('profiles').upsert({
-        id: userId,
+      const { data: updated, error: updateError } = await supabase.from('profiles').update({
         first_name: firstName.trim(),
         bio: bio.trim() || null,
         avatar_url: avatarUrl,
         home_country_iso2: selectedCountry || null,
         home_country_name: country?.name ?? null,
         username: username.trim() || null,
-      });
-      if (upsertError) {
-        Alert.alert('Save failed', upsertError.message);
+      }).eq('id', userId).select('id');
+      if (updateError) {
+        Alert.alert('Save failed', updateError.message);
+        setSaving(false);
+        return;
+      }
+      if (!updated || updated.length === 0) {
+        Alert.alert('Save failed', 'Could not update profile. Please sign out and back in.');
         setSaving(false);
         return;
       }
@@ -248,8 +249,8 @@ export default function EditProfileScreen() {
         console.warn('[edit-profile] Visited countries save failed:', err.message),
       );
 
-      // 5. Invalidate caches and navigate back
-      queryClient.invalidateQueries({ queryKey: ['useData', userId] });
+      // 5. Invalidate ALL cached data so profile, home, etc. pick up changes
+      queryClient.invalidateQueries({ queryKey: ['useData'] });
       posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: selectedTagSlugs.length, visited_countries_count: visitedCountryIds.length });
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
@@ -346,40 +347,61 @@ export default function EditProfileScreen() {
 
         {/* Country */}
         <Text style={styles.fieldLabel}>Where are you from?</Text>
-        <View style={styles.searchContainer}>
-          <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search countries..."
-            placeholderTextColor={colors.textMuted}
-            value={countrySearch}
-            onChangeText={setCountrySearch}
-          />
-          {countrySearch.length > 0 && (
-            <Pressable onPress={() => setCountrySearch('')} hitSlop={8}>
-              <Ionicons name="close-circle" size={18} color={colors.textMuted} />
-            </Pressable>
-          )}
-        </View>
-        <View style={styles.pillGrid}>
-          {displayedCountries.map((c) => {
-            const selected = selectedCountry === c.iso2;
-            return (
-              <Pressable
-                key={c.iso2}
-                style={[styles.pill, selected && styles.pillSelected]}
-                onPress={() => {
-                  setSelectedCountry(c.iso2);
-                  setCountrySearch('');
-                }}
-              >
-                <Text style={[styles.pillText, selected && styles.pillTextSelected]}>
-                  {c.flag ?? ''} {c.name}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
+        {selectedCountry && !countrySearch ? (
+          <Pressable
+            style={styles.selectedCountryRow}
+            onPress={() => setCountrySearch(' ')}
+          >
+            <Text style={styles.selectedCountryText}>
+              {countries.find((c) => c.iso2 === selectedCountry)?.flag ?? ''}{' '}
+              {countries.find((c) => c.iso2 === selectedCountry)?.name ?? selectedCountry}
+            </Text>
+            <Text style={styles.changeText}>Change</Text>
+          </Pressable>
+        ) : (
+          <>
+            <View style={styles.searchContainer}>
+              <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Search for your country..."
+                placeholderTextColor={colors.textMuted}
+                value={countrySearch.trim() ? countrySearch : ''}
+                onChangeText={setCountrySearch}
+                autoFocus={!!selectedCountry}
+              />
+              {countrySearch.trim().length > 0 && (
+                <Pressable onPress={() => setCountrySearch('')} hitSlop={8}>
+                  <Ionicons name="close-circle" size={18} color={colors.textMuted} />
+                </Pressable>
+              )}
+            </View>
+            {countrySearch.trim().length >= 2 && displayedCountries.length > 0 && (
+              <View style={styles.countryDropdown}>
+                {displayedCountries.map((c) => (
+                  <Pressable
+                    key={c.iso2}
+                    style={({ pressed }) => [styles.countryRow, pressed && { backgroundColor: colors.neutralFill }]}
+                    onPress={() => {
+                      setSelectedCountry(c.iso2);
+                      setCountrySearch('');
+                    }}
+                  >
+                    <Text style={styles.countryRowText}>
+                      {c.flag ?? ''} {c.name}
+                    </Text>
+                    {selectedCountry === c.iso2 && (
+                      <Ionicons name="checkmark" size={18} color={colors.orange} />
+                    )}
+                  </Pressable>
+                ))}
+              </View>
+            )}
+            {countrySearch.trim().length >= 2 && displayedCountries.length === 0 && (
+              <Text style={styles.noResults}>No countries found</Text>
+            )}
+          </>
+        )}
 
         {/* Interests */}
         <Text style={[styles.fieldLabel, { marginTop: spacing.xl }]}>Interests</Text>
@@ -499,31 +521,55 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: colors.textPrimary,
   },
-  pillGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  pill: {
+  selectedCountryRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 48,
+    borderRadius: radius.input,
     borderWidth: 1,
     borderColor: colors.borderDefault,
-    borderRadius: radius.pill,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    marginBottom: spacing.lg,
   },
-  pillSelected: {
-    backgroundColor: colors.orange,
-    borderColor: colors.orange,
-  },
-  pillText: {
+  selectedCountryText: {
     fontFamily: fonts.medium,
-    fontSize: 14,
+    fontSize: 16,
     color: colors.textPrimary,
   },
-  pillTextSelected: {
-    color: colors.background,
+  changeText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
+  },
+  countryDropdown: {
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    borderRadius: radius.cardLg,
+    overflow: 'hidden',
+    marginBottom: spacing.lg,
+  },
+  countryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  countryRowText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  noResults: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+    marginBottom: spacing.lg,
   },
   saveButton: {
     backgroundColor: colors.orange,

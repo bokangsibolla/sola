@@ -7,15 +7,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import { getCollections, getProfileById, getSavedPlaces, getUserVisitedCountries } from '@/data/api';
+import { InterestPills } from '@/components/profile/InterestPills';
+import { TravelMap } from '@/components/profile/TravelMap';
+import { getCollections, getProfileById, getSavedPlaces, getUserVisitedCountries, getProfileTags } from '@/data/api';
+import { getTripsGrouped } from '@/data/trips/tripApi';
 import { useData } from '@/hooks/useData';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { countries } from '@/data/geo';
-import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { colors, fonts, radius, spacing, pressedState } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
+import type { ProfileTag } from '@/data/types';
+
+const AVATAR_SIZE = 100;
 
 function countryFlag(iso2: string): string {
   return [...iso2.toUpperCase()]
@@ -35,23 +41,50 @@ export default function ProfileScreen() {
 
   const { data: profile, loading: loadingProfile, error: errorProfile, refetch: refetchProfile } = useData(
     () => userId ? getProfileById(userId) : Promise.resolve(null),
-    ['profile', userId],
+    ['my-profile', userId],
   );
 
   const country = profile?.homeCountryIso2
     ? countries.find((c) => c.iso2 === profile.homeCountryIso2)
     : undefined;
-  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(() => userId ? getCollections(userId) : Promise.resolve([]), ['collections', userId]);
-  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(() => userId ? getSavedPlaces(userId) : Promise.resolve([]), ['savedPlaces', userId]);
-  const { data: visitedCountries, loading: loadingVC, refetch: refetchVC } = useData(() => userId ? getUserVisitedCountries(userId) : Promise.resolve([]), ['visitedCountries', userId]);
 
-  // Re-fetch profile every time tab is focused (picks up edits)
+  const { data: collections, loading: loadingCol, error: errorCol, refetch: refetchCol } = useData(
+    () => userId ? getCollections(userId) : Promise.resolve([]),
+    ['collections', userId],
+  );
+  const { data: saved, loading: loadingSaved, error: errorSaved, refetch: refetchSaved } = useData(
+    () => userId ? getSavedPlaces(userId) : Promise.resolve([]),
+    ['savedPlaces', userId],
+  );
+  const { data: visitedCountries, loading: loadingVC, refetch: refetchVC } = useData(
+    () => userId ? getUserVisitedCountries(userId) : Promise.resolve([]),
+    ['visitedCountries', userId],
+  );
+  const { data: profileTags, refetch: refetchTags } = useData<ProfileTag[]>(
+    () => userId ? getProfileTags(userId) : Promise.resolve([]),
+    ['profile-tags', userId],
+  );
+  const { data: tripsGrouped, refetch: refetchTrips } = useData(
+    () => userId ? getTripsGrouped(userId) : Promise.resolve(null),
+    ['profile-trips', userId],
+  );
+
+  // Re-fetch everything when screen is focused
   useFocusEffect(
     useCallback(() => {
       refetchProfile();
       refetchVC();
-    }, [refetchProfile, refetchVC]),
+      refetchTags();
+      refetchTrips();
+    }, [refetchProfile, refetchVC, refetchTags, refetchTrips]),
   );
+
+  const tripCount = tripsGrouped
+    ? (tripsGrouped.current ? 1 : 0) + tripsGrouped.upcoming.length + tripsGrouped.past.length
+    : 0;
+  const vcList = visitedCountries ?? [];
+  const vcIso2s = vcList.map((vc) => vc.countryIso2).filter(Boolean);
+  const tagsList = profileTags ?? [];
 
   if (loadingProfile || loadingCol || loadingSaved || loadingVC) return <LoadingScreen />;
   if (errorProfile) return <ErrorScreen message={errorProfile.message} onRetry={refetchProfile} />;
@@ -65,157 +98,125 @@ export default function ProfileScreen() {
         rightActions={
           <Pressable
             onPress={() => {
-              posthog.capture('settings_tapped', { source: 'header' });
-              router.push('/home/settings');
+              posthog.capture('edit_profile_tapped', { source: 'header' });
+              router.push('/home/edit-profile');
             }}
             hitSlop={12}
             style={styles.headerAction}
             accessibilityRole="button"
-            accessibilityLabel="Settings"
+            accessibilityLabel="Edit profile"
           >
-            <Ionicons name="settings-outline" size={22} color={colors.textPrimary} />
+            <Ionicons name="create-outline" size={22} color={colors.textPrimary} />
           </Pressable>
         }
       />
       <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Avatar + info */}
-        <View style={styles.header}>
-          <View style={styles.avatarContainer}>
+        {/* ── Hero section ── */}
+        <View style={styles.heroSection}>
+          <View style={styles.heroWarmBg} />
+          <View style={styles.avatarRing}>
             {profile?.avatarUrl ? (
-              <Image source={{ uri: getImageUrl(profile.avatarUrl, { width: 160, height: 160 }) ?? undefined }} style={styles.avatar} contentFit="cover" transition={200} />
+              <Image
+                source={{ uri: getImageUrl(profile.avatarUrl, { width: AVATAR_SIZE * 2, height: AVATAR_SIZE * 2 }) ?? undefined }}
+                style={styles.avatar}
+                contentFit="cover"
+                transition={200}
+              />
             ) : (
               <View style={[styles.avatar, styles.avatarPlaceholder]}>
-                <Ionicons name="person" size={32} color={colors.textMuted} />
+                <Ionicons name="person" size={36} color={colors.textMuted} />
               </View>
             )}
           </View>
+
           <Text style={styles.name}>{profile?.firstName || 'Traveler'}</Text>
           {profile?.username && (
             <Text style={styles.username}>@{profile.username}</Text>
           )}
           {country && (
             <Text style={styles.origin}>
-              {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + ' ' : ''}{country.name}
+              {profile?.homeCountryIso2 ? countryFlag(profile.homeCountryIso2) + '  ' : ''}
+              {country.name}
             </Text>
           )}
           {mode === 'travelling' && activeTripInfo && (
             <View style={styles.travellingBadge}>
-              <Ionicons name="navigate" size={14} color={colors.orange} />
-              <Text style={styles.travellingBadgeText}>
-                Currently in {activeTripInfo.city.name}
-              </Text>
+              <Ionicons name="navigate" size={13} color={colors.orange} />
+              <Text style={styles.travellingText}>Currently in {activeTripInfo.city.name}</Text>
             </View>
           )}
-          {profile?.bio ? <Text style={styles.bio}>{profile.bio}</Text> : null}
+          {profile?.bio ? (
+            <Text style={styles.bio}>{profile.bio}</Text>
+          ) : null}
         </View>
 
-        {/* Interests */}
-        {(profile?.interests ?? []).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interests</Text>
-            <View style={styles.tags}>
-              {(profile?.interests ?? []).map((interest) => (
-                <View key={interest} style={styles.tag}>
-                  <Text style={styles.tagText}>{interest}</Text>
-                </View>
-              ))}
-            </View>
+        {/* ── Stats row ── */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{tripCount}</Text>
+            <Text style={styles.statLabel}>{tripCount === 1 ? 'Trip' : 'Trips'}</Text>
           </View>
-        )}
-
-        {/* Countries visited */}
-        {(visitedCountries ?? []).length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>
-              {(visitedCountries ?? []).length} {(visitedCountries ?? []).length === 1 ? 'country' : 'countries'} visited
-            </Text>
-            <View style={styles.tags}>
-              {(visitedCountries ?? []).map((vc) => (
-                <View key={vc.countryId} style={styles.tag}>
-                  <Text style={styles.tagText}>
-                    {vc.countryIso2 ? countryFlag(vc.countryIso2) + ' ' : ''}{vc.countryName}
-                  </Text>
-                </View>
-              ))}
-            </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{vcList.length}</Text>
+            <Text style={styles.statLabel}>{vcList.length === 1 ? 'Country' : 'Countries'}</Text>
           </View>
-        )}
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{(saved ?? []).length}</Text>
+            <Text style={styles.statLabel}>Saved</Text>
+          </View>
+        </View>
 
-        {/* Stats */}
-        <Text style={styles.stats}>
-          {(saved ?? []).length} {(saved ?? []).length === 1 ? 'place' : 'places'} saved
-          {'  ·  '}
-          {(collections ?? []).length} {(collections ?? []).length === 1 ? 'collection' : 'collections'}
-        </Text>
+        <View style={styles.contentArea}>
+          {/* ── Interests ── */}
+          {tagsList.length > 0 && (
+            <View style={styles.section}>
+              <InterestPills tags={tagsList} />
+            </View>
+          )}
 
-        {/* Collections */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Collections</Text>
-          {(collections ?? []).length === 0 ? (
-            <Text style={styles.emptyText}>
-              Save places into collections as you explore.
-            </Text>
-          ) : (
-            (collections ?? []).map((col) => {
-              const placeCount = (saved ?? []).filter((s) => s.collectionId === col.id).length;
-              return (
-                <Pressable
-                  key={col.id}
-                  style={styles.collectionRow}
-                  onPress={() => {
-                    posthog.capture('collection_tapped', { collection_id: col.id });
-                    router.push(`/home/collections/${col.id}`);
-                  }}
-                >
-                  <Text style={styles.collectionEmoji}>{col.emoji}</Text>
-                  <View style={styles.collectionText}>
-                    <Text style={styles.collectionName}>{col.name}</Text>
-                    <Text style={styles.collectionCount}>
-                      {placeCount} {placeCount === 1 ? 'place' : 'places'}
-                    </Text>
-                  </View>
-                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-                </Pressable>
-              );
-            })
+          {/* ── Countries visited ── */}
+          {vcIso2s.length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Countries visited</Text>
+              <TravelMap
+                countries={vcIso2s}
+                onAddCountry={() => router.push('/home/edit-profile')}
+              />
+            </View>
+          )}
+
+          {/* ── Collections ── */}
+          {(collections ?? []).length > 0 && (
+            <View style={styles.section}>
+              <Text style={styles.sectionTitle}>Collections</Text>
+              <View style={styles.collectionsGrid}>
+                {(collections ?? []).map((col) => {
+                  const placeCount = (saved ?? []).filter((s) => s.collectionId === col.id).length;
+                  return (
+                    <Pressable
+                      key={col.id}
+                      style={({ pressed }) => [styles.collectionCard, pressed && pressedState]}
+                      onPress={() => {
+                        posthog.capture('collection_tapped', { collection_id: col.id });
+                        router.push(`/home/collections/${col.id}`);
+                      }}
+                    >
+                      <Text style={styles.collectionEmoji}>{col.emoji}</Text>
+                      <Text style={styles.collectionName} numberOfLines={1}>{col.name}</Text>
+                      <Text style={styles.collectionCount}>
+                        {placeCount} {placeCount === 1 ? 'place' : 'places'}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
           )}
         </View>
 
-        {/* Action buttons */}
-        <View style={styles.actionRow}>
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => {
-              posthog.capture('edit_profile_tapped');
-              router.push('/home/edit-profile');
-            }}
-          >
-            <Ionicons name="create-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Edit profile</Text>
-          </Pressable>
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => {
-              posthog.capture('settings_tapped');
-              router.push('/home/settings');
-            }}
-          >
-            <Ionicons name="settings-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Settings</Text>
-          </Pressable>
-          <Pressable
-            style={styles.actionButton}
-            onPress={() => {
-              posthog.capture('messages_tapped', { source: 'profile' });
-              router.push('/(tabs)/travelers/dm' as any);
-            }}
-          >
-            <Ionicons name="chatbubbles-outline" size={18} color={colors.orange} />
-            <Text style={styles.actionLabel}>Messages</Text>
-          </Pressable>
-        </View>
-
-        <View style={{ height: spacing.xxl }} />
+        <View style={{ height: spacing.xxxl }} />
       </ScrollView>
     </AppScreen>
   );
@@ -228,37 +229,60 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  header: {
+
+  /* ── Hero ── */
+  heroSection: {
     alignItems: 'center',
     paddingBottom: spacing.xl,
+    paddingHorizontal: spacing.screenX,
   },
-  avatarContainer: {
-    marginBottom: spacing.md,
+  heroWarmBg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 100,
+    backgroundColor: colors.orangeFill,
+    borderBottomLeftRadius: radius.module,
+    borderBottomRightRadius: radius.module,
+  },
+  avatarRing: {
+    width: AVATAR_SIZE + 8,
+    height: AVATAR_SIZE + 8,
+    borderRadius: radius.full,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xxl,
   },
   avatar: {
-    width: 80,
-    height: 80,
+    width: AVATAR_SIZE,
+    height: AVATAR_SIZE,
     borderRadius: radius.full,
   },
   avatarPlaceholder: {
-    backgroundColor: colors.borderDefault,
+    backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   name: {
-    ...typography.h2,
+    fontFamily: fonts.semiBold,
+    fontSize: 24,
+    lineHeight: 30,
     color: colors.textPrimary,
+    marginTop: spacing.md,
   },
   username: {
     fontFamily: fonts.regular,
-    fontSize: 14,
+    fontSize: 15,
     color: colors.textMuted,
     marginTop: 2,
   },
   origin: {
-    ...typography.body,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.textSecondary,
+    marginTop: spacing.sm,
   },
   travellingBadge: {
     flexDirection: 'row',
@@ -266,101 +290,96 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
     backgroundColor: colors.orangeFill,
     paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    paddingVertical: 6,
     borderRadius: radius.full,
     marginTop: spacing.sm,
   },
-  travellingBadgeText: {
+  travellingText: {
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.orange,
   },
   bio: {
-    ...typography.body,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    lineHeight: 22,
     color: colors.textSecondary,
     textAlign: 'center',
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.xl,
+    marginTop: spacing.md,
+    paddingHorizontal: spacing.lg,
   },
-  stats: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-    textAlign: 'center',
+
+  /* ── Stats ── */
+  statsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginHorizontal: spacing.screenX,
+    paddingVertical: spacing.lg,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: colors.borderSubtle,
     marginBottom: spacing.xl,
+  },
+  statItem: {
+    flex: 1,
+    alignItems: 'center',
+    gap: 2,
+  },
+  statNumber: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+  },
+  statLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
+  },
+  statDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.borderSubtle,
+  },
+
+  /* ── Content ── */
+  contentArea: {
+    paddingHorizontal: spacing.screenX,
   },
   section: {
     marginBottom: spacing.xl,
   },
   sectionTitle: {
-    ...typography.label,
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
     color: colors.textPrimary,
     marginBottom: spacing.md,
   },
-  tags: {
+
+  /* ── Collections ── */
+  collectionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 6,
+    gap: spacing.sm,
   },
-  tag: {
-    backgroundColor: colors.orangeFill,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.card,
-  },
-  tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textMuted,
-  },
-  collectionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderDefault,
+  collectionCard: {
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.cardLg,
+    padding: spacing.lg,
+    width: '48%' as any,
+    gap: spacing.xs,
   },
   collectionEmoji: {
-    fontSize: 24,
-    marginRight: spacing.md,
-  },
-  collectionText: {
-    flex: 1,
+    fontSize: 28,
   },
   collectionName: {
     fontFamily: fonts.semiBold,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textPrimary,
   },
   collectionCount: {
     fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    marginTop: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 6,
-    borderWidth: 1,
-    borderColor: colors.orange,
-    borderRadius: radius.button,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.sm,
-  },
-  actionLabel: {
-    fontFamily: fonts.semiBold,
     fontSize: 12,
-    color: colors.orange,
+    color: colors.textMuted,
   },
 });
