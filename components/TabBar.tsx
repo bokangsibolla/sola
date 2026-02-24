@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Pressable, StyleSheet, Platform } from 'react-native';
+import { View, Pressable, Text, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { StackActions } from '@react-navigation/native';
-import { colors, spacing } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 import { useAuth } from '@/state/AuthContext';
 import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/lastVisit';
 import { getNewCommunityActivity } from '@/data/community/communityApi';
+import { useData } from '@/hooks/useData';
+import { getProfileById } from '@/data/api';
+import { getAdminPendingCounts } from '@/data/admin/adminApi';
 
 // ─── Icon mapping ────────────────────────────────────────────────────────────
 
@@ -17,6 +20,7 @@ const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   discussions: 'newspaper-outline',
   travelers: 'people-outline',
   trips: 'airplane-outline',
+  admin: 'shield-outline',
 };
 
 const TAB_ICONS_ACTIVE: Record<string, keyof typeof Ionicons.glyphMap> = {
@@ -25,6 +29,7 @@ const TAB_ICONS_ACTIVE: Record<string, keyof typeof Ionicons.glyphMap> = {
   discussions: 'newspaper',
   travelers: 'people',
   trips: 'airplane',
+  admin: 'shield',
 };
 
 const ICON_SIZE = 26;
@@ -43,9 +48,10 @@ interface TabItemProps {
   onPress: () => void;
   onLongPress: () => void;
   showBadge: boolean;
+  badgeCount?: number;
 }
 
-function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge }: TabItemProps) {
+function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge, badgeCount }: TabItemProps) {
   const iconName = isFocused
     ? TAB_ICONS_ACTIVE[routeName]
     : TAB_ICONS[routeName];
@@ -67,7 +73,15 @@ function TabItem({ isFocused, routeName, label, onPress, onLongPress, showBadge 
           size={ICON_SIZE}
           color={isFocused ? colors.orange : colors.floatingNavIconInactive}
         />
-        {showBadge && <View style={styles.badge} />}
+        {showBadge && badgeCount != null && badgeCount > 0 ? (
+          <View style={styles.countBadge}>
+            <Text style={styles.countBadgeText}>
+              {badgeCount > 99 ? '99+' : badgeCount}
+            </Text>
+          </View>
+        ) : showBadge ? (
+          <View style={styles.badge} />
+        ) : null}
       </View>
     </Pressable>
   );
@@ -108,10 +122,31 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
     }
   }, [state.index]);
 
+  // Admin — profile check + pending count
+  const { data: profile } = useData(
+    () => userId ? getProfileById(userId) : Promise.resolve(null),
+    ['profile', userId],
+  );
+  const isAdmin = profile?.isAdmin === true;
+
+  const [adminCount, setAdminCount] = useState(0);
+  useEffect(() => {
+    if (!isAdmin) return;
+    getAdminPendingCounts()
+      .then((c) => setAdminCount(c.total))
+      .catch(() => {});
+  }, [isAdmin]);
+
+  const visibleRoutes = state.routes.filter((route) => {
+    if (route.name === 'admin') return isAdmin;
+    return true;
+  });
+
   return (
     <View style={[styles.wrapper, { paddingBottom: bottomInset }]}>
       <View style={styles.bar}>
-        {state.routes.map((route, index) => {
+        {visibleRoutes.map((route) => {
+          const index = state.routes.indexOf(route);
           const { options } = descriptors[route.key];
           const isFocused = state.index === index;
           const label = options.title ?? route.name;
@@ -142,6 +177,10 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
             navigation.emit({ type: 'tabLongPress', target: route.key });
           };
 
+          const showBadge =
+            (route.name === 'discussions' && discussionsHasNew && !isFocused) ||
+            (route.name === 'admin' && adminCount > 0 && !isFocused);
+
           return (
             <TabItem
               key={route.key}
@@ -150,7 +189,8 @@ export default function TabBar({ state, descriptors, navigation }: BottomTabBarP
               label={label}
               onPress={onPress}
               onLongPress={onLongPress}
-              showBadge={route.name === 'discussions' && discussionsHasNew && !isFocused}
+              showBadge={showBadge}
+              badgeCount={route.name === 'admin' ? adminCount : undefined}
             />
           );
         })}
@@ -203,5 +243,22 @@ const styles = StyleSheet.create({
     height: 7,
     borderRadius: 3.5,
     backgroundColor: colors.orange,
+  },
+  countBadge: {
+    position: 'absolute',
+    top: 4,
+    right: 2,
+    minWidth: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: colors.emergency,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
+  },
+  countBadgeText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 10,
+    color: '#FFFFFF',
   },
 });
