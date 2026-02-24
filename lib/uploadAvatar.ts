@@ -1,5 +1,7 @@
 import { supabase } from './supabase';
 import { Platform } from 'react-native';
+import * as FileSystem from 'expo-file-system';
+import { decode } from 'base64-arraybuffer';
 
 const BUCKET = 'avatars';
 
@@ -19,17 +21,22 @@ export async function uploadAvatar(
     return localUri;
   }
 
-  const ext = localUri.split('.').pop()?.toLowerCase() ?? 'jpg';
+  // Determine file extension from URI
+  const uriParts = localUri.split('.');
+  const rawExt = uriParts.length > 1 ? uriParts.pop()?.toLowerCase() : 'jpg';
+  const ext = rawExt === 'jpeg' || rawExt === 'jpg' || rawExt === 'png' || rawExt === 'webp' ? rawExt : 'jpg';
+  const contentType = `image/${ext === 'jpg' ? 'jpeg' : ext}`;
   const filePath = `${userId}/avatar.${ext}`;
 
-  // Read the file into a blob for upload
-  const response = await fetch(localUri);
-  const blob = await response.blob();
+  // Read file as base64 and convert to ArrayBuffer for reliable RN upload
+  const base64 = await FileSystem.readAsStringAsync(localUri, {
+    encoding: 'base64',
+  });
 
   const { error } = await supabase.storage
     .from(BUCKET)
-    .upload(filePath, blob, {
-      contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}`,
+    .upload(filePath, decode(base64), {
+      contentType,
       upsert: true,
     });
 
