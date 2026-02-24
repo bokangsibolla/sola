@@ -15,13 +15,14 @@ import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { usePostHog } from 'posthog-react-native';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, fonts, spacing, radius, typography } from '@/constants/design';
+import { colors, fonts, spacing, radius, typography, elevation } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
 import TravelerCard from '@/components/TravelerCard';
 import PendingConnectionsBanner from '@/components/travelers/PendingConnectionsBanner';
+import { TogetherFeed } from '@/components/together/TogetherFeed';
 import { useTravelersFeed } from '@/data/travelers/useTravelersFeed';
 import type { TravelerMatchSection } from '@/data/travelers/useTravelersFeed';
 import { useTravelerSearch } from '@/data/travelers/useTravelerSearch';
@@ -34,10 +35,12 @@ import { getFlag } from '@/data/trips/helpers';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
+type TravelersTab = 'travelers' | 'together';
+
 const CARD_WIDTH = 260;
 
 // ---------------------------------------------------------------------------
-// Traveler Card Wrapper — handles connection state
+// Traveler Card Wrapper -- handles connection state
 // ---------------------------------------------------------------------------
 
 function TravelerCardWrapper({
@@ -101,7 +104,7 @@ function TravelerCardWrapper({
 }
 
 // ---------------------------------------------------------------------------
-// Horizontal Section — renders a tiered match section
+// Horizontal Section -- renders a tiered match section
 // ---------------------------------------------------------------------------
 
 function HorizontalSection({
@@ -141,7 +144,7 @@ function HorizontalSection({
 }
 
 // ---------------------------------------------------------------------------
-// Connected User Row — compact row for empty state
+// Connected User Row -- compact row for empty state
 // ---------------------------------------------------------------------------
 
 function ConnectedUserRow({ profile }: { profile: Profile }) {
@@ -182,7 +185,7 @@ function ConnectedUserRow({ profile }: { profile: Profile }) {
 }
 
 // ---------------------------------------------------------------------------
-// Empty State — trip-gated discovery locked
+// Empty State -- trip-gated discovery locked
 // ---------------------------------------------------------------------------
 
 function EmptyState({ connectedProfiles }: { connectedProfiles: Profile[] }) {
@@ -226,11 +229,86 @@ function NoMatchesYet() {
     <View style={styles.noMatchesContainer}>
       <Feather name="clock" size={36} color={colors.textMuted} />
       <Text style={styles.noMatchesText}>
-        No matches yet — check back as your trip dates approach
+        No matches yet -- check back as your trip dates approach
       </Text>
     </View>
   );
 }
+
+// ---------------------------------------------------------------------------
+// Segmented Control
+// ---------------------------------------------------------------------------
+
+const SEGMENTS: { key: TravelersTab; label: string }[] = [
+  { key: 'travelers', label: 'Travelers' },
+  { key: 'together', label: 'Together' },
+];
+
+function SegmentedControl({
+  selected,
+  onChange,
+}: {
+  selected: TravelersTab;
+  onChange: (tab: TravelersTab) => void;
+}) {
+  return (
+    <View style={segStyles.wrapper}>
+      {SEGMENTS.map((seg) => {
+        const active = selected === seg.key;
+        return (
+          <Pressable
+            key={seg.key}
+            style={[segStyles.segment, active && segStyles.segmentActive]}
+            onPress={() => onChange(seg.key)}
+          >
+            <Text
+              style={[
+                segStyles.segmentText,
+                active ? segStyles.segmentTextActive : segStyles.segmentTextInactive,
+              ]}
+            >
+              {seg.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+const segStyles = StyleSheet.create({
+  wrapper: {
+    flexDirection: 'row',
+    marginHorizontal: spacing.screenX,
+    marginBottom: spacing.md,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    padding: spacing.xs,
+    height: 36,
+  },
+  segment: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+  },
+  segmentActive: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    ...elevation.sm,
+  },
+  segmentText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+  },
+  segmentTextActive: {
+    color: colors.textPrimary,
+  },
+  segmentTextInactive: {
+    color: colors.textMuted,
+  },
+});
 
 // ---------------------------------------------------------------------------
 // Main Screen
@@ -240,6 +318,8 @@ export default function TravelersScreen() {
   const router = useRouter();
   const { userId } = useAuth();
   const posthog = usePostHog();
+
+  const [activeTab, setActiveTab] = useState<TravelersTab>('travelers');
 
   const { query, setQuery, results: searchResults, isSearching, search, clear } =
     useTravelerSearch(userId ?? undefined);
@@ -281,13 +361,14 @@ export default function TravelersScreen() {
 
   const nonEmptySections = sections.filter((s) => s.data.length > 0);
 
-  if (isLoading) {
+  if (isLoading && activeTab === 'travelers') {
     return (
       <AppScreen>
         <NavigationHeader
           title="Travelers"
           rightActions={<HamburgerButton />}
         />
+        <SegmentedControl selected={activeTab} onChange={setActiveTab} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.orange} />
         </View>
@@ -295,13 +376,14 @@ export default function TravelersScreen() {
     );
   }
 
-  if (error) {
+  if (error && activeTab === 'travelers') {
     return (
       <AppScreen>
         <NavigationHeader
           title="Travelers"
           rightActions={<HamburgerButton />}
         />
+        <SegmentedControl selected={activeTab} onChange={setActiveTab} />
         <ErrorScreen message="Something went wrong loading travelers. Pull to retry." onRetry={refetch} />
       </AppScreen>
     );
@@ -314,102 +396,110 @@ export default function TravelersScreen() {
         rightActions={<HamburgerButton />}
       />
 
-      {/* Search Bar */}
-      <View style={styles.searchContainer}>
-        <Feather name="search" size={16} color={colors.textMuted} />
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search by username..."
-          placeholderTextColor={colors.textMuted}
-          value={query}
-          onChangeText={setQuery}
-          onSubmitEditing={handleSearch}
-          autoCapitalize="none"
-          autoCorrect={false}
-          returnKeyType="search"
-        />
-        {hasSearchQuery && (
-          <Pressable onPress={handleClearSearch} hitSlop={8}>
-            <Feather name="x" size={16} color={colors.textMuted} />
-          </Pressable>
-        )}
-      </View>
+      <SegmentedControl selected={activeTab} onChange={setActiveTab} />
 
-      {/* Search Results */}
-      {hasSearchQuery && searchTriggered ? (
-        <View style={styles.searchResults}>
-          {isSearching && (
-            <ActivityIndicator
-              size="small"
-              color={colors.orange}
-              style={styles.searchSpinner}
+      {activeTab === 'together' ? (
+        <TogetherFeed />
+      ) : (
+        <>
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Feather name="search" size={16} color={colors.textMuted} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search by username..."
+              placeholderTextColor={colors.textMuted}
+              value={query}
+              onChangeText={setQuery}
+              onSubmitEditing={handleSearch}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
             />
-          )}
-          {!isSearching && searchResults.length === 0 && (
-            <View style={styles.noResultContainer}>
-              <Feather name="user-x" size={28} color={colors.textMuted} />
-              <Text style={styles.noResultText}>No user found</Text>
-            </View>
-          )}
-          {!isSearching && searchResults.map((result) => (
-            <Pressable
-              key={result.id}
-              style={styles.searchResultRow}
-              onPress={() => {
-                posthog.capture('traveler_search_result_tapped', { target_id: result.id });
-                router.push(`/travelers/user/${result.id}` as any);
-              }}
-            >
-              {result.avatarUrl ? (
-                <Image
-                  source={{ uri: getImageUrl(result.avatarUrl, { width: 80, height: 80 }) ?? undefined }}
-                  style={styles.searchAvatar}
-                  contentFit="cover"
+            {hasSearchQuery && (
+              <Pressable onPress={handleClearSearch} hitSlop={8}>
+                <Feather name="x" size={16} color={colors.textMuted} />
+              </Pressable>
+            )}
+          </View>
+
+          {/* Search Results */}
+          {hasSearchQuery && searchTriggered ? (
+            <View style={styles.searchResults}>
+              {isSearching && (
+                <ActivityIndicator
+                  size="small"
+                  color={colors.orange}
+                  style={styles.searchSpinner}
                 />
-              ) : (
-                <View style={[styles.searchAvatar, styles.searchAvatarPlaceholder]}>
-                  <Feather name="user" size={18} color={colors.textMuted} />
+              )}
+              {!isSearching && searchResults.length === 0 && (
+                <View style={styles.noResultContainer}>
+                  <Feather name="user-x" size={28} color={colors.textMuted} />
+                  <Text style={styles.noResultText}>No user found</Text>
                 </View>
               )}
-              <View style={styles.searchResultText}>
-                <Text style={styles.searchResultName}>{result.firstName}</Text>
-                <Text style={styles.searchResultUsername}>@{result.username}</Text>
-              </View>
-              {result.homeCountryIso2 && (
-                <Text style={styles.searchResultFlag}>
-                  {getFlag(result.homeCountryIso2)}
-                </Text>
-              )}
-            </Pressable>
-          ))}
-        </View>
-      ) : (
-        <ScrollView
-          style={styles.scrollView}
-          contentContainerStyle={styles.scrollContent}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Pending Connections Banner */}
-          <PendingConnectionsBanner
-            count={pendingReceived.length}
-            onPress={() => router.push('/travelers/connections' as any)}
-          />
-
-          {/* Trip-gated content */}
-          {!hasQualifyingTrip ? (
-            <EmptyState connectedProfiles={connectedProfiles} />
-          ) : nonEmptySections.length > 0 ? (
-            nonEmptySections.map((section) => (
-              <HorizontalSection
-                key={section.key}
-                section={section}
-                userProfile={userProfile}
-              />
-            ))
+              {!isSearching && searchResults.map((result) => (
+                <Pressable
+                  key={result.id}
+                  style={styles.searchResultRow}
+                  onPress={() => {
+                    posthog.capture('traveler_search_result_tapped', { target_id: result.id });
+                    router.push(`/travelers/user/${result.id}` as any);
+                  }}
+                >
+                  {result.avatarUrl ? (
+                    <Image
+                      source={{ uri: getImageUrl(result.avatarUrl, { width: 80, height: 80 }) ?? undefined }}
+                      style={styles.searchAvatar}
+                      contentFit="cover"
+                    />
+                  ) : (
+                    <View style={[styles.searchAvatar, styles.searchAvatarPlaceholder]}>
+                      <Feather name="user" size={18} color={colors.textMuted} />
+                    </View>
+                  )}
+                  <View style={styles.searchResultText}>
+                    <Text style={styles.searchResultName}>{result.firstName}</Text>
+                    <Text style={styles.searchResultUsername}>@{result.username}</Text>
+                  </View>
+                  {result.homeCountryIso2 && (
+                    <Text style={styles.searchResultFlag}>
+                      {getFlag(result.homeCountryIso2)}
+                    </Text>
+                  )}
+                </Pressable>
+              ))}
+            </View>
           ) : (
-            <NoMatchesYet />
+            <ScrollView
+              style={styles.scrollView}
+              contentContainerStyle={styles.scrollContent}
+              showsVerticalScrollIndicator={false}
+            >
+              {/* Pending Connections Banner */}
+              <PendingConnectionsBanner
+                count={pendingReceived.length}
+                onPress={() => router.push('/travelers/connections' as any)}
+              />
+
+              {/* Trip-gated content */}
+              {!hasQualifyingTrip ? (
+                <EmptyState connectedProfiles={connectedProfiles} />
+              ) : nonEmptySections.length > 0 ? (
+                nonEmptySections.map((section) => (
+                  <HorizontalSection
+                    key={section.key}
+                    section={section}
+                    userProfile={userProfile}
+                  />
+                ))
+              ) : (
+                <NoMatchesYet />
+              )}
+            </ScrollView>
           )}
-        </ScrollView>
+        </>
       )}
     </AppScreen>
   );
