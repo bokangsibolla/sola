@@ -1,60 +1,71 @@
-import { useEffect, useMemo } from 'react';
+import React, { useEffect } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import { usePostHog } from 'posthog-react-native';
-import { useRouter } from 'expo-router';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { HamburgerButton } from '@/components/home/HamburgerButton';
-import { HeroModule } from '@/components/home/HeroModule';
-import { ForYouRow } from '@/components/home/ForYouRow';
-import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
 import { HomeSkeleton } from '@/components/home/HomeSkeleton';
-import { TripModeCard } from '@/components/trips/TripMode/TripModeCard';
 import { VerificationNudge } from '@/components/home/VerificationNudge';
 import { AvatarNudge } from '@/components/home/AvatarNudge';
-import { useHomeData } from '@/data/home/useHomeData';
-import { useAuth } from '@/state/AuthContext';
-import { getTripsGrouped } from '@/data/trips/tripApi';
-import { useData } from '@/hooks/useData';
+import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
+import { HomeTripCard } from '@/components/home/cards/HomeTripCard';
+import { TravelMapCard } from '@/components/home/cards/TravelMapCard';
+import { StatsCard } from '@/components/home/cards/StatsCard';
+import { ProfileProgressCard } from '@/components/home/cards/ProfileProgressCard';
+import { NudgeCard } from '@/components/home/cards/NudgeCard';
+import { DiscoveryCard } from '@/components/home/cards/DiscoveryCard';
+import { CommunityCard } from '@/components/home/cards/CommunityCard';
+import { useCardFeed } from '@/data/home/useCardFeed';
 import { colors, spacing } from '@/constants/design';
+import type { FeedCard } from '@/data/home/cardEngine';
+
+// Track discovery card index to show different cities
+let discoveryIndex = 0;
+
+function renderCard(card: FeedCard): React.ReactElement | null {
+  switch (card.type) {
+    case 'active_trip':
+      return <HomeTripCard key={card.key} trip={card.data as any} variant="active" />;
+    case 'upcoming_trip':
+      return <HomeTripCard key={card.key} trip={card.data as any} variant="upcoming" />;
+    case 'trip_recap':
+      return <HomeTripCard key={card.key} trip={card.data as any} variant="recap" />;
+    case 'travel_map':
+      return <TravelMapCard key={card.key} />;
+    case 'stats_snapshot':
+      return <StatsCard key={card.key} tripCount={(card.data as any)?.tripCount ?? 0} />;
+    case 'profile_progress':
+      return <ProfileProgressCard key={card.key} {...(card.data as any)} />;
+    case 'avatar_nudge':
+      return <AvatarNudge key={card.key} />;
+    case 'interests_nudge':
+    case 'first_trip_nudge':
+      return <NudgeCard key={card.key} type={card.type} />;
+    case 'recommended_city':
+      return <DiscoveryCard key={card.key} index={discoveryIndex++} />;
+    case 'collection':
+      return <DiscoveryCard key={card.key} index={discoveryIndex++} />;
+    case 'trending_thread':
+      return <CommunityCard key={card.key} />;
+    case 'community_banner':
+      return <CommunityBannerCard key={card.key} />;
+    case 'verification_nudge':
+      return <VerificationNudge key={card.key} />;
+    default:
+      return null;
+  }
+}
 
 export default function HomeScreen() {
   const posthog = usePostHog();
-  const router = useRouter();
-  const { userId } = useAuth();
+  const { cards, loading, refetch } = useCardFeed();
 
   useEffect(() => {
     posthog.capture('home_viewed');
   }, [posthog]);
 
-  const {
-    heroState,
-    savedPlaces,
-    personalizedCities,
-    loading,
-    refetch,
-  } = useHomeData();
-
-  // Fetch grouped trips to detect an active (current) trip
-  const { data: grouped } = useData(
-    () => (userId ? getTripsGrouped(userId) : Promise.resolve(null)),
-    [userId],
-  );
-
-  // Determine active trip — must have arriving/leaving dates spanning today
-  const activeTrip = useMemo(() => {
-    if (!grouped?.current) return null;
-    const trip = grouped.current;
-    if (!trip.arriving || !trip.leaving) return null;
-
-    const today = new Date();
-    const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-    if (todayStr >= trip.arriving && todayStr <= trip.leaving) {
-      return trip;
-    }
-    return null;
-  }, [grouped]);
+  // Reset discovery index on each render so cards stay stable
+  discoveryIndex = 0;
 
   return (
     <AppScreen>
@@ -64,7 +75,7 @@ export default function HomeScreen() {
         rightActions={<HamburgerButton />}
       />
 
-      {loading && !heroState ? (
+      {loading && cards.length === 0 ? (
         <HomeSkeleton />
       ) : (
         <ScrollView
@@ -78,35 +89,14 @@ export default function HomeScreen() {
             />
           }
         >
-          {activeTrip != null && (
-            <View style={styles.tripModeSection}>
-              <TripModeCard
-                tripId={activeTrip.id}
-                tripTitle={activeTrip.title ?? activeTrip.destinationName}
-                arriving={activeTrip.arriving!}
-                leaving={activeTrip.leaving!}
-                destinationName={activeTrip.destinationName}
-                onPress={() =>
-                  router.push(`/(tabs)/trips/${activeTrip.id}` as any)
-                }
-              />
-            </View>
-          )}
-
+          {/* Always show verification nudge at top — it self-hides when not needed */}
           <VerificationNudge />
-          <AvatarNudge />
 
-          <View style={styles.heroSection}>
-            <HeroModule hero={heroState} />
-          </View>
-
-          <ForYouRow
-            heroState={heroState}
-            savedPlaces={savedPlaces}
-            personalizedCities={personalizedCities}
-          />
-
-          <CommunityBannerCard />
+          {cards.map((card) => (
+            <View key={card.key} style={styles.cardWrapper}>
+              {renderCard(card)}
+            </View>
+          ))}
         </ScrollView>
       )}
     </AppScreen>
@@ -115,12 +105,11 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   scrollContent: {
-    paddingBottom: spacing.md,
+    paddingHorizontal: spacing.screenX,
+    paddingBottom: spacing.xxl,
+    gap: spacing.md,
   },
-  tripModeSection: {
-    marginTop: spacing.lg,
-  },
-  heroSection: {
-    marginTop: spacing.lg,
+  cardWrapper: {
+    // Cards handle their own internal spacing/padding
   },
 });
