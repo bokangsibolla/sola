@@ -3,7 +3,9 @@ export type NotificationType =
   | 'connection_request'
   | 'connection_accepted'
   | 'new_message'
-  | 'admin_announcement';
+  | 'admin_announcement'
+  | 'verification_approved'
+  | 'verification_rejected';
 
 export type NotificationTargetType = 'thread' | 'conversation' | 'profile';
 
