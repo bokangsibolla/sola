@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable, StyleSheet, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, fonts } from '@/constants/design';
 import { createTripEntry } from '@/data/trips/tripApi';
@@ -15,9 +15,11 @@ const QUICK_ACTIONS: { type: EntryType; icon: string; label: string }[] = [
 interface QuickAddFABProps {
   tripId: string;
   onEntryAdded: () => void;
+  /** Override wrapper positioning (e.g. bottom offset) */
+  style?: ViewStyle;
 }
 
-export const QuickAddFAB: React.FC<QuickAddFABProps> = ({ tripId, onEntryAdded }) => {
+export const QuickAddFAB: React.FC<QuickAddFABProps> = ({ tripId, onEntryAdded, style }) => {
   const { userId } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -40,7 +42,7 @@ export const QuickAddFAB: React.FC<QuickAddFABProps> = ({ tripId, onEntryAdded }
   };
 
   return (
-    <View style={styles.wrapper}>
+    <View style={[styles.wrapper, style]}>
       {expanded && (
         <View style={styles.menu}>
           {QUICK_ACTIONS.map(({ type, icon, label }) => (

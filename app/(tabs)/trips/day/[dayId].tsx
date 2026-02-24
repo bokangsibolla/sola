@@ -16,6 +16,8 @@ import { TripDaySuggestions, ACCOMMODATION_TYPES, placeRoute } from '@/component
 import { PlacePreviewSheet } from '@/components/trips/PlacePreviewSheet';
 import { AccommodationBanner } from '@/components/trips/AccommodationBanner';
 import { AddToDaysSheet } from '@/components/trips/AddToDaysSheet';
+import { ComfortCheckPrompt } from '@/components/trips/ComfortCheckPrompt';
+import { QuickAddFAB } from '@/components/trips/QuickAddFAB';
 import type { DayOption } from '@/components/trips/AddToDaysSheet';
 import { useDayTimeline, useDaySuggestions, useTripItinerary } from '@/data/trips/useItinerary';
 import { getTripWithStops } from '@/data/trips/tripApi';
@@ -138,6 +140,16 @@ export default function DayTimelineScreen() {
     const todayStr = new Date().toISOString().split('T')[0];
     return day.date === todayStr;
   }, [day?.date]);
+
+  // Live mode: today + trip is active
+  const isActive = trip?.status === 'active';
+  const isLiveMode = isToday && !!isActive;
+
+  // Count completed blocks for comfort check trigger
+  const completedBlockCount = useMemo(() => {
+    if (!isToday || !day?.blocks) return 0;
+    return day.blocks.filter(b => getBlockProgressStatus(b, true) === 'completed').length;
+  }, [isToday, day?.blocks]);
 
   // Place IDs already added to this day
   const addedPlaceIds = useMemo(
@@ -367,6 +379,11 @@ export default function DayTimelineScreen() {
           </View>
         )}
 
+        {/* ── Comfort check (live mode) ──────────────────────────── */}
+        {isLiveMode && completedBlockCount >= 2 && (
+          <ComfortCheckPrompt tripId={day.tripId} onLogged={refetch} />
+        )}
+
         {/* ── Suggestion card ────────────────────────────────────────── */}
         {topSuggestion != null && (
           <SuggestionCard
@@ -401,6 +418,15 @@ export default function DayTimelineScreen() {
       >
         <Ionicons name="add" size={24} color="#FFFFFF" />
       </Pressable>
+
+      {/* ── Quick journal FAB (live mode) ───────────────────────── */}
+      {isLiveMode && (
+        <QuickAddFAB
+          tripId={day.tripId}
+          onEntryAdded={refetch}
+          style={{ bottom: insets.bottom + spacing.lg + FAB_SIZE + spacing.md }}
+        />
+      )}
 
       {/* ── AddStopSheet ─────────────────────────────────────────────── */}
       <AddStopSheet
