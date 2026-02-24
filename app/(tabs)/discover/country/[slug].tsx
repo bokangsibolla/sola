@@ -12,6 +12,7 @@ import { useNavContext } from '@/hooks/useNavContext';
 import { useData } from '@/hooks/useData';
 import {
   getCountryBySlug,
+  getCountryById,
   getCitiesByCountry,
   getPlacesByCountryAndType,
 } from '@/data/api';
@@ -41,8 +42,12 @@ export default function CountryGuideScreen() {
     if (slug) posthog.capture('country_guide_viewed', { country_slug: slug });
   }, [slug, posthog]);
 
+  const isUuid = slug ? /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(slug) : false;
+
   const { data: country, loading: countryLoading, error, refetch } = useData(
-    () => slug ? getCountryBySlug(slug) : Promise.resolve(null),
+    () => slug
+      ? isUuid ? getCountryById(slug) : getCountryBySlug(slug)
+      : Promise.resolve(null),
     [slug],
   );
 

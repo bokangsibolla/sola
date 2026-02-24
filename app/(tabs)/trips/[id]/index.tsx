@@ -3,6 +3,7 @@ import {
   ActivityIndicator,
   Alert,
   FlatList,
+  Linking,
   Pressable,
   StyleSheet,
   Text,
@@ -430,28 +431,45 @@ export default function TripDetailScreen() {
     );
   };
 
-  const handleAccommodationPress = (_accom: TripAccommodation) => {
-    // TODO: Open edit accommodation sheet
+  const handleAccommodationPress = (accom: TripAccommodation) => {
+    if (accom.placeId) {
+      router.push(`/discover/place-detail/${accom.placeId}`);
+    } else if (accom.bookingUrl) {
+      Linking.openURL(accom.bookingUrl);
+    }
   };
 
   const handleAddAccommodation = (_cityName: string) => {
-    // TODO: Open add accommodation sheet
+    setSearchSheetVisible(true);
   };
 
-  const handleTransportPress = (_transport: TripTransport) => {
-    // TODO: Open edit transport sheet
+  const handleTransportPress = (transport: TripTransport) => {
+    if (transport.bookingUrl) {
+      Linking.openURL(transport.bookingUrl);
+    }
   };
 
   const handleAddTransport = (_fromOrder: number, _toOrder: number) => {
-    // TODO: Open add transport sheet
+    Alert.alert('Coming soon', 'Adding transport details will be available in a future update.');
   };
 
-  const handleSavedItemPress = (_item: TripSavedItem) => {
-    // TODO: Navigate to entity detail
+  const handleSavedItemPress = (item: TripSavedItem) => {
+    switch (item.entityType) {
+      case 'place':
+      case 'activity':
+        router.push(`/discover/place-detail/${item.entityId}`);
+        break;
+      case 'city':
+        router.push(`/discover/city/${item.entityId}`);
+        break;
+      case 'country':
+        router.push(`/discover/country/${item.entityId}`);
+        break;
+    }
   };
 
   const handleAddSavedItem = () => {
-    // TODO: Open add to trip sheet
+    setSearchSheetVisible(true);
   };
 
   const handleJournalViewAll = () => {
@@ -459,7 +477,7 @@ export default function TripDetailScreen() {
   };
 
   const handleEntryPress = (_entry: TripEntry) => {
-    // TODO: Open entry detail
+    if (trip) router.push(`/trips/${trip.id}/journal`);
   };
 
   // ── Loading / Error ──────────────────────────────────────────────────────────
@@ -522,7 +540,11 @@ export default function TripDetailScreen() {
             <DayTimelineCard
               block={item.block}
               onPress={() => {
-                // TODO: Open block detail/edit
+                if (item.block.placeId) {
+                  router.push(`/discover/place-detail/${item.block.placeId}`);
+                } else if (selectedDayId) {
+                  router.push(`/trips/day/${selectedDayId}`);
+                }
               }}
               isDone={item.isDone}
               isCurrent={item.isCurrent}
