@@ -22,8 +22,10 @@ import { getFlag } from '@/data/trips/helpers';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing } from '@/constants/design';
+import { haptics } from '@/lib/haptics';
 import NavigationHeader from '@/components/NavigationHeader';
 import { BuddyPickerSheet } from '@/components/trips/BuddyPickerSheet';
+import { markFeatureSeen } from '@/data/home/useNewUserFeed';
 import type { Profile } from '@/data/types';
 
 const DAY_MS = 86_400_000;
@@ -263,11 +265,13 @@ export default function NewTripScreen() {
         matchingOptIn: false,
         buddyUserIds: buddyIds,
       });
+      haptics.action();
       posthog.capture('create_trip_completed', {
         stops_count: stops.length,
         has_dates: !flexibleDates && !!tripDates.arriving,
         flexible_dates: flexibleDates,
       });
+      markFeatureSeen('trip_created');
       router.replace(`/(tabs)/trips/${tripId}`);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Something went wrong';

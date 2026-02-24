@@ -32,6 +32,7 @@ import { getCountriesList, getProfileById } from '@/data/api';
 import { getImageUrl } from '@/lib/image';
 import { formatTimeAgo } from '@/utils/timeAgo';
 import { getFlag } from '@/data/trips/helpers';
+import { markFeatureSeen } from '@/data/home/useNewUserFeed';
 import type { ThreadWithAuthor, CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
@@ -613,6 +614,10 @@ export default function DiscussionsScreen() {
   useEffect(() => {
     posthog.capture('discussions_screen_viewed');
   }, [posthog]);
+
+  useEffect(() => {
+    markFeatureSeen('community_visited');
+  }, []);
 
   // Last visit timestamp for "Earlier" divider
   const [lastVisitTimestamp, setLastVisitTimestamp] = useState<string | null>(null);

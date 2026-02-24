@@ -16,6 +16,7 @@ import { NudgeCard } from '@/components/home/cards/NudgeCard';
 import { DiscoveryCard } from '@/components/home/cards/DiscoveryCard';
 import { CommunityCard } from '@/components/home/cards/CommunityCard';
 import { useCardFeed } from '@/data/home/useCardFeed';
+import { NewUserFeed } from '@/components/home/NewUserFeed';
 import { colors, spacing } from '@/constants/design';
 import type { FeedCard } from '@/data/home/cardEngine';
 
@@ -58,11 +59,16 @@ function renderCard(card: FeedCard): React.ReactElement | null {
 
 export default function HomeScreen() {
   const posthog = usePostHog();
-  const { cards, loading, refetch } = useCardFeed();
+  const { cards, userState, loading, refetch } = useCardFeed();
 
   useEffect(() => {
     posthog.capture('home_viewed');
   }, [posthog]);
+
+  // Show the rich new-user feed for fresh/idle users without trips
+  const showNewFeed =
+    userState === 'new' ||
+    (userState === 'idle' && !cards.some((c) => c.type === 'travel_map'));
 
   // Reset discovery index on each render so cards stay stable
   discoveryIndex = 0;
@@ -75,7 +81,9 @@ export default function HomeScreen() {
         rightActions={<HamburgerButton />}
       />
 
-      {loading && cards.length === 0 ? (
+      {showNewFeed ? (
+        <NewUserFeed />
+      ) : loading && cards.length === 0 ? (
         <HomeSkeleton />
       ) : (
         <ScrollView

@@ -33,6 +33,7 @@ import { useData } from '@/hooks/useData';
 import { useAuth } from '@/state/AuthContext';
 import { getFlag } from '@/data/trips/helpers';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
+import { markFeatureSeen } from '@/data/home/useNewUserFeed';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
 const CARD_WIDTH = 260;
@@ -249,6 +250,10 @@ export default function TravelersScreen() {
   useEffect(() => {
     posthog.capture('travelers_screen_viewed');
   }, [posthog]);
+
+  useEffect(() => {
+    markFeatureSeen('buddies_seen');
+  }, []);
 
   // Reset search triggered state when query is cleared
   useEffect(() => {
