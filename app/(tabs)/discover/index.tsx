@@ -119,6 +119,21 @@ export default function DiscoverScreen() {
           </View>
         )}
 
+        {/* Volunteer CTA */}
+        <Pressable
+          style={({ pressed }) => [styles.volunteerCard, pressed && { opacity: pressedState.opacity }]}
+          onPress={() => router.push('/(tabs)/discover/volunteer')}
+        >
+          <View style={styles.volunteerIcon}>
+            <Ionicons name="heart" size={18} color={colors.orange} />
+          </View>
+          <View style={styles.volunteerContent}>
+            <Text style={styles.volunteerTitle}>Volunteer opportunities</Text>
+            <Text style={styles.volunteerSubtitle}>Vetted organizations across Southeast Asia</Text>
+          </View>
+          <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+        </Pressable>
+
         {/* Continent filter */}
         {continents.length > 0 && (
           <View style={styles.filterWrap}>
@@ -194,6 +209,40 @@ const styles = StyleSheet.create({
   heroWrap: {
     paddingHorizontal: spacing.screenX,
     marginTop: spacing.moduleInset,
+  },
+
+  // Volunteer CTA
+  volunteerCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: spacing.screenX,
+    marginTop: spacing.moduleInset,
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.card,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  volunteerIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: colors.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  volunteerContent: {
+    flex: 1,
+  },
+  volunteerTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  volunteerSubtitle: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 1,
   },
 
   // Filter

@@ -9,7 +9,8 @@ import { onboardingStore } from '@/state/onboardingStore';
 import { getGreeting } from '@/data/greetings';
 import { supabase } from '@/lib/supabase';
 import { uploadAvatar } from '@/lib/uploadAvatar';
-import { submitVerificationSelfie } from '@/data/api';
+import { submitVerificationSelfie, setProfileTags } from '@/data/api';
+import { ALL_INTERESTS } from '@/constants/interests';
 import { completeOnboardingSession } from '@/lib/onboardingConfig';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
@@ -73,6 +74,7 @@ export default function YoureInScreen() {
     const { error: profileError } = await supabase.from('profiles').upsert({
       id: activeUserId,
       first_name: data.firstName,
+      username: data.username || null,
       avatar_url: avatarUrl,
       home_country_iso2: data.countryIso2 || null,
       home_country_name: data.countryName || null,
@@ -85,6 +87,22 @@ export default function YoureInScreen() {
       setSaving(false);
       Alert.alert('Could not save profile', profileError.message ?? 'Please try again.');
       return;
+    }
+
+    // Save interests to profile_tags
+    const dayStyleSlugs: string[] = data.dayStyle ?? [];
+    if (dayStyleSlugs.length > 0 && activeUserId) {
+      const tags = dayStyleSlugs.map((slug: string) => {
+        const option = ALL_INTERESTS.find((o) => o.slug === slug);
+        return {
+          tagSlug: slug,
+          tagLabel: option?.label ?? slug,
+          tagGroup: option?.group ?? '',
+        };
+      });
+      await setProfileTags(activeUserId, tags).catch(() => {
+        // Don't block onboarding if tags fail to save
+      });
     }
 
     // Upload verification selfie if taken during onboarding

@@ -10,7 +10,7 @@ const MAX_RECENT = 5;
 export interface SearchResult {
   id: string;
   name: string;
-  type: 'country' | 'city' | 'area' | 'activity';
+  type: 'country' | 'city' | 'area' | 'activity' | 'volunteer';
   context: string;
   slug: string;
 }
@@ -61,6 +61,8 @@ export function useSearch(): UseSearchResult {
                 ? 'Country'
                 : d.type === 'area'
                 ? `Area in ${d.parentName ?? ''}`
+                : d.type === 'volunteer'
+                ? `Volunteer · ${d.parentName ?? ''}`
                 : d.type === 'activity'
                 ? d.parentName ?? 'Activity'
                 : d.parentName ?? '',

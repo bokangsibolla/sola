@@ -10,7 +10,8 @@ export type PlaceCategoryKey =
   | 'eat_drink'
   | 'nightlife'
   | 'wellness'
-  | 'practical';
+  | 'practical'
+  | 'impact';
 
 export interface PlaceCategoryDef {
   key: PlaceCategoryKey;
@@ -56,6 +57,12 @@ export const PLACE_CATEGORIES: PlaceCategoryDef[] = [
     emoji: '🔑',
     placeTypes: ['coworking', 'transport', 'shop', 'laundry', 'pharmacy', 'clinic', 'hospital', 'atm', 'police'],
   },
+  {
+    key: 'impact',
+    label: 'Volunteer',
+    emoji: '🤝',
+    placeTypes: ['volunteer'],
+  },
 ];
 
 /** Lookup: placeType → category key */
@@ -85,6 +92,7 @@ export const PLACE_TYPE_TO_CATEGORY: Record<Place['placeType'], PlaceCategoryKey
   hospital: 'practical',
   atm: 'practical',
   police: 'practical',
+  volunteer: 'impact',
 };
 
 /** Readable labels for each place type */
@@ -114,6 +122,7 @@ export const PLACE_TYPE_LABELS: Record<Place['placeType'], string> = {
   hospital: 'Hospitals',
   atm: 'ATMs',
   police: 'Police',
+  volunteer: 'Volunteer',
 };
 
 /** Place with pre-joined image + area name for the Places tab */

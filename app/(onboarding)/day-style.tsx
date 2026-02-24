@@ -5,36 +5,14 @@ import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import Pill from '@/components/onboarding/Pill';
 import { onboardingStore } from '@/state/onboardingStore';
 import { useOnboardingNavigation } from '@/hooks/useOnboardingNavigation';
+import { INTEREST_GROUPS } from '@/constants/interests';
 import { colors, fonts } from '@/constants/design';
-
-const INTERESTS = [
-  '🏛️ History & culture',
-  '🌿 Being outdoors',
-  '🍜 Trying the food',
-  '🌙 Going out at night',
-  '🧘 Rest & wellness',
-  '🧗 Adventure & sports',
-  '🛍️ Shopping & markets',
-  '🎨 Art & creativity',
-];
-
-const PRIORITIES = [
-  '🛡️ Feeling safe',
-  '🤝 Meeting locals',
-  '🗺️ Hidden gems',
-  '📸 Photo spots',
-  '💰 Good value',
-  '✨ Treating myself',
-  '🚶‍♀️ Solo-friendly',
-  '👩 Welcoming spaces',
-];
 
 export default function DayStyleScreen() {
   const router = useRouter();
   const { navigateToNextScreen, skipCurrentScreen, checkScreenAccess, trackScreenView } =
     useOnboardingNavigation();
-  const [interests, setInterests] = useState<string[]>([]);
-  const [priorities, setPriorities] = useState<string[]>([]);
+  const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
 
   // Check if this screen should be shown (A/B testing)
   useEffect(() => {
@@ -44,39 +22,22 @@ export default function DayStyleScreen() {
     }
   }, [checkScreenAccess, trackScreenView]);
 
-  const toggleInterest = (option: string) => {
-    setInterests((prev) => {
-      if (prev.includes(option)) return prev.filter((o) => o !== option);
-      if (prev.length >= 2) return prev;
-      return [...prev, option];
-    });
-  };
-
-  const togglePriority = (option: string) => {
-    setPriorities((prev) => {
-      if (prev.includes(option)) return prev.filter((o) => o !== option);
-      if (prev.length >= 2) return prev;
-      return [...prev, option];
-    });
+  const toggleSlug = (slug: string) => {
+    setSelectedSlugs((prev) =>
+      prev.includes(slug) ? prev.filter((s) => s !== slug) : [...prev, slug],
+    );
   };
 
   const handleContinue = () => {
-    onboardingStore.set('dayStyle', interests);
-    onboardingStore.set('priorities', priorities);
+    onboardingStore.set('dayStyle', selectedSlugs);
 
     const answered: string[] = [];
     const skipped: string[] = [];
 
-    if (interests.length > 0) {
+    if (selectedSlugs.length > 0) {
       answered.push('day_style');
     } else {
       skipped.push('day_style');
-    }
-
-    if (priorities.length > 0) {
-      answered.push('priorities');
-    } else {
-      skipped.push('priorities');
     }
 
     navigateToNextScreen('day-style', {
@@ -86,7 +47,7 @@ export default function DayStyleScreen() {
   };
 
   const handleSkip = () => {
-    skipCurrentScreen('day-style', ['day_style', 'priorities']);
+    skipCurrentScreen('day-style', ['day_style']);
   };
 
   return (
@@ -95,38 +56,25 @@ export default function DayStyleScreen() {
       screenName="day-style"
       headline="What gets you excited about a new place?"
       ctaLabel="Continue"
-      ctaDisabled={interests.length === 0 || priorities.length === 0}
+      ctaDisabled={selectedSlugs.length === 0}
       onCtaPress={handleContinue}
       onSkip={handleSkip}
     >
-      <View style={styles.section}>
-        <Text style={styles.sectionLabel}>Pick up to 2</Text>
-        <View style={styles.pillGrid}>
-          {INTERESTS.map((option) => (
-            <Pill
-              key={option}
-              label={option}
-              selected={interests.includes(option)}
-              onPress={() => toggleInterest(option)}
-            />
-          ))}
+      {INTEREST_GROUPS.map((group) => (
+        <View key={group.key} style={styles.section}>
+          <Text style={styles.sectionHeadline}>{group.question}</Text>
+          <View style={styles.pillGrid}>
+            {group.options.map((option) => (
+              <Pill
+                key={option.slug}
+                label={option.label}
+                selected={selectedSlugs.includes(option.slug)}
+                onPress={() => toggleSlug(option.slug)}
+              />
+            ))}
+          </View>
         </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionHeadline}>What would make this trip feel right?</Text>
-        <Text style={styles.sectionLabel}>Pick up to 2</Text>
-        <View style={styles.pillGrid}>
-          {PRIORITIES.map((option) => (
-            <Pill
-              key={option}
-              label={option}
-              selected={priorities.includes(option)}
-              onPress={() => togglePriority(option)}
-            />
-          ))}
-        </View>
-      </View>
+      ))}
     </OnboardingScreen>
   );
 }
@@ -140,13 +88,6 @@ const styles = StyleSheet.create({
     fontSize: 17,
     lineHeight: 22,
     color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: 4,
-  },
-  sectionLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
     textAlign: 'center',
     marginBottom: 10,
   },

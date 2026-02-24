@@ -7,6 +7,7 @@ import {
   getConnectionStatus,
   getConnectionRequests,
   getUserVisitedCountries,
+  getProfileTags,
 } from '@/data/api';
 import type { UserVisitedCountry } from '@/data/api';
 import {
@@ -17,7 +18,7 @@ import {
 import { formatDateShort } from '@/data/trips/helpers';
 import type { VisitedCountry } from '@/data/trips/tripApi';
 import { getConnectionContext, getSharedInterests } from './connectionContext';
-import type { Profile, ConnectionStatus, ConnectionRequest } from '@/data/types';
+import type { Profile, ConnectionStatus, ConnectionRequest, ProfileTag } from '@/data/types';
 import type { GroupedTrips } from '@/data/trips/types';
 
 export interface TravelerProfileData {
@@ -30,6 +31,7 @@ export interface TravelerProfileData {
   trips: GroupedTrips;
   visitedCountries: VisitedCountry[];
   userManagedCountries: UserVisitedCountry[];
+  profileTags: ProfileTag[];
   tripOverlaps: Map<string, string>;
   totalTripCount: number;
   isLoading: boolean;
@@ -86,6 +88,11 @@ export function useTravelerProfile(targetUserId: string | undefined): TravelerPr
     enabled: !!targetUserId,
     staleTime: 60_000,
   });
+
+  const { data: profileTags } = useData(
+    () => (targetUserId ? getProfileTags(targetUserId) : Promise.resolve([])),
+    [targetUserId, 'profile-tags'],
+  );
 
   const viewerTripsQuery = useQuery({
     queryKey: ['travelerProfile', 'viewerTrips', userId],
@@ -149,6 +156,7 @@ export function useTravelerProfile(targetUserId: string | undefined): TravelerPr
     tripOverlaps,
     visitedCountries: countriesQuery.data ?? [],
     userManagedCountries: userManagedCountriesQuery.data ?? [],
+    profileTags: profileTags ?? [],
     totalTripCount,
     isLoading,
     error,

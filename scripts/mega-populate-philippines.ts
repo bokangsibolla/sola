@@ -330,22 +330,18 @@ async function getExistingNames(cityId: string): Promise<Set<string>> {
 }
 
 function buildDesc(f: Found, cityName: string): string {
-  const rt = f.rating
-    ? `Rated ${f.rating}/5 by ${f.reviews ?? 0} visitors`
-    : 'Recently discovered';
-
   if (f.cat === 'healthcare') {
     const ph = f.phone ? ` Phone: ${f.phone}.` : '';
     const wh = f.womenHealth ? " Offers women's health services." : '';
-    return `${f.name} — ${f.pt} in ${cityName}, Philippines.${ph}${wh} ${rt}.`;
+    return `${f.name} — ${f.pt} in ${cityName}, Philippines.${ph}${wh}`;
   }
 
   if (f.cat === 'accommodation') {
     const wo = f.womenOnly ? ' Women-only establishment.' : '';
-    return `${f.name} — ${f.pt} in ${cityName}, Philippines. ${rt}.${wo}`;
+    return `${f.name} — ${f.pt} in ${cityName}, Philippines.${wo}`;
   }
 
-  return `${f.name} — ${f.pt} in ${cityName}, Philippines. ${rt}.`;
+  return `${f.name} — ${f.pt} in ${cityName}, Philippines.`;
 }
 
 async function insertFound(f: Found, city: City): Promise<string> {

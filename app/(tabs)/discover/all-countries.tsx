@@ -93,7 +93,7 @@ export default function AllCountriesScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Header */}
-      <NavigationHeader title="All Countries" parentTitle="Discover" />
+      <NavigationHeader title="All Countries" parentTitle="Discover" backHref="/(tabs)/discover" />
 
       {/* Search */}
       <View style={styles.searchContainer}>

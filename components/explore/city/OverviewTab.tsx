@@ -6,6 +6,7 @@ import { WomenShouldKnow } from './WomenShouldKnow';
 import { ExperiencePillars } from './ExperiencePillars';
 import { HowWomenUseCity } from './HowWomenUseCity';
 import { AreaCardsRow } from './AreaCard';
+import { VolunteerSection } from './VolunteerSection';
 import { AwarenessAccordion } from './AwarenessAccordion';
 
 interface OverviewTabProps {
@@ -47,6 +48,9 @@ export function OverviewTab({ city, areas }: OverviewTabProps) {
 
       {/* Neighborhoods */}
       <AreaCardsRow areas={areas} />
+
+      {/* Volunteer opportunities */}
+      <VolunteerSection cityId={city.id} />
 
       {/* Women should know */}
       <WomenShouldKnow city={city} />

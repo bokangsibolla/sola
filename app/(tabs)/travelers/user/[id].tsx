@@ -19,13 +19,16 @@ import { getFlag } from '@/data/trips/helpers';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import ProfileTripCard from '@/components/profile/ProfileTripCard';
-import { FlagGrid } from '@/components/profile/FlagGrid';
+import { TravelMap } from '@/components/profile/TravelMap';
+import { InterestPills } from '@/components/profile/InterestPills';
+import { getProfileTags } from '@/data/api';
+import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 import { getImageUrl } from '@/lib/image';
 import { useAuth } from '@/state/AuthContext';
 import { VerificationBanner } from '@/components/VerificationBanner';
-import type { ConnectionStatus } from '@/data/types';
+import type { ConnectionStatus, ProfileTag } from '@/data/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
@@ -59,6 +62,7 @@ export default function UserProfileScreen() {
     tripOverlaps,
     visitedCountries,
     userManagedCountries,
+    profileTags,
     totalTripCount,
     isLoading,
     error,
@@ -79,6 +83,12 @@ export default function UserProfileScreen() {
     }
     return Array.from(set);
   }, [visitedCountries, userManagedCountries]);
+
+  const { data: viewerTags } = useData(
+    () => (!isOwn && userId ? getProfileTags(userId) : Promise.resolve([])),
+    [isOwn, userId, 'viewer-tags'],
+  );
+  const viewerTagSlugs = (viewerTags ?? []).map((t: ProfileTag) => t.tagSlug);
 
   const countriesCount = allCountryIso2s.length;
   const joinedDate = profile ? new Date(profile.createdAt) : null;
@@ -365,28 +375,32 @@ export default function UserProfileScreen() {
         {(isOwn || showExtended) && allCountryIso2s.length > 0 && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Countries visited</Text>
-            <FlagGrid countries={allCountryIso2s} />
+            <TravelMap
+              countries={allCountryIso2s}
+              onAddCountry={isOwn ? () => router.push('/(tabs)/home/edit-profile' as any) : undefined}
+            />
           </View>
         )}
 
         {/* 5. Interests */}
-        {(isOwn || showExtended) && (profile.interests ?? []).length > 0 && (
+        {(isOwn || showExtended) && (profileTags.length > 0 || (profile.interests ?? []).length > 0) && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Interests</Text>
-            <View style={styles.tags}>
-              {(profile.interests ?? []).map((interest) => (
-                <View
-                  key={interest}
-                  style={[styles.tag, shared.includes(interest) && styles.tagShared]}
-                >
-                  <Text
-                    style={[styles.tagText, shared.includes(interest) && styles.tagTextShared]}
-                  >
-                    {interest}
-                  </Text>
-                </View>
-              ))}
-            </View>
+            {profileTags.length > 0 ? (
+              <InterestPills
+                tags={profileTags}
+                viewerTagSlugs={isOwn ? undefined : viewerTagSlugs}
+              />
+            ) : profile?.interests && profile.interests.length > 0 ? (
+              /* Legacy fallback for profiles that haven't migrated */
+              <View style={styles.interestsGrid}>
+                {profile.interests.map((interest: string) => (
+                  <View key={interest} style={styles.interestPill}>
+                    <Text style={styles.interestText}>{interest}</Text>
+                  </View>
+                ))}
+              </View>
+            ) : null}
           </View>
         )}
 
@@ -635,28 +649,22 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
 
-  // Interest tags
-  tags: {
+  // Interest tags (legacy fallback)
+  interestsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
   },
-  tag: {
+  interestPill: {
     backgroundColor: colors.neutralFill,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radius.card,
   },
-  tagShared: {
-    backgroundColor: colors.orangeFill,
-  },
-  tagText: {
+  interestText: {
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.textSecondary,
-  },
-  tagTextShared: {
-    color: colors.orange,
   },
 
   // Trips

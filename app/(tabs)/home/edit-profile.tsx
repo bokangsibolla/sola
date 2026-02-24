@@ -3,6 +3,7 @@ import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
   Linking,
   Platform,
   Pressable,
@@ -198,8 +199,21 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     if (!userId) return;
     setSaving(true);
+
+    // 1. Upload avatar separately — don't block profile save if photo fails
+    let avatarUrl = photoUri;
+    if (photoUri && !photoUri.startsWith('http')) {
+      try {
+        avatarUrl = await uploadAvatar(userId, photoUri);
+      } catch (err: any) {
+        console.warn('[edit-profile] Avatar upload failed:', err.message);
+        // Keep going — save the rest of the profile
+        avatarUrl = profile?.avatarUrl ?? null; // fallback to existing
+      }
+    }
+
+    // 2. Save profile
     try {
-      const avatarUrl = await uploadAvatar(userId, photoUri);
       const country = countries.find((c) => c.iso2 === selectedCountry);
       const { error: upsertError } = await supabase.from('profiles').upsert({
         id: userId,
@@ -212,9 +226,11 @@ export default function EditProfileScreen() {
       });
       if (upsertError) {
         Alert.alert('Save failed', upsertError.message);
+        setSaving(false);
         return;
       }
-      // Save profile tags
+
+      // 3. Save profile tags (non-blocking)
       const tagsToSave = selectedTagSlugs.map((slug) => {
         const option = ALL_INTERESTS.find((o) => o.slug === slug);
         return {
@@ -223,16 +239,23 @@ export default function EditProfileScreen() {
           tagGroup: option?.group ?? '',
         };
       });
-      await setProfileTags(userId, tagsToSave);
-      await saveVisitedCountries(userId, visitedCountryIds);
-      // Invalidate all profile-related caches so avatar updates everywhere immediately
+      await setProfileTags(userId, tagsToSave).catch((err: any) =>
+        console.warn('[edit-profile] Tags save failed:', err.message),
+      );
+
+      // 4. Save visited countries (non-blocking)
+      await saveVisitedCountries(userId, visitedCountryIds).catch((err: any) =>
+        console.warn('[edit-profile] Visited countries save failed:', err.message),
+      );
+
+      // 5. Invalidate caches and navigate back
       queryClient.invalidateQueries({ queryKey: ['useData', userId] });
       posthog.capture('profile_updated', { has_photo: !!avatarUrl, interests_count: selectedTagSlugs.length, visited_countries_count: visitedCountryIds.length });
       Alert.alert('Saved', 'Your profile has been updated.', [
         { text: 'OK', onPress: () => router.back() },
       ]);
     } catch (err: any) {
-      Alert.alert('Upload failed', err.message ?? 'Could not upload photo.');
+      Alert.alert('Save failed', err.message ?? 'Something went wrong. Please try again.');
     } finally {
       setSaving(false);
     }
@@ -242,6 +265,11 @@ export default function EditProfileScreen() {
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <NavigationHeader title="Edit profile" parentTitle="Profile" />
 
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={insets.top + 56}
+      >
       <ScrollView
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
@@ -372,8 +400,9 @@ export default function EditProfileScreen() {
           <Text style={styles.saveButtonText}>{saving ? 'Saving...' : 'Save changes'}</Text>
         </Pressable>
 
-        <View style={{ height: spacing.xxl }} />
+        <View style={{ height: 120 }} />
       </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -384,7 +413,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxl,
   },

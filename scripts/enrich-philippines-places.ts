@@ -194,9 +194,8 @@ function getHighlights(place: Place): string[] {
   const rating = place.google_rating;
   const reviews = place.google_review_count;
 
-  // Rating highlight
   if (rating && rating >= 4.3 && reviews && reviews >= 5) {
-    hl.push(`Rated ${rating}/5 by ${reviews} travelers`);
+    hl.push('Highly recommended by travelers');
   }
 
   switch (type) {
@@ -430,9 +429,8 @@ function getPositioningSummary(place: Place): string {
   }
 
   const prefix = qualifiers.length > 0 ? `A ${qualifiers.join(', ')} ` : 'A ';
-  const ratingStr = rating ? ` Rated ${rating}/5 by guests.` : '';
 
-  return `${prefix}${type} in ${cityName} that works well for solo women travelers.${ratingStr}`;
+  return `${prefix}${type} in ${cityName} that works well for solo women travelers.`;
 }
 
 function getWhyWomenChoose(place: Place): string {
