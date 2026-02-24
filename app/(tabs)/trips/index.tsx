@@ -12,6 +12,7 @@ import ErrorScreen from '@/components/ErrorScreen';
 import CurrentTripCard from '@/components/trips/CurrentTripCard';
 import TripListCard from '@/components/trips/TripListCard';
 import { TripsEmptyStateV2 } from '@/components/trips/TripsEmptyStateV2';
+import { WishlistGrid } from '@/components/trips/WishlistGrid';
 import { useTrips } from '@/data/trips/useTrips';
 import { deleteTrip } from '@/data/trips/tripApi';
 import { useAppMode } from '@/state/AppModeContext';
@@ -99,6 +100,9 @@ export default function TripsScreen() {
                 ))}
               </View>
             )}
+
+            {/* Wishlist — places I want to go */}
+            <WishlistGrid />
 
             {/* Past trips */}
             {past.length > 0 && (

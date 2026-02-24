@@ -1,6 +1,6 @@
 import type { Place } from '@/data/types';
 
-/** Colored dot for each place type — used in DayOverviewCard and TripEmptyState */
+/** Colored dot for each place type — used in DayOverviewCard and trip planning views */
 export const TYPE_DOT_COLOR: Partial<Record<Place['placeType'], string>> = {
   landmark: '#3B82F6',
   activity: '#2D8A4E',
