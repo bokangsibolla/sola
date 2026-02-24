@@ -888,6 +888,62 @@ export async function getSocialSpotsByCountry(
   return getPlacesByCountryAndType(countryId, socialTypes, limit);
 }
 
+/**
+ * Get volunteer orgs for a specific city.
+ */
+export async function getVolunteersByCity(cityId: string): Promise<Place[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, place_media(url)')
+    .eq('city_id', cityId)
+    .eq('place_type', 'volunteer')
+    .eq('is_active', true)
+    .order('name');
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    imageUrl: row.image_url_cached ?? row.place_media?.[0]?.url ?? null,
+  }));
+}
+
+/**
+ * Get volunteer orgs across a country (joins city name + image).
+ */
+export async function getVolunteersByCountry(
+  countryId: string,
+  limit = 10,
+): Promise<PlaceWithCity[]> {
+  return getPlacesByCountryAndType(countryId, ['volunteer'], limit);
+}
+
+/**
+ * Get all volunteer orgs across all countries (for dedicated listing).
+ */
+export interface VolunteerWithLocation extends Place {
+  cityName: string;
+  countryName: string;
+  countryId: string;
+  imageUrl: string | null;
+}
+
+export async function getAllVolunteers(limit = 200): Promise<VolunteerWithLocation[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, cities!inner(name, country_id, countries(name)), place_media(url)')
+    .eq('place_type', 'volunteer')
+    .eq('is_active', true)
+    .order('name')
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    countryName: row.cities?.countries?.name ?? '',
+    countryId: row.cities?.country_id ?? '',
+    imageUrl: row.image_url_cached ?? row.place_media?.[0]?.url ?? null,
+  }));
+}
+
 export async function getAllActivities(limit = 50): Promise<(Place & { imageUrl: string | null })[]> {
   const { data, error } = await supabase
     .from('places')
@@ -1670,7 +1726,7 @@ export async function reportContent(
 // ---------------------------------------------------------------------------
 
 export interface DestinationResult {
-  type: 'country' | 'city' | 'area' | 'activity';
+  type: 'country' | 'city' | 'area' | 'activity' | 'volunteer';
   id: string;
   name: string;
   slug: string;
@@ -1757,6 +1813,26 @@ export async function searchDestinations(query: string): Promise<DestinationResu
       name: a.name,
       slug: a.slug,
       parentName: (a as any).cities?.name ?? null,
+      countryIso2: null,
+    });
+  }
+
+  // Volunteer orgs
+  const { data: volunteers } = await supabase
+    .from('places')
+    .select('id, name, slug, city_id, cities(name)')
+    .eq('is_active', true)
+    .eq('place_type', 'volunteer')
+    .ilike('name', `%${q}%`)
+    .limit(5);
+
+  for (const v of volunteers ?? []) {
+    results.push({
+      type: 'volunteer',
+      id: v.id,
+      name: v.name,
+      slug: v.slug,
+      parentName: (v as any).cities?.name ?? null,
       countryIso2: null,
     });
   }

@@ -4,6 +4,7 @@ import type { City, Country } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
 import { mapSoloLevel } from '@/components/explore/country/mappings';
 import { DestinationCard } from './DestinationCard';
+import { VolunteerCountrySection } from './VolunteerCountrySection';
 import { CommunityThreadRows } from './CommunityThreadRows';
 
 interface Props {
@@ -175,6 +176,9 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
           </View>
         </View>
       )}
+
+      {/* Volunteer opportunities */}
+      <VolunteerCountrySection countryId={country.id} countryName={country.name} />
 
       {/* Community threads */}
       {communityData && communityData.threads.length > 0 && (

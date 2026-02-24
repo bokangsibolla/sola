@@ -90,10 +90,213 @@ function placeTypeIcon(placeType: string): keyof typeof Ionicons.glyphMap {
       return 'leaf-outline';
     case 'landmark':
       return 'camera-outline';
+    case 'volunteer':
+      return 'heart-outline';
     default:
       return 'location-outline';
   }
 }
+
+// ---------------------------------------------------------------------------
+// VolunteerInfoBlock — volunteer places only
+// ---------------------------------------------------------------------------
+
+function VolunteerInfoBlock({ place }: { place: Place }) {
+  if (place.placeType !== 'volunteer') return null;
+
+  const details = place.volunteerDetails;
+  const typeLabel = place.volunteerType
+    ? place.volunteerType.charAt(0).toUpperCase() + place.volunteerType.slice(1)
+    : null;
+
+  const includes: string[] = [];
+  if (details?.includesAccommodation) includes.push('Accommodation');
+  if (details?.includesMeals) includes.push('Meals');
+
+  return (
+    <View style={volStyles.container}>
+      {/* Type pill + commitment */}
+      <View style={volStyles.metaRow}>
+        {typeLabel && (
+          <View style={volStyles.typePill}>
+            <Text style={volStyles.typePillText}>{typeLabel}</Text>
+          </View>
+        )}
+        {place.minCommitment && (
+          <View style={volStyles.commitmentPill}>
+            <Ionicons name="time-outline" size={13} color={colors.textSecondary} />
+            <Text style={volStyles.commitmentText}>Min. {place.minCommitment}</Text>
+          </View>
+        )}
+      </View>
+
+      {/* What volunteers do */}
+      {details?.whatVolunteersDo && (
+        <View style={volStyles.block}>
+          <Text style={volStyles.blockLabel}>WHAT VOLUNTEERS DO</Text>
+          <Text style={volStyles.blockText}>{details.whatVolunteersDo}</Text>
+        </View>
+      )}
+
+      {/* Includes */}
+      {includes.length > 0 && (
+        <View style={volStyles.includesRow}>
+          {includes.map((item) => (
+            <View key={item} style={volStyles.includeChip}>
+              <Ionicons
+                name={item === 'Accommodation' ? 'bed-outline' : 'restaurant-outline'}
+                size={14}
+                color={colors.greenSoft}
+              />
+              <Text style={volStyles.includeText}>{item} included</Text>
+            </View>
+          ))}
+        </View>
+      )}
+
+      {/* Cost note */}
+      {details?.costNote && (
+        <View style={volStyles.block}>
+          <Text style={volStyles.blockLabel}>COST</Text>
+          <Text style={volStyles.blockText}>{details.costNote}</Text>
+        </View>
+      )}
+
+      {/* How to apply */}
+      {details?.howToApply && (
+        <View style={volStyles.block}>
+          <Text style={volStyles.blockLabel}>HOW TO APPLY</Text>
+          <Text style={volStyles.blockText}>{details.howToApply}</Text>
+        </View>
+      )}
+
+      {/* Apply CTA */}
+      {place.website && (
+        <Pressable
+          style={volStyles.ctaButton}
+          onPress={() =>
+            Linking.openURL(
+              place.website!.startsWith('http') ? place.website! : `https://${place.website}`
+            )
+          }
+        >
+          <Ionicons name="open-outline" size={18} color={colors.background} />
+          <Text style={volStyles.ctaText}>Apply on their website</Text>
+        </Pressable>
+      )}
+
+      {/* Contact email */}
+      {details?.email && (
+        <Pressable
+          style={volStyles.emailRow}
+          onPress={() => Linking.openURL(`mailto:${details.email}`)}
+        >
+          <Ionicons name="mail-outline" size={16} color={colors.blueSoft} />
+          <Text style={volStyles.emailText}>{details.email}</Text>
+        </Pressable>
+      )}
+    </View>
+  );
+}
+
+const volStyles = StyleSheet.create({
+  container: {
+    marginTop: spacing.xxl,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    flexWrap: 'wrap',
+  },
+  typePill: {
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  typePillText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+  },
+  commitmentPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+  },
+  commitmentText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+  },
+  block: {
+    marginBottom: spacing.lg,
+  },
+  blockLabel: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    letterSpacing: 1.5,
+    color: colors.textMuted,
+    marginBottom: spacing.sm,
+  },
+  blockText: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textSecondary,
+    lineHeight: 22,
+  },
+  includesRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginBottom: spacing.lg,
+    flexWrap: 'wrap',
+  },
+  includeChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    backgroundColor: colors.neutralFill,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+  },
+  includeText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  ctaButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.orange,
+    paddingVertical: spacing.md,
+    borderRadius: radius.full,
+    marginBottom: spacing.md,
+  },
+  ctaText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+    color: colors.background,
+  },
+  emailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  emailText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.blueSoft,
+  },
+});
 
 // ---------------------------------------------------------------------------
 // TrustStrip — enriched places only
@@ -433,6 +636,9 @@ export default function PlaceDetailScreen() {
             <PriceLabel level={place.priceLevel} />
           </View>
           {city && <Text style={styles.cityLabel}>{city.name}</Text>}
+
+          {/* Volunteer info block — volunteer places only */}
+          <VolunteerInfoBlock place={place} />
 
           {/* Trust Strip — enriched only */}
           <TrustStrip place={place} />

@@ -50,13 +50,14 @@ export default function SearchScreen() {
     { label: 'Cities', icon: 'map-pin' as const, route: '/discover/all-destinations' as const },
     { label: 'Countries', icon: 'globe' as const, route: '/discover/all-countries' as const },
     { label: 'Activities', icon: 'compass' as const, route: '/discover/all-activities' as const },
+    { label: 'Volunteer', icon: 'heart' as const, route: '/discover/volunteer' as const },
   ];
 
   const suggestions = [
     'Bangkok',
     'Female-only stays',
     'Chiang Mai',
-    'Yoga retreat',
+    'Volunteer',
     'Bali beaches',
     'Night markets',
   ];
@@ -68,8 +69,9 @@ export default function SearchScreen() {
       city: 'Cities',
       area: 'Areas',
       activity: 'Activities',
+      volunteer: 'Volunteer',
     };
-    const order: SearchResult['type'][] = ['country', 'city', 'area', 'activity'];
+    const order: SearchResult['type'][] = ['country', 'city', 'area', 'activity', 'volunteer'];
 
     for (const type of order) {
       const items = results.filter((r) => r.type === type);
@@ -117,6 +119,9 @@ export default function SearchScreen() {
         break;
       case 'activity':
         router.push(`/(tabs)/discover/activity/${result.slug}`);
+        break;
+      case 'volunteer':
+        router.push(`/(tabs)/discover/place-detail/${result.id}`);
         break;
     }
   };
@@ -196,9 +201,13 @@ export default function SearchScreen() {
           )}
 
           {/* Section 2: Browse by */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>BROWSE BY</Text>
-            <View style={styles.browseRow}>
+          <View style={styles.sectionNoPadX}>
+            <Text style={[styles.sectionTitle, { paddingHorizontal: spacing.screenX }]}>BROWSE BY</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.browseRow}
+            >
               {browseCategories.map((cat) => (
                 <Pressable
                   key={cat.label}
@@ -209,7 +218,7 @@ export default function SearchScreen() {
                   <Text style={styles.browseChipText}>{cat.label}</Text>
                 </Pressable>
               ))}
-            </View>
+            </ScrollView>
           </View>
 
           {/* Section 3: Popular destinations */}
@@ -435,7 +444,7 @@ const styles = StyleSheet.create({
     // section without horizontal padding (for horizontal scroll)
   },
   browseRow: {
-    flexDirection: 'row',
+    paddingHorizontal: spacing.screenX,
     gap: spacing.sm,
   },
   browseChip: {

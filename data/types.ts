@@ -222,7 +222,8 @@ export interface Place {
     | 'restaurant' | 'cafe' | 'bakery' | 'bar' | 'club' | 'rooftop'
     | 'activity' | 'coworking' | 'landmark' | 'transport' | 'shop'
     | 'wellness' | 'spa' | 'salon' | 'gym'
-    | 'laundry' | 'pharmacy' | 'clinic' | 'hospital' | 'atm' | 'police' | 'tour';
+    | 'laundry' | 'pharmacy' | 'clinic' | 'hospital' | 'atm' | 'police' | 'tour'
+    | 'volunteer';
   primaryCategoryId: string | null;
   lat: number | null;
   lng: number | null;
@@ -275,6 +276,19 @@ export interface Place {
   paymentTypes: string[];
   nearestTransport: string | null;
   locationContext: string | null;
+  // Volunteer-specific fields
+  volunteerType: string | null;
+  minCommitment: string | null;
+  volunteerDetails: {
+    skillsNeeded?: string[];
+    languages?: string[];
+    includesAccommodation?: boolean;
+    includesMeals?: boolean;
+    costNote?: string;
+    howToApply?: string;
+    whatVolunteersDo?: string;
+    email?: string | null;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }
