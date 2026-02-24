@@ -22,19 +22,9 @@ import { clearLocalData } from '@/lib/clearLocalData';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { getProfileById, updateProfile } from '@/data/api';
-import { getSupportedCurrencies, getSymbol } from '@/lib/currency';
-import { getSupportedLanguages, changeLanguage, type SupportedLanguage } from '@/lib/i18n';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
 
-const RELATIONSHIP_OPTIONS = ['Parent', 'Partner', 'Sibling', 'Friend'] as const;
-const RELATIONSHIP_VALUES = ['parent', 'partner', 'sibling', 'friend'] as const;
-const RELATIONSHIP_LABELS: Record<string, string> = {
-  parent: 'Parent',
-  partner: 'Partner',
-  sibling: 'Sibling',
-  friend: 'Friend',
-};
 
 const PRIVACY_POLICY_URL = 'https://solatravel.app/privacy';
 const TERMS_URL = 'https://solatravel.app/terms';
@@ -174,8 +164,6 @@ export default function SettingsScreen() {
 
   const verificationStatus = profile?.verificationStatus || 'unverified';
   const verificationInfo = VERIFICATION_DISPLAY[verificationStatus] || VERIFICATION_DISPLAY.unverified;
-  const currentCurrency = profile?.preferredCurrency || 'USD';
-  const currentLanguage = (profile?.preferredLanguage || 'en') as SupportedLanguage;
 
   const updatePrivacy = (
     key: keyof typeof privacy,
@@ -186,43 +174,6 @@ export default function SettingsScreen() {
     setPrivacy(updated);
     posthog.capture('privacy_setting_changed', { setting: key, value: values[index] });
     onboardingStore.set('privacyDefaults', updated as typeof privacy);
-  };
-
-  const handleCurrencyPicker = () => {
-    const currencies = getSupportedCurrencies();
-    const labels = currencies.map((c) => `${c.symbol} ${c.code} \u2014 ${c.label}`);
-    const currentIdx = currencies.findIndex((c) => c.code === currentCurrency);
-
-    showPicker('Select Currency', labels, currentIdx, async (i) => {
-      const selected = currencies[i].code;
-      if (selected === currentCurrency || !userId) return;
-      try {
-        await updateProfile(userId, { preferredCurrency: selected });
-        posthog.capture('currency_changed', { currency: selected });
-        refetchProfile();
-      } catch (error) {
-        Sentry.captureException(error);
-      }
-    });
-  };
-
-  const handleLanguagePicker = () => {
-    const languages = getSupportedLanguages();
-    const labels = languages.map((l) => l.label);
-    const currentIdx = languages.findIndex((l) => l.code === currentLanguage);
-
-    showPicker('Select Language', labels, currentIdx, async (i) => {
-      const selected = languages[i].code;
-      if (selected === currentLanguage || !userId) return;
-      try {
-        await changeLanguage(selected);
-        await updateProfile(userId, { preferredLanguage: selected });
-        posthog.capture('language_changed', { language: selected });
-        refetchProfile();
-      } catch (error) {
-        Sentry.captureException(error);
-      }
-    });
   };
 
   const handleLogout = () => {
@@ -242,8 +193,6 @@ export default function SettingsScreen() {
       },
     ]);
   };
-
-  const languageLabel = getSupportedLanguages().find((l) => l.code === currentLanguage)?.label || 'English';
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
@@ -277,7 +226,7 @@ export default function SettingsScreen() {
                 <Text style={styles.ecCardName}>{ecName}</Text>
                 {ecRelationship ? (
                   <Text style={styles.ecCardRelationship}>
-                    {RELATIONSHIP_LABELS[ecRelationship] ?? ecRelationship}
+                    {ecRelationship}
                   </Text>
                 ) : null}
               </View>
@@ -308,25 +257,15 @@ export default function SettingsScreen() {
               onChangeText={setEcName}
               onFocus={() => setEcEditing(true)}
             />
-            <Pressable
-              style={styles.ecPickerRow}
-              onPress={() =>
-                showPicker(
-                  'Relationship',
-                  RELATIONSHIP_OPTIONS,
-                  RELATIONSHIP_VALUES.indexOf(ecRelationship as any),
-                  (i) => {
-                    setEcRelationship(RELATIONSHIP_VALUES[i]);
-                    setEcEditing(true);
-                  },
-                )
-              }
-            >
-              <Text style={ecRelationship ? styles.ecPickerValue : styles.ecPickerPlaceholder}>
-                {ecRelationship ? RELATIONSHIP_LABELS[ecRelationship] : 'Relationship'}
-              </Text>
-              <Ionicons name="chevron-down" size={16} color={colors.textMuted} />
-            </Pressable>
+            <TextInput
+              style={styles.ecInput}
+              placeholder="Relationship (e.g. friend, sister, partner)"
+              placeholderTextColor={colors.textMuted}
+              value={ecRelationship}
+              onChangeText={setEcRelationship}
+              onFocus={() => setEcEditing(true)}
+              autoCapitalize="words"
+            />
             <TextInput
               style={styles.ecInput}
               placeholder="Phone (with country code, e.g. +1...)"
@@ -371,23 +310,6 @@ export default function SettingsScreen() {
         <Text style={styles.ecHint}>
           Shown on your trip safety cards for quick access
         </Text>
-
-        {/* Preferences */}
-        <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Preferences</Text>
-
-        <Pressable style={styles.settingRow} onPress={handleCurrencyPicker}>
-          <Ionicons name="wallet-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Currency</Text>
-          <Text style={styles.settingValue}>{getSymbol(currentCurrency)} {currentCurrency}</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
-
-        <Pressable style={styles.settingRow} onPress={handleLanguagePicker}>
-          <Ionicons name="language-outline" size={18} color={colors.textPrimary} />
-          <Text style={styles.settingLabel}>Language</Text>
-          <Text style={styles.settingValue}>{languageLabel}</Text>
-          <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-        </Pressable>
 
         {/* Privacy */}
         <Text style={[styles.sectionTitle, { marginTop: spacing.xxl }]}>Privacy</Text>
@@ -599,26 +521,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.regular,
     fontSize: 15,
     color: colors.textPrimary,
-  },
-  ecPickerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.input,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-  },
-  ecPickerValue: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textPrimary,
-  },
-  ecPickerPlaceholder: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
   },
   ecFormActions: {
     flexDirection: 'row',
