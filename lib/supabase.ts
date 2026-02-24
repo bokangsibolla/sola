@@ -177,6 +177,17 @@ async function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
   return response;
 }
 
+// ── Timeout helper ──────────────────────────────────────────────────────────
+// AbortController doesn't work on some Android devices, so use Promise.race.
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new TypeError(`Timeout (${ms}ms) [${label}]`)), ms),
+    ),
+  ]);
+}
+
 // ── Connection warmup ───────────────────────────────────────────────────────
 // Pre-warm connection to supabase.co on Android before any auth calls.
 // If warmup fails, enables proxy mode for all subsequent requests.
@@ -196,47 +207,53 @@ export function warmupConnection(): Promise<boolean> {
     const healthUrl = `${supabaseUrl}/auth/v1/health`;
     const healthHeaders = { apikey: supabaseAnonKey };
 
-    // On Android, the GmsCore TLS security provider may not be installed yet
-    // on cold start. ProviderInstaller runs in MainApplication.onCreate() but
-    // React Native JS can boot before it finishes. We retry with a delay.
-    const maxRounds = 2;
-    for (let round = 0; round < maxRounds; round++) {
-      if (round > 0) {
-        console.log('[Sola] Warmup retry — waiting for TLS provider...');
-        await new Promise((r) => setTimeout(r, 3_000));
-      }
-
-      // Try XHR first (primary on Android — avoids TurboModule header bug)
-      try {
-        await xhrFetch(healthUrl, {
-          method: 'GET',
-          headers: healthHeaders as any,
-        });
-        _warmupDone = true;
-        return true;
-      } catch {
-        // XHR failed, try native fetch as fallback
-      }
-
-      // Native fetch fallback (single attempt with short timeout)
-      try {
-        const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), 5_000);
-        await fetch(healthUrl, {
-          method: 'GET',
-          headers: healthHeaders,
-          signal: controller.signal,
-        });
-        clearTimeout(timer);
-        _warmupDone = true;
-        return true;
-      } catch {
-        // Native fetch also failed
-      }
+    // Round 1: Try XHR first, then native fetch with timeout
+    try {
+      await withTimeout(
+        xhrFetch(healthUrl, { method: 'GET', headers: healthHeaders as any }),
+        4_000,
+        'warmup-xhr',
+      );
+      _warmupDone = true;
+      console.log('[Sola] Warmup: XHR succeeded');
+      return true;
+    } catch {
+      // XHR failed
     }
 
-    // Both XHR and fetch failed across all rounds — enable proxy mode
+    try {
+      await withTimeout(
+        fetch(healthUrl, { method: 'GET', headers: healthHeaders }),
+        4_000,
+        'warmup-fetch',
+      );
+      _warmupDone = true;
+      console.log('[Sola] Warmup: native fetch succeeded');
+      return true;
+    } catch {
+      // Native fetch failed
+    }
+
+    // Round 2: Wait for TLS provider, then try once more
+    console.log('[Sola] Warmup retry — waiting for TLS provider...');
+    await new Promise((r) => setTimeout(r, 2_000));
+
+    try {
+      await withTimeout(
+        xhrFetch(healthUrl, { method: 'GET', headers: healthHeaders as any }),
+        4_000,
+        'warmup-xhr-2',
+      );
+      _warmupDone = true;
+      console.log('[Sola] Warmup: XHR succeeded (round 2)');
+      return true;
+    } catch {
+      // Still failing
+    }
+
+    // Both rounds failed — enable proxy mode
     _proxyMode = true;
+    _warmupDone = true;
     console.log('[Sola] Warmup failed — enabling proxy mode for all Supabase requests');
     return false;
   })();
@@ -245,8 +262,8 @@ export function warmupConnection(): Promise<boolean> {
 }
 
 // ── Custom fetch: XHR-first on Android, proxy fallback ──────────────────────
-// On Android, use XHR as primary, native fetch as fallback, and edge function
-// proxy as last resort (for devices where all custom-header requests fail).
+// On Android, wait for warmup to determine connectivity mode, then use XHR,
+// native fetch, or edge function proxy depending on what works.
 const supabaseFetch: typeof fetch = async (input, init) => {
   if (Platform.OS !== 'android') {
     return fetch(input, init);
@@ -255,6 +272,11 @@ const supabaseFetch: typeof fetch = async (input, init) => {
   const url = typeof input === 'string' ? input : (input as Request).url;
   const isSupabaseUrl = url.startsWith(supabaseUrl);
 
+  // Wait for warmup to determine if proxy mode is needed
+  if (!_warmupDone && isSupabaseUrl) {
+    await warmupConnection();
+  }
+
   // Fast path: if proxy mode is active, skip XHR/fetch entirely
   if (_proxyMode && isSupabaseUrl) {
     return proxyFetch(url, init);
@@ -262,19 +284,15 @@ const supabaseFetch: typeof fetch = async (input, init) => {
 
   // Phase 1: XHR (primary on Android — bypasses TurboModule header bug)
   try {
-    return await xhrFetch(url, init);
+    return await withTimeout(xhrFetch(url, init), 10_000, 'xhr');
   } catch (xhrError: any) {
     // XHR failed, try native fetch
-    console.log(`[Sola] XHR failed, trying native fetch: ${xhrError.message}`);
+    console.log(`[Sola] XHR failed: ${xhrError.message?.substring(0, 80)}`);
   }
 
-  // Phase 2: Native fetch (single attempt with timeout — hangs forever on some devices)
+  // Phase 2: Native fetch (with timeout — hangs forever on some devices)
   try {
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), 5_000);
-    const response = await fetch(url, { ...init, signal: controller.signal });
-    clearTimeout(timer);
-    return response;
+    return await withTimeout(fetch(url, init), 5_000, 'native-fetch');
   } catch (fetchError: any) {
     // Both XHR and native fetch failed
     if (isSupabaseUrl) {
