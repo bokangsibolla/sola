@@ -600,7 +600,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJ7Wv7gqCrNTERV0aUMHe7tsk',
     citySlug: 'hanoi',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Mad Monkey Hanoi',
     // Rating: 4.7 (1489 reviews)
   },
@@ -614,7 +614,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJx8FgQJ6rNTERr9w8J4xnKyw',
     citySlug: 'hanoi',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Urban Slumber Dormitory',
     // Rating: 4.7 (400 reviews)
   },
@@ -709,7 +709,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJq7w0rW8XEDERAsTo81bxhmc',
     citySlug: 'siem-reap',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Mad Monkey Siem Reap',
     // Rating: 4.7 (1645 reviews)
   },
@@ -753,7 +753,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJxaaRaiVRCTERDEK0DQwG4tk',
     citySlug: 'phnom-penh',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Mad Monkey Phnom Penh',
     // Rating: 4.6 (3091 reviews)
   },
@@ -804,7 +804,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJ65zRRn0HtzMRhLto_n5eCiI',
     citySlug: 'el-nido',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Mad Monkey Nacpan Beach',
     // Rating: 4.5 (1302 reviews)
   },
@@ -855,7 +855,7 @@ export const ACCOMMODATIONS: AccommodationEntry[] = [
   {
     googlePlaceId: 'ChIJY6KU1y0JBDMRQVqscCdtbqo',
     citySlug: 'siargao',
-    type: 'hotel',
+    type: 'hostel',
     name: 'Mad Monkey Siargao',
     // Rating: 4.7 (908 reviews)
   },
