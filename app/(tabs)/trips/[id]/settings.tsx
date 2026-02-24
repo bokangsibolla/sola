@@ -12,11 +12,14 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 
 import NavigationHeader from '@/components/NavigationHeader';
 import LoadingScreen from '@/components/LoadingScreen';
 import StyleTagPicker from '@/components/trips/StyleTagPicker';
+import { BuddyPickerSheet } from '@/components/trips/BuddyPickerSheet';
 import { useTripDetail, useNotificationSettings } from '@/data/trips/useTripDetail';
+import { useTripBuddies } from '@/data/trips/useTripBuddies';
 import { updateTrip, upsertTripNotificationSettings, deleteTrip } from '@/data/trips/tripApi';
 import { formatDate } from '@/data/trips/helpers';
 import type { PrivacyLevel, TripNotificationSettings } from '@/data/trips/types';
@@ -52,9 +55,11 @@ export default function TripSettingsScreen() {
   const { trip, loading: tripLoading, refetchTrip } = useTripDetail(id);
   const { settings: notifSettings, loading: notifLoading, refetch: refetchNotif } =
     useNotificationSettings(id);
+  const { buddies, loading: buddiesLoading, addBuddy, removeBuddy } = useTripBuddies(id);
 
   // ── Local state ─────────────────────────────────────────────────────────────
 
+  const [buddyPickerVisible, setBuddyPickerVisible] = useState(false);
   const [title, setTitle] = useState('');
   const [privacyLevel, setPrivacyLevel] = useState<PrivacyLevel>('private');
   const [matchingOptIn, setMatchingOptIn] = useState(false);
@@ -187,6 +192,25 @@ export default function TripSettingsScreen() {
     [id, refetchNotif],
   );
 
+  const handleBuddyToggle = useCallback(
+    async (userId: string) => {
+      const isAlreadyBuddy = buddies.some((b) => b.id === userId);
+      if (isAlreadyBuddy) {
+        await removeBuddy(userId);
+      } else {
+        await addBuddy(userId);
+      }
+    },
+    [buddies, addBuddy, removeBuddy],
+  );
+
+  const handleRemoveBuddy = useCallback(
+    async (userId: string) => {
+      await removeBuddy(userId);
+    },
+    [removeBuddy],
+  );
+
   const handleDelete = useCallback(() => {
     Alert.alert(
       'Delete trip',
@@ -212,7 +236,7 @@ export default function TripSettingsScreen() {
 
   // ── Loading ─────────────────────────────────────────────────────────────────
 
-  if (tripLoading || notifLoading) return <LoadingScreen />;
+  if (tripLoading || notifLoading || buddiesLoading) return <LoadingScreen />;
 
   if (!trip) {
     return (
@@ -280,6 +304,61 @@ export default function TripSettingsScreen() {
             </View>
           )}
         </View>
+
+        <View style={styles.divider} />
+
+        {/* ── Travel Companions ────────────────────────────────────────── */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Travel companions</Text>
+
+          {buddies.length > 0 ? (
+            <View style={styles.buddyList}>
+              {buddies.map((buddy) => (
+                <View key={buddy.id} style={styles.buddyRow}>
+                  <View style={styles.buddyInfo}>
+                    {buddy.avatarUrl ? (
+                      <Image source={{ uri: buddy.avatarUrl }} style={styles.buddyAvatar} />
+                    ) : (
+                      <View style={[styles.buddyAvatar, styles.buddyAvatarPlaceholder]}>
+                        <Ionicons name="person" size={14} color={colors.textMuted} />
+                      </View>
+                    )}
+                    <View>
+                      <Text style={styles.buddyName}>{buddy.firstName}</Text>
+                      {buddy.username && (
+                        <Text style={styles.buddyUsername}>@{buddy.username}</Text>
+                      )}
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={() => handleRemoveBuddy(buddy.id)}
+                    hitSlop={12}
+                    style={styles.buddyRemove}
+                  >
+                    <Ionicons name="close" size={16} color={colors.textMuted} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+          ) : (
+            <Text style={styles.buddyEmptyText}>No companions added</Text>
+          )}
+
+          <Pressable
+            style={styles.addBuddyButton}
+            onPress={() => setBuddyPickerVisible(true)}
+          >
+            <Ionicons name="person-add-outline" size={16} color={colors.orange} />
+            <Text style={styles.addBuddyButtonText}>Add companion</Text>
+          </Pressable>
+        </View>
+
+        <BuddyPickerSheet
+          visible={buddyPickerVisible}
+          onClose={() => setBuddyPickerVisible(false)}
+          selectedUserIds={buddies.map((b) => b.id)}
+          onToggle={handleBuddyToggle}
+        />
 
         <View style={styles.divider} />
 
@@ -513,6 +592,71 @@ const styles = StyleSheet.create({
   },
   dateArrow: {
     marginHorizontal: spacing.md,
+  },
+
+  // ── Buddies ─────────────────────────────────────────────────────
+  buddyList: {
+    gap: spacing.xs,
+    marginBottom: spacing.md,
+  },
+  buddyRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+  },
+  buddyInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    flex: 1,
+  },
+  buddyAvatar: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+  },
+  buddyAvatarPlaceholder: {
+    backgroundColor: colors.neutralFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyName: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  buddyUsername: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  buddyRemove: {
+    padding: spacing.sm,
+  },
+  buddyEmptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
+    color: colors.textMuted,
+    marginBottom: spacing.md,
+  },
+  addBuddyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.orange,
+    borderRadius: radius.button,
+    backgroundColor: colors.orangeFill,
+    minHeight: 44,
+  },
+  addBuddyButtonText: {
+    fontFamily: fonts.medium,
+    fontSize: 14,
+    color: colors.orange,
   },
 
   // ── Privacy ─────────────────────────────────────────────────────

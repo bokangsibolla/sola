@@ -14,8 +14,10 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
 
+import { Image } from 'expo-image';
 import { useTripDetail } from '@/data/trips/useTripDetail';
 import { useTripItinerary } from '@/data/trips/useItinerary';
+import { useTripBuddies } from '@/data/trips/useTripBuddies';
 import { deleteTrip, removeTripSavedItem } from '@/data/trips/tripApi';
 import { generateDaysFromTrip, createBlock } from '@/data/trips/itineraryApi';
 import { getFlag, getCityIdForDay } from '@/data/trips/helpers';
@@ -57,6 +59,7 @@ interface PlaceDisplay {
 type ListItem =
   | { type: 'header'; key: string }
   | { type: 'stats'; key: string }
+  | { type: 'buddies'; key: string }
   | { type: 'planning-board'; key: string }
   | { type: 'day-selector'; key: string }
   | { type: 'day-timeline-card'; key: string; block: TripDayWithBlocks['blocks'][number]; isDone: boolean; isCurrent: boolean }
@@ -91,6 +94,7 @@ export default function TripDetailScreen() {
     refetchTransports,
   } = useTripDetail(id);
   const { itinerary, loading: itinLoading, refetch: refetchItinerary } = useTripItinerary(id);
+  const { buddies } = useTripBuddies(id);
 
   const [showMenu, setShowMenu] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -282,6 +286,11 @@ export default function TripDetailScreen() {
       items.push({ type: 'stats', key: 'stats' });
     }
 
+    // 2b. Buddy avatars
+    if (buddies.length > 0) {
+      items.push({ type: 'buddies', key: 'buddies' });
+    }
+
     // 3A. Planning Board — saved items exist but no blocks yet
     if (!hasBlocks && enrichedPlaces.length > 0) {
       items.push({ type: 'planning-board', key: 'planning-board' });
@@ -378,7 +387,7 @@ export default function TripDetailScreen() {
     }
 
     return items;
-  }, [days, tripStops, todayStr, transports, accommodations, savedItems, entries, hasBlocks, enrichedPlaces, selectedDayId, selectedDayBlocks]);
+  }, [days, tripStops, todayStr, transports, accommodations, savedItems, entries, hasBlocks, enrichedPlaces, selectedDayId, selectedDayBlocks, buddies]);
 
   // Auto-scroll to today
   useEffect(() => {
@@ -511,6 +520,47 @@ export default function TripDetailScreen() {
             stopCount={stats.stopCount}
           />
         );
+
+      case 'buddies': {
+        const maxShow = 4;
+        const shown = buddies.slice(0, maxShow);
+        const overflow = buddies.length - maxShow;
+        return (
+          <Pressable
+            style={styles.buddiesRow}
+            onPress={() => { if (trip) router.push(`/trips/${trip.id}/settings`); }}
+          >
+            <View style={styles.buddiesAvatars}>
+              {shown.map((buddy, i) => (
+                <View
+                  key={buddy.id}
+                  style={[styles.buddyAvatarWrap, i > 0 && { marginLeft: -8 }]}
+                >
+                  {buddy.avatarUrl ? (
+                    <Image source={{ uri: buddy.avatarUrl }} style={styles.buddyAvatar} />
+                  ) : (
+                    <View style={[styles.buddyAvatar, styles.buddyAvatarPlaceholder]}>
+                      <Ionicons name="person" size={12} color={colors.textMuted} />
+                    </View>
+                  )}
+                </View>
+              ))}
+              {overflow > 0 && (
+                <View style={[styles.buddyAvatarWrap, { marginLeft: -8 }]}>
+                  <View style={[styles.buddyAvatar, styles.buddyOverflow]}>
+                    <Text style={styles.buddyOverflowText}>+{overflow}</Text>
+                  </View>
+                </View>
+              )}
+            </View>
+            <Text style={styles.buddiesLabel}>
+              {buddies.length === 1
+                ? `with ${buddies[0].firstName}`
+                : `with ${buddies.length} companions`}
+            </Text>
+          </Pressable>
+        );
+      }
 
       case 'planning-board':
         return (
@@ -773,6 +823,49 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 15,
     color: colors.textPrimary,
+  },
+
+  // Buddy avatars
+  buddiesRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.md,
+  },
+  buddiesAvatars: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  buddyAvatarWrap: {
+    borderWidth: 2,
+    borderColor: colors.background,
+    borderRadius: 16,
+  },
+  buddyAvatar: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+  },
+  buddyAvatarPlaceholder: {
+    backgroundColor: colors.neutralFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyOverflow: {
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyOverflowText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 11,
+    color: colors.orange,
+  },
+  buddiesLabel: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
   },
 
   // Timeline card wrapper

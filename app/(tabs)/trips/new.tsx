@@ -11,17 +11,20 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Image } from 'expo-image';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
 import { usePostHog } from 'posthog-react-native';
 import { searchDestinations } from '@/data/api';
 import type { DestinationResult } from '@/data/api';
-import { createTrip } from '@/data/trips/tripApi';
+import { createTrip, getConnectedProfiles } from '@/data/trips/tripApi';
 import { getFlag } from '@/data/trips/helpers';
 import { useAuth } from '@/state/AuthContext';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
+import { BuddyPickerSheet } from '@/components/trips/BuddyPickerSheet';
+import type { Profile } from '@/data/types';
 
 const DAY_MS = 86_400_000;
 const NAME_MAX = 50;
@@ -71,6 +74,11 @@ export default function NewTripScreen() {
   // Trip name
   const [tripName, setTripName] = useState('');
 
+  // Buddies
+  const [buddyIds, setBuddyIds] = useState<string[]>([]);
+  const [buddyPickerVisible, setBuddyPickerVisible] = useState(false);
+  const [buddyProfiles, setBuddyProfiles] = useState<Map<string, Profile>>(new Map());
+
   // Save state
   const [saving, setSaving] = useState(false);
 
@@ -111,6 +119,37 @@ export default function NewTripScreen() {
     if (stops.length === 1) return stops[0].cityName ?? '';
     return stops.map((s) => s.cityName).filter(Boolean).join(' \u00b7 ');
   }, [stops]);
+
+  // Fetch buddy profiles when buddyIds change (for display)
+  const { data: fetchedBuddyProfiles } = useData(
+    () =>
+      userId && buddyIds.length > 0
+        ? getConnectedProfiles(userId).then((profiles) =>
+            profiles.filter((p) => buddyIds.includes(p.id)),
+          )
+        : Promise.resolve([]),
+    ['newTripBuddyProfiles', ...buddyIds],
+  );
+
+  // Keep buddy profile map in sync
+  useMemo(() => {
+    if (!fetchedBuddyProfiles) return;
+    const map = new Map<string, Profile>();
+    for (const p of fetchedBuddyProfiles) {
+      map.set(p.id, p);
+    }
+    setBuddyProfiles(map);
+  }, [fetchedBuddyProfiles]);
+
+  const handleBuddyToggle = (uid: string) => {
+    setBuddyIds((prev) =>
+      prev.includes(uid) ? prev.filter((id) => id !== uid) : [...prev, uid],
+    );
+  };
+
+  const handleRemoveBuddy = (uid: string) => {
+    setBuddyIds((prev) => prev.filter((id) => id !== uid));
+  };
 
   // ── Handlers ─────────────────────────────────────────────────────────────────
 
@@ -222,7 +261,7 @@ export default function NewTripScreen() {
         leaving: !flexibleDates && tripDates.leaving ? tripDates.leaving.toISOString().split('T')[0] : undefined,
         privacyLevel: 'private',
         matchingOptIn: false,
-        buddyUserIds: [],
+        buddyUserIds: buddyIds,
       });
       posthog.capture('create_trip_completed', {
         stops_count: stops.length,
@@ -494,7 +533,61 @@ export default function NewTripScreen() {
             </View>
           </View>
         </View>
+
+        {/* ── Traveling with anyone? ───────────────────────── */}
+        <View style={styles.section}>
+          <View style={styles.sectionCard}>
+            <Text style={styles.sectionTitle}>Traveling with anyone?</Text>
+
+            {buddyIds.length === 0 ? (
+              <Pressable
+                style={styles.buddyEmpty}
+                onPress={() => setBuddyPickerVisible(true)}
+              >
+                <Ionicons name="people-outline" size={18} color={colors.textMuted} />
+                <Text style={styles.buddyEmptyText}>Add connections to this trip</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.buddyChipsRow}>
+                {buddyIds.map((uid) => {
+                  const profile = buddyProfiles.get(uid);
+                  return (
+                    <View key={uid} style={styles.buddyChip}>
+                      {profile?.avatarUrl ? (
+                        <Image source={{ uri: profile.avatarUrl }} style={styles.buddyChipAvatar} />
+                      ) : (
+                        <View style={[styles.buddyChipAvatar, styles.buddyChipAvatarPlaceholder]}>
+                          <Ionicons name="person" size={10} color={colors.textMuted} />
+                        </View>
+                      )}
+                      <Text style={styles.buddyChipName}>
+                        {profile?.firstName ?? 'Loading...'}
+                      </Text>
+                      <Pressable onPress={() => handleRemoveBuddy(uid)} hitSlop={8}>
+                        <Ionicons name="close" size={14} color={colors.textMuted} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+                <Pressable
+                  style={styles.buddyAddButton}
+                  onPress={() => setBuddyPickerVisible(true)}
+                >
+                  <Ionicons name="add" size={16} color={colors.orange} />
+                </Pressable>
+              </View>
+            )}
+          </View>
+        </View>
       </ScrollView>
+
+      {/* Buddy Picker Modal */}
+      <BuddyPickerSheet
+        visible={buddyPickerVisible}
+        onClose={() => setBuddyPickerVisible(false)}
+        selectedUserIds={buddyIds}
+        onToggle={handleBuddyToggle}
+      />
 
       {/* ── Fixed Create Button ───────────────────────────────── */}
       <View
@@ -815,6 +908,65 @@ const styles = StyleSheet.create({
     fontFamily: fonts.semiBold,
     fontSize: 15,
     color: colors.orange,
+  },
+
+  // ── Buddies ──
+  buddyEmpty: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.sm,
+  },
+  buddyEmptyText: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+  buddyChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    alignItems: 'center',
+  },
+  buddyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingLeft: spacing.xs,
+    paddingRight: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+    backgroundColor: colors.background,
+  },
+  buddyChipAvatar: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+  },
+  buddyChipAvatarPlaceholder: {
+    backgroundColor: colors.neutralFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  buddyChipName: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textPrimary,
+  },
+  buddyAddButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.orange,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 
   // ── Bottom Bar ──
