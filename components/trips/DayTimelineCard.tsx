@@ -8,6 +8,7 @@ import type { ItineraryBlockWithTags } from '@/data/trips/itineraryTypes';
 interface DayTimelineCardProps {
   block: ItineraryBlockWithTags;
   onPress: () => void;
+  onLongPress?: () => void;
   isDone?: boolean;
   isCurrent?: boolean;
 }
@@ -32,6 +33,7 @@ function formatCost(cost: number | null): string | null {
 export const DayTimelineCard: React.FC<DayTimelineCardProps> = ({
   block,
   onPress,
+  onLongPress,
   isDone = false,
   isCurrent = false,
 }) => {
@@ -52,6 +54,8 @@ export const DayTimelineCard: React.FC<DayTimelineCardProps> = ({
   return (
     <Pressable
       onPress={onPress}
+      onLongPress={onLongPress}
+      delayLongPress={400}
       style={({ pressed }) => [
         styles.card,
         isCurrent && styles.cardCurrent,

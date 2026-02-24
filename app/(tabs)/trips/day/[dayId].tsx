@@ -41,6 +41,7 @@ import type {
   InsertPayload,
   RemovePayload,
 } from '@/data/trips/itineraryTypes';
+import { OpenPlanSheet } from '@/components/together/OpenPlanSheet';
 import { colors, fonts, spacing, radius } from '@/constants/design';
 
 type BlockProgressStatus = 'completed' | 'current' | 'upcoming' | undefined;
@@ -133,6 +134,9 @@ export default function DayTimelineScreen() {
   const [smartSearchVisible, setSmartSearchVisible] = useState(false);
   const [smartSearchInsertIndex, setSmartSearchInsertIndex] = useState(0);
 
+  // Open Plan sheet state
+  const [openPlanBlock, setOpenPlanBlock] = useState<ItineraryBlockWithTags | null>(null);
+
   // Refetch on screen focus (returning from elsewhere)
   useFocusEffect(
     useCallback(() => { refetch(); }, [refetch]),
@@ -141,6 +145,12 @@ export default function DayTimelineScreen() {
   // Resolve city for this day (for suggestions + multi-day add)
   const tripStops: TripStop[] = trip?.stops ?? [];
   const dayCityId = day ? getCityIdForDay(day, tripStops) : null;
+
+  // City context for Open Plan sheet
+  const dayStop = useMemo(() => {
+    if (!dayCityId) return null;
+    return tripStops.find((s) => s.cityId === dayCityId) ?? null;
+  }, [dayCityId, tripStops]);
 
   // Check if this day is today
   const isToday = useMemo(() => {
@@ -161,17 +171,17 @@ export default function DayTimelineScreen() {
 
   // Place IDs already added to this day
   const addedPlaceIds = useMemo(
-    () => new Set(day?.blocks.filter((b) => b.placeId).map((b) => b.placeId!) ?? []),
+    () => new Set((day?.blocks ?? []).filter((b) => b.placeId).map((b) => b.placeId!)),
     [day?.blocks],
   );
 
   // Split blocks: accommodation (banner) vs timeline (everything else)
   const accommodationBlocks = useMemo(
-    () => day?.blocks.filter((b) => b.blockType === 'accommodation') ?? [],
+    () => (day?.blocks ?? []).filter((b) => b.blockType === 'accommodation'),
     [day?.blocks],
   );
   const timelineBlocks = useMemo(
-    () => day?.blocks.filter((b) => b.blockType !== 'accommodation') ?? [],
+    () => (day?.blocks ?? []).filter((b) => b.blockType !== 'accommodation'),
     [day?.blocks],
   );
 
@@ -368,6 +378,7 @@ export default function DayTimelineScreen() {
                     <DayTimelineCard
                       block={block}
                       onPress={() => handleBlockPress(block.id)}
+                      onLongPress={() => setOpenPlanBlock(block)}
                       isDone={getBlockProgressStatus(block, isToday) === 'completed'}
                       isCurrent={getBlockProgressStatus(block, isToday) === 'current'}
                     />
@@ -510,6 +521,27 @@ export default function DayTimelineScreen() {
             refetch();
             setSmartSearchVisible(false);
           }}
+        />
+      )}
+
+      {/* ── OpenPlanSheet (Together) ──────────────────────────────────── */}
+      {openPlanBlock != null && (
+        <OpenPlanSheet
+          visible
+          onClose={() => setOpenPlanBlock(null)}
+          block={{
+            id: openPlanBlock.id,
+            title: openPlanBlock.titleOverride ?? openPlanBlock.place?.name ?? 'Activity',
+            blockType: openPlanBlock.blockType,
+            startTime: openPlanBlock.startTime,
+            endTime: openPlanBlock.endTime,
+          }}
+          tripId={day.tripId}
+          date={day.date}
+          cityId={dayCityId}
+          cityName={dayStop?.cityName ?? null}
+          countryIso2={dayStop?.countryIso2 ?? null}
+          onPosted={() => setOpenPlanBlock(null)}
         />
       )}
     </View>
