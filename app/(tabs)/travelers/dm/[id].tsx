@@ -24,6 +24,7 @@ import type { Message } from '@/data/types';
 import { useAuth } from '@/state/AuthContext';
 import { usePostHog } from 'posthog-react-native';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
+import { haptics } from '@/lib/haptics';
 
 export default function DMThreadScreen() {
   const { id: conversationId } = useLocalSearchParams<{ id: string }>();
@@ -90,6 +91,7 @@ export default function DMThreadScreen() {
     setText('');
     try {
       const msg = await apiSendMessage(conversationId, userId, body);
+      haptics.action();
       setRealtimeMessages((prev) => [...prev, msg]);
       posthog.capture('message_sent', { conversation_id: conversationId });
     } catch {

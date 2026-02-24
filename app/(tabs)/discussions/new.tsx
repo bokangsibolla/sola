@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import { haptics } from '@/lib/haptics';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
@@ -110,6 +111,7 @@ export default function NewThread() {
         topicId: selectedTopicId,
         postType: postType ?? undefined,
       });
+      haptics.action();
       markFirstPost();
       router.replace(`/(tabs)/discussions/thread/${threadId}`);
     } catch {

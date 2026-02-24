@@ -28,6 +28,7 @@ import { getPlaceById } from '@/data/api';
 import type { TripDayWithBlocks } from '@/data/trips/itineraryTypes';
 import type { TripAccommodation, TripTransport, TripSavedItem, TripEntry } from '@/data/trips/types';
 
+import { haptics } from '@/lib/haptics';
 import LoadingScreen from '@/components/LoadingScreen';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
@@ -419,6 +420,7 @@ export default function TripDetailScreen() {
           style: 'destructive',
           onPress: async () => {
             if (!trip) return;
+            haptics.action();
             await deleteTrip(trip.id);
             router.replace('/(tabs)/trips');
           },

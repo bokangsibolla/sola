@@ -6,6 +6,7 @@ import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import { useQueryClient } from '@tanstack/react-query';
+import { haptics } from '@/lib/haptics';
 import {
   sendConnectionRequest,
   respondToConnectionRequest,
@@ -98,6 +99,7 @@ export default function UserProfileScreen() {
     try {
       setLocalStatus('pending_sent');
       await sendConnectionRequest(userId!, id!, contextLabel, message || undefined);
+      haptics.action();
       queryClient.invalidateQueries({ queryKey: ['travelers'] });
     } catch {
       setLocalStatus(null);
@@ -127,6 +129,7 @@ export default function UserProfileScreen() {
     setActionLoading(true);
     try {
       await respondToConnectionRequest(incomingRequest.id, 'accepted');
+      haptics.confirm();
       setLocalStatus('connected');
       queryClient.invalidateQueries({ queryKey: ['travelers'] });
     } catch {

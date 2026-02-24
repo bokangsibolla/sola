@@ -16,6 +16,7 @@ import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, spacing, radius } from '@/constants/design';
+import { haptics } from '@/lib/haptics';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useAuth } from '@/state/AuthContext';
 import { useTrips } from '@/data/trips/useTrips';
@@ -186,6 +187,7 @@ export default function NewTogetherPost() {
       }
 
       await createTogetherPost(userId, input);
+      haptics.action();
       router.back();
     } catch {
       Alert.alert('Error', 'Could not create post. Please try again.');
