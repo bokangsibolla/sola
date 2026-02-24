@@ -40,7 +40,7 @@ import { TripStopHeader } from '@/components/trips/TripStopHeader';
 import { TripHeader } from '@/components/trips/TripOverview/TripHeader';
 import { TripStatsRow } from '@/components/trips/TripOverview/TripStatsRow';
 import { AccommodationSection } from '@/components/trips/TripOverview/AccommodationSection';
-import { TransportCard, TransportPlaceholder } from '@/components/trips/TripOverview/TransportCard';
+import { TransportCard } from '@/components/trips/TripOverview/TransportCard';
 import { SavedItemsSection } from '@/components/trips/TripOverview/SavedItemsSection';
 import { JournalSection } from '@/components/trips/TripOverview/JournalSection';
 
@@ -65,7 +65,6 @@ type ListItem =
   | { type: 'day-timeline-card'; key: string; block: TripDayWithBlocks['blocks'][number]; isDone: boolean; isCurrent: boolean }
   | { type: 'stop-header'; key: string; cityName: string; startDate: string | null; endDate: string | null }
   | { type: 'transport-card'; key: string; transport: TripTransport }
-  | { type: 'transport-placeholder'; key: string; fromCity: string; toCity: string; fromOrder: number; toOrder: number }
   | { type: 'day-row'; key: string; day: TripDayWithBlocks; isToday: boolean }
   | { type: 'accommodation-section'; key: string }
   | { type: 'saved-items-section'; key: string }
@@ -326,9 +325,6 @@ export default function TripDetailScreen() {
 
             // Insert transport between destination groups
             if (lastCityId !== null) {
-              const prevStop = tripStops.find((s) => s.cityId === lastCityId);
-              const prevCity = prevStop?.cityName ?? '';
-              const newCity = newStop?.cityName ?? '';
               const existingTransport = transports.find(
                 (t) => t.fromStopOrder === lastStopOrder && t.toStopOrder === newStopOrder,
               );
@@ -338,15 +334,6 @@ export default function TripDetailScreen() {
                   type: 'transport-card',
                   key: `transport-${existingTransport.id}`,
                   transport: existingTransport,
-                });
-              } else {
-                items.push({
-                  type: 'transport-placeholder',
-                  key: `transport-ph-${lastStopOrder}-${newStopOrder}`,
-                  fromCity: prevCity,
-                  toCity: newCity,
-                  fromOrder: lastStopOrder,
-                  toOrder: newStopOrder,
                 });
               }
             }
@@ -456,10 +443,6 @@ export default function TripDetailScreen() {
     if (transport.bookingUrl) {
       Linking.openURL(transport.bookingUrl);
     }
-  };
-
-  const handleAddTransport = (_fromOrder: number, _toOrder: number) => {
-    Alert.alert('Coming soon', 'Adding transport details will be available in a future update.');
   };
 
   const handleSavedItemPress = (item: TripSavedItem) => {
@@ -617,15 +600,6 @@ export default function TripDetailScreen() {
             transport={item.transport}
             stops={tripStops}
             onPress={() => handleTransportPress(item.transport)}
-          />
-        );
-
-      case 'transport-placeholder':
-        return (
-          <TransportPlaceholder
-            fromCityName={item.fromCity}
-            toCityName={item.toCity}
-            onPress={() => handleAddTransport(item.fromOrder, item.toOrder)}
           />
         );
 

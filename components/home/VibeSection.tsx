@@ -161,9 +161,7 @@ export default function VibeSection({ title, cities, countries, activities }: Vi
 
   if (allItems.length === 0) return null;
 
-  // Show max 5, rest behind "see all"
   const visible = allItems.slice(0, 5);
-  const hasMore = allItems.length > 5;
 
   // Layout: 1 wide, then pairs
   const wideItem = visible[0];
@@ -194,16 +192,6 @@ export default function VibeSection({ title, cities, countries, activities }: Vi
           </View>
         ))}
       </View>
-
-      {hasMore && (
-        <Pressable
-          style={({ pressed }) => [styles.seeAll, pressed && { opacity: 0.7 }]}
-          onPress={() => {}}
-          hitSlop={8}
-        >
-          <Text style={styles.seeAllText}>See all</Text>
-        </Pressable>
-      )}
 
       {/* Activities under this vibe */}
       <ActivityRow activities={activities ?? []} />
@@ -272,19 +260,6 @@ const styles = StyleSheet.create({
     lineHeight: 16,
     color: 'rgba(255,255,255,0.8)',
     marginTop: 2,
-  },
-
-  // See all
-  seeAll: {
-    alignSelf: 'flex-end',
-    marginTop: spacing.sm,
-    paddingHorizontal: spacing.screenX,
-  },
-  seeAllText: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    lineHeight: 20,
-    color: colors.orange,
   },
 
   // Activities
