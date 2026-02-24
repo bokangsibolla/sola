@@ -10,6 +10,7 @@ import { Feather } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { colors, spacing, radius, fonts } from '@/constants/design';
+import { useAuth } from '@/state/AuthContext';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -36,6 +37,7 @@ interface MenuItem {
 export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { userId } = useAuth();
 
   const menuItems: MenuItem[] = [
     {
@@ -44,7 +46,7 @@ export function MenuSheet({ visible, onClose, unreadCount = 0 }: MenuSheetProps)
       route: '/(tabs)/travelers/dm',
       showDot: unreadCount > 0,
     },
-    { label: 'Profile', icon: 'user', route: '/(tabs)/home/profile' },
+    { label: 'Profile', icon: 'user', route: userId ? `/(tabs)/travelers/user/${userId}` : '/(tabs)/home/edit-profile' },
     { label: 'Saved Places', icon: 'bookmark', route: '/(tabs)/home/profile' },
     { label: 'Countries', icon: 'globe', route: '/(tabs)/discover/all-countries', dividerBefore: true },
     { label: 'Destinations', icon: 'map-pin', route: '/(tabs)/discover/all-destinations' },

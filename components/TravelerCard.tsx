@@ -3,6 +3,7 @@ import { Image } from 'expo-image';
 import { Feather } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import { getImageUrl } from '@/lib/image';
+import { getFlag } from '@/data/trips/helpers';
 import type { Profile, ConnectionStatus } from '@/data/types';
 
 interface TravelerCardProps {
@@ -10,6 +11,7 @@ interface TravelerCardProps {
   connectionStatus: ConnectionStatus;
   sharedInterests?: string[];
   contextLabel?: string;
+  visitedCountryIso2s?: string[];
   onPress: () => void;
   onConnect: () => void;
 }
@@ -19,6 +21,7 @@ export default function TravelerCard({
   connectionStatus,
   sharedInterests = [],
   contextLabel,
+  visitedCountryIso2s,
   onPress,
   onConnect,
 }: TravelerCardProps) {
@@ -59,6 +62,16 @@ export default function TravelerCard({
           )}
           {contextLabel && (
             <Text style={styles.contextLabel}>{contextLabel}</Text>
+          )}
+          {visitedCountryIso2s && visitedCountryIso2s.length > 0 && (
+            <View style={styles.flagRow}>
+              {visitedCountryIso2s.slice(0, 5).map((iso2) => (
+                <Text key={iso2} style={styles.miniFlag}>{getFlag(iso2)}</Text>
+              ))}
+              {visitedCountryIso2s.length > 5 && (
+                <Text style={styles.flagCount}>+{visitedCountryIso2s.length - 5}</Text>
+              )}
+            </View>
           )}
         </View>
       </View>
@@ -137,8 +150,8 @@ const styles = StyleSheet.create({
     marginRight: spacing.md,
   },
   avatar: {
-    width: 56,
-    height: 56,
+    width: 64,
+    height: 64,
     borderRadius: radius.full,
   },
   avatarPlaceholder: {
@@ -171,6 +184,22 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: colors.orange,
     marginTop: 2,
+  },
+  flagRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginTop: 4,
+  },
+  miniFlag: {
+    fontSize: 16,
+    lineHeight: 20,
+  },
+  flagCount: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginLeft: 2,
   },
   bio: {
     ...typography.captionSmall,

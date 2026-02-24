@@ -11,6 +11,7 @@ import { CommunityBannerCard } from '@/components/home/CommunityBannerCard';
 import { HomeSkeleton } from '@/components/home/HomeSkeleton';
 import { TripModeCard } from '@/components/trips/TripMode/TripModeCard';
 import { VerificationNudge } from '@/components/home/VerificationNudge';
+import { AvatarNudge } from '@/components/home/AvatarNudge';
 import { useHomeData } from '@/data/home/useHomeData';
 import { useAuth } from '@/state/AuthContext';
 import { getTripsGrouped } from '@/data/trips/tripApi';
@@ -93,6 +94,7 @@ export default function HomeScreen() {
           )}
 
           <VerificationNudge />
+          <AvatarNudge />
 
           <View style={styles.heroSection}>
             <HeroModule hero={heroState} />
