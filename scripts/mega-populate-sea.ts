@@ -598,21 +598,17 @@ function filterAndDedup(
 }
 
 function buildDesc(f: Found, city: City): string {
-  const rt = f.rating
-    ? `Rated ${f.rating}/5 by ${f.reviews ?? 0} visitors`
-    : 'Recently discovered';
-
   if (f.cat === 'healthcare') {
     const ph = f.phone ? ` Phone: ${f.phone}.` : '';
-    return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}.${ph} ${rt}.`;
+    return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}.${ph}`;
   }
 
   if (f.cat === 'accommodation') {
     const wo = f.womenOnly ? ' Women-only establishment.' : '';
-    return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}. ${rt}.${wo}`;
+    return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}.${wo}`;
   }
 
-  return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}. ${rt}.`;
+  return `${f.name} — ${f.pt} in ${city.name}, ${city.countryName}.`;
 }
 
 async function insertFound(f: Found, city: City, dryRun: boolean): Promise<string> {

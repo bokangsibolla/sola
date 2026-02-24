@@ -294,8 +294,19 @@ function sleep(ms: number): Promise<void> {
 function isGarbageDescription(desc: string | null): boolean {
   if (!desc) return true;
   if (desc.length < 30) return true;
-  // Matches: "Name — type in City. Rated X/5" or "Name — type in City. Phone: ..."
-  return /^.+ — .+ in .+\. (Rated|Phone)/.test(desc);
+  // Matches: "Name — type in City." (with or without trailing text)
+  if (/^.+ — .+ in .+\./.test(desc)) return true;
+  // Template hostel descriptions
+  if (/^A (social|lively|popular) hostel with a (lively|social|vibrant) atmosphere/i.test(desc)) return true;
+  // Template hotel descriptions
+  if (/^A (peaceful|quiet|comfortable|modern) hotel with a (relaxed|calm|comfortable|modern) atmosphere/i.test(desc)) return true;
+  // Template homestay descriptions
+  if (/^An authentic homestay offering a genuine local experience/i.test(desc)) return true;
+  // Template women-only descriptions
+  if (/^A women-only hostel/i.test(desc)) return true;
+  // Any description containing rating scores
+  if (/Rated \d(\.\d)?\/?5/i.test(desc)) return true;
+  return false;
 }
 
 async function main() {
@@ -339,6 +350,11 @@ async function main() {
 
   if (typeFilter) {
     query = query.eq('place_type', typeFilter);
+  }
+
+  // When --only-garbage, filter server-side for NULL descriptions to avoid 1000-row cap
+  if (onlyGarbage) {
+    query = query.is('description', null);
   }
 
   const { data: rawPlaces, error } = await query;
