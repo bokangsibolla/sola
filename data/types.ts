@@ -588,6 +588,7 @@ export interface PlaceSolaNote {
 export interface PlaceWithCity extends Place {
   cityName: string;
   imageUrl: string | null;
+  countryName?: string;
 }
 
 // ---------------------------------------------------------------------------

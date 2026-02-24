@@ -918,6 +918,51 @@ export async function getVolunteersByCountry(
 }
 
 /**
+ * Get popular places with city info and images for the home feed hero cards.
+ * Returns places ordered by curation_score, limited to those with images.
+ */
+export async function getPopularPlacesWithCity(
+  limit = 6,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, cities!inner(name, country_id, countries!inner(name)), place_media!inner(url)')
+    .eq('is_active', true)
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    countryName: row.cities?.countries?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
+}
+
+/**
+ * Get places by a set of place_types, with city name and first image.
+ * Used by home feed horizontal rows.
+ */
+export async function getPlacesByCategoryWithCity(
+  placeTypes: string[],
+  limit = 5,
+): Promise<PlaceWithCity[]> {
+  const { data, error } = await supabase
+    .from('places')
+    .select('*, cities!inner(name, country_id), place_media!inner(url)')
+    .in('place_type', placeTypes)
+    .eq('is_active', true)
+    .order('curation_score', { ascending: false, nullsFirst: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []).map((row: any) => ({
+    ...toCamel<Place>(row),
+    cityName: row.cities?.name ?? '',
+    imageUrl: row.place_media?.[0]?.url ?? null,
+  }));
+}
+
+/**
  * Get all volunteer orgs across all countries (for dedicated listing).
  */
 export interface VolunteerWithLocation extends Place {
