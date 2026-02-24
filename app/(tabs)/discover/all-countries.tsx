@@ -15,11 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import NavigationHeader from '@/components/NavigationHeader';
 import * as Sentry from '@sentry/react-native';
 import { colors, fonts, spacing, radius } from '@/constants/design';
-import {
-  getCountries,
-  getCountriesByTags,
-  getUniqueDestinationTagSlugs,
-} from '@/data/api';
+import { getCountries } from '@/data/api';
 import type { Country } from '@/data/types';
 
 export default function AllCountriesScreen() {
@@ -29,19 +25,13 @@ export default function AllCountriesScreen() {
   const [countries, setCountries] = useState<Country[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [tags, setTags] = useState<{ tagSlug: string; tagLabel: string }[]>([]);
-  const [activeTag, setActiveTag] = useState<string | null>(null);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       try {
-        const [allCountries, availableTags] = await Promise.all([
-          activeTag ? getCountriesByTags([activeTag]) : getCountries(),
-          getUniqueDestinationTagSlugs('country', 'travel_style'),
-        ]);
+        const allCountries = await getCountries();
         setCountries(allCountries);
-        setTags(availableTags);
       } catch (err) {
         Sentry.captureException(err);
       } finally {
@@ -49,17 +39,13 @@ export default function AllCountriesScreen() {
       }
     }
     load();
-  }, [activeTag]);
+  }, []);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return countries;
     const q = search.toLowerCase();
     return countries.filter((c) => c.name.toLowerCase().includes(q));
   }, [countries, search]);
-
-  const handleTagPress = useCallback((slug: string) => {
-    setActiveTag((prev) => (prev === slug ? null : slug));
-  }, []);
 
   const renderCountry = useCallback(({ item }: { item: Country }) => (
     <Pressable
@@ -113,37 +99,6 @@ export default function AllCountriesScreen() {
         )}
       </View>
 
-      {/* Tag filters */}
-      {tags.length > 0 && (
-        <View style={styles.tagsRow}>
-          <FlatList
-            horizontal
-            data={tags}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.tagsContent}
-            keyExtractor={(t) => t.tagSlug}
-            renderItem={({ item: tag }) => (
-              <Pressable
-                style={[
-                  styles.tagChip,
-                  activeTag === tag.tagSlug && styles.tagChipActive,
-                ]}
-                onPress={() => handleTagPress(tag.tagSlug)}
-              >
-                <Text
-                  style={[
-                    styles.tagText,
-                    activeTag === tag.tagSlug && styles.tagTextActive,
-                  ]}
-                >
-                  {tag.tagLabel}
-                </Text>
-              </Pressable>
-            )}
-          />
-        </View>
-      )}
-
       {/* List */}
       <FlatList
         data={filtered}
@@ -184,33 +139,6 @@ const styles = StyleSheet.create({
     fontSize: 15,
     color: colors.textPrimary,
     paddingVertical: spacing.xs,
-  },
-  tagsRow: {
-    marginTop: spacing.md,
-  },
-  tagsContent: {
-    paddingHorizontal: spacing.screenX,
-    gap: spacing.sm,
-  },
-  tagChip: {
-    paddingHorizontal: spacing.lg,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-  },
-  tagChipActive: {
-    backgroundColor: colors.textPrimary,
-    borderColor: colors.textPrimary,
-  },
-  tagText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textPrimary,
-  },
-  tagTextActive: {
-    color: colors.background,
   },
   list: {
     padding: spacing.screenX,
