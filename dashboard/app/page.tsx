@@ -15,6 +15,7 @@ import { SearchTerms } from '@/components/SearchTerms';
 import { CommunityHealth } from '@/components/CommunityHealth';
 import { GeoDemandTable } from '@/components/GeoDemandTable';
 import { FunnelChart } from '@/components/FunnelChart';
+import { DemographicsSection } from '@/components/DemographicsSection';
 import {
   getSignupsOverTime,
   getRetentionCohort,
@@ -186,6 +187,15 @@ export default async function Dashboard({ searchParams }: PageProps) {
           <CommunityFunnelSection days={days} />
         </Suspense>
       </div>
+
+      {/* Audience & Demographics */}
+      <SectionHeader
+        title="Audience & Demographics"
+        subtitle="Who are your users?"
+      />
+      <Suspense fallback={<ChartSkeleton height={400} />}>
+        <DemographicsSection />
+      </Suspense>
 
       {/* Footer */}
       <div className="mt-16 mb-8 text-center">
