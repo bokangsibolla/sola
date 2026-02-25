@@ -157,30 +157,31 @@ async function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
     body: typeof init?.body === 'string' ? init.body : undefined,
   });
 
-  _proxyCallCount++;
-  // Log first 5 proxy calls for diagnostics
-  if (_proxyCallCount <= 5) {
-    console.log(`[Sola Proxy] #${_proxyCallCount} ${method} ${url.substring(0, 70)}`);
+  const callNum = ++_proxyCallCount;
+  // Log first 10 proxy calls for diagnostics (use local callNum to avoid race)
+  if (callNum <= 10) {
+    console.log(`[Sola Proxy] #${callNum} ${method} ${url.substring(0, 70)}`);
   }
 
   // Use global fetch — pass apikey as query parameter (not header) because
   // Android TurboModule networking hangs on custom headers like "apikey".
   // Standard headers (Content-Type) work fine.
-  const response = await fetch(
-    `${supabaseUrl}/functions/v1/android-proxy?apikey=${encodeURIComponent(supabaseAnonKey)}`,
-    {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: payload,
-    },
-  );
+  const proxyUrl = `${supabaseUrl}/functions/v1/android-proxy?apikey=${supabaseAnonKey}`;
+  if (callNum <= 3) {
+    console.log(`[Sola Proxy] proxyUrl length=${proxyUrl.length}, key present=${supabaseAnonKey.length > 0}`);
+  }
+  const response = await fetch(proxyUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: payload,
+  });
 
-  if (_proxyCallCount <= 5) {
-    console.log(`[Sola Proxy] #${_proxyCallCount} → ${response.status}`);
+  if (callNum <= 10) {
+    console.log(`[Sola Proxy] #${callNum} → ${response.status}`);
     if (!response.ok) {
       try {
         const errBody = await response.clone().text();
-        console.log(`[Sola Proxy] #${_proxyCallCount} error body: ${errBody.substring(0, 200)}`);
+        console.log(`[Sola Proxy] #${callNum} error: ${errBody.substring(0, 200)}`);
       } catch { /* ignore */ }
     }
   }
