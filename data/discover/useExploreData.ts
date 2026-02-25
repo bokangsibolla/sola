@@ -72,7 +72,7 @@ export function useExploreData(): ExploreData {
   useEffect(() => {
     let cancelled = false;
 
-    async function load() {
+    async function load(attempt = 0) {
       try {
         setIsLoading(true);
         setError(null);
@@ -85,6 +85,11 @@ export function useExploreData(): ExploreData {
           setFilterChips(chips);
         }
       } catch (e) {
+        // Retry up to 2 times — Android TLS provider can cause transient failures
+        if (!cancelled && attempt < 2) {
+          await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+          return load(attempt + 1);
+        }
         if (!cancelled) {
           const err = e instanceof Error ? e : new Error('Failed to load countries');
           setError(err);

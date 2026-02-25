@@ -76,7 +76,7 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
     [userId],
   );
 
-  const fetchThreads = useCallback(async (pageNum: number, isRefresh: boolean) => {
+  const fetchThreads = useCallback(async (pageNum: number, isRefresh: boolean, attempt = 0) => {
     if (!userId) return;
     try {
       if (isRefresh) setRefreshing(true);
@@ -99,6 +99,11 @@ export function useCommunityFeed(): UseCommunityFeedReturn {
       setHasMore(result.length === PAGE_SIZE);
       setError(null);
     } catch (err) {
+      // Retry up to 2 times — Android TLS provider can cause transient failures
+      if (attempt < 2) {
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+        return fetchThreads(pageNum, isRefresh, attempt + 1);
+      }
       setError(err instanceof Error ? err : new Error('Failed to load threads'));
     } finally {
       setLoading(false);

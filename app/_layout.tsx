@@ -30,7 +30,17 @@ try {
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Retry failed queries up to 2 times with exponential backoff.
+      // Critical on Android where TLS provider init can cause the first
+      // few API calls after sign-in to fail transiently.
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 5000),
+    },
+  },
+});
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { PostHogProvider, usePostHog } from 'posthog-react-native';

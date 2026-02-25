@@ -29,8 +29,15 @@ export function useData<T>(
         }
         return result === undefined ? null : result;
       } catch (err) {
-        // Re-throw as Error for React Query to handle
-        throw err instanceof Error ? err : new Error(String(err));
+        // Re-throw as Error for React Query to handle.
+        // Supabase PostgrestError and network TypeErrors are Error instances.
+        // Plain objects (e.g. {code, message}) need their .message extracted
+        // to avoid "[object Object]" in error screens.
+        if (err instanceof Error) throw err;
+        if (err && typeof err === 'object' && 'message' in err) {
+          throw new Error((err as any).message);
+        }
+        throw new Error(typeof err === 'string' ? err : 'Something went wrong');
       }
     },
     // Show stale data while refetching
