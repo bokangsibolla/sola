@@ -44,14 +44,19 @@ export default function YoureInScreen() {
   const handleFinish = async () => {
     setSaving(true);
 
-    // Check for an active session — try recovering from storage if context is stale
+    // Check for an active session — try recovering from storage if context is stale.
+    // On Android production builds the auth state can lag behind, so retry with a delay.
     let activeUserId = userId;
     if (!activeUserId) {
-      try {
-        const { data: { session: recoveredSession } } = await supabase.auth.getSession();
-        activeUserId = recoveredSession?.user?.id ?? null;
-      } catch {
-        // Storage/network error — continue with null
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const { data: { session: recoveredSession } } = await supabase.auth.getSession();
+          activeUserId = recoveredSession?.user?.id ?? null;
+          if (activeUserId) break;
+        } catch {
+          // Storage/network error — retry
+        }
+        if (attempt < 2) await new Promise((r) => setTimeout(r, 1000));
       }
     }
 

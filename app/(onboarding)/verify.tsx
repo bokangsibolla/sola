@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -100,8 +101,13 @@ export default function VerifyScreen() {
         router.push('/(onboarding)/profile' as any);
       } else {
         // Existing user — go straight home
-        await onboardingStore.set('onboardingCompleted', true);
-        router.replace('/(tabs)/home' as any);
+        onboardingStore.set('onboardingCompleted', true);
+        // Defer navigation on Android — Expo Router bug with cross-group replace
+        if (Platform.OS === 'android') {
+          setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+        } else {
+          router.replace('/(tabs)/home' as any);
+        }
       }
     } catch (e: any) {
       Alert.alert('Verification failed', e.message ?? 'Something went wrong');

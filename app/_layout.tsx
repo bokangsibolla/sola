@@ -10,7 +10,7 @@ import * as Sentry from '@sentry/react-native';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Stack, useRouter, useSegments } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors, spacing, radius } from '@/constants/design';
 import { StatusBar } from 'expo-status-bar';
@@ -154,6 +154,9 @@ function AuthGate() {
   const router = useRouter();
   const segments = useSegments();
   const { userId, loading: authLoading, recoverSession } = useAuth();
+  // Guard against concurrent navigations — prevents the race condition where
+  // both AuthGate and screen-level handlers try to navigate simultaneously.
+  const isNavigatingRef = useRef(false);
 
   usePushNotifications(userId);
 
@@ -179,24 +182,39 @@ function AuthGate() {
     if (!router || !segments || segments.length < 1) return;
 
     const currentGroup = segments[0] as string;
+    const currentScreen = segments[1] as string | undefined;
 
     const isOnboardingCompleted = onboardingStore.get('onboardingCompleted');
 
-    console.log(`[Sola AuthGate] group=${currentGroup}, userId=${userId?.substring(0, 8) ?? 'null'}, onboarded=${isOnboardingCompleted}`);
+    console.log(`[Sola AuthGate] group=${currentGroup}, screen=${currentScreen}, userId=${userId?.substring(0, 8) ?? 'null'}, onboarded=${isOnboardingCompleted}`);
 
-    // Helper: replace to tabs with Android setTimeout workaround
+    // Helper: replace to tabs with Android setTimeout workaround and navigation guard
     const replaceToTabs = () => {
+      if (isNavigatingRef.current) return;
+      isNavigatingRef.current = true;
       if (Platform.OS === 'android') {
-        setTimeout(() => router.replace('/(tabs)/home' as any), 50);
+        setTimeout(() => {
+          router.replace('/(tabs)/home' as any);
+          setTimeout(() => { isNavigatingRef.current = false; }, 500);
+        }, 50);
       } else {
         router.replace('/(tabs)/home' as any);
+        setTimeout(() => { isNavigatingRef.current = false; }, 500);
       }
     };
 
-    if (currentGroup === '(onboarding)' && userId && isOnboardingCompleted) {
+    // IMPORTANT: Only redirect from (onboarding) to tabs when on the WELCOME
+    // screen or app index. This prevents a race condition where both AuthGate
+    // AND the login/create-account/verify screens try to navigate after auth
+    // success, causing navigation state corruption on Android.
+    // Screen-level handlers (login, create-account, verify, youre-in) manage
+    // their own post-auth navigation.
+    const isEntryScreen = currentScreen === 'welcome' || currentGroup === 'index';
+
+    if (isEntryScreen && userId && isOnboardingCompleted) {
       replaceToTabs();
-    } else if (currentGroup === '(onboarding)' && userId && !isOnboardingCompleted) {
-      // Check DB in case onboarding was completed on another device
+    } else if (isEntryScreen && userId && !isOnboardingCompleted) {
+      // Returning user who reinstalled — check DB for onboarding status
       supabase
         .from('profiles')
         .select('onboarding_completed_at')
@@ -212,15 +230,25 @@ function AuthGate() {
       // Session might exist in storage but React state hasn't updated yet
       // (timing issue on Android where navigation triggers before auth state propagates).
       // Verify session from storage before redirecting to avoid false logouts.
+      if (isNavigatingRef.current) return;
       console.log('[Sola AuthGate] Tabs without userId — verifying session from storage...');
       (async () => {
-        const recovered = await recoverSession();
-        if (!recovered) {
-          console.log('[Sola AuthGate] No session in storage — redirecting to welcome');
-          router.replace('/(onboarding)/welcome' as any);
-        } else {
-          console.log('[Sola AuthGate] Session recovered — staying on tabs');
+        // Try up to 3 times with delay — Android production builds can be slow to propagate
+        for (let attempt = 0; attempt < 3; attempt++) {
+          const recovered = await recoverSession();
+          if (recovered) {
+            console.log(`[Sola AuthGate] Session recovered on attempt ${attempt + 1} — staying on tabs`);
+            return;
+          }
+          if (attempt < 2) {
+            console.log(`[Sola AuthGate] Recovery attempt ${attempt + 1} failed, retrying...`);
+            await new Promise((r) => setTimeout(r, 1000));
+          }
         }
+        console.log('[Sola AuthGate] No session after 3 attempts — redirecting to welcome');
+        isNavigatingRef.current = true;
+        router.replace('/(onboarding)/welcome' as any);
+        setTimeout(() => { isNavigatingRef.current = false; }, 500);
       })();
     }
   }, [segments, router, userId, authLoading, recoverSession]);

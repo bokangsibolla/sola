@@ -50,22 +50,20 @@ export default function WelcomeScreen() {
         if (result.userMetadata?.firstName) {
           onboardingStore.set('firstName', result.userMetadata.firstName);
         }
+        setLoading(false);
         router.push('/(onboarding)/profile' as any);
       } else {
-        await onboardingStore.set('onboardingCompleted', true);
-        // Defer navigation on Android — Expo Router bug with cross-group replace
-        if (Platform.OS === 'android') {
-          setTimeout(() => router.replace('/(tabs)/home' as any), 50);
-        } else {
-          router.replace('/(tabs)/home' as any);
-        }
+        // Set the flag — AuthGate will detect we're on the welcome screen
+        // with a valid session and redirect to tabs. This prevents a race
+        // condition where both this handler and AuthGate navigate simultaneously.
+        onboardingStore.set('onboardingCompleted', true);
+        // Keep loading=true so the spinner stays visible until AuthGate navigates
       }
     } catch (e: any) {
+      setLoading(false);
       if (e.message?.includes('cancelled')) return;
       posthog.capture('auth_failed', { provider: 'google', error: e.message });
       Alert.alert('Sign in failed', e.message ?? 'Something went wrong');
-    } finally {
-      setLoading(false);
     }
   };
 
