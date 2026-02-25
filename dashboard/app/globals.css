@@ -1,0 +1,15 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-sola-orange: #E5653A;
+  --color-sola-orangeLight: #FFF5F1;
+  --color-sola-bg: #FAFAFA;
+  --color-sola-card: #FFFFFF;
+  --color-sola-border: #F0F0F0;
+  --color-sola-text: #1A1A1A;
+  --color-sola-textSecondary: #6B7280;
+  --color-sola-green: #22C55E;
+  --color-sola-red: #EF4444;
+
+  --font-sans: 'Inter', system-ui, sans-serif;
+}
