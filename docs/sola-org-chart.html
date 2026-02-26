@@ -1,0 +1,1054 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page {
+    size: A4;
+    margin: 36px 44px 52px 44px;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    color: #1a1a1a;
+    line-height: 1.5;
+    font-size: 9.5px;
+  }
+
+  /* Cover */
+  .cover {
+    page-break-after: always;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 700px;
+    text-align: center;
+    padding: 80px 60px;
+  }
+  .cover-brand { font-size: 52px; font-weight: 700; letter-spacing: 6px; color: #E5653A; margin-bottom: 6px; }
+  .cover-tagline { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #888; margin-bottom: 50px; }
+  .cover-title { font-size: 24px; font-weight: 600; color: #1a1a1a; margin-bottom: 10px; line-height: 1.3; }
+  .cover-subtitle { font-size: 12px; color: #666; margin-bottom: 40px; max-width: 400px; line-height: 1.6; }
+  .cover-meta { font-size: 8.5px; color: #aaa; letter-spacing: 1px; text-transform: uppercase; }
+  .cover-divider { width: 50px; height: 3px; background: #E5653A; margin: 24px auto; }
+
+  /* TOC */
+  .toc { margin: 10px 0 20px; }
+  .toc-item { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dotted #ddd; font-size: 10px; color: #444; }
+  .toc-item span:first-child { font-weight: 600; }
+  .toc-section { font-size: 8px; text-transform: uppercase; letter-spacing: 1.5px; color: #999; font-weight: 600; margin-top: 10px; margin-bottom: 3px; }
+
+  /* Typography */
+  h1 { font-size: 18px; font-weight: 700; color: #1a1a1a; margin-bottom: 4px; margin-top: 24px; letter-spacing: -0.3px; }
+  h1:first-child { margin-top: 0; }
+  h2 { font-size: 13px; font-weight: 600; color: #E5653A; margin-top: 18px; margin-bottom: 4px; }
+  h3 { font-size: 10.5px; font-weight: 600; color: #333; margin-top: 12px; margin-bottom: 3px; }
+  h4 { font-size: 9.5px; font-weight: 600; color: #1a1a1a; margin-bottom: 2px; }
+  p { margin-bottom: 6px; color: #333; }
+  .section-intro { font-size: 10.5px; color: #555; margin-bottom: 12px; border-left: 3px solid #E5653A; padding-left: 10px; line-height: 1.55; }
+  .page-break { page-break-before: always; }
+  .avoid-break { page-break-inside: avoid; }
+  hr.divider { border: none; border-top: 1px solid #EBEBEB; margin: 16px 0; }
+  .small-note { font-size: 8.5px; color: #999; }
+
+  /* Org chart */
+  .org-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 6px; }
+  .org-card { border: 1.5px solid #E5E5E5; border-radius: 8px; padding: 10px 14px; width: 200px; text-align: center; }
+  .org-card.hl { border-color: #E5653A; background: #FFF8F5; }
+  .org-name { font-size: 12px; font-weight: 700; color: #1a1a1a; margin-bottom: 1px; }
+  .org-title { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #E5653A; font-weight: 600; margin-bottom: 4px; }
+  .org-scope { font-size: 8.5px; color: #666; line-height: 1.4; }
+  .badge { display: inline-block; font-size: 8px; font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: #888; background: #F3F3F3; border-radius: 20px; padding: 4px 14px; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 9px; }
+  thead th { background: #1a1a1a; color: #fff; padding: 6px 8px; text-align: left; font-weight: 600; font-size: 8px; letter-spacing: 0.8px; text-transform: uppercase; }
+  thead th:first-child { border-radius: 5px 0 0 0; }
+  thead th:last-child { border-radius: 0 5px 0 0; }
+  tbody td { padding: 5px 8px; border-bottom: 1px solid #F0F0F0; color: #444; vertical-align: top; }
+  tbody tr:last-child td { border-bottom: none; }
+  tbody tr:nth-child(even) { background: #FAFAFA; }
+
+  /* Metric cards */
+  .metric-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .metric-grid.col2 { grid-template-columns: 1fr 1fr; }
+  .metric-card { border: 1px solid #EBEBEB; border-radius: 6px; padding: 8px 10px; page-break-inside: avoid; }
+  .metric-label { font-size: 8px; text-transform: uppercase; letter-spacing: 1px; color: #999; font-weight: 600; margin-bottom: 2px; }
+  .metric-value { font-size: 18px; font-weight: 700; color: #E5653A; margin-bottom: 1px; }
+  .metric-desc { font-size: 8.5px; color: #666; }
+
+  /* Domain sections */
+  .domain-header { display: flex; align-items: center; gap: 8px; margin-top: 16px; margin-bottom: 6px; }
+  .domain-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .dot-orange { background: #E5653A; }
+  .dot-blue { background: #2D9CDB; }
+  .dot-green { background: #27AE60; }
+  .dot-purple { background: #8B5CF6; }
+  .domain-name { font-size: 14px; font-weight: 700; color: #1a1a1a; }
+  .domain-owner { font-size: 9px; color: #888; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; }
+
+  /* Sub-section cards */
+  .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 8px 0; }
+  .sub-card { border: 1px solid #EBEBEB; border-radius: 6px; padding: 8px 10px; page-break-inside: avoid; }
+  .sub-card h4 { font-size: 9.5px; font-weight: 700; color: #1a1a1a; margin-bottom: 3px; }
+  .sub-card ul { list-style: none; padding: 0; margin: 0; }
+  .sub-card ul li { padding: 2px 0; font-size: 8.5px; color: #555; }
+  .sub-card ul li::before { content: "\2022"; color: #E5653A; font-weight: 700; margin-right: 4px; font-size: 8px; }
+
+  /* KPI tables */
+  .kpi-table { width: 100%; margin: 6px 0; }
+  .kpi-table td { padding: 4px 8px; font-size: 9px; }
+  .kpi-table .kpi-name { font-weight: 600; color: #1a1a1a; width: 35%; }
+  .kpi-table .kpi-def { color: #666; width: 40%; }
+  .kpi-table .kpi-target { color: #E5653A; font-weight: 600; width: 25%; text-align: right; }
+
+  /* Funnel */
+  .funnel { margin: 10px 0; }
+  .funnel-step { display: flex; align-items: center; gap: 8px; padding: 5px 0; border-bottom: 1px solid #F5F5F5; }
+  .funnel-bar { height: 8px; background: #E5653A; border-radius: 4px; }
+  .funnel-label { font-size: 9px; font-weight: 600; color: #333; min-width: 100px; }
+  .funnel-metric { font-size: 8.5px; color: #888; }
+
+  /* Playbook rows */
+  .playbook { margin: 8px 0; }
+  .play { display: flex; gap: 8px; padding: 6px 0; border-bottom: 1px solid #F0F0F0; page-break-inside: avoid; }
+  .play:last-child { border-bottom: none; }
+  .play-num { font-size: 16px; font-weight: 700; color: #E5653A; opacity: 0.3; min-width: 24px; }
+  .play-content { flex: 1; }
+  .play-title { font-size: 9.5px; font-weight: 700; color: #1a1a1a; margin-bottom: 1px; }
+  .play-desc { font-size: 8.5px; color: #666; line-height: 1.4; }
+
+  /* Comparison */
+  .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; }
+  .comp-card { border-radius: 6px; padding: 10px 12px; }
+  .comp-card.old { background: #F5F5F5; border: 1px solid #E5E5E5; }
+  .comp-card.new { background: #FFF8F5; border: 1px solid #F0D5C8; }
+  .comp-card h4 { font-size: 9px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
+  .comp-card.old h4 { color: #999; }
+  .comp-card.new h4 { color: #E5653A; }
+  .comp-card ul { list-style: none; padding: 0; font-size: 9px; color: #555; }
+  .comp-card ul li { padding: 2px 0; }
+
+  /* Multiplier */
+  .multiplier { background: #1a1a1a; color: #fff; border-radius: 8px; padding: 14px 20px; margin: 10px 0; text-align: center; page-break-inside: avoid; }
+  .mult-row { display: flex; justify-content: center; gap: 30px; }
+  .mult-num { font-size: 28px; font-weight: 700; color: #E5653A; }
+  .mult-label { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; }
+  .mult-op { font-size: 22px; color: #E5653A; font-weight: 700; padding-top: 4px; }
+
+  /* Principles */
+  .prin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 10px 0; }
+  .prin-card { border: 1px solid #EBEBEB; border-radius: 6px; padding: 8px 10px; }
+  .prin-num { font-size: 16px; font-weight: 700; color: #E5653A; opacity: 0.35; }
+  .prin-title { font-size: 10px; font-weight: 700; color: #1a1a1a; margin-bottom: 2px; }
+  .prin-desc { font-size: 8.5px; color: #666; line-height: 1.4; }
+
+  /* Values */
+  .val-list { list-style: none; padding: 0; margin: 8px 0; }
+  .val-list li { padding: 5px 0; border-bottom: 1px solid #F0F0F0; font-size: 9.5px; color: #333; }
+  .val-list li:last-child { border-bottom: none; }
+  .val-list strong { color: #1a1a1a; }
+
+  /* Agent flow */
+  .agent-flow { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 10px 0; }
+  .af-box { border-radius: 6px; padding: 8px 12px; text-align: center; font-size: 9px; font-weight: 600; }
+  .af-box.human { background: #1a1a1a; color: #fff; }
+  .af-box.ai { background: #FFF5F1; color: #E5653A; border: 1px solid #F0D5C8; }
+  .af-arrow { font-size: 14px; color: #ccc; }
+  .af-sub { font-size: 7.5px; font-weight: 400; opacity: 0.7; }
+
+  /* Cadence table */
+  .cadence { margin: 8px 0; }
+  .cadence-row { display: flex; gap: 6px; padding: 4px 0; border-bottom: 1px solid #F5F5F5; align-items: baseline; }
+  .cadence-freq { font-size: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: #E5653A; min-width: 60px; }
+  .cadence-what { font-size: 9px; color: #444; flex: 1; }
+</style>
+</head>
+<body>
+
+<!-- ============ COVER ============ -->
+<div class="cover">
+  <div class="cover-brand">SOLA</div>
+  <div class="cover-tagline">Travel differently</div>
+  <div class="cover-divider"></div>
+  <div class="cover-title">Internal Operating<br>Framework</div>
+  <div class="cover-subtitle">Team structure, role complexity, growth playbooks, measurement frameworks, and the operating model of an agent-native company.</div>
+  <div class="cover-meta">February 2026 &nbsp;|&nbsp; Confidential &nbsp;|&nbsp; v2.0</div>
+</div>
+
+<!-- ============ TABLE OF CONTENTS ============ -->
+<h1 style="margin-top:0;">Contents</h1>
+<div class="toc">
+  <div class="toc-section">Structure</div>
+  <div class="toc-item"><span>1. The Team</span><span>3</span></div>
+  <div class="toc-item"><span>2. Operating Principles</span><span>3</span></div>
+  <div class="toc-section">Domains</div>
+  <div class="toc-item"><span>3. Brand & Communications</span><span>4</span></div>
+  <div class="toc-item"><span>4. Growth & Acquisition</span><span>6</span></div>
+  <div class="toc-item"><span>5. Product & Business Development</span><span>8</span></div>
+  <div class="toc-item"><span>6. Engineering & Data</span><span>9</span></div>
+  <div class="toc-item"><span>7. Finance, Legal & Operations</span><span>10</span></div>
+  <div class="toc-section">System</div>
+  <div class="toc-item"><span>8. Measurement Framework</span><span>11</span></div>
+  <div class="toc-item"><span>9. The Agentic Model</span><span>13</span></div>
+  <div class="toc-item"><span>10. Values & Culture</span><span>14</span></div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ============ 1. THE TEAM ============ -->
+<h1>1. The Team</h1>
+<p class="section-intro">Four cofounders. Flat structure. No hierarchy. Each person owns their domain end-to-end with full autonomy. We collaborate constantly, but nobody waits for permission to move.</p>
+
+<div style="text-align:center; margin-bottom: 10px;">
+  <span class="badge">Flat Structure &mdash; All Cofounders, All Peers</span>
+</div>
+
+<div style="margin: 12px auto;">
+  <div class="org-row">
+    <div class="org-card hl">
+      <div class="org-name">BK (Bokang)</div>
+      <div class="org-title">Tech, Engineering & Analytics</div>
+      <div class="org-scope">Full-stack product engineering. System architecture. Data and analytics. Longest tenure &mdash; context across every domain.</div>
+    </div>
+    <div class="org-card">
+      <div class="org-name">Aya</div>
+      <div class="org-title">Communications</div>
+      <div class="org-scope">Brand voice and storytelling. PR and media. Community engagement. Social presence. The human interface to the world.</div>
+    </div>
+  </div>
+  <div class="org-row">
+    <div class="org-card">
+      <div class="org-name">Clem</div>
+      <div class="org-title">Product & Business Development</div>
+      <div class="org-scope">Product strategy and roadmap. B2B and B2C growth. Partnerships. Turning product into revenue and relationships into deals.</div>
+    </div>
+    <div class="org-card">
+      <div class="org-name">Sergio</div>
+      <div class="org-title">Finance, BD & Legal</div>
+      <div class="org-scope">Financial planning. Business development. Legal structure and compliance. The operational foundation.</div>
+    </div>
+  </div>
+</div>
+
+<p class="small-note" style="text-align:center;">BK has the deepest cross-domain context, having built the product from day one. Every cofounder has direct ownership and moves independently within their domain.</p>
+
+<hr class="divider">
+
+<!-- ============ 2. OPERATING PRINCIPLES ============ -->
+<h1>2. Operating Principles</h1>
+<p class="section-intro">We are not a traditional company. We don't track hours. We don't hold meetings for the sake of it. We track outcomes, move fast, and trust each other to deliver.</p>
+
+<div class="prin-grid">
+  <div class="prin-card">
+    <div class="prin-num">01</div>
+    <div class="prin-title">Track Tasks, Not Time</div>
+    <div class="prin-desc">Nobody clocks in. We measure output: what ships, what closes, what grows. Each person manages their own schedule.</div>
+  </div>
+  <div class="prin-card">
+    <div class="prin-num">02</div>
+    <div class="prin-title">Stay Agile, Stay Informed</div>
+    <div class="prin-desc">Continuous async updates. No bottlenecks. Everyone knows what everyone is working on. No surprises, no silos.</div>
+  </div>
+  <div class="prin-card">
+    <div class="prin-num">03</div>
+    <div class="prin-title">Always Be Learning</div>
+    <div class="prin-desc">AI tooling evolves weekly. Markets shift monthly. Staying current is part of the job. Learning is the work.</div>
+  </div>
+  <div class="prin-card">
+    <div class="prin-num">04</div>
+    <div class="prin-title">Bias Toward Action</div>
+    <div class="prin-desc">When in doubt, ship it. Iterate publicly, fix fast. Speed with taste is the standard. Perfection is the enemy.</div>
+  </div>
+  <div class="prin-card">
+    <div class="prin-num">05</div>
+    <div class="prin-title">Own It End-to-End</div>
+    <div class="prin-desc">No handoffs. Each person owns from strategy to execution. See a problem, fix it. See an opportunity, take it.</div>
+  </div>
+  <div class="prin-card">
+    <div class="prin-num">06</div>
+    <div class="prin-title">Collaborative, Not Hierarchical</div>
+    <div class="prin-desc">Ideas win on merit. Any cofounder can challenge any decision. We debate, align, and move. No egos.</div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ============ 3. BRAND & COMMUNICATIONS ============ -->
+<div class="domain-header">
+  <div class="domain-dot dot-blue"></div>
+  <div>
+    <div class="domain-name">3. Brand & Communications</div>
+    <div class="domain-owner">Owner: Aya</div>
+  </div>
+</div>
+
+<p class="section-intro">Brand is not a logo. It is every interaction a person has with Sola &mdash; every word, every screen, every reply, every silence. Aya owns the entire surface area of how Sola shows up in the world.</p>
+
+<h2>3.1 Brand Architecture</h2>
+<p>The brand is built on three pillars. Every piece of communication maps back to at least one.</p>
+
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>Pillar 1: Trust</h4>
+    <ul>
+      <li>Safety-first information women can rely on</li>
+      <li>Real advice from real travelers, not SEO filler</li>
+      <li>Transparent about what we know and what we don't</li>
+      <li>Every city guide fact-checked and source-verified</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Pillar 2: Intelligence</h4>
+    <ul>
+      <li>Structured, useful information (not blog-style fluff)</li>
+      <li>Respects the audience's time and judgment</li>
+      <li>Premium, editorial tone (not influencer-speak)</li>
+      <li>Notion-meets-Lonely-Planet information design</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Pillar 3: Community</h4>
+    <ul>
+      <li>Women helping women with real questions</li>
+      <li>No performative feminism or empty empowerment</li>
+      <li>Practical: "Is it safe to walk alone at night in X?"</li>
+      <li>Built around shared experience, not aspiration</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Voice Rules</h4>
+    <ul>
+      <li>Direct, warm, honest. Never corporate or polished.</li>
+      <li>No em dashes (reads as AI). Short paragraphs.</li>
+      <li>No "queen", "girl boss", "bestie", "slay"</li>
+      <li>Specific details, not generic statements</li>
+    </ul>
+  </div>
+</div>
+
+<h2>3.2 Brand Health & Sentiment</h2>
+<p>What we track to know whether the brand is landing. These are leading indicators &mdash; they move before revenue does.</p>
+
+<table>
+  <thead>
+    <tr><th>Metric</th><th>Definition</th><th>How We Measure</th><th>Target</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>NPS</strong></td><td>Net Promoter Score from in-app survey</td><td>Quarterly in-app prompt at Day 30</td><td>&gt; 50</td></tr>
+    <tr><td><strong>Brand Sentiment</strong></td><td>Positive/negative ratio across social + reviews</td><td>Manual audit + AI sentiment scan weekly</td><td>&gt; 4:1 positive</td></tr>
+    <tr><td><strong>Share of Voice</strong></td><td>Sola mentions vs. competitor mentions</td><td>Social listening (Brandwatch/manual)</td><td>Top 3 in category</td></tr>
+    <tr><td><strong>Earned Media Value</strong></td><td>PR coverage equivalent ad spend</td><td>Coverage tracking + circulation data</td><td>3x PR spend</td></tr>
+    <tr><td><strong>Community Trust Score</strong></td><td>% of questions that get a helpful reply within 24h</td><td>Community analytics</td><td>&gt; 80%</td></tr>
+    <tr><td><strong>Brand Recall</strong></td><td>"When you think solo women travel, what comes to mind?"</td><td>Survey panel quarterly</td><td>Unaided recall &gt; 10%</td></tr>
+  </tbody>
+</table>
+
+<h2>3.3 Communications Channels</h2>
+
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>PR & Media</h4>
+    <ul>
+      <li>Tier 1 targets: Condé Nast Traveller, The Guardian Travel, Refinery29, Bustle</li>
+      <li>Tier 2: Travel bloggers, newsletter creators, podcasters</li>
+      <li>Angle: "Two guys met traveling, spent a year listening to women, built an app"</li>
+      <li>Metric: Media mentions/month, domain authority of placements</li>
+      <li>AI agent: research journalists, draft pitches, track responses</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Social Media</h4>
+    <ul>
+      <li>Primary: Instagram (@with_solatravel), TikTok</li>
+      <li>Secondary: X/Twitter, Pinterest (SEO play)</li>
+      <li>Content: UGC reposts, city spotlights, safety tips, community Q&A</li>
+      <li>Cadence: 5x/week IG, 3x/week TikTok</li>
+      <li>Metrics: Engagement rate, saves, shares (not vanity follows)</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Email & Lifecycle</h4>
+    <ul>
+      <li>Welcome sequence (4 emails, Day 0/1/3/7)</li>
+      <li>Re-engagement at Day 14, Day 30 if dormant</li>
+      <li>Weekly digest: trending threads, new city guides</li>
+      <li>Metrics: Open rate (&gt;40%), CTR (&gt;8%), unsubscribe (&lt;0.5%)</li>
+      <li>From: welcome@solatravel.app / team@solatravel.app</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Community</h4>
+    <ul>
+      <li>In-app community threads (real questions, real answers)</li>
+      <li>Moderation: Sola Team seeded threads + organic growth</li>
+      <li>Tone: helpful, specific, never preachy</li>
+      <li>Metrics: Threads/week, reply rate, DAU in community tab</li>
+      <li>Goal: community becomes the acquisition channel itself</li>
+    </ul>
+  </div>
+</div>
+
+<h2>3.4 Content Strategy</h2>
+<p>Content is the product. Every city guide, every safety tip, every community thread is marketing that also delivers value. We don't create content to fill a calendar. We create content that answers the questions women are actually asking.</p>
+
+<table>
+  <thead>
+    <tr><th>Content Type</th><th>Owner</th><th>Cadence</th><th>Distribution</th><th>Success Metric</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>City guides</td><td>BK (data) + Aya (voice)</td><td>3/week</td><td>In-app, SEO, social</td><td>Time on page, saves</td></tr>
+    <tr><td>Safety briefings</td><td>Aya</td><td>Per new city</td><td>In-app, email</td><td>Completion rate</td></tr>
+    <tr><td>Community threads</td><td>Aya (seed) + organic</td><td>Daily</td><td>In-app</td><td>Replies/thread, DAU</td></tr>
+    <tr><td>Social content</td><td>Aya</td><td>5x/week IG</td><td>IG, TikTok, Pinterest</td><td>Saves, shares, profile visits</td></tr>
+    <tr><td>PR/thought leadership</td><td>Aya + Clem</td><td>2x/month</td><td>External publications</td><td>Backlinks, referral traffic</td></tr>
+    <tr><td>Email campaigns</td><td>Aya</td><td>Weekly + lifecycle</td><td>Email</td><td>Open rate, CTR, conversions</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ============ 4. GROWTH & ACQUISITION ============ -->
+<div class="domain-header">
+  <div class="domain-dot dot-green"></div>
+  <div>
+    <div class="domain-name">4. Growth & Acquisition</div>
+    <div class="domain-owner">Owner: Clem (strategy) + Aya (execution) + BK (instrumentation)</div>
+  </div>
+</div>
+
+<p class="section-intro">Growth is a shared function. Clem owns the strategy and numbers. Aya owns the channels. BK instruments everything so we know what works. We do not spend money we cannot measure. Every dollar has a known return or it does not get spent.</p>
+
+<h2>4.1 The Funnel</h2>
+<p>Every user passes through this funnel. We measure every stage and optimize the weakest link.</p>
+
+<div class="funnel">
+  <div class="funnel-step">
+    <div class="funnel-label">Awareness</div>
+    <div class="funnel-bar" style="width: 100%;"></div>
+    <div class="funnel-metric">Impressions, reach, brand mentions</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Interest</div>
+    <div class="funnel-bar" style="width: 75%;"></div>
+    <div class="funnel-metric">App Store page views, website visits, social profile visits</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Download</div>
+    <div class="funnel-bar" style="width: 50%;"></div>
+    <div class="funnel-metric">App installs, conversion rate from page view</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Activation</div>
+    <div class="funnel-bar" style="width: 35%;"></div>
+    <div class="funnel-metric">Completed onboarding, explored 1 city, or posted in community</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Retention</div>
+    <div class="funnel-bar" style="width: 22%;"></div>
+    <div class="funnel-metric">D7 retention, D30 retention, WAU/MAU</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Revenue</div>
+    <div class="funnel-bar" style="width: 12%;"></div>
+    <div class="funnel-metric">Subscription conversion, LTV, ARPU</div>
+  </div>
+  <div class="funnel-step">
+    <div class="funnel-label">Referral</div>
+    <div class="funnel-bar" style="width: 8%;"></div>
+    <div class="funnel-metric">Invite sent, invite accepted, viral coefficient</div>
+  </div>
+</div>
+
+<h2>4.2 Acquisition Channels</h2>
+
+<table>
+  <thead>
+    <tr><th>Channel</th><th>Type</th><th>CPA Target</th><th>Scalability</th><th>Priority</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>App Store Optimization (ASO)</strong></td><td>Organic</td><td>$0</td><td>High (compounds)</td><td>P0</td></tr>
+    <tr><td><strong>Content SEO</strong></td><td>Organic</td><td>$0</td><td>High (compounds)</td><td>P0</td></tr>
+    <tr><td><strong>Community / word of mouth</strong></td><td>Organic</td><td>$0</td><td>Medium (slow start)</td><td>P0</td></tr>
+    <tr><td><strong>PR &amp; press</strong></td><td>Earned</td><td>~$2-5 effective</td><td>Medium (spiky)</td><td>P1</td></tr>
+    <tr><td><strong>Social organic (IG, TikTok)</strong></td><td>Organic</td><td>$0</td><td>Medium</td><td>P1</td></tr>
+    <tr><td><strong>Influencer partnerships</strong></td><td>Paid/barter</td><td>$3-8</td><td>Medium</td><td>P2</td></tr>
+    <tr><td><strong>Paid social (Meta, TikTok)</strong></td><td>Paid</td><td>$5-12</td><td>High (expensive)</td><td>P3 (post-PMF)</td></tr>
+    <tr><td><strong>Partnerships (tourism boards)</strong></td><td>B2B/earned</td><td>$0-2</td><td>High (distribution)</td><td>P1</td></tr>
+  </tbody>
+</table>
+
+<h2>4.3 Guerrilla & Growth Hacking Playbook</h2>
+<p>Low-cost, high-impact tactics for pre-scale growth. These compound. We run 2-3 experiments per week and kill what doesn't work within 7 days.</p>
+
+<div class="playbook">
+  <div class="play">
+    <div class="play-num">01</div>
+    <div class="play-content">
+      <div class="play-title">Hostel & Co-working Drops</div>
+      <div class="play-desc">QR code cards with "What 500 solo women said about [City]" at hostels, co-working spaces, and cafes in target cities. Physical presence in the places our users already are. Track via UTM-coded QR links. Cost: print only.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">02</div>
+    <div class="play-content">
+      <div class="play-title">Reddit & Forum Seeding</div>
+      <div class="play-desc">Genuinely helpful answers in r/solotravel, r/TwoXChromosomes, Lonely Planet Thorn Tree, Facebook solo travel groups. Not spam &mdash; real answers that happen to reference Sola data. Track referral traffic from forums.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">03</div>
+    <div class="play-content">
+      <div class="play-title">Shareable Safety Cards</div>
+      <div class="play-desc">Instagram-native "Safety briefing" carousels for trending destinations. Designed to be saved and shared. Each card links to the full in-app guide. Metric: saves and shares per post.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">04</div>
+    <div class="play-content">
+      <div class="play-title">Waitlist / Invite Mechanic</div>
+      <div class="play-desc">Early access waitlist with "skip the line" by inviting 3 friends. Creates urgency and viral loop. Track viral coefficient (K-factor) and conversion of invitees.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">05</div>
+    <div class="play-content">
+      <div class="play-title">Partnership Content Swaps</div>
+      <div class="play-desc">Co-branded content with travel insurance, booking platforms, or travel gear brands. They get our audience, we get their distribution. Zero cost, shared upside.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">06</div>
+    <div class="play-content">
+      <div class="play-title">SEO Programmatic Pages</div>
+      <div class="play-desc">"Is [City] safe for solo women?" landing pages auto-generated from our data. Targets long-tail search queries women actually Google before booking. Track organic impressions, CTR, and install conversion.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">07</div>
+    <div class="play-content">
+      <div class="play-title">Micro-influencer Barter</div>
+      <div class="play-desc">Free premium access to travel nano-influencers (1K-10K followers) in exchange for honest content. Not scripted ads &mdash; genuine reviews. Track with unique referral codes.</div>
+    </div>
+  </div>
+  <div class="play">
+    <div class="play-num">08</div>
+    <div class="play-content">
+      <div class="play-title">University Travel Societies</div>
+      <div class="play-desc">Campus ambassadors at universities with strong study-abroad programs. Free access + co-branded "solo travel safety kit" PDF. Track by university referral code.</div>
+    </div>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<h2>4.4 Growth Metrics Dashboard</h2>
+<p>These are the numbers the entire team sees weekly. No vanity metrics. Every number connects to a decision.</p>
+
+<table>
+  <thead>
+    <tr><th>Metric</th><th>Definition</th><th>Frequency</th><th>Target (V1)</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>WAU</strong></td><td>Weekly active users (opened app + 1 action)</td><td>Weekly</td><td>2,500 by M3</td></tr>
+    <tr><td><strong>MAU</strong></td><td>Monthly active users</td><td>Monthly</td><td>10,000 by M6</td></tr>
+    <tr><td><strong>D1 / D7 / D30 Retention</strong></td><td>% of users returning after N days</td><td>Weekly cohort</td><td>60% / 35% / 20%</td></tr>
+    <tr><td><strong>WAU/MAU Ratio</strong></td><td>Stickiness (healthy = &gt;25%)</td><td>Weekly</td><td>&gt; 25%</td></tr>
+    <tr><td><strong>CPA (blended)</strong></td><td>Total acquisition spend / new installs</td><td>Weekly</td><td>&lt; $5</td></tr>
+    <tr><td><strong>Organic %</strong></td><td>% of installs from unpaid sources</td><td>Weekly</td><td>&gt; 70%</td></tr>
+    <tr><td><strong>Activation Rate</strong></td><td>% of installs reaching "aha moment"</td><td>Weekly</td><td>&gt; 40%</td></tr>
+    <tr><td><strong>Viral Coefficient (K)</strong></td><td>Avg invites sent x conversion rate of invites</td><td>Monthly</td><td>&gt; 0.3</td></tr>
+    <tr><td><strong>App Store Rating</strong></td><td>Average rating on iOS App Store</td><td>Weekly</td><td>&gt; 4.7</td></tr>
+    <tr><td><strong>App Store Conversion</strong></td><td>% of page views that install</td><td>Weekly</td><td>&gt; 30%</td></tr>
+  </tbody>
+</table>
+
+<h2>4.5 Experimentation Framework</h2>
+<p>We run growth experiments like a machine. Every experiment has a hypothesis, a metric, a timeline, and a kill criteria.</p>
+
+<table>
+  <thead>
+    <tr><th>Element</th><th>Requirement</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Hypothesis</strong></td><td>"If we [action], then [metric] will [change] because [reason]"</td></tr>
+    <tr><td><strong>Primary Metric</strong></td><td>One number that determines success/failure</td></tr>
+    <tr><td><strong>Duration</strong></td><td>Maximum 7 days for quick tests, 14 days for channel tests</td></tr>
+    <tr><td><strong>Kill Criteria</strong></td><td>If primary metric &lt; X after 48 hours, kill the experiment</td></tr>
+    <tr><td><strong>Sample Size</strong></td><td>Minimum statistical significance before declaring winner</td></tr>
+    <tr><td><strong>Documentation</strong></td><td>Result logged in experiment log regardless of outcome</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ============ 5. PRODUCT & BD ============ -->
+<div class="domain-header">
+  <div class="domain-dot dot-green"></div>
+  <div>
+    <div class="domain-name">5. Product & Business Development</div>
+    <div class="domain-owner">Owner: Clem + Sergio (BD)</div>
+  </div>
+</div>
+
+<p class="section-intro">Product and business development are two sides of the same coin. The product must serve users (B2C) and create value for partners (B2B). Clem owns product strategy and partnerships. Sergio co-owns deal negotiation and closing.</p>
+
+<h2>5.1 Product KPIs</h2>
+<table>
+  <thead>
+    <tr><th>Metric</th><th>What It Tells Us</th><th>Target</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Time to Value</strong></td><td>Seconds from first open to first useful content</td><td>&lt; 30 seconds</td></tr>
+    <tr><td><strong>Session Duration</strong></td><td>Average time per session (engaged exploration)</td><td>&gt; 4 minutes</td></tr>
+    <tr><td><strong>Feature Adoption</strong></td><td>% of MAU using each core feature</td><td>&gt; 30% per feature</td></tr>
+    <tr><td><strong>Task Completion Rate</strong></td><td>% completing key flows (search&rarr;city, post&rarr;reply)</td><td>&gt; 60%</td></tr>
+    <tr><td><strong>Crash-Free Rate</strong></td><td>% of sessions without a crash (Sentry)</td><td>&gt; 99.5%</td></tr>
+    <tr><td><strong>App Store Rating</strong></td><td>User satisfaction proxy</td><td>&gt; 4.7</td></tr>
+    <tr><td><strong>Support Tickets</strong></td><td>Volume and category of user issues</td><td>Trending down weekly</td></tr>
+  </tbody>
+</table>
+
+<h2>5.2 B2B Pipeline</h2>
+<p>B2B is a parallel revenue engine. Partnerships with tourism boards, accommodation brands, and travel services create revenue and distribution simultaneously.</p>
+
+<table>
+  <thead>
+    <tr><th>Pipeline Stage</th><th>Definition</th><th>Metric</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Prospect</strong></td><td>Identified target, no contact yet</td><td># in pipeline</td></tr>
+    <tr><td><strong>Outreach</strong></td><td>First contact made (email, LinkedIn, intro)</td><td>Response rate</td></tr>
+    <tr><td><strong>Meeting</strong></td><td>Discovery call or pitch completed</td><td>Meetings/week</td></tr>
+    <tr><td><strong>Proposal</strong></td><td>Formal proposal or partnership deck sent</td><td>Proposal-to-close rate</td></tr>
+    <tr><td><strong>Negotiation</strong></td><td>Terms being discussed</td><td>Avg deal cycle (days)</td></tr>
+    <tr><td><strong>Closed</strong></td><td>Signed agreement</td><td>Revenue, distribution value</td></tr>
+  </tbody>
+</table>
+
+<h2>5.3 Partnership Categories</h2>
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>Tourism Boards</h4>
+    <ul>
+      <li>Co-branded city/country content</li>
+      <li>Featured placement in explore feed</li>
+      <li>Revenue: sponsored content fees</li>
+      <li>Value to us: credibility + distribution</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Accommodation Partners</h4>
+    <ul>
+      <li>Women-vetted hostels and hotels</li>
+      <li>Booking referral commissions</li>
+      <li>Revenue: affiliate + featured listing fees</li>
+      <li>Value to us: utility for users</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Travel Services</h4>
+    <ul>
+      <li>Insurance, SIM cards, airport transfers</li>
+      <li>Contextual recommendations in-app</li>
+      <li>Revenue: affiliate commissions</li>
+      <li>Value to us: complete travel toolkit</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Media & Content</h4>
+    <ul>
+      <li>Travel publications, podcasts, newsletters</li>
+      <li>Content swaps and cross-promotion</li>
+      <li>Revenue: shared audience growth</li>
+      <li>Value to us: distribution at zero cost</li>
+    </ul>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ============ 6. ENGINEERING & DATA ============ -->
+<div class="domain-header">
+  <div class="domain-dot dot-orange"></div>
+  <div>
+    <div class="domain-name">6. Engineering & Data</div>
+    <div class="domain-owner">Owner: BK</div>
+  </div>
+</div>
+
+<p class="section-intro">Engineering is not a support function. It is the production engine. BK owns the entire technical stack from infrastructure to analytics, running multiple AI agent sessions in parallel to ship at a pace that would normally require a team of 8-12 engineers.</p>
+
+<h2>6.1 Technical KPIs</h2>
+<table>
+  <thead>
+    <tr><th>Metric</th><th>What It Measures</th><th>Target</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Crash-Free Rate</strong></td><td>App stability (Sentry)</td><td>&gt; 99.5%</td></tr>
+    <tr><td><strong>Cold Start Time</strong></td><td>Time from tap to interactive on iOS</td><td>&lt; 2 seconds</td></tr>
+    <tr><td><strong>API P95 Latency</strong></td><td>95th percentile response time (Supabase)</td><td>&lt; 300ms</td></tr>
+    <tr><td><strong>TypeScript Errors</strong></td><td>Compile-time type safety (npx tsc)</td><td>0 in app/ and components/</td></tr>
+    <tr><td><strong>Deployment Frequency</strong></td><td>OTA updates pushed per week</td><td>&gt; 3/week</td></tr>
+    <tr><td><strong>Time to Recovery</strong></td><td>Minutes from bug report to fix deployed</td><td>&lt; 60 min for P0</td></tr>
+  </tbody>
+</table>
+
+<h2>6.2 Data & Analytics Infrastructure</h2>
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>Event Tracking (PostHog)</h4>
+    <ul>
+      <li>Every screen view, tap, scroll, and interaction</li>
+      <li>Feature flags for progressive rollout</li>
+      <li>Session recordings for UX debugging</li>
+      <li>Funnel analysis and retention cohorts</li>
+      <li>Custom dashboards per team function</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Internal Dashboard (Next.js)</h4>
+    <ul>
+      <li>Real-time user count, signups, activity</li>
+      <li>Content coverage (cities, places, images)</li>
+      <li>Community health (threads, replies, moderation)</li>
+      <li>Growth metrics (installs, retention, funnel)</li>
+      <li>Accessible to all cofounders, updated live</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Error Monitoring (Sentry)</h4>
+    <ul>
+      <li>Real-time crash reporting with stack traces</li>
+      <li>Release health tracking per OTA update</li>
+      <li>Performance monitoring (slow screens, API calls)</li>
+      <li>Alert routing to BK for P0/P1 issues</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Database Analytics (Supabase)</h4>
+    <ul>
+      <li>Content completeness tracking (cities, guides, images)</li>
+      <li>User behavior patterns via SQL queries</li>
+      <li>Data quality monitoring (missing fields, broken links)</li>
+      <li>Growth queries powering the internal dashboard</li>
+    </ul>
+  </div>
+</div>
+
+<h2>6.3 What We Instrument</h2>
+<p>If we can't measure it, we can't improve it. Every user-facing feature ships with analytics from day one.</p>
+
+<table>
+  <thead>
+    <tr><th>Category</th><th>Events Tracked</th><th>Used By</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Onboarding</strong></td><td>Each step completed, drop-off points, time per step</td><td>Product, Growth</td></tr>
+    <tr><td><strong>Explore</strong></td><td>Search queries, city views, place views, collection taps</td><td>Product, Content</td></tr>
+    <tr><td><strong>Community</strong></td><td>Thread views, posts, replies, time in community tab</td><td>Comms, Product</td></tr>
+    <tr><td><strong>Trips</strong></td><td>Trip creation, place saves, itinerary edits</td><td>Product</td></tr>
+    <tr><td><strong>Navigation</strong></td><td>Tab switches, screen flows, back-button usage</td><td>Product, Engineering</td></tr>
+    <tr><td><strong>Performance</strong></td><td>Screen load times, API response times, JS errors</td><td>Engineering</td></tr>
+    <tr><td><strong>Growth</strong></td><td>Install source, first action, activation event, referral sent</td><td>Growth, Marketing</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ============ 7. FINANCE, LEGAL & OPS ============ -->
+<div class="domain-header">
+  <div class="domain-dot dot-purple"></div>
+  <div>
+    <div class="domain-name">7. Finance, Legal & Operations</div>
+    <div class="domain-owner">Owner: Sergio</div>
+  </div>
+</div>
+
+<p class="section-intro">Sergio owns the financial, legal, and operational infrastructure that makes everything else possible. This is not a back-office function. Financial clarity and legal soundness are what let the rest of the team move fast without breaking things that matter.</p>
+
+<h2>7.1 Financial KPIs</h2>
+<table>
+  <thead>
+    <tr><th>Metric</th><th>Definition</th><th>Frequency</th><th>Target</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Runway</strong></td><td>Months of operating cash remaining</td><td>Monthly</td><td>&gt; 12 months</td></tr>
+    <tr><td><strong>Burn Rate</strong></td><td>Monthly cash outflow</td><td>Monthly</td><td>Decreasing or stable</td></tr>
+    <tr><td><strong>MRR</strong></td><td>Monthly recurring revenue (subscriptions)</td><td>Monthly</td><td>Growing 15%+ MoM</td></tr>
+    <tr><td><strong>LTV</strong></td><td>Lifetime value per subscriber</td><td>Monthly</td><td>&gt; 3x CPA</td></tr>
+    <tr><td><strong>LTV:CAC Ratio</strong></td><td>Unit economics health</td><td>Monthly</td><td>&gt; 3:1</td></tr>
+    <tr><td><strong>ARPU</strong></td><td>Average revenue per user (all users)</td><td>Monthly</td><td>Growing</td></tr>
+    <tr><td><strong>Gross Margin</strong></td><td>Revenue minus direct costs / revenue</td><td>Monthly</td><td>&gt; 80%</td></tr>
+  </tbody>
+</table>
+
+<h2>7.2 Revenue Model</h2>
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>B2C: Subscriptions</h4>
+    <ul>
+      <li>Free tier: Core city guides, limited community</li>
+      <li>Premium: Full guides, offline, trip planner, DMs</li>
+      <li>Pricing: $7.99/month or $49.99/year</li>
+      <li>Managed via RevenueCat</li>
+      <li>Target: 5-8% conversion of MAU to paid</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>B2B: Partnerships</h4>
+    <ul>
+      <li>Tourism board sponsorships ($5K-50K/campaign)</li>
+      <li>Accommodation affiliate commissions (8-15%)</li>
+      <li>Travel service referrals (per-booking fee)</li>
+      <li>Co-branded content partnerships</li>
+      <li>Target: B2B = 30-40% of total revenue by M12</li>
+    </ul>
+  </div>
+</div>
+
+<h2>7.3 Legal & Compliance</h2>
+<table>
+  <thead>
+    <tr><th>Area</th><th>Status</th><th>Owner</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Corporate structure &amp; incorporation</td><td>Established</td><td>Sergio</td></tr>
+    <tr><td>Privacy policy &amp; Terms of Service</td><td>Live, reviewed quarterly</td><td>Sergio</td></tr>
+    <tr><td>GDPR / data protection compliance</td><td>Implemented (Supabase EU hosting)</td><td>Sergio + BK</td></tr>
+    <tr><td>App Store compliance (Apple guidelines)</td><td>Ongoing per release</td><td>BK + Sergio</td></tr>
+    <tr><td>Partnership contracts &amp; templates</td><td>Standardized, agent-drafted</td><td>Sergio</td></tr>
+    <tr><td>IP protection (trademark, brand)</td><td>Filed</td><td>Sergio</td></tr>
+    <tr><td>Employment / contractor agreements</td><td>Template ready</td><td>Sergio</td></tr>
+  </tbody>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ============ 8. MEASUREMENT FRAMEWORK ============ -->
+<h1>8. Measurement Framework</h1>
+<p class="section-intro">We measure everything. Not because we are obsessive, but because a four-person team cannot afford to waste time on things that don't work. Data tells us where to focus and when to stop. This is how top startups operate, and we are no different.</p>
+
+<h2>8.1 Weekly Scorecard</h2>
+<p>Every Monday, we review these numbers. This is the heartbeat of the company.</p>
+
+<table>
+  <thead>
+    <tr><th>Category</th><th>Metric</th><th>Owner</th><th>Target</th></tr>
+  </thead>
+  <tbody>
+    <tr><td rowspan="3"><strong>Growth</strong></td><td>New installs (weekly)</td><td>Clem</td><td>+15% WoW</td></tr>
+    <tr><td>WAU</td><td>BK (dashboard)</td><td>Trending up</td></tr>
+    <tr><td>Activation rate</td><td>Clem + BK</td><td>&gt; 40%</td></tr>
+    <tr><td rowspan="3"><strong>Engagement</strong></td><td>D7 retention (latest cohort)</td><td>BK</td><td>&gt; 35%</td></tr>
+    <tr><td>Community posts + replies</td><td>Aya</td><td>+10% WoW</td></tr>
+    <tr><td>Avg session duration</td><td>BK</td><td>&gt; 4 min</td></tr>
+    <tr><td rowspan="2"><strong>Brand</strong></td><td>Social engagement rate</td><td>Aya</td><td>&gt; 5%</td></tr>
+    <tr><td>Press mentions (weekly)</td><td>Aya</td><td>&ge; 1</td></tr>
+    <tr><td rowspan="2"><strong>Revenue</strong></td><td>MRR</td><td>Sergio</td><td>Growing</td></tr>
+    <tr><td>B2B pipeline value</td><td>Clem + Sergio</td><td>Growing</td></tr>
+    <tr><td rowspan="2"><strong>Product</strong></td><td>Crash-free rate</td><td>BK</td><td>&gt; 99.5%</td></tr>
+    <tr><td>App Store rating</td><td>BK</td><td>&gt; 4.7</td></tr>
+  </tbody>
+</table>
+
+<h2>8.2 Monthly Deep Dives</h2>
+<p>First week of each month, we do a longer analysis on these areas. This informs strategy for the next 30 days.</p>
+
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4>Retention Analysis</h4>
+    <ul>
+      <li>Cohort curves (D1, D7, D14, D30)</li>
+      <li>Retention by acquisition channel</li>
+      <li>Feature correlation with retention</li>
+      <li>Churn reasons (exit surveys, support tickets)</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Channel Performance</h4>
+    <ul>
+      <li>CPA by channel (organic, paid, referral, PR)</li>
+      <li>Quality of users by channel (retention, LTV)</li>
+      <li>Channel mix optimization</li>
+      <li>Experiment results and learnings</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Unit Economics</h4>
+    <ul>
+      <li>LTV:CAC by cohort</li>
+      <li>ARPU trend</li>
+      <li>Subscription conversion funnel</li>
+      <li>Revenue per channel (B2C vs B2B)</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4>Content & Brand</h4>
+    <ul>
+      <li>Content coverage gaps (cities, countries)</li>
+      <li>Top-performing content (views, saves, shares)</li>
+      <li>Brand sentiment trend</li>
+      <li>PR coverage analysis</li>
+    </ul>
+  </div>
+</div>
+
+<h2>8.3 North Star Metric</h2>
+
+<div class="multiplier">
+  <div style="font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; color: #999; margin-bottom: 6px;">North Star Metric</div>
+  <div style="font-size: 11px; color: #fff; font-weight: 400; opacity: 0.8; margin-bottom: 8px;">Weekly Active Women Who Explored a City Guide or Posted in Community</div>
+  <div class="mult-row">
+    <div>
+      <div class="mult-num">WAE</div>
+      <div class="mult-label">Weekly Active Explorers</div>
+    </div>
+  </div>
+  <div style="font-size: 9px; color: #666; margin-top: 8px;">This single metric captures acquisition (they downloaded), activation (they explored), and engagement (they came back this week). Everything we do should move this number.</div>
+</div>
+
+<div class="page-break"></div>
+
+<h2>8.4 Reporting Cadence</h2>
+
+<div class="cadence">
+  <div class="cadence-row"><div class="cadence-freq">Daily</div><div class="cadence-what">Glance at installs, crashes, community activity (PostHog + Sentry dashboards). No formal report &mdash; just awareness.</div></div>
+  <div class="cadence-row"><div class="cadence-freq">Weekly</div><div class="cadence-what">Monday scorecard review (15 min async or sync). Each person updates their metrics. Flag anything off-track.</div></div>
+  <div class="cadence-row"><div class="cadence-freq">Bi-weekly</div><div class="cadence-what">Experiment review. What did we test? What did we learn? What are we testing next? Kill, scale, or iterate.</div></div>
+  <div class="cadence-row"><div class="cadence-freq">Monthly</div><div class="cadence-what">Deep dive analysis. Cohort retention, channel economics, financial review, content audit, brand health check.</div></div>
+  <div class="cadence-row"><div class="cadence-freq">Quarterly</div><div class="cadence-what">Strategic review. Are we on track for 10K users? Adjust priorities, reallocate attention, update targets.</div></div>
+</div>
+
+<hr class="divider">
+
+<!-- ============ 9. THE AGENTIC MODEL ============ -->
+<h1>9. The Agentic Model</h1>
+<p class="section-intro">There is a narrow window in the world right now. AI is advanced enough to be transformative, but most companies haven't figured out how to use it. We have. This is our structural advantage and it compounds every day.</p>
+
+<h2>9.1 The Thesis</h2>
+<p>We are an <strong>agent-native company</strong>. AI agents handle explicit, repeatable, scalable work. Humans handle taste, judgment, relationships, and decisions. A team of four produces the output of a team of forty.</p>
+
+<div class="comparison">
+  <div class="comp-card old">
+    <h4>Traditional Startup</h4>
+    <ul>
+      <li>Hire specialists for every function</li>
+      <li>Weeks to ship a feature</li>
+      <li>$1.5-5M/year operating cost</li>
+      <li>Scale by adding headcount</li>
+    </ul>
+  </div>
+  <div class="comp-card new">
+    <h4>Sola &mdash; Agent-Native</h4>
+    <ul>
+      <li>Buy expertise, codify it, agents operationalize</li>
+      <li>Hours or days to ship a feature</li>
+      <li>$100-300K/year operating cost</li>
+      <li>Scale by adding agent workflows</li>
+    </ul>
+  </div>
+</div>
+
+<h2>9.2 Human-AI Split by Function</h2>
+
+<div class="agent-flow">
+  <div class="af-box human">HUMAN<br><span class="af-sub">Taste, Judgment,<br>Relationships</span></div>
+  <div class="af-arrow">&rarr;</div>
+  <div class="af-box ai">DIRECTION<br><span class="af-sub">What to build<br>What standard</span></div>
+  <div class="af-arrow">&rarr;</div>
+  <div class="af-box ai">AI AGENTS<br><span class="af-sub">Build it, maintain it,<br>improve it</span></div>
+  <div class="af-arrow">&rarr;</div>
+  <div class="af-box human">HUMAN<br><span class="af-sub">Review, Curate,<br>Ship</span></div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Function</th><th>Human Does</th><th>Agent Does</th></tr>
+  </thead>
+  <tbody>
+    <tr><td><strong>Engineering</strong></td><td>Architecture decisions, quality review, taste</td><td>Write, test, refactor code. Migrations. QA. Multiple parallel sessions.</td></tr>
+    <tr><td><strong>Communications</strong></td><td>Set narrative, build relationships, show up</td><td>Draft content, research targets, schedule, track sentiment</td></tr>
+    <tr><td><strong>Growth</strong></td><td>Strategy, channel selection, kill decisions</td><td>Research, A/B test setup, data analysis, report generation</td></tr>
+    <tr><td><strong>Business Dev</strong></td><td>Close deals, build trust, negotiate</td><td>Prospect research, outreach prep, pipeline tracking, proposals</td></tr>
+    <tr><td><strong>Finance</strong></td><td>Strategic decisions, sign contracts</td><td>Financial models, scenario analysis, compliance research</td></tr>
+    <tr><td><strong>Content</strong></td><td>Curate for quality, set editorial standard</td><td>Research, write, structure, enrich data at scale</td></tr>
+  </tbody>
+</table>
+
+<h2>9.3 AI Agents Per Role</h2>
+<div class="sub-grid">
+  <div class="sub-card">
+    <h4 style="color:#E5653A;">BK &mdash; Engineering</h4>
+    <ul>
+      <li>Claude Code: parallel agent sessions for concurrent development</li>
+      <li>Automated database migrations and data enrichment</li>
+      <li>QA regression testing via agent workflows</li>
+      <li>Analytics dashboard and pipeline automation</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4 style="color:#2D9CDB;">Aya &mdash; Communications</h4>
+    <ul>
+      <li>Content drafting within codified brand voice guidelines</li>
+      <li>Press target research and pitch preparation</li>
+      <li>Social content generation and scheduling</li>
+      <li>Sentiment analysis and community monitoring</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4 style="color:#27AE60;">Clem &mdash; Product & BD</h4>
+    <ul>
+      <li>Market research and competitive analysis at scale</li>
+      <li>Partnership prospect identification and outreach prep</li>
+      <li>User behavior analysis and feature prioritization</li>
+      <li>Pitch deck and proposal generation</li>
+    </ul>
+  </div>
+  <div class="sub-card">
+    <h4 style="color:#8B5CF6;">Sergio &mdash; Finance & Legal</h4>
+    <ul>
+      <li>Financial modeling and scenario analysis</li>
+      <li>Contract drafting and compliance checks</li>
+      <li>Regulatory research across jurisdictions</li>
+      <li>Investor materials and data room management</li>
+    </ul>
+  </div>
+</div>
+
+<div class="page-break"></div>
+
+<!-- ============ 10. VALUES & CULTURE ============ -->
+<h1>10. Values & Culture</h1>
+<p class="section-intro">These are not aspirational statements on a wall. They are operating behaviors we hold each other accountable to. If someone isn't living these, we say so directly.</p>
+
+<ul class="val-list">
+  <li><strong>Speed with taste.</strong> Move fast, but never ship something that feels cheap. Premium is non-negotiable. We would rather delay than dilute.</li>
+  <li><strong>Ownership over everything.</strong> When you own a domain, you own it completely. No waiting for someone to tell you what to do. See a problem, fix it.</li>
+  <li><strong>Honesty over performance.</strong> Say what you think. Challenge bad ideas directly. No corporate speak, no hedging. If something is wrong, say so.</li>
+  <li><strong>Learning as a discipline.</strong> AI tools evolve weekly. Markets shift monthly. The team that learns fastest wins. Staying current is part of the job.</li>
+  <li><strong>Leverage over labor.</strong> The smartest path is not working harder. It is using every available tool to multiply what each person can accomplish.</li>
+  <li><strong>Trust over process.</strong> We trust each other to make good decisions within our domains. Process exists only where it prevents real mistakes.</li>
+  <li><strong>Data over opinions.</strong> When we disagree, we look at the numbers. When we don't have numbers, we instrument and measure before debating further.</li>
+  <li><strong>Users over abstractions.</strong> Every decision starts with "what does the woman planning her trip actually need?" Not what's trendy, not what's clever.</li>
+</ul>
+
+<hr class="divider">
+
+<h2>The Opportunity</h2>
+
+<p>There is a moment happening right now. AI is capable enough to be transformative, but most organizations are still figuring out how to use it for anything beyond chatbots and summaries. We are not most organizations.</p>
+
+<p>We don't need to be ahead of the curve. We just need to be genuinely embedded in it. Every person on this team uses AI agents daily, understands what they can and cannot do, and pushes the boundary of what a small team can accomplish.</p>
+
+<p>The companies that will define the next decade are not the ones with the biggest teams or the most capital. They are the ones that figured out, early, how to pair human judgment with machine execution. We are one of them.</p>
+
+<p><strong>Four people. AI-native from day one. Building for the women who travel differently. Moving at godspeed.</strong></p>
+
+<div style="text-align:center; margin-top: 24px;">
+  <div style="font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #ccc;">The company of the future, built today.</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sola — Creative Brief</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      color: #1a1a1a;
+      background: #ffffff;
+      line-height: 1.65;
+      font-size: 15px;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .page {
+      max-width: 680px;
+      margin: 0 auto;
+      padding: 60px 40px 80px;
+    }
+
+    /* Header */
+    .header {
+      margin-bottom: 56px;
+    }
+
+    .logo {
+      font-size: 28px;
+      font-weight: 700;
+      color: #E5653A;
+      letter-spacing: 3px;
+      margin-bottom: 32px;
+    }
+
+    .brief-title {
+      font-size: 26px;
+      font-weight: 700;
+      color: #1a1a1a;
+      line-height: 1.3;
+      margin-bottom: 8px;
+    }
+
+    .brief-meta {
+      font-size: 14px;
+      color: #888;
+      margin-bottom: 0;
+    }
+
+    .divider {
+      height: 1px;
+      background: #F0F0F0;
+      margin: 40px 0;
+    }
+
+    .thick-divider {
+      height: 2px;
+      background: #E5653A;
+      width: 40px;
+      margin: 40px 0;
+    }
+
+    /* Sections */
+    h2 {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: #E5653A;
+      margin-bottom: 20px;
+    }
+
+    h3 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 12px;
+      line-height: 1.35;
+    }
+
+    p {
+      margin-bottom: 16px;
+      color: #333;
+    }
+
+    .highlight-block {
+      background: #FFF5F1;
+      border-radius: 12px;
+      padding: 28px 28px;
+      margin: 24px 0 28px;
+    }
+
+    .highlight-block p {
+      margin-bottom: 12px;
+      color: #333;
+    }
+
+    .highlight-block p:last-child {
+      margin-bottom: 0;
+    }
+
+    .highlight-block .label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: #E5653A;
+      margin-bottom: 12px;
+    }
+
+    .grey-block {
+      background: #F8F8F8;
+      border-radius: 12px;
+      padding: 28px 28px;
+      margin: 24px 0 28px;
+    }
+
+    .grey-block p {
+      margin-bottom: 12px;
+    }
+
+    .grey-block p:last-child {
+      margin-bottom: 0;
+    }
+
+    ul {
+      padding-left: 20px;
+      margin-bottom: 16px;
+    }
+
+    li {
+      margin-bottom: 8px;
+      color: #333;
+    }
+
+    li strong {
+      color: #1a1a1a;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin: 20px 0 28px;
+    }
+
+    .col-card {
+      background: #F8F8F8;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .col-card h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+    }
+
+    .col-card p, .col-card ul {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    .col-card li {
+      font-size: 14px;
+      color: #555;
+    }
+
+    .number-list {
+      list-style: none;
+      padding-left: 0;
+      counter-reset: item;
+    }
+
+    .number-list li {
+      counter-increment: item;
+      padding-left: 36px;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .number-list li::before {
+      content: counter(item);
+      position: absolute;
+      left: 0;
+      top: 1px;
+      width: 24px;
+      height: 24px;
+      background: #FFF5F1;
+      color: #E5653A;
+      border-radius: 50%;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .closing {
+      margin-top: 48px;
+    }
+
+    .closing p {
+      color: #555;
+    }
+
+    .signature {
+      margin-top: 32px;
+    }
+
+    .signature .name {
+      font-weight: 600;
+      color: #1a1a1a;
+    }
+
+    .signature .role {
+      font-size: 14px;
+      color: #888;
+    }
+
+    em {
+      font-style: italic;
+      color: #555;
+    }
+
+    .decision-grid {
+      margin: 24px 0 28px;
+    }
+
+    .decision-item {
+      border-left: 2px solid #F0F0F0;
+      padding-left: 20px;
+      margin-bottom: 24px;
+    }
+
+    .decision-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .decision-item h4 {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1a1a1a;
+      margin-bottom: 6px;
+    }
+
+    .decision-item p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    .pillar-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 20px 0 28px;
+    }
+
+    .pillar-card {
+      background: #FFF5F1;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .pillar-card h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #E5653A;
+      margin-bottom: 6px;
+    }
+
+    .pillar-card p {
+      font-size: 14px;
+      color: #555;
+      margin-bottom: 0;
+    }
+
+    .question-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 20px 0;
+    }
+
+    .question-list li {
+      padding: 12px 0;
+      border-bottom: 1px solid #F0F0F0;
+      color: #333;
+      font-weight: 500;
+    }
+
+    .question-list li:last-child {
+      border-bottom: none;
+    }
+
+    @media (max-width: 600px) {
+      .page {
+        padding: 40px 24px 60px;
+      }
+      .two-col, .pillar-grid {
+        grid-template-columns: 1fr;
+      }
+      .brief-title {
+        font-size: 22px;
+      }
+    }
+
+    @media print {
+      .page {
+        max-width: 100%;
+        padding: 40px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">SOLA</div>
+      <div class="brief-title">Creative Brief: Brand Voice & Communications Strategy</div>
+      <p class="brief-meta">Prepared for Tebello Mosenene &mdash; February 2026</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECTION 1: What Sola Is -->
+    <h2>What Sola Is</h2>
+
+    <p>Sola is a travel intelligence app built for women who travel solo. It structures the information women need to make clear travel decisions: safety data, neighbourhood-level guidance, community knowledge from other women, and trip planning tools. All in one place, designed around how women plan.</p>
+
+    <p>The whole product is built from the ground up around one user: a woman planning a trip on her own. The questions she asks, the information she looks for, the way she evaluates a destination. That's what shapes the architecture, the content, the features.</p>
+
+    <p>The app covers 19 countries, 75 cities, and hundreds of curated places across Southeast Asia, Southern Africa, South America, and Southern Europe. We're launching on the Play Store first, then iOS, targeting 10,000 users.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 2: The Problem -->
+    <h2>The Problem We're Solving</h2>
+
+    <h3>There is a gender information gap in travel.</h3>
+
+    <p>When women plan a trip alone, they don't just ask: is this place beautiful? They ask: is it safe to walk home at night? Which neighbourhoods should I avoid? How do women experience this city? What should I wear? Is it okay to eat alone here? Can I trust this taxi company?</p>
+
+    <p>This information exists, but it's scattered across Reddit threads, Facebook groups, blog posts, Google Maps street view sessions, and DMs to friends who've been. Women piece together what they need from 15 different sources because no single product was designed around the questions they're asking.</p>
+
+    <p>Travel platforms were built around a default traveller who doesn't reflect how women make decisions. The result is a gap. Not a gap in inspiration or aspiration. A gap in structured, practical, trustworthy information.</p>
+
+    <p>Sola exists to close that gap.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 3: How We Got Here -->
+    <h2>How We Got Here</h2>
+
+    <p>Bokang's background is in digital marketing, digital media, online community, and social impact. He'd spent years thinking about how information gets structured and delivered to the people who need it. In 2024, he moved to Manila to take some time off and explore a new project. While there, he started paying attention to how women travelling alone were planning their trips. The amount of research they did, the number of sources they stitched together, the questions they couldn't find clean answers to. There was clearly a gap, and it was an information design problem.</p>
+
+    <p>He met Clemence in Poblacion, a traveller hub in Manila where people pass through on their way to the islands. She was travelling solo. He told her about the idea. She got it immediately because she was living the problem every day. She joined, and Sola became a two-person team.</p>
+
+    <p>Over the next year, the two of them spoke to hundreds of solo women travellers. In hostels, in cafes, over DMs. They listened to what women research before a trip, what they worry about, what information is hardest to find, and what would genuinely help. Then they taught themselves to code and built what those women described.</p>
+
+    <p>Sola is bootstrapped. No VC funding, no big team. Two founders, a lot of AI-assisted development, and complete focus on one problem. Everything in the app exists because a real woman said she needed it.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 4: What We Decided Not to Build -->
+    <h2>The Decisions That Define Us</h2>
+
+    <p>These are the structural choices behind Sola. They shape what we build, how we talk, and what the brand strategy needs to reflect.</p>
+
+    <div class="decision-grid">
+      <div class="decision-item">
+        <h4>We built a tool, specifically.</h4>
+        <p>The most visible path in this space is content: editorial, inspiration, storytelling. We chose to build a product that structures information and helps women make decisions. Sola is useful first. The stories come from the community, not from us.</p>
+      </div>
+      <div class="decision-item">
+        <h4>We lead with clarity, always.</h4>
+        <p>Safety is a core part of what we do. But Sola is about giving women the information to travel freely, with confidence. The framing is always clarity and preparation. The goal is a clear decision, not a brave one.</p>
+      </div>
+      <div class="decision-item">
+        <h4>We built the whole thing around one user.</h4>
+        <p>The entire architecture, the content model, the information hierarchy, the questions the product asks and answers, are designed around a woman planning a solo trip. This is purpose-built. The specificity is what makes it useful.</p>
+      </div>
+    </div>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 5: What We're Building -->
+    <h2>What We're Building</h2>
+
+    <div class="highlight-block">
+      <p class="label">Mission</p>
+      <p><strong>Structure the information women need to travel freely, confidently, and with clarity.</strong></p>
+    </div>
+
+    <p>The product is built on four pillars:</p>
+
+    <div class="pillar-grid">
+      <div class="pillar-card">
+        <h4>Destination Intelligence</h4>
+        <p>Safety data, practical information, neighbourhood guidance, budget breakdowns, real experiences.</p>
+      </div>
+      <div class="pillar-card">
+        <h4>Community Knowledge</h4>
+        <p>Women sharing what they found on the ground. The kind of information you can only get from someone who's been there.</p>
+      </div>
+      <div class="pillar-card">
+        <h4>Decision Signals</h4>
+        <p>Structured data that helps answer: can I go there? Solo-friendliness levels, best months, vibe, comfort signals.</p>
+      </div>
+      <div class="pillar-card">
+        <h4>Trip Planning</h4>
+        <p>Keeping relevant information in one place so the planning process isn't scattered across 15 tabs.</p>
+      </div>
+    </div>
+
+    <p><strong>Long-term vision:</strong> Sola becomes the intelligence layer for women's travel decisions globally. We want to shape how destinations are understood from women's perspectives, and become the default starting point when a woman plans a solo trip.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 6: Our Philosophy -->
+    <h2>Our Philosophy</h2>
+
+    <div class="highlight-block">
+      <p class="label">Core Belief</p>
+      <p><strong>Women don't need to be told they're brave for travelling alone. They need useful information and a community that gets it.</strong></p>
+    </div>
+
+    <p>Sola is built on a feminist perspective. A quiet one. We take women seriously. We assume they're intelligent, capable, and already making the decision to travel. Our job is to make that decision easier with clear, structured information.</p>
+
+    <p>The feminism shows up in what we build and how we build it, not in the language we wrap around it. We'd rather be useful than inspirational. We'd rather give a woman the information she needs than tell her she's brave.</p>
+
+    <p>This shapes everything:</p>
+
+    <ul>
+      <li><strong>Practical over inspirational.</strong> "Here's what a taxi from the airport should cost" is more useful than "follow your wanderlust."</li>
+      <li><strong>Honest over polished.</strong> If a neighbourhood isn't safe at night, say that. Don't sugarcoat it.</li>
+      <li><strong>Structured over editorial.</strong> Women doing trip research want scannable, organised information. Not blog posts.</li>
+      <li><strong>Respectful over cheerful.</strong> We talk to our users like adults, not like friends at brunch.</li>
+    </ul>
+
+    <p>The feminism is in the product decisions. We built a safety-first information architecture because women need it. We built community threads because women want to ask other women things they can't Google. We prioritised neighbourhood-level data because that's what women research. The lens is structural. The brand should reflect that naturally.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 7: Who We're Talking To -->
+    <h2>Who We're Talking To</h2>
+
+    <h3>Our audience in detail</h3>
+
+    <p><strong>Primary:</strong> Women who travel solo or are planning to. First-time solo travellers who need clarity. Experienced solo travellers who want efficiency. Digital nomads. Long-term travellers. Women planning specific destinations and doing the research.</p>
+
+    <p><strong>Secondary:</strong> Women considering their first solo trip. Travel-curious but not yet committed. Community-oriented travellers who want to hear from other women before deciding.</p>
+
+    <p><strong>Age range:</strong> 25 to 40, core of 28 to 35.</p>
+
+    <p><strong>Who she is:</strong> She has a career or is between chapters. She's educated, curious, probably a bit of an overthinker (in a good way). She researches everything. She doesn't make impulsive decisions about travel. She plans.</p>
+
+    <p><strong>What she reads:</strong> The Economist, Bon Appetit, Monocle, The Cut. Podcasts over morning radio. Long-form journalism over social media hot takes. She has opinions about quality.</p>
+
+    <p><strong>How she travels:</strong> Intentionally. She doesn't want "10 Best Beaches." She wants "Is it safe to walk home at 11pm in Canggu?" She books her own accommodation. She reads reviews carefully. She has a spreadsheet or a Notion doc for trip planning. She checks the visa requirements herself.</p>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h4>She is</h4>
+        <p>Curious, independent, detail-oriented, self-reliant, intellectual, prepared, thoughtful about risk</p>
+      </div>
+      <div class="col-card">
+        <h4>She is not</h4>
+        <p>A gap-year backpacker. A luxury influencer. A "travel is my personality" person. Looking for a dating app. Looking to be coddled.</p>
+      </div>
+    </div>
+
+    <p><strong>What she feels before a trip:</strong> Excitement and anxiety in equal measure. She's genuinely looking forward to the independence, but she carries a background hum of responsibility for her own safety that men don't have. She doesn't talk about it much because she doesn't want to seem like she can't handle it. She can. But the mental load is real.</p>
+
+    <p><strong>Where she currently goes for information:</strong> Reddit (r/solotravel, r/TwoXChromosomes), Facebook groups (Girls LOVE Travel, Solo Female Travellers), Google Maps street view, travel blogs, hostel review sites, friends who've been. She stitches together what she needs from 15 different sources. No single product serves her.</p>
+
+    <p><strong>What earns her trust:</strong> Specificity. Real detail. Honest assessments. A product that feels like it was built by people who listened, not people who assumed. She can spot generic content immediately and she'll leave.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 8: Where We Are Now -->
+    <h2>Where We Are Now</h2>
+
+    <h3>The gap this brief is about</h3>
+
+    <p>We have a product. We have a visual identity: logo, colours, typography, a full design system in the app. We have content across 19 countries. We have the beginnings of a community. We're early-stage, focused on refining the product, validating core value, building credibility, and shaping the narrative.</p>
+
+    <p>What we don't have is a defined voice.</p>
+
+    <p>We haven't figured out how Sola sounds. We know what it doesn't sound like. We have instincts. But we haven't turned those instincts into a system that someone else, or an AI tool, could follow consistently.</p>
+
+    <p>Right now, if you asked three different people to write a Sola Instagram caption, you'd get three different tones. That's the problem.</p>
+
+    <div class="grey-block">
+      <p><strong>What we know we don't want:</strong></p>
+      <p>We don't want to sound like a lifestyle brand. No "wanderlust." No "find yourself." We don't want performative feminism that says "empowerment" every third sentence. We don't want the polished corporate tone of a big travel company. We don't want the fake-casual tone of brands that say "hey bestie" to their customers. We don't want fear-based messaging that amplifies anxiety instead of reducing it. And we don't want to sound like AI wrote it.</p>
+      <p><strong>What we think we want:</strong></p>
+      <p>Intelligent but accessible. Calm and grounded. Warm but not bubbly. Direct. Specific. Like a smart friend who's done the research and is telling you what she found. Substance over style, but with good style. Think: the difference between a well-written Wirecutter review and a generic "Top 10" listicle.</p>
+    </div>
+
+    <p>We need someone to take these instincts and turn them into a system. Not adjective lists. A real framework with definitions, examples, and rules.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 9: What We Need -->
+    <h2>What We Need</h2>
+
+    <h3>The ask</h3>
+
+    <p>A brand voice and communications strategy document. Something that defines how Sola sounds, how we talk about what we're building, and how we show up across every channel. Here's what we think that includes, but we'd love your perspective on priorities:</p>
+
+    <ul class="number-list">
+      <li><strong>Brand voice and tone system.</strong> Who is Sola when she speaks? Core voice attributes with real definitions, not adjective lists. How tone shifts across contexts: a push notification sounds different to an Instagram caption sounds different to a safety alert. A vocabulary guide with words we use, words we avoid, and why. Example copy across contexts so the voice is tangible.</li>
+
+      <li><strong>Messaging and positioning framework.</strong> A clear positioning statement. How we talk about the gender information gap and the category we're creating. Our origin story as a usable narrative. Key messages we keep returning to. Elevator pitches at different lengths. How we talk about the feminist underpinning without performing it.</li>
+
+      <li><strong>Audience communication guide.</strong> What resonates with our users and what doesn't. What earns trust with this specific demographic. The difference between talking about solo female travel and talking to solo female travellers. How we balance emotional messaging (confidence, clarity, autonomy) with functional messaging (practical information, real experiences, decision support).</li>
+
+      <li><strong>Visual language direction.</strong> Not a rebrand. Guidance on photography style, content aesthetics, what a Sola social post looks like vs. what it doesn't. How we use our colour (orange) in communications. The visual version of our voice.</li>
+
+      <li><strong>Content pillars and channel strategy.</strong> What are the 4 to 5 recurring themes for our content? What goes on Instagram vs. email vs. in-app? What kind of content builds the audience we want? How do we build credibility early when we're still small?</li>
+    </ul>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 10: Key Questions -->
+    <h2>Questions We're Wrestling With</h2>
+
+    <p>These are the strategic questions we'd love your thinking on. They're the ones we haven't cracked yet:</p>
+
+    <ul class="question-list">
+      <li>How do we introduce a new category? "Travel intelligence for women" doesn't exist yet. How do we make it immediately understandable?</li>
+      <li>What's the narrative that makes someone get Sola in 10 seconds?</li>
+      <li>How do we build trust when we're early and small? We don't have millions of users or press coverage yet.</li>
+      <li>How do we talk about safety without making it the whole brand? Safety is essential to what we do, but it's not the only thing we do.</li>
+      <li>How do we position two male founders building for women in a way that's honest and earns respect?</li>
+      <li>Which channels create the strongest early signal with our audience?</li>
+    </ul>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 11: How This Document Will Be Used -->
+    <h2>How This Document Will Be Used</h2>
+
+    <h3>This matters for how you structure it</h3>
+
+    <p>We're a two-person team. We don't have a marketing department. We use AI tools (specifically Claude) for content creation, copywriting, and marketing execution.</p>
+
+    <p>The document you create won't sit in a brand folder. It will be fed directly into AI tools as instructions. When we ask Claude to write an Instagram caption, a welcome email, or app copy, it reads the brand strategy document first and follows it.</p>
+
+    <p>This means the document needs to be specific, example-rich, and structured in a way that a machine can interpret consistently. Abstract brand manifestos won't work. Concrete rules, clear examples, and explicit do/don't guidance will.</p>
+
+    <p>Think of it as writing a brief that needs to make sense to both a human creative and an AI that will execute against it hundreds of times.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 12: What We Have -->
+    <h2>What We Already Have</h2>
+
+    <div class="two-col">
+      <div class="col-card">
+        <h4>Done</h4>
+        <p>Logo and wordmark<br>Brand colours (Orange #E5653A, warm whites, neutral greys)<br>Typography (Plus Jakarta Sans)<br>Full app design system<br>Working app with content across 19 countries<br>Community feature live</p>
+      </div>
+      <div class="col-card">
+        <h4>Missing</h4>
+        <p>Defined brand voice<br>Tone of voice guidelines<br>Messaging and positioning framework<br>Communication strategy<br>Content pillars<br>Visual language for marketing</p>
+      </div>
+    </div>
+
+    <p>We'll share full access to the app (TestFlight), our internal design docs, and examples of copy we've written so far so you can see what's working and where the inconsistencies are.</p>
+
+    <div class="thick-divider"></div>
+
+    <!-- SECTION 13: Budget & Next Steps -->
+    <h2>Budget & Next Steps</h2>
+
+    <p>I want to be upfront. I know the scope described here is broad, and my proposed budget of around <strong>$650 USD</strong> probably won't cover all of it.</p>
+
+    <p>I'd rather be honest about that than pretend it will. We're bootstrapped and every dollar counts, but we also know that brand voice is foundational work. Everything we put out builds on it. It's not the place to cut corners.</p>
+
+    <p>So here's what I'd love: let's talk. I'd like to hear your perspective on:</p>
+
+    <ul>
+      <li>What's most important to tackle first given where we are</li>
+      <li>What you think is achievable within that budget, and what would need more</li>
+      <li>How you'd prioritise the deliverables</li>
+      <li>Whether there's a phased approach that makes sense for both of us</li>
+    </ul>
+
+    <p>We're looking for the smartest way to get the foundation right. Not the cheapest option, not the biggest scope. The right starting point.</p>
+
+    <div class="divider"></div>
+
+    <!-- Closing -->
+    <div class="closing">
+      <p>Thanks for reading this. If the way we think about Sola resonates with how you think about brand, I think we'll work well together. Looking forward to talking.</p>
+
+      <div class="signature">
+        <p class="name">Bokang Sibolla</p>
+        <p class="role">Co-founder, Sola</p>
+        <p class="role">team@solatravel.app</p>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

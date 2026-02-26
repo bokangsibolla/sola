@@ -1,0 +1,93 @@
+@startuml ER — Community
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Community Forum
+
+entity "community_topics" as topics {
+  * id : uuid <<PK>>
+  --
+  label, slug
+  sort_order, is_active
+}
+
+entity "community_threads" as threads {
+  * id : uuid <<PK>>
+  --
+  * author_id : uuid <<FK profiles>>
+  author_type (user|system)
+  title, body
+  country_id : uuid <<FK>>
+  city_id : uuid <<FK>>
+  topic_id : uuid <<FK>>
+  status (active|locked|removed)
+  visibility (public|hidden)
+  pinned, is_seed
+  helpful_count, vote_score
+  reply_count
+  search_vector (tsvector)
+  created_at, updated_at
+}
+
+entity "community_replies" as replies {
+  * id : uuid <<PK>>
+  --
+  * thread_id : uuid <<FK>>
+  * author_id : uuid <<FK profiles>>
+  body
+  parent_reply_id : uuid <<FK self>>
+  status (active|removed)
+  helpful_count, vote_score
+  created_at, updated_at
+}
+
+entity "community_reactions" as reacts {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  entity_type (thread|reply)
+  entity_id : uuid
+  vote (up|down)
+  .. unique(user, type, id) ..
+}
+
+entity "community_reports" as creports {
+  * id : uuid <<PK>>
+  --
+  * reporter_id : uuid <<FK>>
+  entity_type (thread|reply)
+  entity_id : uuid
+  reason, details
+  status (open|reviewed|actioned)
+}
+
+entity "profiles" as profiles <<ref>> {
+  id : uuid
+}
+
+entity "countries" as countries <<ref>> {
+  id : uuid
+}
+
+entity "cities" as cities <<ref>> {
+  id : uuid
+}
+
+topics ||--o{ threads
+profiles ||--o{ threads : "author"
+countries |o--o{ threads
+cities |o--o{ threads
+threads ||--o{ replies
+profiles ||--o{ replies : "author"
+replies |o--o{ replies : "nested"
+profiles ||--o{ reacts
+profiles ||--o{ creports
+
+note bottom of threads
+  DB triggers auto-manage:
+  - reply_count on INSERT/soft-delete
+  - vote_score on reaction changes
+  - search_vector is GENERATED
+end note
+
+@enduml

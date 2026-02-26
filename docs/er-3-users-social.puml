@@ -1,0 +1,130 @@
+@startuml ER — Users and Social
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Users, Messaging & Connections
+
+entity "auth.users" as auth {
+  * id : uuid <<PK>>
+  --
+  email (managed by Supabase)
+}
+
+entity "profiles" as profiles {
+  * id : uuid <<PK, FK auth.users>>
+  --
+  username (unique, regex validated)
+  first_name, bio, avatar_url
+  nationality, date_of_birth
+  --
+  home_country_iso2, home_country_name
+  current_city_name
+  location_sharing_enabled
+  location_lat, location_lng
+  location_city_name
+  --
+  interests (text[])
+  travel_style
+  is_discoverable, is_online
+  --
+  verification_status
+  is_admin
+  --
+  has_seen_community_intro
+  has_created_first_post
+  --
+  emergency_contact_name
+  emergency_contact_phone
+  emergency_contact_relationship
+  --
+  onboarding_completed_at
+  created_at, updated_at
+}
+
+entity "blocked_users" as blocked {
+  * id : uuid <<PK>>
+  --
+  * blocker_id : uuid <<FK>>
+  * blocked_id : uuid <<FK>>
+  created_at
+}
+
+entity "connection_requests" as connreq {
+  * id : uuid <<PK>>
+  --
+  * sender_id : uuid <<FK>>
+  * receiver_id : uuid <<FK>>
+  status (pending|accepted|declined)
+  context, responded_at
+}
+
+entity "conversations" as convos {
+  * id : uuid <<PK>>
+  --
+  participant_ids (uuid[])
+  last_message
+  last_message_at
+  unread_count
+}
+
+entity "messages" as msgs {
+  * id : uuid <<PK>>
+  * conversation_id : uuid <<FK>>
+  * sender_id : uuid <<FK>>
+  --
+  text, sent_at, read_at
+  .. Realtime enabled ..
+}
+
+entity "push_tokens" as tokens {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  --
+  token (Expo push token)
+}
+
+entity "notifications" as notifs {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  --
+  type (community_reply|connection_request|...)
+  title, body
+  target_type, target_id
+  actor_id : uuid <<FK>>
+  is_read
+}
+
+entity "user_visited_countries" as uvc {
+  * user_id : uuid <<FK>>
+  * country_id : uuid <<FK>>
+}
+
+entity "user_attribution" as attrib {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK, UNIQUE>>
+  --
+  utm_source, utm_medium
+  utm_campaign, utm_term
+  referrer, first_seen_at
+}
+
+entity "user_reports" as ureports {
+  * id : uuid <<PK>>
+  --
+  reporter_id, reported_id
+  reason, details
+  status (pending|reviewed|resolved)
+}
+
+auth ||--|| profiles : "auto-created\non signup"
+profiles ||--o{ blocked : "blocker"
+profiles ||--o{ connreq : "sender"
+profiles ||--o{ connreq : "receiver"
+convos ||--o{ msgs
+profiles ||--o{ msgs : "sender"
+profiles ||--o{ tokens
+profiles ||--o{ notifs
+profiles ||--o{ uvc
+profiles |o--|| attrib
+
+@enduml

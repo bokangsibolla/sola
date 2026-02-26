@@ -1,0 +1,161 @@
+@startuml ER — Trips and Itinerary
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Trips & Itinerary Planning
+
+entity "trips" as trips {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK profiles>>
+  --
+  title, summary
+  destination_city_id : uuid <<FK>>
+  destination_name, country_iso2
+  arriving (date), leaving (date)
+  nights
+  --
+  status (draft|planned|active|completed)
+  privacy_level (private|friends|public)
+  matching_opt_in, flexible_dates
+  --
+  travel_style_tags (text[])
+  timezone, currency
+  budget_total, pace
+  cover_image_url, notes
+  created_at, updated_at
+}
+
+entity "trip_stops" as stops {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  --
+  stop_order, country_iso2
+  city_id : uuid <<FK>>
+  city_name
+  start_date, end_date
+  notes
+}
+
+entity "trip_days" as days {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  --
+  day_index, date
+  title, notes
+  .. unique(trip_id, day_index) ..
+}
+
+entity "itinerary_blocks" as blocks {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  * trip_day_id : uuid <<FK>>
+  --
+  block_type (place|accommodation|activity|
+    transport|meal|free_time|note|safety_check)
+  title_override
+  start_time, end_time
+  duration_min, order_index
+  place_id : uuid <<FK>>
+  location_lat, location_lng
+  cost_estimate, booking_url
+  status (planned|booked|done|skipped)
+  meta (jsonb)
+}
+
+entity "itinerary_block_tags" as btags {
+  * id : uuid <<PK>>
+  * block_id : uuid <<FK>>
+  --
+  tag_type (vibe|accessibility|women_note|logistics)
+  label
+}
+
+entity "itinerary_suggestions" as suggest {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  --
+  trip_day_id, block_id
+  suggestion_type (reorder|swap|insert|remove|time_shift)
+  reason, payload (jsonb)
+  status (pending|applied|dismissed)
+}
+
+entity "trip_entries" as entries {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  --
+  entry_type (note|arrival|departure|
+    stay|tip|comfort_check|highlight)
+  title, body
+  location_name
+  mood_tag (calm|happy|uneasy|unsafe)
+  visibility (private|shared|public)
+  is_shareable_tip
+}
+
+entity "trip_saved_items" as saved {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  --
+  entity_type (place|city|country|activity)
+  entity_id : uuid
+  category (general|accommodation|food|...)
+  notes, sort_order
+  .. unique(trip, type, id) ..
+}
+
+entity "trip_buddies" as buddies {
+  * id : uuid <<PK>>
+  * trip_id : uuid <<FK>>
+  * user_id : uuid <<FK>>
+  .. unique(trip, user) ..
+}
+
+entity "trip_matching_preferences" as match {
+  * trip_id : uuid <<PK, FK>>
+  --
+  style_tags (text[])
+  match_radius_km
+  show_profile, show_dates
+  show_stops
+}
+
+entity "trip_places" as tplaces {
+  * trip_id : uuid <<FK>>
+  * place_id : uuid <<FK>>
+  --
+  day_number, notes
+  .. (legacy table) ..
+}
+
+entity "profiles" as profiles <<ref>> {
+  id : uuid
+}
+
+entity "cities" as cities <<ref>> {
+  id : uuid
+}
+
+entity "places" as places <<ref>> {
+  id : uuid
+}
+
+profiles ||--o{ trips
+trips ||--o{ stops
+trips ||--o{ days
+days ||--o{ blocks
+blocks ||--o{ btags
+trips ||--o{ suggest
+trips ||--o{ entries
+trips ||--o{ saved
+trips ||--o{ buddies
+trips ||--|| match
+trips ||--o{ tplaces
+cities |o--o{ stops
+cities |o--o{ trips
+places |o--o{ blocks
+places |o--o{ tplaces
+profiles ||--o{ buddies
+
+@enduml

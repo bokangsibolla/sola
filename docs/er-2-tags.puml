@@ -1,0 +1,81 @@
+@startuml ER — Tags and Collections
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Tags, Collections & Explore
+
+entity "tag_groups" as tgroups {
+  * id : uuid <<PK>>
+  --
+  slug, label
+  scope (global|city|country)
+  order_index, is_active
+}
+
+entity "tags" as tags {
+  * id : uuid <<PK>>
+  tag_group_id : uuid <<FK>>
+  --
+  slug, label
+  filter_group (vibe|good_for|amenity|...)
+  scope, tag_type (place|profile)
+  icon, order_index
+}
+
+entity "place_tags" as ptags {
+  * place_id : uuid <<FK>>
+  * tag_id : uuid <<FK>>
+  --
+  weight, source (editorial|model|user)
+}
+
+entity "destination_tags" as dtags {
+  * id : uuid <<PK>>
+  --
+  entity_type (country|city|neighborhood)
+  entity_id : uuid
+  tag_category, tag_slug, tag_label
+  order_index
+}
+
+entity "explore_collections" as ecoll {
+  * id : uuid <<PK>>
+  --
+  slug, title, subtitle
+  intro_md, hero_image_url
+  badge_label
+  include_tags (text[])
+  exclude_tags (text[])
+  entity_types (text[])
+  sort_by, order_index
+  is_active, is_featured
+  is_sponsored, sponsor_name
+}
+
+entity "discovery_lenses" as lenses {
+  * id : uuid <<PK>>
+  --
+  slug, title, helper_text
+  icon_name, intro_md
+  include_tags (text[])
+  exclude_tags (text[])
+  sort_by, max_items
+  is_active
+  .. (removed from active feed) ..
+}
+
+entity "places" as places <<ref>> {
+  id : uuid
+}
+
+tgroups ||--o{ tags
+tags ||--o{ ptags
+places ||--o{ ptags
+
+note bottom of ecoll
+  Collections filter destinations
+  by matching destination_tags
+  against include/exclude tags
+end note
+
+@enduml

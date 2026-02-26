@@ -1,0 +1,114 @@
+@startuml Sola App Data Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam activityBackgroundColor #FFF5F1
+skinparam componentBackgroundColor #F8F8F8
+
+title Sola — Application Data Flow (High Level)
+
+' ========== ACTORS ==========
+actor "User" as user
+cloud "Supabase" as supa {
+  database "Postgres\n(RLS)" as db
+  component "Auth" as auth
+  component "Storage" as storage
+  component "Realtime" as realtime
+  component "Edge\nFunctions" as edge
+}
+cloud "External" as ext {
+  component "Expo Push" as expo_push
+  component "Resend\n(Email)" as resend
+  component "PostHog" as posthog
+  component "Sentry" as sentry
+  component "Google\nOAuth" as google
+  component "Apple\nOAuth" as apple
+}
+
+' ========== CLIENT ==========
+package "React Native App" as app {
+
+  package "Auth Layer" as auth_layer {
+    component "AuthContext\n(useAuth)" as authCtx
+    component "lib/oauth.ts" as oauth
+  }
+
+  package "Data Layer" as data_layer {
+    component "data/api.ts\n(Supabase Queries)" as api
+    component "hooks/useData.ts\n(React Query)" as useData
+    component "React Query\nCache" as cache
+  }
+
+  package "Domain Hooks" as domain {
+    component "useFeedItems" as useFeed
+    component "useCommunityFeed" as useComm
+    component "useTrips" as useTrips
+    component "useTravelersFeed" as useTravelers
+    component "useUnreadIndicator" as useUnread
+    component "useThread" as useThread
+  }
+
+  package "Screens" as screens {
+    component "Home" as homeScreen
+    component "Discover" as discoverScreen
+    component "Connect" as connectScreen
+    component "Trips" as tripsScreen
+    component "Onboarding" as onbScreen
+  }
+
+  package "Utilities" as utils {
+    component "lib/analytics.ts" as analytics
+    component "lib/currency.ts" as currency
+    component "lib/i18n.ts" as i18n
+    component "lib/attribution.ts" as attrib
+  }
+}
+
+' ========== AUTH FLOW ==========
+user --> authCtx : "Sign in"
+authCtx --> oauth : "OAuth flow"
+oauth --> google : "ID token"
+oauth --> apple : "ID token"
+oauth --> auth : "signInWithIdToken"
+auth --> db : "Create user"
+db --> profiles : "Trigger:\nhandle_new_user()"
+
+' ========== DATA FLOW ==========
+screens --> domain : "Use hooks"
+domain --> useData : "Wrapped queries"
+useData --> cache : "Cache check"
+cache --> api : "Cache miss"
+api --> db : "Supabase queries\n(RLS enforced)"
+db --> api : "Rows"
+api --> useData : "Mapped data\n(toCamel)"
+useData --> cache : "Store"
+cache --> domain : "Data + loading state"
+domain --> screens : "Render"
+
+' ========== REALTIME ==========
+db --> realtime : "INSERT on\nmessages"
+realtime --> useUnread : "Subscription"
+useUnread --> cache : "Invalidate\nquery key"
+
+' ========== PUSH NOTIFICATIONS ==========
+db -right-> edge : "Webhook:\nmessage INSERT"
+edge --> expo_push : "Push notification"
+expo_push --> user : "Device notification"
+
+' ========== VERIFICATION EMAIL ==========
+edge --> resend : "Verification\nemail"
+resend --> ext : "team@solatravel.app"
+
+' ========== MEDIA ==========
+user --> storage : "Upload avatar\n/ photos"
+storage --> api : "Public URL"
+
+' ========== ANALYTICS ==========
+screens --> analytics : "Track events"
+analytics --> posthog : "Events + properties"
+screens --> sentry : "Error reports"
+
+' ========== ATTRIBUTION ==========
+user --> attrib : "Deep link\n(UTM params)"
+attrib --> db : "user_attribution"
+
+@enduml

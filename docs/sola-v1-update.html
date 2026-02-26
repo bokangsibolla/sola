@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sola — V1 Product Update</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #E5653A;
+    --orange-fill: #FFF5F1;
+    --orange-light: #FEE8DE;
+    --charcoal: #0E0E0E;
+    --text-secondary: #6B6B6B;
+    --text-muted: #9A9A9A;
+    --border: #F0F0F0;
+    --bg: #FFFFFF;
+    --neutral-fill: #F3F3F3;
+    --green: #2D8A4E;
+    --blue: #3B82F6;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  @page {
+    size: A4 landscape;
+    margin: 0;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', -apple-system, sans-serif;
+    color: var(--charcoal);
+    background: var(--bg);
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  .slide {
+    width: 297mm;
+    height: 210mm;
+    padding: 40px 56px;
+    page-break-after: always;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .slide:last-child { page-break-after: avoid; }
+
+  /* ---- Utility ---- */
+  .slide-number {
+    position: absolute;
+    bottom: 24px;
+    right: 40px;
+    font-size: 10px;
+    color: var(--text-muted);
+    letter-spacing: 0.5px;
+  }
+  .logo-corner {
+    position: absolute;
+    top: 28px;
+    left: 40px;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--orange);
+    letter-spacing: 1px;
+  }
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: var(--orange);
+    font-weight: 600;
+    margin-bottom: 12px;
+  }
+  .slide-title {
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--charcoal);
+    margin-bottom: 8px;
+  }
+  .slide-subtitle {
+    font-size: 18px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    line-height: 1.5;
+    max-width: 720px;
+  }
+  .divider {
+    width: 48px;
+    height: 3px;
+    background: var(--orange);
+    border-radius: 2px;
+    margin: 20px 0;
+  }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; }
+  .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+  .grid-5 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr; gap: 16px; }
+  .flex-grow { flex: 1; }
+  .flex-center { display: flex; align-items: center; justify-content: center; }
+
+  /* ---- Stat Cards ---- */
+  .stat-card {
+    background: var(--neutral-fill);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .stat-card.orange {
+    background: var(--orange);
+    color: white;
+  }
+  .stat-card.orange-fill {
+    background: var(--orange-fill);
+  }
+  .stat-number {
+    font-size: 42px;
+    font-weight: 800;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .stat-label {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.7;
+  }
+  .stat-card.orange .stat-label { opacity: 0.85; }
+
+  /* ---- Feature Cards ---- */
+  .feature-card {
+    background: var(--neutral-fill);
+    border-radius: 12px;
+    padding: 28px 24px;
+    display: flex;
+    flex-direction: column;
+  }
+  .feature-card.bordered {
+    background: white;
+    border: 1px solid var(--border);
+  }
+  .feature-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--orange-fill);
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    margin-bottom: 16px;
+  }
+  .feature-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .feature-desc {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.55;
+  }
+
+  /* ---- Checklist ---- */
+  .check-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13.5px;
+    line-height: 1.4;
+  }
+  .check-item:last-child { border: none; }
+  .check-done {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--green);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .check-pending {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--orange);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  /* ---- Timeline ---- */
+  .timeline-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+  }
+  .timeline-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--orange);
+    flex-shrink: 0;
+  }
+  .timeline-dot.done { background: var(--green); }
+  .timeline-dot.future { background: var(--border); border: 2px solid var(--text-muted); }
+  .timeline-label {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 100px;
+  }
+  .timeline-desc {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Cohort Table ---- */
+  .cohort-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .cohort-table th {
+    text-align: left;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    padding: 8px 12px;
+    border-bottom: 2px solid var(--charcoal);
+  }
+  .cohort-table td {
+    padding: 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  .cohort-table .row-label {
+    font-weight: 600;
+    color: var(--charcoal);
+  }
+  .cohort-table .row-desc {
+    color: var(--text-secondary);
+    line-height: 1.45;
+  }
+
+  /* ---- Progress Bar ---- */
+  .progress-bar {
+    height: 8px;
+    background: var(--neutral-fill);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+  }
+  .progress-fill {
+    height: 100%;
+    background: var(--orange);
+    border-radius: 4px;
+  }
+  .progress-fill.green { background: var(--green); }
+
+  /* ---- Tag/Pill ---- */
+  .pill {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .pill.orange { background: var(--orange-fill); color: var(--orange); }
+  .pill.green { background: #E8F5EE; color: var(--green); }
+  .pill.blue { background: #EFF6FF; color: var(--blue); }
+  .pill.neutral { background: var(--neutral-fill); color: var(--text-secondary); }
+
+  /* ---- Cover Specific ---- */
+  .cover {
+    background: var(--charcoal);
+    color: white;
+    justify-content: flex-end;
+    padding: 56px 64px;
+  }
+  .cover .logo-corner { color: white; }
+  .cover-logo {
+    font-size: 64px;
+    font-weight: 800;
+    letter-spacing: 3px;
+    color: var(--orange);
+    margin-bottom: 16px;
+  }
+  .cover-tagline {
+    font-size: 28px;
+    font-weight: 300;
+    color: rgba(255,255,255,0.7);
+    margin-bottom: 48px;
+    line-height: 1.4;
+  }
+  .cover-meta {
+    font-size: 12px;
+    color: rgba(255,255,255,0.4);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+  }
+  .cover-accent {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 45%;
+    height: 100%;
+    background: var(--orange);
+    clip-path: polygon(25% 0%, 100% 0%, 100% 100%, 0% 100%);
+    opacity: 0.15;
+  }
+
+  /* ---- Section Divider ---- */
+  .section-divider {
+    background: var(--orange);
+    color: white;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 56px 64px;
+  }
+  .section-divider .section-label { color: rgba(255,255,255,0.5); }
+  .section-divider .slide-title { color: white; font-size: 48px; }
+  .section-divider .slide-subtitle { color: rgba(255,255,255,0.8); }
+
+  /* ---- Quote ---- */
+  .quote-block {
+    border-left: 3px solid var(--orange);
+    padding: 0 24px;
+    margin: 16px 0;
+  }
+  .quote-text {
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--charcoal);
+  }
+  .quote-attr {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+
+  /* ---- Dashboard Image ---- */
+  .dashboard-frame {
+    background: var(--neutral-fill);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 12px;
+    overflow: hidden;
+  }
+  .dashboard-frame img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+  }
+
+  /* ---- Tech Stack ---- */
+  .tech-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .tech-label {
+    font-weight: 600;
+    min-width: 120px;
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .tech-value {
+    font-weight: 500;
+    color: var(--charcoal);
+  }
+
+  /* ---- Strategy Card ---- */
+  .strategy-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .strategy-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+  .strategy-card .count {
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+  .strategy-card p {
+    font-size: 12px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ---- Close Slide ---- */
+  .close-slide {
+    background: var(--charcoal);
+    color: white;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+
+  /* ---- Inline Metric ---- */
+  .inline-metric {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .inline-metric .num {
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--orange);
+  }
+  .inline-metric .label {
+    font-size: 14px;
+    color: var(--text-secondary);
+  }
+
+  /* ---- Content Grid ---- */
+  .content-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+  }
+  .content-bar-fill {
+    height: 24px;
+    background: var(--orange);
+    border-radius: 4px;
+    min-width: 4px;
+  }
+  .content-bar-label {
+    font-size: 12px;
+    font-weight: 500;
+    min-width: 80px;
+    text-align: right;
+    color: var(--text-secondary);
+  }
+  .content-bar-value {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--charcoal);
+    min-width: 40px;
+  }
+
+  /* ---- LinkedIn Content ---- */
+  .linkedin-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .linkedin-card .week {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+  .linkedin-card h4 {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .linkedin-card p {
+    font-size: 11.5px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+  }
+
+  /* ---- Closing CTA ---- */
+  .cta-box {
+    background: var(--orange);
+    color: white;
+    border-radius: 12px;
+    padding: 32px 40px;
+    text-align: center;
+  }
+  .cta-box h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .cta-box p {
+    font-size: 14px;
+    opacity: 0.85;
+    margin-bottom: 20px;
+  }
+  .cta-links {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+  .cta-links span {
+    opacity: 0.9;
+  }
+
+  /* Print tweaks */
+  @media print {
+    body { margin: 0; }
+    .slide { margin: 0; }
+  }
+
+  /* Screen preview */
+  @media screen {
+    body {
+      background: #e5e5e5;
+      padding: 20px 0;
+    }
+    .slide {
+      margin: 20px auto;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+      border-radius: 4px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================================ -->
+<!-- SLIDE 1: COVER -->
+<!-- ============================================ -->
+<section class="slide cover">
+  <div class="cover-accent"></div>
+  <div style="position:relative; z-index:1;">
+    <div class="cover-logo">SOLA</div>
+    <div class="cover-tagline">
+      The solo travel app built for women.<br>
+      V1 is ready.
+    </div>
+    <div class="cover-meta">Product Update &nbsp;&middot;&nbsp; February 2026 &nbsp;&middot;&nbsp; Confidential</div>
+  </div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.3);">01</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 2: THE PROBLEM -->
+<!-- ============================================ -->
+<section class="slide" style="justify-content: center;">
+  <div class="logo-corner">SOLA</div>
+  <div class="section-label">The Problem</div>
+  <div class="slide-title" style="max-width: 750px;">Women travel differently.<br>No app is built for that.</div>
+  <div class="divider"></div>
+  <div style="max-width: 720px;">
+    <p style="font-size: 16px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 20px;">
+      There is invisible labour behind every trip a woman takes alone. Safety research, neighbourhood checks, questions you can only ask another woman. Which hostels actually feel safe. Which streets to avoid after dark. What to wear in which country.
+    </p>
+    <p style="font-size: 16px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 28px;">
+      None of this lives in one place. It's scattered across Reddit threads, Facebook groups, and outdated blog posts. Women deserve better tools.
+    </p>
+    <div style="display: flex; gap: 48px;">
+      <div class="inline-metric"><span class="num">72%</span><span class="label">of solo travelers are women<br><span style="font-size:11px; color:var(--text-muted);">Solo Travel Society, 2024</span></span></div>
+      <div class="inline-metric"><span class="num">$125B</span><span class="label">solo travel market by 2028<br><span style="font-size:11px; color:var(--text-muted);">Allied Market Research</span></span></div>
+    </div>
+  </div>
+  <div class="slide-number">02</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 3: OUR STORY -->
+<!-- ============================================ -->
+<section class="slide" style="justify-content: center;">
+  <div class="logo-corner">SOLA</div>
+  <div class="section-label">Our Story</div>
+  <div class="slide-title" style="max-width: 700px;">Born in Poblacion, Manila.</div>
+  <div class="divider"></div>
+  <div class="grid-2" style="margin-top: 8px;">
+    <div>
+      <p style="font-size: 15px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 16px;">
+        We met traveling. That corner of Manila where every traveler passes through on their way somewhere. We kept hearing the same thing from women on the road. The same frustrations, the same unanswered questions, the same gaps that no app or travel blog was filling.
+      </p>
+      <p style="font-size: 15px; line-height: 1.7; color: var(--text-secondary); margin-bottom: 16px;">
+        So we spent a year listening. Hundreds of conversations with solo women travelers about what they actually need.
+      </p>
+      <p style="font-size: 15px; line-height: 1.7; color: var(--text-secondary);">
+        Then we taught ourselves to code and built it. No funding, no team of fifty. Just a deep belief that women should be able to travel freely, and that someone should build the tools to support that.
+      </p>
+    </div>
+    <div style="display: flex; flex-direction: column; justify-content: center; gap: 20px; padding-left: 24px;">
+      <div class="quote-block">
+        <div class="quote-text" style="font-size: 17px;">"Everything in here was built because a woman told us she needed it."</div>
+      </div>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap; margin-top: 12px;">
+        <div class="pill orange">Self-taught founders</div>
+        <div class="pill orange">Bootstrapped</div>
+        <div class="pill orange">100+ women interviewed</div>
+        <div class="pill orange">1 year of listening</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">03</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 4: SECTION DIVIDER - THE PRODUCT -->
+<!-- ============================================ -->
+<section class="slide section-divider">
+  <div class="section-label">Section 01</div>
+  <div class="slide-title">The Product</div>
+  <div class="slide-subtitle" style="margin-top: 12px;">A complete solo travel platform. Not a prototype. Not an MVP.<br>A real, working app submitting to the App Store this week.</div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.3);">04</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 5: PRODUCT AT A GLANCE -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Product Overview</div>
+    <div class="slide-title">What we built.</div>
+    <div class="slide-subtitle" style="margin-bottom: 28px;">Five pillars. One app. Everything a solo woman traveler needs.</div>
+  </div>
+  <div class="grid-5 flex-grow" style="align-items: stretch;">
+    <div class="feature-card" style="background: var(--orange-fill);">
+      <div class="feature-icon">D</div>
+      <div class="feature-title">Discover</div>
+      <div class="feature-desc">Country guides, city pages, places, experiences, budget breakdowns, safety info. All researched for women traveling alone.</div>
+    </div>
+    <div class="feature-card" style="background: var(--orange-fill);">
+      <div class="feature-icon">C</div>
+      <div class="feature-title">Community</div>
+      <div class="feature-desc">Ask the questions you can't google. Real women, real answers. Safety alerts, tips, shared experiences.</div>
+    </div>
+    <div class="feature-card" style="background: var(--orange-fill);">
+      <div class="feature-icon">T</div>
+      <div class="feature-title">Travelers</div>
+      <div class="feature-desc">Find women heading where you're heading. Smart matching by destination, interests, travel dates, and home country.</div>
+    </div>
+    <div class="feature-card" style="background: var(--orange-fill);">
+      <div class="feature-icon">P</div>
+      <div class="feature-title">Trip Planning</div>
+      <div class="feature-desc">Day-by-day itineraries, saved places, budget tracking, travel companions, comfort checks. Replace your spreadsheet.</div>
+    </div>
+    <div class="feature-card" style="background: var(--orange-fill);">
+      <div class="feature-icon">H</div>
+      <div class="feature-title">Home</div>
+      <div class="feature-desc">Personalized feed. Your trips, community activity, traveler recommendations, profile progress, all in one place.</div>
+    </div>
+  </div>
+  <div class="slide-number">05</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 6: BY THE NUMBERS -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">By The Numbers</div>
+    <div class="slide-title">This is not a prototype.</div>
+    <div class="slide-subtitle" style="margin-bottom: 28px;">Real depth. Real content. Real infrastructure.</div>
+  </div>
+  <div class="grid-4" style="margin-bottom: 20px;">
+    <div class="stat-card orange">
+      <div class="stat-number">74</div>
+      <div class="stat-label">App Screens</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">222</div>
+      <div class="stat-label">UI Components</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">136</div>
+      <div class="stat-label">DB Migrations</div>
+    </div>
+    <div class="stat-card orange-fill">
+      <div class="stat-number" style="color: var(--orange);">v1.0</div>
+      <div class="stat-label">App Version</div>
+    </div>
+  </div>
+  <div class="grid-4">
+    <div class="stat-card">
+      <div class="stat-number" style="font-size: 36px;">19</div>
+      <div class="stat-label">Countries</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="font-size: 36px;">75</div>
+      <div class="stat-label">Cities</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="font-size: 36px;">658</div>
+      <div class="stat-label">Places & Experiences</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number" style="font-size: 36px;">2,313</div>
+      <div class="stat-label">Place Images</div>
+    </div>
+  </div>
+  <div style="display: flex; gap: 16px; margin-top: 20px; flex-wrap: wrap;">
+    <div class="pill neutral">React Native</div>
+    <div class="pill neutral">Expo SDK 54</div>
+    <div class="pill neutral">Supabase</div>
+    <div class="pill neutral">TypeScript Strict</div>
+    <div class="pill neutral">PostHog Analytics</div>
+    <div class="pill neutral">Apple Auth</div>
+    <div class="pill neutral">Push Notifications</div>
+    <div class="pill neutral">iOS + Android</div>
+  </div>
+  <div class="slide-number">06</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 7: DISCOVER DEEP DIVE -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Feature: Discover</div>
+    <div class="slide-title">Destination intelligence for solo women.</div>
+  </div>
+  <div class="grid-2 flex-grow" style="margin-top: 20px;">
+    <div>
+      <p style="font-size: 14px; line-height: 1.65; color: var(--text-secondary); margin-bottom: 24px;">
+        Not another travel guide. Structured, practical information that answers the questions solo women actually have. Safety, budget, vibe, what to expect on the ground.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        <div class="check-item">
+          <div class="check-done">&#10003;</div>
+          <div><strong>Country guides</strong> with solo friendliness levels, budget grids, visa info, cultural notes, transport summaries</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done">&#10003;</div>
+          <div><strong>City pages</strong> with neighbourhood breakdowns, areas to explore, local experiences, social spots</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done">&#10003;</div>
+          <div><strong>658 curated places</strong> with real descriptions. Cafes, hostels, experiences, landmarks, wellness spots</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done">&#10003;</div>
+          <div><strong>Smart filtering</strong> by tags, categories, budget level, neighbourhood</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done">&#10003;</div>
+          <div><strong>Volunteer opportunities</strong> hub with curated organizations across Southeast Asia</div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 24px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 16px;">Content Coverage</div>
+        <div class="content-bar">
+          <div class="content-bar-label">Countries</div>
+          <div class="content-bar-fill" style="width: 100%;"></div>
+          <div class="content-bar-value">19/19</div>
+        </div>
+        <div class="content-bar">
+          <div class="content-bar-label">Cities</div>
+          <div class="content-bar-fill" style="width: 97%;"></div>
+          <div class="content-bar-value">73/75</div>
+        </div>
+        <div class="content-bar">
+          <div class="content-bar-label">Country Guides</div>
+          <div class="content-bar-fill" style="width: 63%;"></div>
+          <div class="content-bar-value">12/19</div>
+        </div>
+        <div class="content-bar">
+          <div class="content-bar-label">Places</div>
+          <div class="content-bar-fill" style="width: 100%; background: var(--green);"></div>
+          <div class="content-bar-value">658</div>
+        </div>
+        <div class="content-bar">
+          <div class="content-bar-label">Images</div>
+          <div class="content-bar-fill" style="width: 100%; background: var(--green);"></div>
+          <div class="content-bar-value">2,313</div>
+        </div>
+      </div>
+      <div style="background: var(--orange-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px;">Regions Covered</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+          Southeast Asia (Thailand, Vietnam, Indonesia, Philippines, Cambodia, Laos, Myanmar, Malaysia, Singapore) &middot; East Asia (Japan, South Korea, Taiwan) &middot; South Asia (India, Sri Lanka, Nepal) &middot; Southern Africa (South Africa, Namibia, Mozambique) &middot; Europe (Portugal)
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">07</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 8: COMMUNITY + TRAVELERS -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Features: Community & Travelers</div>
+    <div class="slide-title">The social layer that doesn't exist yet.</div>
+  </div>
+  <div class="grid-2 flex-grow" style="margin-top: 20px;">
+    <div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Discussions</div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+        A space for the questions you can't google. "Is it safe to walk alone at night in Medellin?" "Which hostels in Bali actually have a solo female vibe?" Real women, real answers.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Post types:</strong> Questions, Tips, Experiences, Safety Alerts</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Threaded replies</strong> with voting system</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Sola Team posts</strong> with verified badges</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>First-time onboarding</strong> with guided composer</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Travelers</div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 20px;">
+        Find women heading where you're heading. Not a dating app. Not a random social feed. Context-aware matching that actually helps you find travel companions.
+      </p>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Smart matching:</strong> near you, shared countries, shared interests, trip overlap</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Together feature:</strong> post activities, find companions</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Direct messaging</strong> with real-time delivery</div>
+        </div>
+        <div class="check-item" style="padding: 8px 0;">
+          <div class="check-done">&#10003;</div>
+          <div style="font-size: 13px;"><strong>Connection requests</strong> with accept/decline flow</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="background: var(--neutral-fill); border-radius: 12px; padding: 16px 20px; margin-top: 8px;">
+    <div style="font-size: 12px; color: var(--text-secondary);">
+      <strong style="color: var(--charcoal);">Safety by design:</strong> Identity verification system, content moderation, admin review dashboard, reporting tools, and Sola Team oversight built in from day one. Not bolted on later.
+    </div>
+  </div>
+  <div class="slide-number">08</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 9: TRIPS + HOME -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Features: Trips & Home</div>
+    <div class="slide-title">Plan it. Live it. Remember it.</div>
+  </div>
+  <div class="grid-2 flex-grow" style="margin-top: 20px;">
+    <div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Trip Planning</div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        Replace the spreadsheet. Full trip lifecycle: planning, traveling, completed. Everything in one place.
+      </p>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px; margin-bottom: 12px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px;">Trip Features</div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Day-by-day itinerary</div>
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Time block scheduling</div>
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Saved places / wishlist</div>
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Budget tracking</div>
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Travel companions</div>
+          <div style="font-size: 12px; padding: 6px 0; border-bottom: 1px solid var(--border);">Comfort checks</div>
+          <div style="font-size: 12px; padding: 6px 0;">Transport tracking</div>
+          <div style="font-size: 12px; padding: 6px 0;">Trip recap & analytics</div>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Personalized Home</div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px;">
+        A smart home feed that adapts to where you are in your travel journey. New user? Get discovery. Planning a trip? See your itinerary. On the road? Live travel mode.
+      </p>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); font-weight: 600; margin-bottom: 12px;">Feed Card Types</div>
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <span class="pill orange" style="font-size: 9px; padding: 2px 8px;">TRIP</span> Active, upcoming, and past trip cards
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <span class="pill green" style="font-size: 9px; padding: 2px 8px;">STATS</span> Travel map, profile progress, stats snapshot
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <span class="pill blue" style="font-size: 9px; padding: 2px 8px;">SOCIAL</span> Trending threads, traveler recommendations
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; font-size: 12px;">
+            <span class="pill neutral" style="font-size: 9px; padding: 2px 8px;">NUDGE</span> Profile completion, first trip, verification
+          </div>
+        </div>
+      </div>
+      <div style="margin-top: 12px; padding: 16px 20px; background: var(--orange-fill); border-radius: 12px;">
+        <div style="font-size: 12px; color: var(--text-secondary);">
+          <strong style="color: var(--orange);">New user experience:</strong> Dedicated onboarding flow with welcome screen, profile setup, travel preferences, interests picker, and identity verification.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">09</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 10: SECTION DIVIDER - TECH -->
+<!-- ============================================ -->
+<section class="slide section-divider">
+  <div class="section-label">Section 02</div>
+  <div class="slide-title">Tech & Operations</div>
+  <div class="slide-subtitle" style="margin-top: 12px;">Built to scale. Instrumented from day one.<br>Not a hackathon project.</div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.3);">10</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 11: TECH STACK -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Architecture</div>
+    <div class="slide-title">The stack.</div>
+    <div class="slide-subtitle" style="margin-bottom: 24px;">Production-grade from the start. TypeScript strict mode. Full test coverage path.</div>
+  </div>
+  <div class="grid-2 flex-grow">
+    <div>
+      <div class="tech-row">
+        <div class="tech-label">Framework</div>
+        <div class="tech-value">React Native 0.81 + Expo SDK 54</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Navigation</div>
+        <div class="tech-value">Expo Router 6 (file-based)</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">State</div>
+        <div class="tech-value">React Query (TanStack) v5</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Backend</div>
+        <div class="tech-value">Supabase (Postgres, Auth, Storage)</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Auth</div>
+        <div class="tech-value">Apple Sign-In, Google OAuth</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Analytics</div>
+        <div class="tech-value">PostHog (full event instrumentation)</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Errors</div>
+        <div class="tech-value">Sentry (crash reporting)</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Animations</div>
+        <div class="tech-value">Reanimated v4</div>
+      </div>
+      <div class="tech-row">
+        <div class="tech-label">Push</div>
+        <div class="tech-value">Expo Notifications</div>
+      </div>
+      <div class="tech-row" style="border: none;">
+        <div class="tech-label">Edge Functions</div>
+        <div class="tech-value">6 Supabase functions (auth, proxy, push, email, account)</div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 24px;">
+        <div style="font-size: 14px; font-weight: 700; margin-bottom: 12px;">Codebase Scale</div>
+        <div style="display: flex; flex-direction: column; gap: 10px;">
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">App screens</span>
+            <span style="font-weight: 700;">74</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Reusable components</span>
+            <span style="font-weight: 700;">222</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Database migrations</span>
+            <span style="font-weight: 700;">136</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 100%;"></div></div>
+          <div style="display: flex; justify-content: space-between; font-size: 13px;">
+            <span style="color: var(--text-secondary);">Edge functions</span>
+            <span style="font-weight: 700;">6</span>
+          </div>
+          <div class="progress-bar"><div class="progress-fill" style="width: 30%;"></div></div>
+        </div>
+      </div>
+      <div style="background: var(--orange-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Design System</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+          Single source of truth for all design tokens. Colors, spacing, typography, radius, animations. 44pt minimum touch targets. WCAG-aware contrast ratios. Consistent across every screen.
+        </div>
+      </div>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 8px;">Cross-Platform</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+          iOS primary. Android supported. Same codebase, native performance. Hermes engine optimized. New Architecture ready.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">11</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 12: ANALYTICS DASHBOARD -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Operations</div>
+    <div class="slide-title">We built the dashboard before launch.</div>
+    <div class="slide-subtitle" style="margin-bottom: 20px;">Full analytics from day one. Growth, retention, engagement, funnels, content performance, geo demand.</div>
+  </div>
+  <div class="flex-grow" style="display: flex; gap: 24px;">
+    <div style="flex: 2;">
+      <div class="dashboard-frame" style="height: 100%;">
+        <img src="/dashboard-full.png" alt="Sola Analytics Dashboard" style="object-fit: contain; max-height: 100%;">
+      </div>
+    </div>
+    <div style="flex: 1; display: flex; flex-direction: column; gap: 12px;">
+      <div style="background: var(--neutral-fill); border-radius: 10px; padding: 16px;">
+        <div style="font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Dashboard Sections</div>
+        <div style="font-size: 12px; line-height: 2; color: var(--text-secondary);">
+          Growth & Retention<br>
+          Engagement Depth<br>
+          Content Intelligence<br>
+          Funnel Analysis<br>
+          Geo Demand Heatmap<br>
+          Community Health<br>
+          Audience Demographics<br>
+          Power Users<br>
+          Churn Risk
+        </div>
+      </div>
+      <div style="background: var(--orange-fill); border-radius: 10px; padding: 16px;">
+        <div style="font-size: 11px; font-weight: 600; color: var(--orange); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px;">Built With</div>
+        <div style="font-size: 12px; line-height: 1.6; color: var(--text-secondary);">
+          Next.js 15, Recharts, Supabase queries, auto-refresh. Separate app at sola-dashboard.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">12</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 13: OPERATIONAL READINESS -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Operations</div>
+    <div class="slide-title">Built to run, not just to demo.</div>
+    <div class="slide-subtitle" style="margin-bottom: 24px;">Admin tools, moderation, automated emails, error tracking. The boring stuff that separates real products from demos.</div>
+  </div>
+  <div class="grid-3 flex-grow">
+    <div class="feature-card bordered">
+      <div class="feature-icon" style="background: #E8F5EE; color: var(--green);">M</div>
+      <div class="feature-title">Moderation</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">Admin tab with content reports, user reports, and verification review. Flag system with severity levels. Not visible to regular users.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+    <div class="feature-card bordered">
+      <div class="feature-icon" style="background: #EFF6FF; color: var(--blue);">V</div>
+      <div class="feature-title">Identity Verification</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">Profile verification flow with admin review. Verified badges on traveler profiles. Trust signals throughout the app.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+    <div class="feature-card bordered">
+      <div class="feature-icon">E</div>
+      <div class="feature-title">Automated Email</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">Welcome email triggered on signup via Supabase Edge Function. Professional branded template with Sola voice.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+    <div class="feature-card bordered">
+      <div class="feature-icon" style="background: #E8F5EE; color: var(--green);">A</div>
+      <div class="feature-title">Analytics Pipeline</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">PostHog instrumented across every screen and interaction. Event tracking, session recording, feature flags ready.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+    <div class="feature-card bordered">
+      <div class="feature-icon" style="background: #EFF6FF; color: var(--blue);">S</div>
+      <div class="feature-title">Error Tracking</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">Sentry integrated for crash reporting and performance monitoring. Real-time alerts on production issues.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+    <div class="feature-card bordered">
+      <div class="feature-icon">P</div>
+      <div class="feature-title">Push Notifications</div>
+      <div class="feature-desc" style="margin-bottom: 12px;">Expo Notifications with Edge Function triggers. Message notifications, community activity, trip reminders.</div>
+      <div class="pill green" style="align-self: flex-start;">Built</div>
+    </div>
+  </div>
+  <div class="slide-number">13</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 14: SECTION DIVIDER - LAUNCH -->
+<!-- ============================================ -->
+<section class="slide section-divider">
+  <div class="section-label">Section 03</div>
+  <div class="slide-title">Launch Readiness</div>
+  <div class="slide-subtitle" style="margin-top: 12px;">Submitting to the App Store this week.<br>Here's where everything stands.</div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.3);">14</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 15: APP STORE CHECKLIST -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">App Store Readiness</div>
+    <div class="slide-title">The checklist.</div>
+  </div>
+  <div class="grid-2 flex-grow" style="margin-top: 16px;">
+    <div>
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">Completed</div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Bundle ID registered</strong><br><span style="color: var(--text-muted); font-size: 12px;">app.solatravel.sola (iOS + Android)</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>App icons and splash screen</strong><br><span style="color: var(--text-muted); font-size: 12px;">1024x1024 icon, adaptive Android icons, branded splash</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Apple Sign-In implemented</strong><br><span style="color: var(--text-muted); font-size: 12px;">Required for App Store. Google OAuth also available.</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Privacy permissions configured</strong><br><span style="color: var(--text-muted); font-size: 12px;">Photo library, camera, notifications, location</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>All 74 screens functional</strong><br><span style="color: var(--text-muted); font-size: 12px;">Auth, onboarding, all 5 tabs, admin, settings</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Content populated</strong><br><span style="color: var(--text-muted); font-size: 12px;">19 countries, 75 cities, 658 places, 2,313 images</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Analytics & error tracking</strong><br><span style="color: var(--text-muted); font-size: 12px;">PostHog + Sentry in production</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-done">&#10003;</div>
+        <div><strong>Welcome email automation</strong><br><span style="color: var(--text-muted); font-size: 12px;">Supabase Edge Function trigger on signup</span></div>
+      </div>
+    </div>
+    <div>
+      <div style="font-size: 15px; font-weight: 700; margin-bottom: 16px;">This Week</div>
+      <div class="check-item">
+        <div class="check-pending"></div>
+        <div><strong>Final QA pass</strong><br><span style="color: var(--text-muted); font-size: 12px;">End-to-end testing of all flows on device</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-pending"></div>
+        <div><strong>App Store screenshots</strong><br><span style="color: var(--text-muted); font-size: 12px;">6.7" and 6.1" iPhone, iPad Pro</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-pending"></div>
+        <div><strong>App Store listing copy</strong><br><span style="color: var(--text-muted); font-size: 12px;">Description, keywords, category</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-pending"></div>
+        <div><strong>TestFlight build</strong><br><span style="color: var(--text-muted); font-size: 12px;">Internal testing before submission</span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-pending"></div>
+        <div><strong>Submit for review</strong><br><span style="color: var(--text-muted); font-size: 12px;">Apple review typically 24-48 hours</span></div>
+      </div>
+      <div style="background: var(--orange-fill); border-radius: 12px; padding: 20px; margin-top: 24px;">
+        <div style="font-size: 16px; font-weight: 700; color: var(--orange); margin-bottom: 4px;">Target: Live by early March</div>
+        <div style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+          Submit this week. Apple review takes 24-48 hours. Aiming to be live on the App Store within days of submission.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">15</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 16: EARLY TRACTION -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Traction</div>
+    <div class="slide-title">200+ people waiting. Before a single ad.</div>
+    <div class="slide-subtitle" style="margin-bottom: 32px;">Organic interest from solo women travelers who found us through word of mouth and Instagram.</div>
+  </div>
+  <div class="grid-3" style="margin-bottom: 32px;">
+    <div class="stat-card orange">
+      <div class="stat-number">200+</div>
+      <div class="stat-label">Total Community</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">125</div>
+      <div class="stat-label">Waitlist Signups</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-number">100+</div>
+      <div class="stat-label">Solo Travelers Engaged</div>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 15px; font-weight: 700;">Where they came from</div>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 180px; font-size: 13px; color: var(--text-secondary);">Direct conversations</div>
+          <div style="flex: 1; height: 24px; background: var(--neutral-fill); border-radius: 4px; overflow: hidden;">
+            <div style="width: 55%; height: 100%; background: var(--orange); border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 13px; font-weight: 700; min-width: 40px;">100+</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 180px; font-size: 13px; color: var(--text-secondary);">Instagram (@with_solatravel)</div>
+          <div style="flex: 1; height: 24px; background: var(--neutral-fill); border-radius: 4px; overflow: hidden;">
+            <div style="width: 38%; height: 100%; background: var(--orange); border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 13px; font-weight: 700; min-width: 40px;">70</div>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <div style="width: 180px; font-size: 13px; color: var(--text-secondary);">Waitlist (website)</div>
+          <div style="flex: 1; height: 24px; background: var(--neutral-fill); border-radius: 4px; overflow: hidden;">
+            <div style="width: 15%; height: 100%; background: var(--orange); border-radius: 4px;"></div>
+          </div>
+          <div style="font-size: 13px; font-weight: 700; min-width: 40px;">25</div>
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 15px; font-weight: 700;">What this tells us</div>
+      <div style="font-size: 13.5px; color: var(--text-secondary); line-height: 1.65;">
+        Zero paid acquisition. Every person found us organically or through direct conversation. The problem resonates. Women hear the concept and immediately want access. We haven't started marketing. These numbers are pure pull.
+      </div>
+      <div class="quote-block" style="margin: 0;">
+        <div style="font-size: 14px; font-weight: 500; line-height: 1.5; font-style: italic;">"When do I get access? I'm traveling to Vietnam next month and I need this."</div>
+        <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Waitlist signup, January 2026</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">16</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 17: SECTION DIVIDER - STRATEGY -->
+<!-- ============================================ -->
+<section class="slide section-divider">
+  <div class="section-label">Section 04</div>
+  <div class="slide-title">Beta Strategy</div>
+  <div class="slide-subtitle" style="margin-top: 12px;">100 people. Two cohorts. Every one intentional.</div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.3);">17</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 18: BETA OVERVIEW -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Beta Strategy</div>
+    <div class="slide-title">Two cohorts. Different purposes.</div>
+    <div class="slide-subtitle" style="margin-bottom: 28px;">Not a public launch. A controlled opening to the right 100 people.</div>
+  </div>
+  <div class="grid-2 flex-grow" style="align-items: stretch;">
+    <div style="background: var(--orange-fill); border-radius: 16px; padding: 32px; display: flex; flex-direction: column;">
+      <div style="font-size: 48px; font-weight: 800; color: var(--orange);">50</div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Cohort A: Community</div>
+      <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Real users. Real feedback. Product validation.</div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <div class="check-item" style="border-color: rgba(229,101,58,0.15);">
+          <div class="check-done" style="background: var(--orange);">&#10003;</div>
+          <div style="font-size: 13px;">Women from our 100+ direct conversations</div>
+        </div>
+        <div class="check-item" style="border-color: rgba(229,101,58,0.15);">
+          <div class="check-done" style="background: var(--orange);">&#10003;</div>
+          <div style="font-size: 13px;">Waitlist early signups (highest intent)</div>
+        </div>
+        <div class="check-item" style="border-color: rgba(229,101,58,0.15);">
+          <div class="check-done" style="background: var(--orange);">&#10003;</div>
+          <div style="font-size: 13px;">Instagram community members</div>
+        </div>
+        <div class="check-item" style="border: none;">
+          <div class="check-done" style="background: var(--orange);">&#10003;</div>
+          <div style="font-size: 13px;">Active solo travelers (currently traveling or planning)</div>
+        </div>
+      </div>
+      <div style="background: white; border-radius: 10px; padding: 16px; margin-top: 16px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">Goal</div>
+        <div style="font-size: 13px; line-height: 1.5;">Bug reports, UX feedback, content gaps, feature requests. These women shape the product before public launch.</div>
+      </div>
+    </div>
+    <div style="background: var(--neutral-fill); border-radius: 16px; padding: 32px; display: flex; flex-direction: column;">
+      <div style="font-size: 48px; font-weight: 800; color: var(--charcoal);">50</div>
+      <div style="font-size: 20px; font-weight: 700; margin-bottom: 4px;">Cohort B: Strategic</div>
+      <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 20px;">Investors. Partners. Amplifiers. Distribution.</div>
+      <div style="flex: 1; display: flex; flex-direction: column; gap: 8px;">
+        <div class="check-item">
+          <div class="check-done" style="background: var(--charcoal);">&#10003;</div>
+          <div style="font-size: 13px;">Previous investor conversations (Dennis + network)</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done" style="background: var(--charcoal);">&#10003;</div>
+          <div style="font-size: 13px;">Travel industry contacts and partners</div>
+        </div>
+        <div class="check-item">
+          <div class="check-done" style="background: var(--charcoal);">&#10003;</div>
+          <div style="font-size: 13px;">Grant organizations (women in tech, travel, social impact)</div>
+        </div>
+        <div class="check-item" style="border: none;">
+          <div class="check-done" style="background: var(--charcoal);">&#10003;</div>
+          <div style="font-size: 13px;">Cold outreach to aligned organizations</div>
+        </div>
+      </div>
+      <div style="background: white; border-radius: 10px; padding: 16px; margin-top: 16px;">
+        <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-weight: 600; margin-bottom: 6px;">Goal</div>
+        <div style="font-size: 13px; line-height: 1.5;">Early credibility, warm investor pipeline, partnership conversations, grant applications with a live product to demo.</div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">18</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 19: STRATEGIC COHORT DETAIL -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Cohort B: Strategic Distribution</div>
+    <div class="slide-title">Who gets access and why.</div>
+    <div class="slide-subtitle" style="margin-bottom: 20px;">Every seat is intentional. Each person opens a door.</div>
+  </div>
+  <div style="flex: 1;">
+    <table class="cohort-table">
+      <thead>
+        <tr>
+          <th style="width: 20%;">Category</th>
+          <th style="width: 10%;">Seats</th>
+          <th style="width: 35%;">Who</th>
+          <th style="width: 35%;">Why</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="row-label">Investors</td>
+          <td><span style="font-weight: 700; color: var(--orange);">15</span></td>
+          <td class="row-desc">Dennis + his network. Previous conversations from last year. Angel investors in travel/consumer.</td>
+          <td class="row-desc">Re-engage warm leads with a live product. "We talked last year. We built it. Try it." Much stronger than a pitch deck.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Personal Network</td>
+          <td><span style="font-weight: 700; color: var(--orange);">10</span></td>
+          <td class="row-desc">Friends, mentors, advisors in tech. People who've been following the journey.</td>
+          <td class="row-desc">Amplification. These people share with their networks. They become advocates who say "my friend built this."</td>
+        </tr>
+        <tr>
+          <td class="row-label">Organizations</td>
+          <td><span style="font-weight: 700; color: var(--orange);">10</span></td>
+          <td class="row-desc">Women Who Travel (Conde Nast), Girls Love Travel, Solo Female Travelers network, Women in Travel Summit.</td>
+          <td class="row-desc">Partnership pipeline. Content partnerships, community integrations, co-marketing. One partnership = thousands of users.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Grant Bodies</td>
+          <td><span style="font-weight: 700; color: var(--orange);">10</span></td>
+          <td class="row-desc">Google for Startups, Techstars Social Impact, UN Women, She Loves Tech, Cartier Women's Initiative.</td>
+          <td class="row-desc">Non-dilutive funding. Social impact angle is strong. A live, functional product dramatically improves application odds.</td>
+        </tr>
+        <tr>
+          <td class="row-label">Cold Outreach</td>
+          <td><span style="font-weight: 700; color: var(--orange);">5</span></td>
+          <td class="row-desc">Travel tech journalists, solo travel influencers (10-50K followers), hostel chain partnerships.</td>
+          <td class="row-desc">Press and content. "Woman-first travel app launches" is a story that writes itself. Early coverage = organic downloads.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="slide-number">19</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 20: LINKEDIN STRATEGY -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Go-To-Market</div>
+    <div class="slide-title">LinkedIn launch content plan.</div>
+    <div class="slide-subtitle" style="margin-bottom: 20px;">4-week content calendar. Build momentum before and after App Store launch.</div>
+  </div>
+  <div class="grid-4 flex-grow" style="align-items: stretch;">
+    <div class="linkedin-card">
+      <div class="week">Week 1 — Pre-Launch</div>
+      <h4>"We spent a year listening"</h4>
+      <p>Origin story post. How two founders met in Manila, talked to 100+ solo women, taught themselves to code. No jargon. Just the story. End with: "It's almost ready."</p>
+      <div style="margin-top: auto; padding-top: 8px;">
+        <div class="pill orange">Story / Credibility</div>
+      </div>
+    </div>
+    <div class="linkedin-card">
+      <div class="week">Week 2 — Launch Week</div>
+      <h4>"We just submitted to the App Store"</h4>
+      <p>Product reveal. Share 3-4 app screenshots. Lead with the problem. Show the solution. Include real numbers (74 screens, 19 countries). Tag relevant people. Ask for TestFlight testers.</p>
+      <div style="margin-top: auto; padding-top: 8px;">
+        <div class="pill orange">Launch / Social Proof</div>
+      </div>
+    </div>
+    <div class="linkedin-card">
+      <div class="week">Week 3 — Depth</div>
+      <h4>"What 'safety info' means for women"</h4>
+      <p>Problem-focused post. The invisible labour of solo female travel. Specific examples. "Here's what we built to solve it." Show a country page, a community thread. Educational, not salesy.</p>
+      <div style="margin-top: auto; padding-top: 8px;">
+        <div class="pill orange">Education / Awareness</div>
+      </div>
+    </div>
+    <div class="linkedin-card">
+      <div class="week">Week 4 — Momentum</div>
+      <h4>"First 100 users are in"</h4>
+      <p>Early feedback and learnings. What users said. What surprised you. What you're changing. Be honest about what's working and what's not. Vulnerability builds trust. End with a CTA.</p>
+      <div style="margin-top: auto; padding-top: 8px;">
+        <div class="pill orange">Traction / FOMO</div>
+      </div>
+    </div>
+  </div>
+  <div style="background: var(--neutral-fill); border-radius: 12px; padding: 16px 20px; margin-top: 12px;">
+    <div style="font-size: 12px; color: var(--text-secondary);">
+      <strong style="color: var(--charcoal);">LinkedIn assets needed:</strong> App icon (have it), 4-5 app screenshots (create this week), product stats graphic, origin story photo (Poblacion, Manila), founder headshots. All posts from personal profile, not company page. Personal profiles get 5-10x more reach.
+    </div>
+  </div>
+  <div class="slide-number">20</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 21: OUTREACH PLAYBOOK -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Go-To-Market</div>
+    <div class="slide-title">The outreach playbook.</div>
+    <div class="slide-subtitle" style="margin-bottom: 20px;">Different message for each audience. Same core: "We built it. Try it."</div>
+  </div>
+  <div class="grid-2 flex-grow">
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="background: var(--orange-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">To Investors (Re-engage)</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic;">
+          "Hey [name], we spoke about Sola back in [month]. Quick update: we've built the full product (74 screens, 19 countries, real content) and we're submitting to the App Store this week. Would love to give you early access. Here's a 2-min walkthrough: [link]. Worth 10 minutes?"
+        </div>
+      </div>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">To Organizations (Partnership)</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic;">
+          "Hi [org name], we've built Sola, a travel app specifically for women traveling alone. We're launching with 19 countries, 75 cities, and a community feature for the questions you can't google. We'd love to explore a partnership. Our first 100 users are going in now. Happy to demo."
+        </div>
+      </div>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">To Grant Bodies (Application)</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic;">
+          "Sola is a mobile app that makes solo travel safer and easier for women. We've built a full product (live on the App Store), bootstrapped by two self-taught founders. 200+ women in our community. We're applying for [grant] to fund user acquisition in our first target markets."
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">To Press (Cold Pitch)</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic;">
+          "Subject: Solo travel app built by two founders who met on the road. Two guys met in Manila, spent a year talking to solo women travelers, taught themselves to code, and built the app those women asked for. Sola launches this month. Happy to share the full story."
+        </div>
+      </div>
+      <div style="background: var(--orange-fill); border-radius: 12px; padding: 20px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 6px;">To Community (Waitlist)</div>
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.6; font-style: italic;">
+          "You signed up for the Sola waitlist. It's ready. You're one of the first 50 people to get access. We built this because of conversations with women like you. Everything in the app exists because someone said they needed it. Download here: [link]. Tell us what's missing."
+        </div>
+      </div>
+      <div style="background: var(--neutral-fill); border-radius: 12px; padding: 24px;">
+        <div style="font-size: 13px; font-weight: 700; margin-bottom: 12px;">Outreach Timeline</div>
+        <div class="timeline-row" style="padding: 8px 0;">
+          <div class="timeline-dot done"></div>
+          <div class="timeline-label" style="font-size: 12px;">Now</div>
+          <div class="timeline-desc" style="font-size: 12px;">Prepare templates, lists, assets</div>
+        </div>
+        <div class="timeline-row" style="padding: 8px 0;">
+          <div class="timeline-dot"></div>
+          <div class="timeline-label" style="font-size: 12px;">Submit</div>
+          <div class="timeline-desc" style="font-size: 12px;">App Store submission + TestFlight invites</div>
+        </div>
+        <div class="timeline-row" style="padding: 8px 0;">
+          <div class="timeline-dot future"></div>
+          <div class="timeline-label" style="font-size: 12px;">Week 1</div>
+          <div class="timeline-desc" style="font-size: 12px;">Cohort A (community) gets access</div>
+        </div>
+        <div class="timeline-row" style="padding: 8px 0;">
+          <div class="timeline-dot future"></div>
+          <div class="timeline-label" style="font-size: 12px;">Week 2</div>
+          <div class="timeline-desc" style="font-size: 12px;">Cohort B (strategic) outreach begins</div>
+        </div>
+        <div class="timeline-row" style="padding: 8px 0;">
+          <div class="timeline-dot future"></div>
+          <div class="timeline-label" style="font-size: 12px;">Week 3-4</div>
+          <div class="timeline-desc" style="font-size: 12px;">LinkedIn content, press, partnerships</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">21</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 22: WHAT'S NEXT -->
+<!-- ============================================ -->
+<section class="slide">
+  <div class="logo-corner">SOLA</div>
+  <div style="padding-top: 8px;">
+    <div class="section-label">Roadmap</div>
+    <div class="slide-title">After launch.</div>
+    <div class="slide-subtitle" style="margin-bottom: 28px;">V1 is the foundation. Here's what comes next.</div>
+  </div>
+  <div class="grid-3 flex-grow" style="align-items: stretch;">
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 12px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 1.5px;">March 2026</div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Launch + Feedback Loop</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          Get 100 users in. Collect feedback aggressively. Fix bugs daily. Ship improvements weekly. Establish a rapid iteration cadence.
+        </div>
+      </div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Content Completion</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          Fill remaining 7 country guides. Complete place tags. Add Tokyo and Lisbon city page content. Expand to 20+ countries.
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 12px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 1.5px;">Q2 2026</div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Monetization</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          Subscription model via RevenueCat. Free tier with core features. Premium with unlimited trip planning, advanced filters, priority community access.
+        </div>
+      </div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Offline Support</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          Local cache for destination guides and trip itineraries. Sync queue for community posts. Essential for travelers with spotty connectivity.
+        </div>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+      <div style="font-size: 12px; font-weight: 700; color: var(--orange); text-transform: uppercase; letter-spacing: 1.5px;">H2 2026</div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Scale to 10,000 Users</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          ASO optimization, partnership activations, press coverage, Instagram growth, referral program. Target: 10K users by end of 2026.
+        </div>
+      </div>
+      <div class="feature-card bordered" style="flex: 1;">
+        <div class="feature-title" style="font-size: 14px;">Expand Coverage</div>
+        <div class="feature-desc" style="font-size: 12px;">
+          Latin America (Colombia, Mexico, Peru), Central America, more of Europe, Middle East. Community-driven content where users contribute local knowledge.
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="slide-number">22</div>
+</section>
+
+<!-- ============================================ -->
+<!-- SLIDE 23: CLOSING -->
+<!-- ============================================ -->
+<section class="slide close-slide">
+  <div style="max-width: 640px;">
+    <div style="font-size: 64px; font-weight: 800; color: var(--orange); letter-spacing: 3px; margin-bottom: 24px;">SOLA</div>
+    <div style="font-size: 28px; font-weight: 300; color: rgba(255,255,255,0.7); line-height: 1.4; margin-bottom: 48px;">
+      Built by two people.<br>
+      Shaped by hundreds of women.<br>
+      Ready for the world.
+    </div>
+    <div class="cta-box" style="text-align: left; display: flex; gap: 40px; align-items: center;">
+      <div style="flex: 1;">
+        <h3 style="font-size: 20px;">Get early access.</h3>
+        <p style="margin-bottom: 0; font-size: 13px;">We're opening Sola to our first 100 users. If you want in, or know someone who should be, reach out.</p>
+      </div>
+      <div style="text-align: right; min-width: 200px;">
+        <div style="font-size: 14px; font-weight: 600; margin-bottom: 8px;">team@solatravel.app</div>
+        <div style="font-size: 13px; opacity: 0.8;">@with_solatravel</div>
+      </div>
+    </div>
+    <div style="margin-top: 40px; font-size: 11px; color: rgba(255,255,255,0.3); letter-spacing: 1px;">
+      CONFIDENTIAL &nbsp;&middot;&nbsp; FEBRUARY 2026 &nbsp;&middot;&nbsp; SOLATRAVEL.APP
+    </div>
+  </div>
+  <div class="slide-number" style="color:rgba(255,255,255,0.2);">23</div>
+</section>
+
+</body>
+</html>

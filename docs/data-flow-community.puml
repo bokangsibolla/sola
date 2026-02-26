@@ -1,0 +1,112 @@
+@startuml Sola Community Data Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Sola — Community Feature Data Flow
+
+|User|
+start
+:Open Connect tab (Discussions);
+
+|useCommunityFeed Hook|
+:Fetch thread feed (page 0, 15/page);
+
+|communityApi.ts|
+:getThreadFeed({
+  page, sort, countryId,
+  cityId, topicId, userId
+})
+----
+SELECT threads.*,
+  profiles.first_name,
+  profiles.avatar_url,
+  seed_profiles.display_name
+FROM community_threads
+LEFT JOIN profiles ON author_id
+LEFT JOIN community_seed_profiles
+WHERE status = 'active'
+  AND visibility = 'public'
+  AND author_id NOT IN (blocked_users)
+ORDER BY sort (newest|top|trending)
+LIMIT 15 OFFSET page*15;
+
+|React Query Cache|
+:Cache key:
+['community-feed', sort, filters, page];
+
+|Connect Screen|
+:Render ThreadCard list;
+:Show IntroBanner (first visit);
+:Show TEAM badge for author_type='system';
+
+|User|
+:Tap thread;
+
+|useThread Hook|
+fork
+  :getThread(threadId)
+  SELECT thread + author + city;
+fork again
+  :getThreadReplies(threadId, userId)
+  SELECT replies + authors
+  WHERE status = 'active'
+  AND author NOT IN blocked
+  ORDER BY vote_score DESC, created_at;
+end fork
+
+|Thread Detail Screen|
+:Render thread + replies;
+:Show vote buttons (up/down);
+:Show reply composer;
+
+|User|
+split
+  :Vote on thread/reply;
+  |communityApi.ts|
+  :castVote(userId, entityType, entityId, direction)
+  ----
+  1. Check existing vote
+  2. Same direction → DELETE (toggle off)
+  3. Different direction → UPDATE
+  4. No existing → INSERT
+  ----
+  Triggers update vote_score
+  on thread/reply via DB trigger;
+  |Thread Detail Screen|
+  :Update vote count locally;
+split again
+  :Write reply;
+  |communityApi.ts|
+  :createReply({
+    threadId, authorId, body,
+    parentReplyId?
+  })
+  INSERT INTO community_replies
+  ----
+  DB trigger: increment
+  thread.reply_count;
+  |Thread Detail Screen|
+  :Refresh replies;
+split again
+  :Report content;
+  |communityApi.ts|
+  :reportContent({
+    reporterId, entityType,
+    entityId, reason, details
+  })
+  INSERT INTO community_reports;
+split again
+  :Create new thread;
+  |new.tsx (modal)|
+  :createThread({
+    authorId, title, body,
+    countryId?, cityId?, topicId?
+  })
+  INSERT INTO community_threads;
+  |Connect Screen|
+  :Refresh feed;
+end split
+
+stop
+
+@enduml

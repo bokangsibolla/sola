@@ -1,0 +1,111 @@
+@startuml Sola Trips Data Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Sola — Trip Planning Data Flow
+
+|User|
+start
+:Open Trips tab;
+
+|useTrips Hook|
+:getTripsGrouped(userId);
+
+|tripApi.ts|
+:SELECT trips.*, trip_stops.*
+FROM trips
+LEFT JOIN trip_stops ON trip_id
+WHERE user_id = ?
+ORDER BY arriving;
+----
+Group into:
+- current (active status)
+- upcoming (planned, future dates)
+- past (completed or past dates);
+
+|Trips Screen|
+:Render trip cards;
+:CurrentTripCard (highlighted)
+UpcomingTrips (list)
+PastTrips (expandable);
+
+|User|
+split
+  :Create new trip;
+  |new.tsx|
+  :Form: destination, dates,
+  style tags, notes;
+  |tripApi.ts|
+  :createTrip({
+    userId, destinationName,
+    countryIso2, cityId?,
+    arriving?, leaving?,
+    travelStyleTags, notes
+  })
+  INSERT INTO trips
+  + auto-calculate nights;
+  :Returns trip.id;
+  |Trip Detail|
+  :Navigate to [id];
+split again
+  :View trip detail;
+  |Trip Detail [id]|
+  fork
+    :getTripWithStops(tripId)
+    Trip + stops + city data;
+  fork again
+    :getTripEntries(tripId)
+    Journal timeline;
+  fork again
+    :getTripSavedItems(tripId)
+    Bookmarked places;
+  fork again
+    :getTripDays(tripId)
+    Day-by-day plan;
+  end fork
+  :Render trip overview;
+
+  |User|
+  split
+    :View day detail;
+    |Day Detail [dayId]|
+    :getItineraryBlocks(dayId)
+    SELECT blocks.*,
+      places.name, places.image
+    FROM itinerary_blocks
+    LEFT JOIN places
+    WHERE trip_day_id = ?
+    ORDER BY order_index;
+    :Render timeline;
+  split again
+    :Save place to trip;
+    |tripApi.ts|
+    :addTripSavedItem({
+      tripId, entityType,
+      entityId, category, notes
+    })
+    INSERT INTO trip_saved_items
+    ON CONFLICT DO NOTHING;
+  split again
+    :Add journal entry;
+    |tripApi.ts|
+    :createTripEntry({
+      tripId, userId, entryType,
+      title, body, moodTag
+    })
+    INSERT INTO trip_entries;
+  split again
+    :Find travel matches;
+    |tripApi.ts|
+    :getTripOverlapMatches(tripId)
+    SELECT FROM trip_overlap_matches
+    WHERE trip matches on
+    location + date overlap
+    EXCLUDING blocked users;
+    :Show matching travelers;
+  end split
+end split
+
+stop
+
+@enduml

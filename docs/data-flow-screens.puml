@@ -1,0 +1,67 @@
+@startuml Sola Screen Navigation
+!theme plain
+skinparam backgroundColor #FFFFFF
+skinparam defaultTextAlignment center
+
+title Sola — Screen Navigation Map
+
+map "Auth & Onboarding" as onboarding {
+  welcome => login | create-account
+  login => verify (OTP)
+  create-account => verify (OTP)
+  verify => profile (new) | home (existing)
+  profile => intent? | day-style? | youre-in
+  intent => day-style?
+  day-style => stay-preference? | youre-in
+  stay-preference => trip-details? | youre-in
+  trip-details => youre-in
+  youre-in => HOME TAB
+}
+
+map "Home Tab" as home {
+  index => HeroModule + ForYouRow + CommunityBanner
+  profile => edit-profile | settings | collections/[id]
+  edit-profile => (save) profile
+  settings => delete-account | verify
+  saved => place-detail (Discover)
+  notifications => notification list
+  collections/[id] => place-detail (Discover)
+}
+
+map "Discover Tab" as discover {
+  index => search (modal) | country/[slug] | continent/[key] | all-countries
+  search => country/[slug] | city/[slug]
+  continent/[key] => country/[slug]
+  all-countries => country/[slug]
+  country/[slug] => city/[slug] | place-detail/[id] | thread/[id] (Connect)
+  city/[slug] => place-detail/[id] | accommodation/[slug] | activity/[slug] | area/[id]
+  collection/[slug] => place-detail/[id]
+  area/[id] => place-detail/[id]
+}
+
+map "Connect Tab" as connect {
+  index => Discussions | Travelers (segments)
+  Discussions => thread/[id] | new (modal FAB)
+  Travelers => user/[id]
+  thread/[id] => user/[id] (reply author)
+  user/[id] => dm/[id] (message)
+  connections => user/[id]
+  dm/index => dm/[id]
+  dm/[id] => block/report (actions)
+}
+
+map "Trips Tab" as trips {
+  index => CurrentTrip | Upcoming | Past
+  new => trip/[id]
+  trip/[id] => day/[dayId] | edit (modal)
+  day/[dayId] => add activity | add accommodation
+}
+
+map "Cross-Tab Links" as cross {
+  Home CommunityBanner => Connect tab
+  Country threads => Connect thread/[id]
+  City threads => Connect thread/[id]
+  Home Avatar => Profile | Settings | DMs
+}
+
+@enduml

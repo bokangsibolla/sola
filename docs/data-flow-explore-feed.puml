@@ -1,0 +1,92 @@
+@startuml Sola Explore Feed Data Flow
+!theme plain
+skinparam backgroundColor #FFFFFF
+
+title Sola — Explore/Discover Feed Data Pipeline
+
+|User|
+start
+:Open Discover tab;
+
+|useFeedItems Hook|
+:Initialize parallel fetch;
+
+|Critical Path (5s timeout)|
+fork
+  :getCountries()
+  SELECT * FROM countries
+  WHERE is_active = true
+  ORDER BY order_index;
+fork again
+  :getPopularCitiesWithCountry(12)
+  SELECT cities.*, countries.name
+  FROM cities JOIN countries
+  WHERE cities.is_featured = true
+  LIMIT 12;
+end fork
+
+|Optional Path (Promise.allSettled)|
+fork
+  :getExploreCollections()
+  SELECT * FROM explore_collections
+  WHERE is_active = true
+  ORDER BY order_index;
+fork again
+  :getDestinationTags(entity_type, entity_id)
+  SELECT * FROM destination_tags
+  WHERE entity_type = ? AND entity_id = ?;
+end fork
+
+|Authenticated User Context|
+if (userId exists?) then (yes)
+  fork
+    :getSavedPlacesWithDetails(userId);
+  fork again
+    :getTripsGrouped(userId)
+    → current / upcoming / past;
+  fork again
+    :getRecentCity(userId)
+    → last viewed city;
+  fork again
+    :getNewCommunityActivity(userId, lastVisit)
+    → new replies on user's threads;
+  end fork
+else (no)
+endif
+
+|buildFeed()|
+:Assemble feed zones;
+partition "Feed Layout" {
+  :1. Personal Zones (max 2)
+  Priority: upcoming trip → community
+  → saved places → recent city;
+  :2. Countries Grid
+  Continent-grouped, shuffled;
+  :3. Popular Cities
+  Date-seeded shuffle;
+  :4. Collections Section
+  Editorial curated;
+  :5. Community Signal
+  Thread count CTA;
+}
+
+|React Query Cache|
+:Cache with key
+['useData', 'feed', userId];
+:Stale time: 30s;
+
+|FlatList Renderer|
+:Render FeedItem[] by type;
+partition "Card Types" {
+  :CountryCard → country/[slug];
+  :CityCard → city/[slug];
+  :CollectionCard → collection/[slug];
+  :PersonalZoneCard → context-dependent;
+  :CommunitySignalCard → connect tab;
+}
+
+|User|
+:Interact with feed;
+stop
+
+@enduml

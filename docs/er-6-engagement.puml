@@ -1,0 +1,111 @@
+@startuml ER — Engagement and Analytics
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Engagement, Saves & Analytics
+
+entity "saved_places" as splaces {
+  * id : uuid <<PK>>
+  --
+  * user_id : uuid <<FK>>
+  * place_id : uuid <<FK>>
+  collection_id : uuid <<FK>>
+  created_at
+  .. unique(user, place) ..
+}
+
+entity "collections" as colls {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  --
+  name, emoji
+  is_public
+}
+
+entity "affiliate_clicks" as aclicks {
+  * id : uuid <<PK>>
+  --
+  user_id : uuid <<FK>>
+  url, partner
+  link_type (booking|maps|website|outbound)
+  place_id : uuid <<FK>>
+  city_id : uuid <<FK>>
+  country_id : uuid <<FK>>
+  created_at
+}
+
+entity "content_reports" as creports {
+  * id : uuid <<PK>>
+  --
+  reporter_id : uuid <<FK>>
+  target_type (community_post|reply|place_review)
+  target_id : uuid
+  reason (spam|harassment|misinformation|...)
+  details
+  status (pending|reviewed|resolved|dismissed)
+  resolved_by, resolved_at
+}
+
+entity "onboarding_question_config" as obcfg {
+  * id : uuid <<PK>>
+  --
+  question_key (unique)
+  screen_name
+  is_required
+  probability (0-1)
+  order_index, is_active
+}
+
+entity "onboarding_sessions" as obsess {
+  * id : uuid <<PK>>
+  * user_id : uuid <<FK>>
+  --
+  config_snapshot (jsonb)
+  questions_shown (text[])
+  questions_answered (text[])
+  questions_skipped (text[])
+  session_completed_at
+}
+
+entity "verification_criteria" as vcrit {
+  * id : uuid <<PK>>
+  --
+  criteria_key (unique)
+  criteria_label, category
+  weight, applies_to (text[])
+  is_required
+  .. service role only ..
+}
+
+entity "profiles" as profiles <<ref>> {
+  id : uuid
+}
+
+entity "places" as places <<ref>> {
+  id : uuid
+}
+
+profiles ||--o{ splaces
+places ||--o{ splaces
+colls |o--o{ splaces
+profiles ||--o{ colls
+profiles ||--o{ aclicks
+profiles ||--o{ creports
+profiles ||--o{ obsess
+
+note bottom of obcfg
+  A/B testing:
+  Each question has a probability
+  of being shown. Client uses
+  deterministic randomization
+  per user ID.
+end note
+
+note bottom of aclicks
+  Tracks outbound clicks
+  for monetization analytics.
+  Partner field enables
+  affiliate revenue tracking.
+end note
+
+@enduml

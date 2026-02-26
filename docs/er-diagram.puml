@@ -1,0 +1,411 @@
+@startuml Sola ER Diagram
+!theme plain
+skinparam linetype polyline
+skinparam nodesep 40
+skinparam ranksep 30
+left to right direction
+
+title Sola — Entity Relationship Diagram
+
+package "Geography" #FFEEDD {
+  entity "countries" as countries {
+    * id : uuid <<PK>>
+    --
+    slug, name, iso2
+    continent, hero_image_url
+    safety_rating, solo_level
+    avg_daily_budget_usd
+    summary_md, content_md
+    sim_providers (jsonb)
+    is_active, is_featured
+  }
+
+  entity "cities" as cities {
+    * id : uuid <<PK>>
+    * country_id : uuid <<FK>>
+    --
+    slug, name, timezone
+    center_lat, center_lng
+    hero_image_url
+    safety_rating, solo_level
+    budget_tier, walkability
+    vibe, positioning_line
+    women_should_know (jsonb)
+    experience_pillars (jsonb)
+    summary_md, transport_md
+  }
+
+  entity "city_areas" as city_areas {
+    * id : uuid <<PK>>
+    * city_id : uuid <<FK>>
+    --
+    slug, name, area_kind
+    is_primary, positioning_line
+  }
+}
+
+package "Places" #E8F5E9 {
+  entity "places" as places {
+    * id : uuid <<PK>>
+    * city_id : uuid <<FK>>
+    --
+    slug, name, place_type
+    lat, lng, address
+    google_place_id, phone
+    verification_status
+    curation_score
+    highlights (jsonb)
+    women_only, is_featured
+    image_url_cached
+  }
+
+  entity "place_media" as media {
+    * id : uuid <<PK>>
+    * place_id : uuid <<FK>>
+    --
+    url, media_type
+    caption, source
+  }
+
+  entity "place_tags" as ptags {
+    * place_id <<FK>>
+    * tag_id <<FK>>
+    --
+    weight, source
+  }
+
+  entity "tags" as tags {
+    * id : uuid <<PK>>
+    --
+    slug, label
+    filter_group, tag_type
+  }
+
+  entity "tag_groups" as tgroups {
+    * id : uuid <<PK>>
+    --
+    slug, label, scope
+  }
+
+  entity "destination_tags" as dtags {
+    * id : uuid <<PK>>
+    --
+    entity_type, entity_id
+    tag_category, tag_slug
+  }
+
+  entity "place_verifications" as pverif {
+    * id : uuid <<PK>>
+    * place_id : uuid <<FK>>
+    --
+    status, confidence_score
+    sources_checked (jsonb)
+  }
+
+  entity "place_signals" as psignals {
+    * id : uuid <<PK>>
+    * place_id : uuid <<FK>>
+    --
+    signal_key, signal_value
+    signal_type, confidence
+  }
+
+  entity "place_sola_notes" as pnotes {
+    * id : uuid <<PK>>
+    * place_id : uuid <<FK>>
+    --
+    note_type, note_text
+  }
+
+  entity "place_categories" as pcats {
+    * id : uuid <<PK>>
+    --
+    slug, name, parent_id
+  }
+}
+
+package "Users" #E3F2FD {
+  entity "profiles" as profiles {
+    * id : uuid <<PK/FK>>
+    --
+    username, first_name, bio
+    avatar_url, nationality
+    home_country_iso2
+    location_sharing_enabled
+    location_lat, location_lng
+    interests (text[])
+    travel_style
+    verification_status
+    is_admin, is_discoverable
+    emergency_contact_name
+    onboarding_completed_at
+  }
+
+  entity "blocked_users" as blocked {
+    * id : uuid <<PK>>
+    --
+    blocker_id, blocked_id
+  }
+
+  entity "push_tokens" as tokens {
+    * id : uuid <<PK>>
+    * user_id : uuid <<FK>>
+    --
+    token
+  }
+
+  entity "user_visited_countries" as uvc {
+    * user_id <<FK>>
+    * country_id <<FK>>
+  }
+
+  entity "user_attribution" as attrib {
+    * id : uuid <<PK>>
+    * user_id : uuid <<FK>>
+    --
+    utm_source, utm_medium
+    utm_campaign, referrer
+  }
+}
+
+package "Messaging" #F3E5F5 {
+  entity "conversations" as convos {
+    * id : uuid <<PK>>
+    --
+    participant_ids (uuid[])
+    last_message
+    last_message_at
+    unread_count
+  }
+
+  entity "messages" as msgs {
+    * id : uuid <<PK>>
+    * conversation_id <<FK>>
+    * sender_id <<FK>>
+    --
+    text, sent_at, read_at
+  }
+
+  entity "connection_requests" as connreq {
+    * id : uuid <<PK>>
+    --
+    sender_id, receiver_id
+    status, context
+  }
+}
+
+package "Community" #FFF3E0 {
+  entity "community_topics" as topics {
+    * id : uuid <<PK>>
+    --
+    label, slug, sort_order
+  }
+
+  entity "community_threads" as threads {
+    * id : uuid <<PK>>
+    * author_id <<FK>>
+    --
+    author_type, title, body
+    country_id, city_id
+    topic_id, status
+    vote_score, reply_count
+    is_seed, search_vector
+  }
+
+  entity "community_replies" as replies {
+    * id : uuid <<PK>>
+    * thread_id <<FK>>
+    * author_id <<FK>>
+    --
+    body, parent_reply_id
+    status, vote_score
+  }
+
+  entity "community_reactions" as reacts {
+    * id : uuid <<PK>>
+    --
+    user_id, entity_type
+    entity_id, vote
+  }
+
+  entity "community_reports" as creports {
+    * id : uuid <<PK>>
+    --
+    reporter_id
+    entity_type, entity_id
+    reason, status
+  }
+}
+
+package "Trips" #E8EAF6 {
+  entity "trips" as trips {
+    * id : uuid <<PK>>
+    * user_id <<FK>>
+    --
+    title, destination_name
+    country_iso2
+    destination_city_id
+    arriving, leaving, nights
+    status, privacy_level
+    matching_opt_in
+    pace, budget_total
+    cover_image_url
+  }
+
+  entity "trip_stops" as stops {
+    * id : uuid <<PK>>
+    * trip_id <<FK>>
+    --
+    stop_order, country_iso2
+    city_id, city_name
+    start_date, end_date
+  }
+
+  entity "trip_days" as tdays {
+    * id : uuid <<PK>>
+    * trip_id <<FK>>
+    --
+    day_index, date
+    title, notes
+  }
+
+  entity "itinerary_blocks" as iblocks {
+    * id : uuid <<PK>>
+    * trip_day_id <<FK>>
+    --
+    block_type, title_override
+    start_time, end_time
+    order_index, place_id
+    cost_estimate, status
+    meta (jsonb)
+  }
+
+  entity "trip_entries" as tentries {
+    * id : uuid <<PK>>
+    * trip_id <<FK>>
+    --
+    entry_type, title, body
+    mood_tag, visibility
+  }
+
+  entity "trip_saved_items" as tsaved {
+    * id : uuid <<PK>>
+    * trip_id <<FK>>
+    --
+    entity_type, entity_id
+    category, notes
+  }
+
+  entity "trip_buddies" as buddies {
+    * id : uuid <<PK>>
+    * trip_id <<FK>>
+    * user_id <<FK>>
+  }
+}
+
+package "Engagement" #FCE4EC {
+  entity "saved_places" as splaces {
+    * id : uuid <<PK>>
+    --
+    user_id, place_id
+    collection_id
+  }
+
+  entity "collections" as colls {
+    * id : uuid <<PK>>
+    * user_id <<FK>>
+    --
+    name, emoji, is_public
+  }
+
+  entity "notifications" as notifs {
+    * id : uuid <<PK>>
+    * user_id <<FK>>
+    --
+    type, title, body
+    target_type, target_id
+    actor_id, is_read
+  }
+
+  entity "explore_collections" as ecoll {
+    * id : uuid <<PK>>
+    --
+    slug, title, subtitle
+    hero_image_url
+    include_tags (text[])
+    is_active, is_featured
+  }
+
+  entity "affiliate_clicks" as aclicks {
+    * id : uuid <<PK>>
+    --
+    user_id, url, partner
+    link_type, place_id
+  }
+}
+
+package "Onboarding" #F1F8E9 {
+  entity "onboarding_config" as obcfg {
+    * id : uuid <<PK>>
+    --
+    question_key, screen_name
+    is_required, probability
+  }
+
+  entity "onboarding_sessions" as obsess {
+    * id : uuid <<PK>>
+    * user_id <<FK>>
+    --
+    config_snapshot (jsonb)
+    questions_shown (text[])
+    questions_answered (text[])
+  }
+}
+
+' === RELATIONSHIPS ===
+countries ||--o{ cities
+cities ||--o{ city_areas
+cities ||--o{ places
+city_areas |o--o{ places
+
+places ||--o{ media
+places ||--o{ ptags
+places ||--o{ pverif
+places ||--o{ psignals
+places ||--o{ pnotes
+tags ||--o{ ptags
+tgroups ||--o{ tags
+
+profiles ||--o{ blocked
+profiles ||--o{ tokens
+profiles ||--o{ uvc
+countries ||--o{ uvc
+profiles |o--|| attrib
+
+convos ||--o{ msgs
+
+profiles ||--o{ threads
+topics ||--o{ threads
+countries |o--o{ threads
+cities |o--o{ threads
+threads ||--o{ replies
+replies |o--o{ replies
+
+profiles ||--o{ trips
+trips ||--o{ stops
+trips ||--o{ tdays
+tdays ||--o{ iblocks
+trips ||--o{ tentries
+trips ||--o{ tsaved
+trips ||--o{ buddies
+cities |o--o{ stops
+places |o--o{ iblocks
+
+profiles ||--o{ splaces
+places ||--o{ splaces
+colls |o--o{ splaces
+profiles ||--o{ colls
+profiles ||--o{ notifs
+profiles ||--o{ obsess
+
+@enduml

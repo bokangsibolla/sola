@@ -50,3 +50,15 @@ app-example
 
 # Store assets (not needed in build)
 google-service-account.json
+
+# Analytics dashboard (Next.js — not part of mobile app)
+dashboard/
+
+# Documentation and planning files
+docs/
+scripts/
+
+# Loose image files in root (screenshots, etc) — NOT in assets/
+/*.jpeg
+/*.png
+/*.pdf

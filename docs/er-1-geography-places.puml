@@ -1,0 +1,145 @@
+@startuml ER — Geography and Places
+!theme plain
+skinparam linetype polyline
+
+title Sola ER — Geography & Places
+
+entity "countries" as countries {
+  * id : uuid <<PK>>
+  --
+  slug, name, iso2, iso3
+  continent, hero_image_url
+  short_blurb, badge_label
+  is_featured, is_active
+  --
+  safety_rating, solo_level
+  best_months, avg_daily_budget_usd
+  internet_quality, english_friendliness
+  highlights (text[])
+  good_for_interests (text[])
+  --
+  summary_md, content_md
+  why_we_love_md, portrait_md
+  sovereignty_md, solo_infrastructure_md
+  health_access_md, experience_density_md
+  community_connection_md, cost_reality_md
+  --
+  sim_providers (jsonb)
+  immigration_url, arrival_card_url
+  created_at, updated_at
+}
+
+entity "cities" as cities {
+  * id : uuid <<PK>>
+  * country_id : uuid <<FK>>
+  --
+  slug, name, timezone
+  center_lat, center_lng
+  hero_image_url, short_blurb
+  is_featured, is_active
+  --
+  safety_rating, solo_level
+  budget_tier, walkability
+  transit_ease, vibe
+  positioning_line
+  --
+  women_should_know (jsonb)
+  experience_pillars (jsonb)
+  how_women_use (jsonb)
+  awareness (jsonb)
+  --
+  summary_md, content_md
+  transport_md, culture_etiquette_md
+  safety_women_md
+  top_things_to_do (text[])
+  created_at, updated_at
+}
+
+entity "city_areas" as areas {
+  * id : uuid <<PK>>
+  * city_id : uuid <<FK>>
+  --
+  slug, name
+  area_kind (neighborhood|beach|island|district)
+  is_primary, positioning_line
+  who_it_suits, hero_image_url
+}
+
+entity "places" as places {
+  * id : uuid <<PK>>
+  * city_id : uuid <<FK>>
+  city_area_id : uuid <<FK>>
+  --
+  slug, name
+  place_type (21 types)
+  lat, lng, address
+  google_place_id, google_maps_url
+  phone, website
+  price_level, hours_text
+  description
+  --
+  verification_status (enum)
+  curation_score, why_selected
+  highlights (jsonb)
+  considerations (jsonb)
+  google_rating, google_review_count
+  --
+  women_only, positioning_summary
+  why_women_choose
+  image_url_cached
+  badge_label, is_featured
+  is_active
+}
+
+entity "place_media" as media {
+  * id : uuid <<PK>>
+  * place_id : uuid <<FK>>
+  --
+  url, media_type (image|video)
+  caption, source, order_index
+}
+
+entity "place_verifications" as pverif {
+  * id : uuid <<PK>>
+  * place_id : uuid <<FK>>
+  --
+  status (enum)
+  sources_checked (jsonb)
+  confidence_score
+}
+
+entity "place_signals" as psig {
+  * id : uuid <<PK>>
+  * place_id : uuid <<FK>>
+  --
+  signal_key, signal_value
+  signal_type, confidence
+}
+
+entity "place_sola_notes" as pnotes {
+  * id : uuid <<PK>>
+  * place_id : uuid <<FK>>
+  --
+  note_type (highlight|context|consideration)
+  note_text, display_context
+}
+
+entity "place_categories" as pcats {
+  * id : uuid <<PK>>
+  --
+  slug, name
+  parent_id : uuid <<FK self>>
+  icon, order_index
+}
+
+countries ||--o{ cities
+cities ||--o{ areas
+cities ||--o{ places
+areas |o--o{ places
+places ||--o{ media
+places ||--o{ pverif
+places ||--o{ psig
+places ||--o{ pnotes
+pcats |o--o{ places
+
+@enduml

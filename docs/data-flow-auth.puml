@@ -1,0 +1,70 @@
+@startuml Sola Auth and Messaging
+!theme plain
+
+title Sola — Auth & Messaging Sequence
+
+actor User
+participant "React Native\nApp" as App
+participant "lib/oauth.ts" as OAuth
+participant "Supabase\nAuth" as Auth
+database "Postgres\n(RLS)" as DB
+participant "Edge Function\npush-on-message" as Edge
+participant "Expo Push\nAPI" as Push
+
+== Sign Up / Sign In ==
+
+User -> App : Open app
+App -> App : Check AsyncStorage\nfor saved session
+
+alt No session — Google OAuth
+  User -> App : Tap "Sign in with Google"
+  App -> OAuth : googleSignIn()
+  OAuth -> OAuth : GoogleSignin.signIn()\nget idToken
+  OAuth -> Auth : signInWithIdToken(\n  provider: google,\n  token: idToken)
+else No session — Apple OAuth
+  User -> App : Tap "Sign in with Apple"
+  App -> OAuth : appleSignIn()
+  OAuth -> OAuth : AppleAuth.signInAsync()\nget identityToken + nonce
+  OAuth -> Auth : signInWithIdToken(\n  provider: apple,\n  token, nonce)
+else No session — Email
+  User -> App : Enter email + password
+  App -> Auth : signUp() or\nsignInWithPassword()
+else Has session
+  App -> Auth : getSession()\n(auto-refresh)
+end
+
+Auth -> DB : CREATE auth.users row\n(if new)
+DB -> DB : Trigger: handle_new_user()\nauto-create profiles row\ngenerate unique username
+
+Auth --> App : Session token
+App -> App : Store in AsyncStorage
+
+alt New user
+  App -> User : Onboarding flow\n(A/B tested screens)
+  User -> App : Name, country,\nbirthday, interests
+  App -> DB : UPDATE profiles\nSET onboarding_completed_at
+end
+
+App -> User : Route to /(tabs)/home
+
+== Direct Messaging (Realtime) ==
+
+User -> App : Open dm/[id]
+App -> DB : SELECT * FROM messages\nWHERE conversation_id = ?
+DB --> App : Message history
+App -> App : Subscribe Supabase\nRealtime channel
+
+User -> App : Type + send message
+App -> DB : INSERT INTO messages
+App -> DB : UPDATE conversations\n(last_message, timestamp)
+
+DB -> App : Realtime broadcast\nto recipient's subscription
+DB -> Edge : Webhook: INSERT trigger
+Edge -> DB : Fetch participants,\nfilter blocked,\nget push_tokens
+Edge -> Push : Send notification\n{title: sender, body: text}
+Push -> User : Push notification\non recipient device
+
+DB -> DB : INSERT INTO notifications
+App -> App : useUnreadIndicator()\nRealtime subscription\ninvalidate cache\nshow badge dot
+
+@enduml
