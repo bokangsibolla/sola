@@ -273,49 +273,9 @@ export function warmupConnection(): Promise<boolean> {
   return _warmupPromise;
 }
 
-// ── Custom fetch: XHR-first on Android, proxy fallback ──────────────────────
-// On Android, wait for warmup to determine connectivity mode, then use XHR,
-// native fetch, or edge function proxy depending on what works.
-const supabaseFetch: typeof fetch = async (input, init) => {
-  if (Platform.OS !== 'android') {
-    return fetch(input, init);
-  }
-
-  const url = typeof input === 'string' ? input : (input as Request).url;
-  const isSupabaseUrl = url.startsWith(supabaseUrl);
-
-  // Wait for warmup to determine if proxy mode is needed
-  if (!_warmupDone && isSupabaseUrl) {
-    await warmupConnection();
-  }
-
-  // Fast path: if proxy mode is active, skip XHR/fetch entirely
-  if (_proxyMode && isSupabaseUrl) {
-    return proxyFetch(url, init);
-  }
-
-  // Phase 1: XHR (primary on Android — bypasses TurboModule header bug)
-  try {
-    return await withTimeout(xhrFetch(url, init), 10_000, 'xhr');
-  } catch (xhrError: any) {
-    // XHR failed, try native fetch
-    console.log(`[Sola] XHR failed: ${xhrError.message?.substring(0, 80)}`);
-  }
-
-  // Phase 2: Native fetch (with timeout — hangs forever on some devices)
-  try {
-    return await withTimeout(fetch(url, init), 5_000, 'native-fetch');
-  } catch (fetchError: any) {
-    // Both XHR and native fetch failed
-    if (isSupabaseUrl) {
-      // Phase 3: Edge function proxy (headerless) — last resort
-      console.log('[Sola] XHR + fetch failed, routing through proxy');
-      _proxyMode = true;
-      return proxyFetch(url, init);
-    }
-    throw fetchError;
-  }
-};
+// ── Supabase fetch ──────────────────────────────────────────────────────────
+// Use native fetch on all platforms. The previous XHR/proxy system caused
+// "Invalid API key" errors on Android production builds by mangling headers.
 
 // ── Supabase client ─────────────────────────────────────────────────────────
 
@@ -327,7 +287,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
   global: {
-    fetch: supabaseFetch,
+    fetch: fetch,
   },
 });
 
