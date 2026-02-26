@@ -215,17 +215,24 @@ function AuthGate() {
       replaceToTabs();
     } else if (isEntryScreen && userId && !isOnboardingCompleted) {
       // Returning user who reinstalled — check DB for onboarding status
-      supabase
-        .from('profiles')
-        .select('onboarding_completed_at')
-        .eq('id', userId)
-        .single()
-        .then(({ data }) => {
-          if (data?.onboarding_completed_at) {
+      (async () => {
+        try {
+          const { data, error: err } = await supabase
+            .from('profiles')
+            .select('onboarding_completed_at')
+            .eq('id', userId)
+            .single();
+          if (err) {
+            console.warn('[Sola AuthGate] Profile lookup failed:', err.message);
+          } else if (data?.onboarding_completed_at) {
             onboardingStore.set('onboardingCompleted', true);
-            replaceToTabs();
           }
-        });
+        } catch (e) {
+          console.warn('[Sola AuthGate] Profile lookup exception:', e);
+        }
+        // Always navigate — don't leave user stuck
+        replaceToTabs();
+      })();
     } else if (currentGroup === '(tabs)' && !userId) {
       // Session might exist in storage but React state hasn't updated yet
       // (timing issue on Android where navigation triggers before auth state propagates).

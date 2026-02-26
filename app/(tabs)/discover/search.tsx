@@ -43,7 +43,7 @@ export default function SearchScreen() {
   useEffect(() => {
     getPopularCitiesWithCountry(6)
       .then(setPopularCities)
-      .catch(() => {});
+      .catch((err) => console.warn('[Sola Search] Popular cities failed:', err?.message));
   }, []);
 
   const browseCategories = [
