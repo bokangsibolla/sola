@@ -16,7 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import { signInWithGoogle } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
-import { supabase, warmupConnection } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { colors, fonts, spacing } from '@/constants/design';
 
 const { height: SCREEN_H } = Dimensions.get('window');
@@ -35,7 +35,6 @@ export default function WelcomeScreen() {
     posthog.capture('oauth_login_tapped', { provider: 'google', source: 'welcome' });
     setLoading(true);
     try {
-      await warmupConnection();
       const result = await signInWithGoogle();
 
       // Verify session is actually established before navigating

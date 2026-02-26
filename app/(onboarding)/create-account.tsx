@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
-import { supabase, diagnoseNetwork, warmupConnection } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 import { signInWithGoogle, signInWithApple } from '@/lib/oauth';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 
@@ -57,7 +57,6 @@ export default function CreateAccountScreen() {
     setLoading(true);
     setFieldError(null);
     try {
-      await warmupConnection();
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
@@ -120,7 +119,6 @@ export default function CreateAccountScreen() {
 
     setLoading(true);
     try {
-      await warmupConnection();
       const { data, error } = await supabase.auth.signUp({
         email,
         password,

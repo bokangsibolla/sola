@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
 import PrimaryButton from '@/components/ui/PrimaryButton';
-import { supabase, diagnoseNetwork, warmupConnection } from '@/lib/supabase';
+import { supabase, diagnoseNetwork } from '@/lib/supabase';
 import { signInWithGoogle, signInWithApple } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { colors, fonts, radius, spacing } from '@/constants/design';
@@ -58,8 +58,7 @@ export default function LoginScreen() {
     setLoading(true);
     setFieldError(null);
     try {
-      // Prime the connection pool on Android before auth
-      await warmupConnection();
+
       const result =
         provider === 'google' ? await signInWithGoogle() : await signInWithApple();
 
@@ -123,8 +122,7 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      // Prime the connection pool on Android before auth
-      await warmupConnection();
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,

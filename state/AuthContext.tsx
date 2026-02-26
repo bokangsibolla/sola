@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 import type { ReactNode } from 'react';
 import type { Session, User } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { supabase, warmupConnection } from '@/lib/supabase';
+import { supabase } from '@/lib/supabase';
 
 interface SignOutOptions {
   /** Use revokeAccess instead of signOut for Google — forces account picker next time. */
@@ -36,39 +36,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Failsafe: never stay loading for more than 15 seconds
-    // (increased from 8s to allow for TLS provider install + warmup retry on Android)
-    const timeout = setTimeout(() => setLoading(false), 15_000);
+    // Failsafe: never stay loading for more than 8 seconds
+    const timeout = setTimeout(() => setLoading(false), 8_000);
 
-    // On Android, warm up the OkHttp connection pool BEFORE making auth calls.
-    // This prevents "Network request failed" errors caused by cold-start failures.
-    warmupConnection()
-      .then((connected) => {
-        if (!connected) {
-          console.warn(
-            '[Sola] Connection warmup failed — Supabase may be unreachable. Continuing anyway.',
-          );
-        }
+    // Restore session from storage
+    supabase.auth
+      .getSession()
+      .then(({ data: { session: s } }) => {
+        console.log('[Sola Auth] Initial getSession:', s ? `userId=${s.user.id.substring(0, 8)}` : 'null');
+        setSession(s);
       })
-      .catch(() => {
-        // Non-fatal: warmup is best-effort
+      .catch((err) => {
+        // Network or storage error — continue as signed out
+        console.warn('[Sola] getSession failed:', err?.message);
       })
       .finally(() => {
-        // Now restore session — the connection pool should be primed
-        supabase.auth
-          .getSession()
-          .then(({ data: { session: s } }) => {
-            console.log('[Sola Auth] Initial getSession:', s ? `userId=${s.user.id.substring(0, 8)}` : 'null');
-            setSession(s);
-          })
-          .catch((err) => {
-            // Network or storage error — continue as signed out
-            console.warn('[Sola] getSession failed:', err?.message);
-          })
-          .finally(() => {
-            clearTimeout(timeout);
-            setLoading(false);
-          });
+        clearTimeout(timeout);
+        setLoading(false);
       });
 
     // Listen for auth changes (sign in, sign out, token refresh)
