@@ -274,8 +274,11 @@ export function warmupConnection(): Promise<boolean> {
 }
 
 // ── Supabase fetch ──────────────────────────────────────────────────────────
-// Use native fetch on all platforms. The previous XHR/proxy system caused
-// "Invalid API key" errors on Android production builds by mangling headers.
+// Android production builds use TurboModule networking which has a bug where
+// native fetch() fails for requests with custom headers (apikey, Authorization).
+// XHR uses the bridge-based networking path which does NOT have this bug.
+// On iOS and web, native fetch works fine.
+const supabaseFetch = Platform.OS === 'android' ? xhrFetch : fetch;
 
 // ── Supabase client ─────────────────────────────────────────────────────────
 
@@ -287,7 +290,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
   global: {
-    fetch: fetch,
+    fetch: supabaseFetch,
   },
 });
 
