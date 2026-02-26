@@ -273,14 +273,9 @@ export function warmupConnection(): Promise<boolean> {
   return _warmupPromise;
 }
 
-// ── Supabase fetch ──────────────────────────────────────────────────────────
-// Android production builds use TurboModule networking which has a bug where
-// native fetch() fails for requests with custom headers (apikey, Authorization).
-// XHR uses the bridge-based networking path which does NOT have this bug.
-// On iOS and web, native fetch works fine.
-const supabaseFetch = Platform.OS === 'android' ? xhrFetch : fetch;
-
 // ── Supabase client ─────────────────────────────────────────────────────────
+// New Architecture is disabled (newArchEnabled=false in app.config.ts) so
+// native fetch works correctly on all Android devices. No workarounds needed.
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -288,9 +283,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
-  },
-  global: {
-    fetch: supabaseFetch,
   },
 });
 
