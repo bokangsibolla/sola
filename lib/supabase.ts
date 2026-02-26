@@ -137,145 +137,41 @@ function xhrFetch(
   });
 }
 
-// ── Proxy mode ──────────────────────────────────────────────────────────────
-// On some Android devices (e.g. Vivo Android 15), ALL HTTP requests with
-// custom headers fail — both XHR and native fetch. When detected (warmup
-// failure or first request failure), we route all Supabase requests through
-// a headerless edge function proxy that adds headers server-side.
-let _proxyMode = false;
+// ── Resilient Android fetch ──────────────────────────────────────────────────
+// Try XHR first (bypasses TurboModule header bug). If XHR fails on this device,
+// permanently switch to native fetch for all subsequent requests.
+// This handles devices where XHR works (most) AND devices where native fetch
+// works but XHR doesn't (some OEM Android builds).
 
-let _proxyCallCount = 0;
+const _nativeFetch = globalThis.fetch;
+let _useNativeFetch = false;
 
-/** Send a Supabase request through the android-proxy edge function (headerless). */
-async function proxyFetch(url: string, init?: RequestInit): Promise<Response> {
-  const headers = normalizeHeaders(init?.headers);
-  const method = init?.method ?? 'GET';
-  const payload = JSON.stringify({
-    url,
-    method,
-    headers,
-    body: typeof init?.body === 'string' ? init.body : undefined,
+function androidFetch(
+  input: URL | RequestInfo,
+  init?: RequestInit,
+): Promise<Response> {
+  const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
+
+  if (_useNativeFetch) {
+    return _nativeFetch(url, init);
+  }
+
+  return xhrFetch(url, init).catch((xhrErr) => {
+    console.warn(
+      `[Sola] XHR failed for ${url.substring(0, 60)}: ${(xhrErr as Error).message} — switching to native fetch`,
+    );
+    _useNativeFetch = true;
+    return _nativeFetch(url, init).catch(() => {
+      // Both failed — throw original XHR error (more descriptive)
+      throw xhrErr;
+    });
   });
-
-  const callNum = ++_proxyCallCount;
-  // Log first 10 proxy calls for diagnostics (use local callNum to avoid race)
-  if (callNum <= 10) {
-    console.log(`[Sola Proxy] #${callNum} ${method} ${url.substring(0, 70)}`);
-  }
-
-  // Use global fetch — pass apikey as query parameter (not header) because
-  // Android TurboModule networking hangs on custom headers like "apikey".
-  // Standard headers (Content-Type) work fine.
-  const proxyUrl = `${supabaseUrl}/functions/v1/android-proxy?apikey=${supabaseAnonKey}`;
-  if (callNum <= 3) {
-    console.log(`[Sola Proxy] proxyUrl length=${proxyUrl.length}, key present=${supabaseAnonKey.length > 0}`);
-  }
-  const response = await fetch(proxyUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: payload,
-  });
-
-  if (callNum <= 10) {
-    console.log(`[Sola Proxy] #${callNum} → ${response.status}`);
-    if (!response.ok) {
-      try {
-        const errBody = await response.clone().text();
-        console.log(`[Sola Proxy] #${callNum} error: ${errBody.substring(0, 200)}`);
-      } catch { /* ignore */ }
-    }
-  }
-
-  return response;
-}
-
-// ── Timeout helper ──────────────────────────────────────────────────────────
-// AbortController doesn't work on some Android devices, so use Promise.race.
-function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) =>
-      setTimeout(() => reject(new TypeError(`Timeout (${ms}ms) [${label}]`)), ms),
-    ),
-  ]);
-}
-
-// ── Connection warmup ───────────────────────────────────────────────────────
-// Pre-warm connection to supabase.co on Android before any auth calls.
-// If warmup fails, enables proxy mode for all subsequent requests.
-let _warmupDone = false;
-let _warmupPromise: Promise<boolean> | null = null;
-
-export function warmupConnection(): Promise<boolean> {
-  if (_warmupDone) return Promise.resolve(true);
-  if (_warmupPromise) return _warmupPromise;
-
-  if (Platform.OS !== 'android') {
-    _warmupDone = true;
-    return Promise.resolve(true);
-  }
-
-  _warmupPromise = (async () => {
-    const healthUrl = `${supabaseUrl}/auth/v1/health`;
-    const healthHeaders = { apikey: supabaseAnonKey };
-
-    // Round 1: Try XHR first, then native fetch with timeout
-    try {
-      await withTimeout(
-        xhrFetch(healthUrl, { method: 'GET', headers: healthHeaders as any }),
-        4_000,
-        'warmup-xhr',
-      );
-      _warmupDone = true;
-      console.log('[Sola] Warmup: XHR succeeded');
-      return true;
-    } catch {
-      // XHR failed
-    }
-
-    try {
-      await withTimeout(
-        fetch(healthUrl, { method: 'GET', headers: healthHeaders }),
-        4_000,
-        'warmup-fetch',
-      );
-      _warmupDone = true;
-      console.log('[Sola] Warmup: native fetch succeeded');
-      return true;
-    } catch {
-      // Native fetch failed
-    }
-
-    // Round 2: Wait for TLS provider, then try once more
-    console.log('[Sola] Warmup retry — waiting for TLS provider...');
-    await new Promise((r) => setTimeout(r, 2_000));
-
-    try {
-      await withTimeout(
-        xhrFetch(healthUrl, { method: 'GET', headers: healthHeaders as any }),
-        4_000,
-        'warmup-xhr-2',
-      );
-      _warmupDone = true;
-      console.log('[Sola] Warmup: XHR succeeded (round 2)');
-      return true;
-    } catch {
-      // Still failing
-    }
-
-    // Both rounds failed — enable proxy mode
-    _proxyMode = true;
-    _warmupDone = true;
-    console.log('[Sola] Warmup failed — enabling proxy mode for all Supabase requests');
-    return false;
-  })();
-
-  return _warmupPromise;
 }
 
 // ── Supabase client ─────────────────────────────────────────────────────────
 // Android TurboModule networking (New Architecture) breaks native fetch() with
-// custom headers. XHR uses the bridge path which works. iOS uses native fetch.
+// custom headers on some devices. XHR uses the bridge path which works on most.
+// androidFetch tries XHR first, then falls back to native fetch.
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -285,7 +181,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
   global: {
-    fetch: Platform.OS === 'android' ? xhrFetch : undefined,
+    fetch: Platform.OS === 'android' ? androidFetch : undefined,
   },
 });
 

@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { usePostHog } from 'posthog-react-native';
 import OnboardingScreen from '@/components/onboarding/OnboardingScreen';
 import { onboardingStore } from '@/state/onboardingStore';
-import { supabase } from '@/lib/supabase';
+import { supabase, diagnoseNetwork } from '@/lib/supabase';
 import { signInWithGoogle, signInWithApple } from '@/lib/oauth';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 

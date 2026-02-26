@@ -83,8 +83,14 @@ export default function ProfileScreen() {
     if (!validation.valid) { setUsernameStatus('invalid'); return; }
     setUsernameStatus('checking');
     const timer = setTimeout(async () => {
-      const result = await checkUsernameAvailability(username);
-      setUsernameStatus(result.available ? 'available' : 'taken');
+      try {
+        const result = await checkUsernameAvailability(username);
+        setUsernameStatus(result.available ? 'available' : 'taken');
+      } catch {
+        // Network error — let user proceed rather than blocking forever
+        console.warn('[Sola] Username check failed, allowing user to continue');
+        setUsernameStatus('available');
+      }
     }, 500);
     return () => clearTimeout(timer);
   }, [username]);
