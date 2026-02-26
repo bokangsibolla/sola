@@ -37,7 +37,9 @@ export function DestinationCard({ city, showBorder = true }: DestinationCardProp
       )}
       <View style={styles.content}>
         <Text style={styles.name} numberOfLines={1}>{city.name}</Text>
-        <Text style={styles.kindLabel} numberOfLines={1}>{displayKindLabel(city)}</Text>
+        <Text style={styles.tagline} numberOfLines={2}>
+          {city.positioningLine ?? displayKindLabel(city)}
+        </Text>
       </View>
       <BookmarkButton entityType="city" entityId={city.id} size={18} />
       <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
@@ -79,11 +81,11 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     lineHeight: 22,
   },
-  kindLabel: {
+  tagline: {
     fontFamily: fonts.regular,
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textSecondary,
-    lineHeight: 20,
+    lineHeight: 18,
     marginTop: 2,
   },
 });

@@ -125,6 +125,23 @@ export const PLACE_TYPE_LABELS: Record<Place['placeType'], string> = {
   volunteer: 'Volunteer',
 };
 
+/** Build category counts from a list of places */
+export function buildCategoryCounts(places: Place[]): CategoryCount[] {
+  const countMap = new Map<PlaceCategoryKey, number>();
+  for (const p of places) {
+    const catKey = PLACE_TYPE_TO_CATEGORY[p.placeType];
+    if (catKey) countMap.set(catKey, (countMap.get(catKey) ?? 0) + 1);
+  }
+  return PLACE_CATEGORIES
+    .filter((cat) => (countMap.get(cat.key) ?? 0) > 0)
+    .map((cat) => ({
+      key: cat.key,
+      label: cat.label,
+      emoji: cat.emoji,
+      count: countMap.get(cat.key) ?? 0,
+    }));
+}
+
 /** Place with pre-joined image + area name for the Places tab */
 export interface PlaceWithImage extends Place {
   imageUrl: string | null;

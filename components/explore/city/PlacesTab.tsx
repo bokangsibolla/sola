@@ -1,9 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
-  NativeScrollEvent,
-  NativeSyntheticEvent,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -13,13 +10,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
-import { getPlacesByCity } from '@/data/api';
 import { getPlaceTagsBatch } from '@/data/city/cityApi';
 import { PLACE_CATEGORIES, PLACE_TYPE_TO_CATEGORY, PLACE_TYPE_LABELS } from '@/data/city/types';
-import type { PlaceCategoryKey, CategoryCount } from '@/data/city/types';
+import type { PlaceCategoryKey } from '@/data/city/types';
 import type { Place, CityArea, Tag } from '@/data/types';
-import NavigationHero from '@/components/NavigationHero';
-import { CountryTabBar } from '@/components/explore/country/CountryTabBar';
 import { CompactPlaceCard } from './CompactPlaceCard';
 
 // ---------------------------------------------------------------------------
@@ -79,52 +73,19 @@ const STAY_FILTERS: StayFilter[] = [
 ];
 
 // ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const HERO_HEIGHT = 260;
-
-// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface HeroProps {
-  imageUrl?: string | null;
-  title: string;
-  label?: string;
-  subtitle?: string;
-  onBack: () => void;
-}
-
 interface PlacesTabProps {
-  cityId: string;
+  allPlaces: Place[];
+  activeCategory: PlaceCategoryKey | null;
   areas: CityArea[];
-  heroProps: HeroProps;
-  tabs: { label: string }[];
-  activeTabIndex: number;
-  onTabPress: (index: number) => void;
-  onScrollPastHero: (pastHero: boolean) => void;
+  loading?: boolean;
 }
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-function buildCategoryCounts(places: Place[]): CategoryCount[] {
-  const countMap = new Map<PlaceCategoryKey, number>();
-  for (const p of places) {
-    const catKey = PLACE_TYPE_TO_CATEGORY[p.placeType];
-    if (catKey) countMap.set(catKey, (countMap.get(catKey) ?? 0) + 1);
-  }
-  return PLACE_CATEGORIES
-    .filter((cat) => (countMap.get(cat.key) ?? 0) > 0)
-    .map((cat) => ({
-      key: cat.key,
-      label: cat.label,
-      emoji: cat.emoji,
-      count: countMap.get(cat.key) ?? 0,
-    }));
-}
 
 function buildSubTypeCounts(
   places: Place[],
@@ -145,35 +106,23 @@ function buildSubTypeCounts(
 // ---------------------------------------------------------------------------
 
 export function PlacesTab({
-  cityId,
+  allPlaces,
+  activeCategory,
   areas,
-  heroProps,
-  tabs,
-  activeTabIndex,
-  onTabPress,
-  onScrollPastHero,
+  loading,
 }: PlacesTabProps) {
-  const { data: allPlaces, loading } = useData(
-    () => getPlacesByCity(cityId),
-    ['placesByCity', cityId],
-  );
-
-  const categoryCounts = useMemo(
-    () => buildCategoryCounts(allPlaces ?? []),
-    [allPlaces],
-  );
-
-  const [activeCategory, setActiveCategory] = useState<PlaceCategoryKey | null>(null);
   const [activeSubType, setActiveSubType] = useState<Place['placeType'] | null>(null);
   const [selectedAreaId, setSelectedAreaId] = useState<string | null>(null);
   const [openDropdown, setOpenDropdown] = useState<'type' | 'area' | 'stay' | null>(null);
   const [activeStayFilters, setActiveStayFilters] = useState<Set<string>>(new Set());
-  const pastHeroRef = useRef(false);
 
+  // Reset sub-filters when category changes
   useEffect(() => {
-    if (categoryCounts.length > 0 && !activeCategory)
-      setActiveCategory(categoryCounts[0].key);
-  }, [categoryCounts, activeCategory]);
+    setActiveSubType(null);
+    setSelectedAreaId(null);
+    setOpenDropdown(null);
+    setActiveStayFilters(new Set());
+  }, [activeCategory]);
 
   const isStayCategory = activeCategory === 'accommodation';
 
@@ -258,7 +207,7 @@ export function PlacesTab({
     () => placeIds.length > 0
       ? getPlaceTagsBatch(placeIds)
       : Promise.resolve(new Map<string, Tag[]>()),
-    ['cityPlaceTags', cityId, activeCategory, tagCacheKey],
+    ['cityPlaceTags', activeCategory, tagCacheKey],
   );
 
   const areaNameMap = useMemo(() => {
@@ -267,39 +216,8 @@ export function PlacesTab({
     return map;
   }, [areas]);
 
-  const renderItem = useCallback(({ item }: { item: Place }) => {
-    const tags = tagMap?.get(item.id) ?? [];
-    const areaName = item.cityAreaId ? areaNameMap.get(item.cityAreaId) ?? null : null;
-    return (
-      <View style={styles.cardWrapper}>
-        <CompactPlaceCard
-          place={{ ...item, imageUrl: item.imageUrlCached ?? null, areaName }}
-          tags={tags}
-        />
-      </View>
-    );
-  }, [tagMap, areaNameMap]);
-
-  const keyExtractor = useCallback((item: Place) => item.id, []);
-
-  // ── Scroll tracking ──
-  const handleScroll = useCallback(
-    (e: NativeSyntheticEvent<NativeScrollEvent>) => {
-      const y = e.nativeEvent.contentOffset.y;
-      const isPast = y >= HERO_HEIGHT;
-      if (isPast !== pastHeroRef.current) {
-        pastHeroRef.current = isPast;
-        onScrollPastHero(isPast);
-      }
-    },
-    [onScrollPastHero],
-  );
-
   if (loading) {
     return <View style={styles.centered}><ActivityIndicator color={colors.orange} /></View>;
-  }
-  if (categoryCounts.length === 0) {
-    return <View style={styles.centered}><Text style={styles.emptyText}>No places added yet</Text></View>;
   }
 
   const showSubTypes = subTypeCounts.length > 1;
@@ -312,59 +230,8 @@ export function PlacesTab({
     : 'All areas';
   const hasActiveStayFilters = activeStayFilters.size > 0;
 
-  // -------------------------------------------------------------------------
-  // Header (hero + segmented + compact filters)
-  // -------------------------------------------------------------------------
-
-  const ListHeader = (
+  return (
     <View>
-      {/* ── Hero (scrolls away with content) ── */}
-      <NavigationHero
-        imageUrl={heroProps.imageUrl}
-        title={heroProps.title}
-        label={heroProps.label}
-        subtitle={heroProps.subtitle}
-        onBack={heroProps.onBack}
-        height={HERO_HEIGHT}
-      />
-
-      {/* ── Segmented control (scrolls away — sticky clone in CityScreen) ── */}
-      <CountryTabBar
-        tabs={tabs}
-        activeIndex={activeTabIndex}
-        onTabPress={onTabPress}
-      />
-
-      {/* ── Category tabs (horizontal scroll, pure text) ── */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.catBar}
-        contentContainerStyle={styles.catBarContent}
-      >
-        {categoryCounts.map((cat) => {
-          const active = cat.key === activeCategory;
-          return (
-            <Pressable
-              key={cat.key}
-              onPress={() => {
-                setActiveCategory(cat.key);
-                setActiveSubType(null);
-                setSelectedAreaId(null);
-                setOpenDropdown(null);
-                if (cat.key !== 'accommodation') setActiveStayFilters(new Set());
-              }}
-              style={styles.catTab}
-            >
-              <Text style={[styles.catLabel, active && styles.catLabelActive]}>
-                {cat.label}
-              </Text>
-              {active && <View style={styles.catUnderline} />}
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-
       {/* ── Compact filter row (type + area + funnel + count) ── */}
       <View style={styles.filterRow}>
         <View style={styles.filterLeft}>
@@ -459,37 +326,21 @@ export function PlacesTab({
               All areas
             </Text>
           </Pressable>
-          {areaOptions.length > 0
-            ? areaOptions.map((area) => {
-                const active = area.id === selectedAreaId;
-                return (
-                  <Pressable
-                    key={area.id}
-                    onPress={() => { setSelectedAreaId(active ? null : area.id); setOpenDropdown(null); }}
-                    style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
-                  >
-                    <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
-                      {area.name}
-                    </Text>
-                    <Text style={styles.dropdownOptionCount}>{area.count}</Text>
-                  </Pressable>
-                );
-              })
-            : areas.map((area) => {
-                const active = area.id === selectedAreaId;
-                return (
-                  <Pressable
-                    key={area.id}
-                    onPress={() => { setSelectedAreaId(active ? null : area.id); setOpenDropdown(null); }}
-                    style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
-                  >
-                    <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
-                      {area.name}
-                    </Text>
-                  </Pressable>
-                );
-              })
-          }
+          {(areaOptions.length > 0 ? areaOptions : areas).map((area) => {
+            const active = area.id === selectedAreaId;
+            return (
+              <Pressable
+                key={area.id}
+                onPress={() => { setSelectedAreaId(active ? null : area.id); setOpenDropdown(null); }}
+                style={[styles.dropdownOption, active && styles.dropdownOptionActive]}
+              >
+                <Text style={[styles.dropdownOptionText, active && styles.dropdownOptionTextActive]}>
+                  {area.name}
+                </Text>
+                {'count' in area && <Text style={styles.dropdownOptionCount}>{(area as any).count}</Text>}
+              </Pressable>
+            );
+          })}
         </View>
       )}
 
@@ -536,21 +387,23 @@ export function PlacesTab({
           )}
         </View>
       )}
-    </View>
-  );
 
-  return (
-    <FlatList
-      data={filteredPlaces}
-      renderItem={renderItem}
-      keyExtractor={keyExtractor}
-      ListHeaderComponent={ListHeader}
-      contentContainerStyle={styles.listContent}
-      showsVerticalScrollIndicator={false}
-      onScroll={handleScroll}
-      scrollEventThrottle={16}
-      ListEmptyComponent={
-        <View style={[styles.centered, styles.cardWrapper]}>
+      {/* ── Place cards ── */}
+      {filteredPlaces.length > 0 ? (
+        filteredPlaces.map((item) => {
+          const tags = tagMap?.get(item.id) ?? [];
+          const areaName = item.cityAreaId ? areaNameMap.get(item.cityAreaId) ?? null : null;
+          return (
+            <View key={item.id} style={styles.cardWrapper}>
+              <CompactPlaceCard
+                place={{ ...item, imageUrl: item.imageUrlCached ?? null, areaName }}
+                tags={tags}
+              />
+            </View>
+          );
+        })
+      ) : (
+        <View style={styles.centered}>
           <Ionicons
             name={isStayCategory ? 'bed-outline' : 'search-outline'}
             size={28}
@@ -567,8 +420,8 @@ export function PlacesTab({
             </Pressable>
           )}
         </View>
-      }
-    />
+      )}
+    </View>
   );
 }
 
@@ -577,40 +430,6 @@ export function PlacesTab({
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  // ── Category tabs (pure text, horizontal scroll) ──
-  catBar: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  catBarContent: {
-    paddingLeft: spacing.screenX,
-    paddingRight: spacing.md,
-    paddingTop: spacing.lg,
-    gap: spacing.xl,
-  },
-  catTab: {
-    alignItems: 'center',
-    paddingBottom: spacing.md,
-  },
-  catLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 14,
-    color: colors.textMuted,
-  },
-  catLabelActive: {
-    color: colors.orange,
-    fontFamily: fonts.semiBold,
-  },
-  catUnderline: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 2,
-    backgroundColor: colors.orange,
-    borderRadius: 1,
-  },
-
   // ── Compact filter row ──
   filterRow: {
     flexDirection: 'row',
@@ -740,10 +559,7 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
 
-  // ── List ──
-  listContent: {
-    paddingBottom: spacing.xxxxl,
-  },
+  // ── Cards ──
   cardWrapper: {
     paddingHorizontal: spacing.screenX,
   },

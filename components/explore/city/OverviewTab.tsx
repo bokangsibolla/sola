@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, CityArea } from '@/data/types';
 import { QuickContextGrid } from './QuickContextGrid';
@@ -19,11 +19,7 @@ export function OverviewTab({ city, areas }: OverviewTabProps) {
   const introText = city.summary || city.shortBlurb || null;
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.content}>
       {/* Intro callout */}
       {introText && (
         <View style={styles.introCard}>
@@ -54,14 +50,11 @@ export function OverviewTab({ city, areas }: OverviewTabProps) {
 
       {/* Things to be aware of (accordion) */}
       <AwarenessAccordion city={city} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,

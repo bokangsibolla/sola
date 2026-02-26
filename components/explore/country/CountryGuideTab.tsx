@@ -1,5 +1,5 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
-import { colors, spacing } from '@/constants/design';
+import { StyleSheet, View } from 'react-native';
+import { spacing } from '@/constants/design';
 import type { Country, PlaceWithCity } from '@/data/types';
 import { WhyWomenLoveIt } from './WhyWomenLoveIt';
 import { TravelFitSection } from './TravelFitSection';
@@ -12,22 +12,17 @@ interface Props {
 
 export function CountryGuideTab({ country, healthPlaces }: Props) {
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.content}>
       <WhyWomenLoveIt country={country} />
 
       <TravelFitSection country={country} />
 
       <KnowBeforeYouGoAccordion country={country} healthPlaces={healthPlaces} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: {
     paddingTop: spacing.xl,
     paddingBottom: spacing.xxxxl,

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { colors, spacing } from '@/constants/design';
 import type { Country } from '@/data/types';
 import type { EmergencyNumbers } from '@/data/safety';
@@ -13,11 +13,7 @@ interface Props {
 
 export function CountryBudgetTab({ country, emergency }: Props) {
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.content}>
       {/* Budget breakdown */}
       {country.budgetBreakdown && (
         <BudgetBreakdown
@@ -37,12 +33,11 @@ export function CountryBudgetTab({ country, emergency }: Props) {
 
       {/* Quick reference */}
       <QuickReference country={country} emergency={emergency} />
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,

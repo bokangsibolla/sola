@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { LayoutAnimation, Platform, Pressable, ScrollView, StyleSheet, Text, UIManager, View } from 'react-native';
+import { LayoutAnimation, Platform, Pressable, StyleSheet, Text, UIManager, View } from 'react-native';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, Country } from '@/data/types';
 import type { ThreadWithAuthor } from '@/data/community/types';
@@ -152,7 +152,7 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
     : [];
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+    <View style={styles.content}>
 
       {/* Intro — warm callout with left accent bar */}
       {introText && <IntroCallout text={introText} />}
@@ -241,7 +241,7 @@ export function CountryOverviewTab({ country, cities, communityData, onSwitchTab
           />
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
@@ -385,7 +385,6 @@ const bulletStyles = StyleSheet.create({
 // -- Main styles ------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
   content: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.xl,

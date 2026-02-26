@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { colors, fonts, spacing } from '@/constants/design';
 import { useData } from '@/hooks/useData';
@@ -46,11 +46,7 @@ export function EventsTab({ cityId, defaultMonth }: EventsTabProps) {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={styles.content}
-      showsVerticalScrollIndicator={false}
-    >
+    <View style={styles.content}>
       {/* Month picker */}
       <View style={styles.monthPickerWrap}>
         <MonthPicker selectedMonth={selectedMonth} onSelect={setSelectedMonth} />
@@ -71,14 +67,11 @@ export function EventsTab({ cityId, defaultMonth }: EventsTabProps) {
           <Text style={styles.emptySubtitle}>Try selecting a different month to see what's happening</Text>
         </View>
       )}
-    </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
   content: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.lg,

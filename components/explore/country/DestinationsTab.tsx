@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, fonts, radius, spacing } from '@/constants/design';
 import type { City, PlaceKind } from '@/data/types';
@@ -91,38 +91,34 @@ export function DestinationsTab({ cities, countryName }: DestinationsTabProps) {
       </View>
 
       {/* Grouped list */}
-      <SectionList
-        sections={sections}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item, index, section }) => (
-          <DestinationCard
-            city={item}
-            showBorder={index < section.data.length - 1}
-          />
-        )}
-        renderSectionHeader={({ section }) => (
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{section.label}</Text>
-            <Text style={styles.sectionCount}>{section.data.length}</Text>
+      <View style={styles.listContent}>
+        {sections.map((section) => (
+          <View key={section.kind}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{section.label}</Text>
+              <Text style={styles.sectionCount}>{section.data.length}</Text>
+            </View>
+            {section.data.map((city, index) => (
+              <DestinationCard
+                key={city.id}
+                city={city}
+                showBorder={index < section.data.length - 1}
+              />
+            ))}
           </View>
-        )}
-        stickySectionHeadersEnabled={false}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-        ListEmptyComponent={
+        ))}
+        {sections.length === 0 && (
           <View style={styles.emptyContainer}>
             <Text style={styles.emptyText}>No places match your search</Text>
           </View>
-        }
-      />
+        )}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
+  container: {},
   searchContainer: {
     paddingHorizontal: spacing.screenX,
     paddingTop: spacing.lg,
