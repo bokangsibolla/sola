@@ -274,8 +274,8 @@ export function warmupConnection(): Promise<boolean> {
 }
 
 // ── Supabase client ─────────────────────────────────────────────────────────
-// New Architecture is disabled (newArchEnabled=false in app.config.ts) so
-// native fetch works correctly on all Android devices. No workarounds needed.
+// Android TurboModule networking (New Architecture) breaks native fetch() with
+// custom headers. XHR uses the bridge path which works. iOS uses native fetch.
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -283,6 +283,9 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: false,
+  },
+  global: {
+    fetch: Platform.OS === 'android' ? xhrFetch : undefined,
   },
 });
 
