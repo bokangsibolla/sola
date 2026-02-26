@@ -1,186 +1,60 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { useFocusEffect } from '@react-navigation/native';
+import React from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { usePostHog } from 'posthog-react-native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { HamburgerButton } from '@/components/home/HamburgerButton';
-import LoadingScreen from '@/components/LoadingScreen';
-import ErrorScreen from '@/components/ErrorScreen';
-import CurrentTripCard from '@/components/trips/CurrentTripCard';
-import TripListCard from '@/components/trips/TripListCard';
-import { TripsEmptyStateV2 } from '@/components/trips/TripsEmptyStateV2';
-import { WishlistGrid } from '@/components/trips/WishlistGrid';
-import { useTrips } from '@/data/trips/useTrips';
-import { deleteTrip } from '@/data/trips/tripApi';
-import { useAppMode } from '@/state/AppModeContext';
-import { colors, fonts, radius, spacing } from '@/constants/design';
+import { colors, fonts, spacing } from '@/constants/design';
 
 export default function TripsScreen() {
-  const router = useRouter();
-  const posthog = usePostHog();
-  const { trips, loading, error, refetch } = useTrips();
-  const { mode } = useAppMode();
-  const [showPast, setShowPast] = useState(false);
-
-  useEffect(() => {
-    posthog.capture('trips_screen_viewed');
-  }, [posthog]);
-
-  useFocusEffect(
-    useCallback(() => {
-      refetch();
-    }, [refetch]),
-  );
-
-  const handleDelete = async (tripId: string) => {
-    await deleteTrip(tripId);
-    refetch();
-  };
-
-  if (loading) return <LoadingScreen />;
-  if (error) return <ErrorScreen message={error.message} onRetry={refetch} />;
-
-  const upcoming = trips.upcoming ?? [];
-  const past = trips.past ?? [];
-  const isEmpty = !trips.current && upcoming.length === 0 && past.length === 0;
-
-  // Travelling Mode: active trip takes over the screen
-  if (mode === 'travelling' && trips.current) {
-    return (
-      <AppScreen>
-        <NavigationHeader
-          title="Trips"
-          rightActions={<HamburgerButton />}
-        />
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-          <CurrentTripCard trip={trips.current} />
-          {upcoming.length > 0 && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>UPCOMING</Text>
-              {upcoming.map((trip) => (
-                <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
-              ))}
-            </View>
-          )}
-          <Pressable
-            style={({ pressed }) => [styles.newTripButton, pressed && styles.newTripPressed]}
-            onPress={() => router.push('/trips/new')}
-          >
-            <Ionicons name="add" size={20} color={colors.orange} />
-            <Text style={styles.newTripText}>Plan a new trip</Text>
-          </Pressable>
-        </ScrollView>
-      </AppScreen>
-    );
-  }
-
   return (
     <AppScreen>
       <NavigationHeader
         title="Trips"
         rightActions={<HamburgerButton />}
       />
-      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {isEmpty ? (
-          <TripsEmptyStateV2 onCreateTrip={() => router.push('/trips/new')} />
-        ) : (
-          <>
-            {/* Current trip */}
-            {trips.current && <CurrentTripCard trip={trips.current} />}
-
-            {/* Upcoming trips */}
-            {upcoming.length > 0 && (
-              <View style={styles.section}>
-                <Text style={styles.sectionLabel}>UPCOMING</Text>
-                {upcoming.map((trip) => (
-                  <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
-                ))}
-              </View>
-            )}
-
-            {/* Wishlist — places I want to go */}
-            <WishlistGrid />
-
-            {/* Past trips */}
-            {past.length > 0 && (
-              <View style={styles.section}>
-                <Pressable
-                  style={styles.pastToggle}
-                  onPress={() => setShowPast(!showPast)}
-                >
-                  <Text style={styles.sectionLabel}>PAST TRIPS</Text>
-                  <Ionicons
-                    name={showPast ? 'chevron-up' : 'chevron-down'}
-                    size={16}
-                    color={colors.textSecondary}
-                  />
-                </Pressable>
-                {showPast &&
-                  past.map((trip) => (
-                    <TripListCard key={trip.id} trip={trip} onDelete={handleDelete} />
-                  ))}
-              </View>
-            )}
-
-            {/* New trip button */}
-            <Pressable
-              style={({ pressed }) => [styles.newTripButton, pressed && styles.newTripPressed]}
-              onPress={() => router.push('/trips/new')}
-            >
-              <Ionicons name="add" size={20} color={colors.orange} />
-              <Text style={styles.newTripText}>Plan a new trip</Text>
-            </Pressable>
-          </>
-        )}
-      </ScrollView>
+      <View style={styles.container}>
+        <View style={styles.iconCircle}>
+          <Ionicons name="airplane-outline" size={32} color={colors.orange} />
+        </View>
+        <Text style={styles.title}>Trip planning is coming soon</Text>
+        <Text style={styles.subtitle}>
+          We're building something thoughtful for how you plan and organise your travels. Stay tuned.
+        </Text>
+      </View>
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
-    paddingBottom: spacing.md,
-  },
-  section: {
-    paddingHorizontal: spacing.screenX,
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.textSecondary,
-    letterSpacing: 0.5,
-    marginBottom: spacing.md,
-  },
-  pastToggle: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.md,
-  },
-  newTripButton: {
-    flexDirection: 'row',
+  container: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.lg,
-    marginHorizontal: spacing.screenX,
-    marginTop: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    borderRadius: radius.card,
-    borderStyle: 'dashed',
+    paddingHorizontal: spacing.screenX * 2,
+    paddingBottom: 80,
   },
-  newTripPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.98 }],
+  iconCircle: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: spacing.lg,
   },
-  newTripText: {
-    fontFamily: fonts.medium,
+  title: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  subtitle: {
+    fontFamily: fonts.regular,
     fontSize: 15,
-    color: colors.orange,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    lineHeight: 22,
   },
 });
