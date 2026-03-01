@@ -16,6 +16,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   scheme: 'sola',
   userInterfaceStyle: 'automatic',
   newArchEnabled: true,
+  updates: {
+    enabled: false,
+  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'app.solatravel.sola',
