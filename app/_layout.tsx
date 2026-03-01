@@ -80,6 +80,7 @@ export const unstable_settings = {
 };
 
 export function ErrorBoundary({ error, retry }: { error: Error; retry: () => void }) {
+  console.error('[Sola ErrorBoundary]', error.message, error.stack);
   return (
     <View style={errorStyles.container}>
       <View style={errorStyles.iconCircle}>
@@ -87,8 +88,13 @@ export function ErrorBoundary({ error, retry }: { error: Error; retry: () => voi
       </View>
       <Text style={errorStyles.title}>We seem to have gotten a little lost</Text>
       <Text style={errorStyles.subtitle}>
-        Something unexpected happened, but it's nothing to worry about.
+        {error.message || 'Something unexpected happened.'}
       </Text>
+      {__DEV__ ? null : (
+        <Text style={errorStyles.errorDetail} selectable>
+          {error.stack?.substring(0, 500) || 'No stack trace'}
+        </Text>
+      )}
       <Pressable
         style={({ pressed }) => [errorStyles.button, pressed && errorStyles.buttonPressed]}
         onPress={retry}
@@ -130,7 +136,17 @@ const errorStyles = StyleSheet.create({
     lineHeight: 22,
     color: colors.textMuted,
     textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  errorDetail: {
+    fontFamily: 'PlusJakartaSans-Regular',
+    fontSize: 11,
+    lineHeight: 16,
+    color: colors.textMuted,
+    textAlign: 'left',
     marginBottom: spacing.xxl,
+    paddingHorizontal: spacing.md,
+    opacity: 0.7,
   },
   button: {
     backgroundColor: colors.orange,
