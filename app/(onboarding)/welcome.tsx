@@ -210,6 +210,7 @@ const styles = StyleSheet.create({
   ctaText: {
     fontFamily: fonts.semiBold,
     fontSize: 15,
+    lineHeight: 22,
     color: '#FFFFFF',
     ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
@@ -219,6 +220,7 @@ const styles = StyleSheet.create({
   loginText: {
     fontFamily: fonts.medium,
     fontSize: 14,
+    lineHeight: 20,
     color: colors.textPrimary,
     ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
@@ -271,6 +273,7 @@ const styles = StyleSheet.create({
   googleG: {
     fontFamily: fonts.semiBold,
     fontSize: 18,
+    lineHeight: 24,
     color: '#4285F4',
     ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },

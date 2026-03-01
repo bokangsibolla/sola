@@ -399,7 +399,7 @@ const styles = StyleSheet.create({
   socialText: {
     fontFamily: fonts.medium,
     fontSize: 15,
-    lineHeight: 20,
+    lineHeight: 22,
     color: colors.textPrimary,
     ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
