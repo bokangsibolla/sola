@@ -169,10 +169,9 @@ export async function signInWithGoogle(): Promise<{
   }
 
   // Phase 2: Exchange ID token with Supabase
-  // On Android, try direct signInWithIdToken first (uses XHR-based fetch which
-  // bypasses the TurboModule header bug). Fall back to edge function proxy if
-  // the direct call fails. Direct call is preferred because the Supabase client
-  // manages the session naturally — no manual setSession() needed.
+  // On Android, signInWithIdToken uses our androidFetch (native-first with
+  // XHR fallback). If it still fails, fall back to the edge function proxy
+  // which bypasses custom headers entirely.
   try {
     let sessionData: { user: any; session: any };
     let proxyProfile: any = null; // Profile from proxy (avoids header-blocked query)

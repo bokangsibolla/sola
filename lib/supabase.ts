@@ -2,6 +2,9 @@ import { createClient } from '@supabase/supabase-js';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 
+// ── DEBUG FLAG — set to false when done diagnosing release build issue ───────
+const SOLA_DEBUG_NETWORK = false;
+
 const supabaseUrl =
   process.env.EXPO_PUBLIC_SUPABASE_URL ||
   'https://bfyewxgdfkmkviajmfzp.supabase.co';
@@ -137,41 +140,55 @@ function xhrFetch(
   });
 }
 
-// ── Resilient Android fetch ──────────────────────────────────────────────────
-// Try XHR first (bypasses TurboModule header bug). If XHR fails on this device,
-// permanently switch to native fetch for all subsequent requests.
-// This handles devices where XHR works (most) AND devices where native fetch
-// works but XHR doesn't (some OEM Android builds).
+// ── Resilient Android fetch ──────────────────────────────────────────────
+// Try native fetch first (works in EAS production builds). If native fetch
+// fails (TurboModule header bug on some devices), fall back to XHR which
+// uses the bridge networking path.
 
 const _nativeFetch = globalThis.fetch;
-let _useNativeFetch = false;
+let _useXhr = false;
 
 function androidFetch(
   input: URL | RequestInfo,
   init?: RequestInit,
 ): Promise<Response> {
   const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
+  const method = init?.method ?? 'GET';
 
-  if (_useNativeFetch) {
-    return _nativeFetch(url, init);
+  if (SOLA_DEBUG_NETWORK) {
+    const urlPath = url.replace(supabaseUrl, '').split('?')[0];
+    console.log(
+      `[Sola Fetch] ${method} ${urlPath.substring(0, 60)} | ` +
+      `transport=${_useXhr ? 'XHR' : 'NATIVE'}`,
+    );
   }
 
-  return xhrFetch(url, init).catch((xhrErr) => {
-    console.warn(
-      `[Sola] XHR failed for ${url.substring(0, 60)}: ${(xhrErr as Error).message} — switching to native fetch`,
-    );
-    _useNativeFetch = true;
-    return _nativeFetch(url, init).catch(() => {
-      // Both failed — throw original XHR error (more descriptive)
-      throw xhrErr;
+  if (_useXhr) {
+    return xhrFetch(url, init);
+  }
+
+  return _nativeFetch(url, init)
+    .catch((nativeErr) => {
+      console.warn(
+        `[Sola] Native fetch failed for ${url.substring(0, 60)}: ${(nativeErr as Error).message} — trying XHR`,
+      );
+      return xhrFetch(url, init)
+        .then((r) => {
+          // XHR worked where native didn't — switch permanently
+          _useXhr = true;
+          console.log('[Sola] XHR succeeded — switching to XHR for all future requests');
+          return r;
+        })
+        .catch(() => {
+          // Both failed — throw native error (more useful)
+          throw nativeErr;
+        });
     });
-  });
 }
 
-// ── Supabase client ─────────────────────────────────────────────────────────
-// Android TurboModule networking (New Architecture) breaks native fetch() with
-// custom headers on some devices. XHR uses the bridge path which works on most.
-// androidFetch tries XHR first, then falls back to native fetch.
+// ── Supabase client ─────────────────────────────────────────────────────
+// On Android, use resilient fetch: native fetch first (works in EAS builds),
+// XHR fallback (works on devices with TurboModule header bug).
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -312,4 +329,51 @@ export async function diagnoseNetwork(): Promise<{
 
   result.details = lines.join('\n');
   return result;
+}
+
+// ── Startup health check (temporary diagnostic) ────────────────────────────
+// Runs once on app startup to verify the full request chain works.
+// Remove when done debugging release build issue.
+export async function runHealthCheck(): Promise<void> {
+  if (!SOLA_DEBUG_NETWORK) return;
+
+  const tag = '[Sola HealthCheck]';
+  console.log(`${tag} ─── Starting health check ───`);
+  console.log(`${tag} Platform: ${Platform.OS} (${Platform.Version})`);
+  console.log(`${tag} __DEV__: ${__DEV__}`);
+  console.log(`${tag} Supabase URL domain: ${supabaseUrl.replace('https://', '').split('.')[0]}`);
+  console.log(`${tag} Anon key exists: ${!!supabaseAnonKey && supabaseAnonKey.length > 10}`);
+  console.log(`${tag} Anon key preview: ${supabaseAnonKey.slice(0, 12)}…${supabaseAnonKey.slice(-6)}`);
+  console.log(`${tag} Android fetch transport: ${_useXhr ? 'XHR (native failed earlier!)' : 'NATIVE (primary)'}`);
+
+  // 1. Check session
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    if (error) {
+      console.error(`${tag} getSession ERROR: ${error.message}`);
+    } else if (session) {
+      console.log(`${tag} Session: userId=${session.user.id.substring(0, 8)}, expires=${new Date(session.expires_at! * 1000).toISOString()}`);
+      console.log(`${tag} Access token preview: ${session.access_token.substring(0, 20)}…`);
+    } else {
+      console.log(`${tag} Session: null (not logged in)`);
+    }
+  } catch (e: any) {
+    console.error(`${tag} getSession THREW: ${e.message}`);
+  }
+
+  // 2. Lightweight data query — try reading 1 row from countries (public table)
+  try {
+    const { data, error, status } = await supabase
+      .from('countries')
+      .select('id, name')
+      .limit(1)
+      .single();
+    console.log(`${tag} Data query (countries): status=${status}, error=${error?.message ?? 'none'}, got=${data ? data.name : 'null'}`);
+  } catch (e: any) {
+    console.error(`${tag} Data query THREW: ${e.message}`);
+  }
+
+  // 3. Check fetch transport state after queries
+  console.log(`${tag} Post-query transport: ${_useXhr ? 'XHR (switched!)' : 'NATIVE (still primary)'}`);
+  console.log(`${tag} ─── Health check complete ───`);
 }
