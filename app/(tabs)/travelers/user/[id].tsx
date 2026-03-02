@@ -5,7 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { usePostHog } from 'posthog-react-native';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { haptics } from '@/lib/haptics';
 import {
   sendConnectionRequest,
@@ -23,6 +23,7 @@ import ProfileTripCard from '@/components/profile/ProfileTripCard';
 import { TravelMap } from '@/components/profile/TravelMap';
 import { InterestPills } from '@/components/profile/InterestPills';
 import { getProfileTags } from '@/data/api';
+import { getOpenPostsByUser } from '@/data/together/togetherApi';
 import { useData } from '@/hooks/useData';
 import { colors, fonts, radius, spacing, typography } from '@/constants/design';
 import NavigationHeader from '@/components/NavigationHeader';
@@ -32,6 +33,23 @@ import { VerificationBanner } from '@/components/VerificationBanner';
 import type { ConnectionStatus, ProfileTag } from '@/data/types';
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+const CATEGORY_LABELS: Record<string, string> = {
+  food: 'Food',
+  culture: 'Culture',
+  adventure: 'Adventure',
+  nightlife: 'Nightlife',
+  day_trip: 'Day trip',
+  wellness: 'Wellness',
+  shopping: 'Shopping',
+  other: 'Other',
+};
+
+function formatPlanDate(dateStr: string | null): string {
+  if (!dateStr) return '';
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
+}
 
 export default function UserProfileScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -90,6 +108,14 @@ export default function UserProfileScreen() {
     [isOwn, userId, 'viewer-tags'],
   );
   const viewerTagSlugs = (viewerTags ?? []).map((t: ProfileTag) => t.tagSlug);
+
+  // Her Plans — fetch open together posts for this user
+  const { data: userActivities = [] } = useQuery({
+    queryKey: ['user-activities', id],
+    queryFn: () => getOpenPostsByUser(id!),
+    enabled: !!id && !isOwn,
+  });
+  const openActivities = userActivities.filter(a => a.status === 'open');
 
   const countriesCount = allCountryIso2s.length;
   const joinedDate = profile ? new Date(profile.createdAt) : null;
@@ -298,7 +324,7 @@ export default function UserProfileScreen() {
       />
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        {/* 1. Profile Header */}
+        {/* 1. Profile Header — avatar, name, flag, username, bio, location */}
         <View style={styles.profileHeader}>
           {profile.avatarUrl ? (
             <Image
@@ -344,26 +370,7 @@ export default function UserProfileScreen() {
           )}
         </View>
 
-        {/* 2. Stats Row */}
-        <View style={styles.statsRow}>
-          {countriesCount > 0 && (
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{countriesCount}</Text>
-              <Text style={styles.statLabel}>{countriesCount === 1 ? 'country' : 'countries'}</Text>
-            </View>
-          )}
-          {totalTripCount > 0 && (
-            <View style={styles.statItem}>
-              <Text style={styles.statNumber}>{totalTripCount}</Text>
-              <Text style={styles.statLabel}>{totalTripCount === 1 ? 'trip' : 'trips'}</Text>
-            </View>
-          )}
-          <View style={styles.statItem}>
-            <Text style={styles.statLabel}>{joinedLabel}</Text>
-          </View>
-        </View>
-
-        {/* 3. Action Area — Edit profile for isOwn */}
+        {/* 2. Edit Button — own profile only */}
         {isOwn && (
           <Pressable
             style={({ pressed }) => [styles.editButton, pressed && { opacity: 0.7 }]}
@@ -374,28 +381,16 @@ export default function UserProfileScreen() {
           </Pressable>
         )}
 
-        {/* 4. Countries Visited */}
-        {(isOwn || showExtended) && allCountryIso2s.length > 0 && (
+        {/* 3. Travel Style Tags — visible to everyone, vibe indicator */}
+        {(profileTags.length > 0 || (profile.interests ?? []).length > 0) && (
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Countries visited</Text>
-            <TravelMap
-              countries={allCountryIso2s}
-              onAddCountry={isOwn ? () => router.push('/(tabs)/home/edit-profile' as any) : undefined}
-            />
-          </View>
-        )}
-
-        {/* 5. Interests */}
-        {(isOwn || showExtended) && (profileTags.length > 0 || (profile.interests ?? []).length > 0) && (
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Interests</Text>
+            <Text style={styles.sectionTitle}>Travel style</Text>
             {profileTags.length > 0 ? (
               <InterestPills
                 tags={profileTags}
                 viewerTagSlugs={isOwn ? undefined : viewerTagSlugs}
               />
             ) : profile?.interests && profile.interests.length > 0 ? (
-              /* Legacy fallback for profiles that haven't migrated */
               <View style={styles.interestsGrid}>
                 {profile.interests.map((interest: string) => (
                   <View key={interest} style={styles.interestPill}>
@@ -407,8 +402,52 @@ export default function UserProfileScreen() {
           </View>
         )}
 
-        {/* 6. Trips */}
-        {(isOwn || showExtended) && (
+        {/* 4. Her Trip — current trip route (visible to everyone) */}
+        {trips.current && trips.current.stops && trips.current.stops.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Her trip</Text>
+            <Text style={styles.tripRoute}>
+              {trips.current.stops.map(s => s.cityName ?? s.countryIso2).join(' \u2192 ')}
+            </Text>
+          </View>
+        )}
+
+        {/* 5. Her Plans — open together posts (non-own only) */}
+        {!isOwn && openActivities.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Her plans</Text>
+            {openActivities.map(a => (
+              <Pressable
+                key={a.id}
+                style={({ pressed }) => [styles.planRow, pressed && { opacity: 0.7 }]}
+                onPress={() => router.push(`/(tabs)/travelers/together/${a.id}`)}
+              >
+                <View style={styles.planCategoryPill}>
+                  <Text style={styles.planCategoryText}>
+                    {CATEGORY_LABELS[a.activityCategory] ?? a.activityCategory}
+                  </Text>
+                </View>
+                <Text style={styles.planTitle} numberOfLines={1}>{a.title}</Text>
+                <Text style={styles.planDate}>
+                  {a.isFlexible ? 'Flexible' : formatPlanDate(a.activityDate)}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+        )}
+
+        {/* 6. Connected Gate — countries map + full trip history */}
+        {showExtended && allCountryIso2s.length > 0 && (
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Countries visited</Text>
+            <TravelMap
+              countries={allCountryIso2s}
+              onAddCountry={isOwn ? () => router.push('/(tabs)/home/edit-profile' as any) : undefined}
+            />
+          </View>
+        )}
+
+        {showExtended && (
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Trips</Text>
 
@@ -451,9 +490,17 @@ export default function UserProfileScreen() {
           <View style={styles.lockedSection}>
             <Ionicons name="lock-closed-outline" size={24} color={colors.textMuted} />
             <Text style={styles.lockedTitle}>Full profile</Text>
-            <Text style={styles.lockedText}>Connect to see trips, interests, and more</Text>
+            <Text style={styles.lockedText}>Connect to see trips, countries, and more</Text>
           </View>
         )}
+
+        {/* 8. Footer Stats — subtle line at bottom */}
+        <Text style={styles.footerStats}>
+          {countriesCount > 0
+            ? `${countriesCount} ${countriesCount === 1 ? 'country' : 'countries'} \u00B7 `
+            : ''
+          }{joinedLabel}
+        </Text>
       </ScrollView>
 
       {/* Connection Bottom Bar — only for non-own */}
@@ -601,29 +648,6 @@ const styles = StyleSheet.create({
     color: colors.orange,
   },
 
-  // Stats row
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: spacing.xxl,
-    paddingVertical: spacing.lg,
-    marginBottom: spacing.md,
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-  },
-  statLabel: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textMuted,
-    marginTop: 1,
-  },
-
   // Edit button
   editButton: {
     flexDirection: 'row',
@@ -668,6 +692,55 @@ const styles = StyleSheet.create({
     fontFamily: fonts.medium,
     fontSize: 13,
     color: colors.textSecondary,
+  },
+
+  // Her Trip
+  tripRoute: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    lineHeight: 22,
+    color: colors.textPrimary,
+  },
+
+  // Her Plans
+  planRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderDefault,
+  },
+  planCategoryPill: {
+    backgroundColor: colors.orangeFill,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.pill,
+  },
+  planCategoryText: {
+    fontFamily: fonts.medium,
+    fontSize: 12,
+    color: colors.orange,
+  },
+  planTitle: {
+    flex: 1,
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textPrimary,
+  },
+  planDate: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+  },
+
+  // Footer Stats
+  footerStats: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xl,
   },
 
   // Trips

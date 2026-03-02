@@ -384,6 +384,50 @@ export async function getMyTogetherPosts(
   });
 }
 
+/**
+ * Fetch a user's open together posts (for viewing on their profile).
+ * Only returns posts with status='open'. Works for any user ID.
+ */
+export async function getOpenPostsByUser(
+  userId: string,
+): Promise<TogetherPostWithAuthor[]> {
+  const { data, error } = await supabase
+    .from('together_posts')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('status', 'open')
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+
+  const rows = data ?? [];
+  if (rows.length === 0) return [];
+
+  const postIds = rows.map((r: any) => r.id as string);
+  const cityIds = rows.map((r: any) => r.city_id as string).filter(Boolean);
+  const iso2Codes = rows.map((r: any) => r.country_iso2 as string).filter(Boolean);
+
+  const [authors, cityNames, countryNames, requestInfo] = await Promise.all([
+    batchFetchAuthors([userId]),
+    batchFetchCityNames(cityIds),
+    batchFetchCountryNames(iso2Codes),
+    batchFetchRequestInfo(postIds, userId),
+  ]);
+
+  return rows.map((row: any) => {
+    const info = requestInfo.get(row.id);
+    return {
+      ...toCamel<TogetherPost>(row),
+      author: authors.get(userId) ?? fallbackAuthor(userId),
+      cityName: row.city_id ? (cityNames.get(row.city_id) ?? null) : null,
+      countryName: row.country_iso2 ? (countryNames.get(row.country_iso2) ?? null) : null,
+      requestCount: info?.requestCount ?? 0,
+      acceptedCount: info?.acceptedCount ?? 0,
+      userRequestStatus: info?.userRequestStatus ?? null,
+      userRequestId: info?.userRequestId ?? null,
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // CRUD
 // ---------------------------------------------------------------------------
