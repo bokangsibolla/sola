@@ -5,22 +5,20 @@ import {
   FlatList,
   Pressable,
   TextInput,
-  ScrollView,
   StyleSheet,
   ActivityIndicator,
   RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import type { Router } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { LinearGradient } from 'expo-linear-gradient';
 import { usePostHog } from 'posthog-react-native';
-import { colors, fonts, spacing, radius, typography } from '@/constants/design';
+import { colors, fonts, spacing, radius } from '@/constants/design';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { HamburgerButton } from '@/components/home/HamburgerButton';
 import ErrorScreen from '@/components/ErrorScreen';
+import FilterSheet from '@/components/community/FilterSheet';
 import { useCommunityFeed } from '@/data/community/useCommunityFeed';
 import { useCommunityOnboarding } from '@/data/community/useCommunityOnboarding';
 import { castVote, getCommunityTopics } from '@/data/community/communityApi';
@@ -28,102 +26,38 @@ import { getCommunityLastVisit, setCommunityLastVisit } from '@/data/community/l
 import { useAuth } from '@/state/AuthContext';
 import { useAppMode } from '@/state/AppModeContext';
 import { useData } from '@/hooks/useData';
-import { getCountriesList, getProfileById } from '@/data/api';
+import { getProfileById } from '@/data/api';
 import { getImageUrl } from '@/lib/image';
 import { formatTimeAgo } from '@/utils/timeAgo';
-import { getFlag } from '@/data/trips/helpers';
 import { markFeatureSeen } from '@/data/home/useNewUserFeed';
 import type { ThreadWithAuthor, CommunityTopic } from '@/data/community/types';
 
 // ---------------------------------------------------------------------------
-// Post Type Badge Labels
+// Sort types
 // ---------------------------------------------------------------------------
 
-const POST_TYPE_LABELS: Record<string, string> = {
-  question: 'Question',
-  tip: 'Tip',
-  experience: 'Experience',
-  safety_alert: 'Safety Alert',
-};
+type SortKey = 'relevant' | 'new' | 'top';
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: 'new', label: 'New' },
+  { key: 'top', label: 'Top' },
+  { key: 'relevant', label: 'Relevant' },
+];
 
 // ---------------------------------------------------------------------------
-// Featured Hero Card — visual header for top Sola Team thread
-// ---------------------------------------------------------------------------
-
-function FeaturedHeroCard({
-  thread,
-  onPress,
-}: {
-  thread: ThreadWithAuthor;
-  onPress: () => void;
-}) {
-  const placeName = thread.cityName ?? thread.countryName;
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => [styles.heroCard, pressed && styles.pressed]}
-    >
-      {thread.cityImageUrl ? (
-        <Image
-          source={{ uri: thread.cityImageUrl }}
-          style={StyleSheet.absoluteFill}
-          contentFit="cover"
-          transition={200}
-          pointerEvents="none"
-        />
-      ) : (
-        <View style={[StyleSheet.absoluteFill, styles.heroCardPlaceholder]} />
-      )}
-      <LinearGradient
-        colors={['transparent', 'rgba(0,0,0,0.65)']}
-        style={StyleSheet.absoluteFill}
-        pointerEvents="none"
-      />
-
-      {/* "FROM SOLA" type label */}
-      <View style={styles.heroTypeLabel}>
-        <Text style={styles.heroTypeLabelText}>FROM SOLA</Text>
-      </View>
-
-      <View style={styles.heroContent} pointerEvents="none">
-        {placeName && (
-          <View style={styles.heroPlacePill}>
-            <Feather name="map-pin" size={10} color="rgba(255,255,255,0.9)" />
-            <Text style={styles.heroPlaceText}>{placeName}</Text>
-          </View>
-        )}
-        <Text style={styles.heroTitle} numberOfLines={2}>
-          {thread.title}
-        </Text>
-        <View style={styles.heroMeta}>
-          <Text style={styles.heroMetaText}>
-            {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-          </Text>
-          <Text style={styles.heroMetaDot}>&middot;</Text>
-          <Text style={styles.heroMetaText}>{formatTimeAgo(thread.createdAt)}</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Thread Card — redesigned with visual warmth
+// Thread Card — Reddit-clean, text-only with vote column
 // ---------------------------------------------------------------------------
 
 function ThreadCard({
   thread,
   onPress,
   onVote,
-  router,
 }: {
   thread: ThreadWithAuthor;
   onPress: () => void;
   onVote: (threadId: string) => void;
-  router: Router;
 }) {
-  const helpfulColor = thread.userVote === 'up' ? colors.orange : colors.textMuted;
+  const voted = thread.userVote === 'up';
+  const voteColor = voted ? colors.orange : colors.textMuted;
 
   const isSystem = thread.authorType === 'system';
   const isSeed = thread.authorType === 'seed';
@@ -131,149 +65,53 @@ function ThreadCard({
     ? 'Sola Team'
     : isSeed && thread.seedProfile
       ? thread.seedProfile.displayName
-      : thread.author.username
-        ? `${thread.author.firstName} @${thread.author.username}`
-        : thread.author.firstName;
+      : thread.author.firstName;
   const placeName = thread.cityName ?? thread.countryName;
-  const hasImage = !!thread.cityImageUrl;
 
-  // Build subtitle: "Safety & comfort · Hoi An"
-  const subtitleParts: string[] = [];
-  if (thread.topicLabel) subtitleParts.push(thread.topicLabel);
-  if (placeName) subtitleParts.push(placeName);
-  const subtitle = subtitleParts.join(' \u00b7 ');
-
-  const avatarContent = isSystem ? (
-    <View style={[styles.avatar, styles.avatarSystem]}>
-      <Text style={styles.avatarSystemText}>S</Text>
-    </View>
-  ) : isSeed ? (
-    <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>
-        {authorName.charAt(0).toUpperCase()}
-      </Text>
-    </View>
-  ) : thread.author.avatarUrl ? (
-    <Image
-      source={{ uri: thread.author.avatarUrl }}
-      style={styles.avatar}
-      contentFit="cover"
-    />
-  ) : (
-    <View style={[styles.avatar, styles.avatarFallback]}>
-      <Text style={styles.avatarFallbackText}>
-        {authorName.charAt(0).toUpperCase()}
-      </Text>
-    </View>
-  );
+  // Build meta: "Safety · Colombia · 8 answers"
+  const metaParts: string[] = [];
+  if (thread.topicLabel) metaParts.push(thread.topicLabel);
+  if (placeName) metaParts.push(placeName);
+  metaParts.push(`${thread.replyCount} ${thread.replyCount === 1 ? 'answer' : 'answers'}`);
+  const meta = metaParts.join(' \u00b7 ');
 
   return (
     <Pressable
       onPress={onPress}
       style={({ pressed }) => [styles.threadCard, pressed && styles.pressed]}
     >
-      <View style={styles.threadCardInner}>
-        {/* Left content area */}
-        <View style={styles.threadCardLeft}>
-          {/* Author row */}
-          <View style={styles.authorRow}>
-            {isSystem ? (
-              <View style={styles.authorPressable}>
-                {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
-                <View style={styles.teamBadge}>
-                  <Text style={styles.teamBadgeText}>TEAM</Text>
-                </View>
-              </View>
-            ) : isSeed ? (
-              <View style={styles.authorPressable}>
-                {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
-              </View>
-            ) : (
-              <Pressable
-                onPress={() => router.push(`/travelers/user/${thread.author.id}` as any)}
-                style={styles.authorPressable}
-              >
-                {avatarContent}
-                <Text style={styles.authorName}>{authorName}</Text>
-                {thread.author.homeCountryIso2 && (
-                  <Text style={styles.authorFlag}>{getFlag(thread.author.homeCountryIso2)}</Text>
-                )}
-              </Pressable>
-            )}
-            <Text style={styles.authorTime}>{formatTimeAgo(thread.createdAt)}</Text>
-          </View>
+      {/* Vote column */}
+      <View style={styles.voteColumn}>
+        <Pressable onPress={() => onVote(thread.id)} hitSlop={8}>
+          <Feather
+            name="chevron-up"
+            size={18}
+            color={voteColor}
+          />
+        </Pressable>
+        <Text style={[styles.voteCount, voted && styles.voteCountActive]}>
+          {thread.voteScore}
+        </Text>
+        <Feather name="chevron-down" size={18} color={colors.textMuted} />
+      </View>
 
-          {/* Title */}
-          <Text style={styles.threadTitle} numberOfLines={2}>
-            {thread.title}
-          </Text>
-
-          {/* Subtitle: post type pill + topic · place */}
-          {(subtitle.length > 0 || (thread.postType && POST_TYPE_LABELS[thread.postType])) && (
-            <View style={styles.threadSubtitleRow}>
-              {thread.postType && POST_TYPE_LABELS[thread.postType] && (
-                <View style={[
-                  styles.postTypePill,
-                  thread.postType === 'safety_alert' && styles.safetyAlertPill,
-                ]}>
-                  <Text style={[
-                    styles.postTypePillText,
-                    thread.postType === 'safety_alert' && styles.safetyAlertPillText,
-                  ]}>
-                    {POST_TYPE_LABELS[thread.postType]}
-                  </Text>
-                </View>
-              )}
-              {subtitle.length > 0 && (
-                <Text style={styles.threadSubtitle} numberOfLines={1}>
-                  {subtitle}
-                </Text>
-              )}
+      {/* Content column */}
+      <View style={styles.threadContent}>
+        <Text style={styles.threadTitle} numberOfLines={2}>
+          {thread.title}
+        </Text>
+        <Text style={styles.threadMeta} numberOfLines={1}>
+          {meta}
+        </Text>
+        <View style={styles.threadAuthorRow}>
+          {isSystem && (
+            <View style={styles.teamBadge}>
+              <Text style={styles.teamBadgeText}>TEAM</Text>
             </View>
           )}
-
-          {/* Footer: helpful + answers */}
-          <View style={styles.threadFooter}>
-            <Pressable
-              onPress={() => onVote(thread.id)}
-              hitSlop={6}
-              style={styles.helpfulButton}
-            >
-              <Feather name="arrow-up" size={14} color={helpfulColor} />
-              <Text style={[styles.footerText, { color: helpfulColor }]}>
-                {thread.voteScore} helpful
-              </Text>
-            </Pressable>
-
-            <View style={styles.replyStatRow}>
-              <Feather
-                name="message-circle"
-                size={13}
-                color={thread.replyCount > 0 ? colors.orange : colors.textMuted}
-              />
-              <Text
-                style={[
-                  styles.footerText,
-                  { color: thread.replyCount > 0 ? colors.orange : colors.textMuted },
-                ]}
-              >
-                {thread.replyCount} {thread.replyCount === 1 ? 'answer' : 'answers'}
-              </Text>
-            </View>
-          </View>
+          <Text style={styles.threadAuthor}>{authorName}</Text>
+          <Text style={styles.threadTime}>{formatTimeAgo(thread.createdAt)}</Text>
         </View>
-
-        {/* Right: destination thumbnail */}
-        {hasImage && (
-          <Image
-            source={{ uri: thread.cityImageUrl! }}
-            style={styles.threadThumbnail}
-            contentFit="cover"
-            transition={200}
-          />
-        )}
       </View>
     </Pressable>
   );
@@ -298,248 +136,10 @@ function IntroBanner({ onDismiss }: { onDismiss: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// Sort config
+// Compose Bar — clean input-style prompt
 // ---------------------------------------------------------------------------
 
-type SortKey = 'relevant' | 'new' | 'top';
-const SORT_CYCLE: SortKey[] = ['relevant', 'new', 'top'];
-const SORT_META: Record<SortKey, { icon: string; label: string }> = {
-  relevant: { icon: 'sliders', label: 'Relevant' },
-  new: { icon: 'clock', label: 'New' },
-  top: { icon: 'trending-up', label: 'Top' },
-};
-
-// ---------------------------------------------------------------------------
-// FilterBar — collapsed bar with expandable filter panel
-// ---------------------------------------------------------------------------
-
-function FilterBar({
-  topics,
-  activeTopicId,
-  onTopicSelect,
-  countries,
-  activeCountryId,
-  onCountrySelect,
-  sort,
-  onSortCycle,
-  isSearchExpanded,
-  searchText,
-  onSearchTextChange,
-  onSearchSubmit,
-  onSearchOpen,
-  onSearchClose,
-  filterCount,
-}: {
-  topics: CommunityTopic[];
-  activeTopicId: string | undefined;
-  onTopicSelect: (id: string | undefined) => void;
-  countries: { id: string; iso2: string; name: string }[];
-  activeCountryId: string | undefined;
-  onCountrySelect: (id: string | undefined) => void;
-  sort: SortKey;
-  onSortCycle: () => void;
-  isSearchExpanded: boolean;
-  searchText: string;
-  onSearchTextChange: (text: string) => void;
-  onSearchSubmit: () => void;
-  onSearchOpen: () => void;
-  onSearchClose: () => void;
-  filterCount: number;
-}) {
-  const [expanded, setExpanded] = useState(false);
-
-  // Search expanded state replaces the entire bar
-  if (isSearchExpanded) {
-    return (
-      <View style={styles.filterSearchRow}>
-        <Feather name="search" size={16} color={colors.textMuted} />
-        <TextInput
-          style={styles.filterSearchInput}
-          placeholder="Search discussions..."
-          placeholderTextColor={colors.textMuted}
-          value={searchText}
-          onChangeText={onSearchTextChange}
-          onSubmitEditing={onSearchSubmit}
-          returnKeyType="search"
-          autoFocus
-        />
-        <Pressable onPress={onSearchClose} hitSlop={8}>
-          <Feather name="x" size={16} color={colors.textMuted} />
-        </Pressable>
-      </View>
-    );
-  }
-
-  const sortMeta = SORT_META[sort];
-  const sortActive = sort !== 'relevant';
-  const hasFilters = filterCount > 0;
-
-  return (
-    <View style={styles.filterBarContainer}>
-      {/* Collapsed bar: Search | Filters | Sort */}
-      <View style={styles.filterBar}>
-        <Pressable onPress={onSearchOpen} style={styles.chip}>
-          <Feather name="search" size={14} color={colors.textSecondary} />
-          <Text style={styles.chipText}>Search</Text>
-        </Pressable>
-
-        <Pressable
-          onPress={() => setExpanded((v) => !v)}
-          style={[styles.chip, hasFilters && styles.chipActive]}
-        >
-          <Feather
-            name={expanded ? 'chevron-up' : 'sliders'}
-            size={14}
-            color={hasFilters ? colors.orange : colors.textSecondary}
-          />
-          <Text style={[styles.chipText, hasFilters && styles.chipTextActive]}>
-            Filters{hasFilters ? ` (${filterCount})` : ''}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onPress={onSortCycle}
-          style={[styles.chip, sortActive && styles.chipActive]}
-        >
-          <Feather
-            name={sortMeta.icon as any}
-            size={14}
-            color={sortActive ? colors.orange : colors.textSecondary}
-          />
-          <Text style={[styles.chipText, sortActive && styles.chipTextActive]}>
-            {sortMeta.label}
-          </Text>
-        </Pressable>
-      </View>
-
-      {/* Expanded panel: Topic + Country rows */}
-      {expanded && (
-        <View style={styles.filterPanel}>
-          {/* Topic chips */}
-          <View style={styles.filterPanelSection}>
-            <Text style={styles.filterPanelLabel}>TOPIC</Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.filterPanelChips}
-            >
-              <Pressable
-                onPress={() => onTopicSelect(undefined)}
-                style={[styles.chipSm, !activeTopicId && styles.chipActive]}
-              >
-                <Text style={[styles.chipText, !activeTopicId && styles.chipTextActive]}>All</Text>
-              </Pressable>
-              {topics.map((topic) => {
-                const active = topic.id === activeTopicId;
-                return (
-                  <Pressable
-                    key={topic.id}
-                    onPress={() => onTopicSelect(active ? undefined : topic.id)}
-                    style={[styles.chipSm, active && styles.chipActive]}
-                  >
-                    <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                      {topic.label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-
-          {/* Country chips */}
-          {countries.length > 0 && (
-            <View style={styles.filterPanelSection}>
-              <Text style={styles.filterPanelLabel}>DESTINATION</Text>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.filterPanelChips}
-              >
-                <Pressable
-                  onPress={() => onCountrySelect(undefined)}
-                  style={[styles.chipSm, !activeCountryId && styles.chipActive]}
-                >
-                  <Text style={[styles.chipText, !activeCountryId && styles.chipTextActive]}>
-                    All
-                  </Text>
-                </Pressable>
-                {countries.map((country) => {
-                  const active = country.id === activeCountryId;
-                  return (
-                    <Pressable
-                      key={country.id}
-                      onPress={() => onCountrySelect(active ? undefined : country.id)}
-                      style={[styles.chipSm, active && styles.chipActive]}
-                    >
-                      <Text style={[styles.chipText, active && styles.chipTextActive]}>
-                        {getFlag(country.iso2)} {country.name}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
-            </View>
-          )}
-        </View>
-      )}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// FilterSummaryLabel — dynamic section label + clear button
-// ---------------------------------------------------------------------------
-
-function FilterSummaryLabel({
-  filters,
-  topics,
-  countries,
-  travellingCityName,
-  onClear,
-}: {
-  filters: { topicId?: string; countryId?: string; searchQuery?: string };
-  topics: CommunityTopic[];
-  countries: { id: string; iso2: string; name: string }[];
-  travellingCityName: string | undefined;
-  onClear: () => void;
-}) {
-  const isFiltered = !!(filters.topicId || filters.countryId || filters.searchQuery);
-
-  let label: string;
-  if (filters.searchQuery) {
-    label = `RESULTS FOR \u201C${filters.searchQuery}\u201D`;
-  } else if (filters.topicId && filters.countryId) {
-    const topicLabel = topics.find((t) => t.id === filters.topicId)?.label?.toUpperCase() ?? '';
-    const countryName = countries.find((c) => c.id === filters.countryId)?.name?.toUpperCase() ?? '';
-    label = `${topicLabel} IN ${countryName}`;
-  } else if (filters.countryId) {
-    const countryName = countries.find((c) => c.id === filters.countryId)?.name?.toUpperCase() ?? '';
-    label = `IN ${countryName}`;
-  } else if (filters.topicId) {
-    label = topics.find((t) => t.id === filters.topicId)?.label?.toUpperCase() ?? '';
-  } else if (travellingCityName) {
-    label = `${travellingCityName.toUpperCase()} & MORE`;
-  } else {
-    label = 'RECENT DISCUSSIONS';
-  }
-
-  return (
-    <View style={styles.sectionLabelRow}>
-      <Text style={styles.sectionLabel}>{label}</Text>
-      {isFiltered && (
-        <Pressable onPress={onClear} hitSlop={8}>
-          <Text style={styles.clearButton}>Clear</Text>
-        </Pressable>
-      )}
-    </View>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Compose Card — Reddit-style compose bar with user avatar
-// ---------------------------------------------------------------------------
-
-function ComposeCard({
+function ComposeBar({
   avatarUrl,
   firstName,
   onPress,
@@ -551,7 +151,7 @@ function ComposeCard({
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.composeCard, pressed && styles.composeCardPressed]}
+      style={({ pressed }) => [styles.composeBar, pressed && styles.composeBarPressed]}
     >
       {avatarUrl ? (
         <Image
@@ -571,6 +171,73 @@ function ComposeCard({
         <Text style={styles.composePostText}>Post</Text>
       </View>
     </Pressable>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Segmented Sort Control
+// ---------------------------------------------------------------------------
+
+function SegmentedSort({
+  activeSort,
+  onSelect,
+}: {
+  activeSort: SortKey;
+  onSelect: (sort: SortKey) => void;
+}) {
+  return (
+    <View style={styles.segmentedContainer}>
+      {SORT_OPTIONS.map((option) => {
+        const active = option.key === activeSort;
+        return (
+          <Pressable
+            key={option.key}
+            onPress={() => onSelect(option.key)}
+            style={[styles.segmentedItem, active && styles.segmentedItemActive]}
+          >
+            <Text style={[styles.segmentedText, active && styles.segmentedTextActive]}>
+              {option.label}
+            </Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Filter Summary Label — shows active filters context
+// ---------------------------------------------------------------------------
+
+function FilterSummaryLabel({
+  filters,
+  topics,
+  onClear,
+}: {
+  filters: { topicId?: string; countryId?: string; searchQuery?: string };
+  topics: CommunityTopic[];
+  onClear: () => void;
+}) {
+  const isFiltered = !!(filters.topicId || filters.countryId || filters.searchQuery);
+  if (!isFiltered) return null;
+
+  let label: string;
+  if (filters.searchQuery) {
+    label = `Results for \u201C${filters.searchQuery}\u201D`;
+  } else if (filters.topicId) {
+    const topicLabel = topics.find((t) => t.id === filters.topicId)?.label ?? '';
+    label = topicLabel;
+  } else {
+    label = 'Filtered';
+  }
+
+  return (
+    <View style={styles.filterSummaryRow}>
+      <Text style={styles.filterSummaryText} numberOfLines={1}>{label}</Text>
+      <Pressable onPress={onClear} hitSlop={8}>
+        <Text style={styles.filterSummaryClear}>Clear</Text>
+      </Pressable>
+    </View>
   );
 }
 
@@ -596,19 +263,16 @@ export default function DiscussionsScreen() {
   } = useCommunityFeed();
   const { showIntroBanner, dismissIntro } = useCommunityOnboarding();
 
-  // User profile for compose card avatar
+  // User profile for compose bar avatar
   const { data: userProfile } = useData(
     () => (userId ? getProfileById(userId) : Promise.resolve(null)),
     ['profile', userId],
   );
 
-  // Topics + countries for filter rows
+  // Topics for filter sheet
   const [topics, setTopics] = useState<CommunityTopic[]>([]);
-  const [countries, setCountries] = useState<{ id: string; iso2: string; name: string }[]>([]);
-
   useEffect(() => {
     getCommunityTopics().then(setTopics).catch(() => {});
-    getCountriesList().then(setCountries).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -641,23 +305,13 @@ export default function DiscussionsScreen() {
     }
   }, [feedThreads]);
 
-  // Featured hero thread: first Sola Team thread with an image
-  const featuredThread = useMemo(
-    () => threads.find((t) => t.authorType === 'system' && t.cityImageUrl),
-    [threads],
-  );
-
-  // All remaining threads (excluding the featured one), boosted by destination in travelling mode
+  // All threads, boosted by destination in travelling mode
   const displayThreads = useMemo(() => {
-    const remaining = featuredThread
-      ? threads.filter((t) => t.id !== featuredThread.id)
-      : threads;
-
     if (mode === 'travelling' && activeTripInfo) {
       const tripCityName = activeTripInfo.city.name.toLowerCase();
       const tripCityId = activeTripInfo.city.id;
 
-      return [...remaining].sort((a, b) => {
+      return [...threads].sort((a, b) => {
         const aMatch =
           (tripCityId && a.cityId === tripCityId) ||
           a.cityName?.toLowerCase() === tripCityName;
@@ -670,13 +324,17 @@ export default function DiscussionsScreen() {
       });
     }
 
-    return remaining;
-  }, [threads, featuredThread, mode, activeTripInfo]);
+    return threads;
+  }, [threads, mode, activeTripInfo]);
 
+  // Search state
   const [searchText, setSearchText] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
-  // Vote handler with optimistic update (single upvote toggle)
+  // Filter sheet state
+  const [filterSheetVisible, setFilterSheetVisible] = useState(false);
+
+  // Vote handler with optimistic update
   const handleVote = useCallback(
     async (threadId: string) => {
       if (!userId) return;
@@ -715,22 +373,22 @@ export default function DiscussionsScreen() {
     if (!searchText.trim()) setIsSearching(false);
   }, [searchText, setFilters]);
 
-  const handleSortCycle = useCallback(() => {
-    const currentIndex = SORT_CYCLE.indexOf(filters.sort ?? 'relevant');
-    const nextSort = SORT_CYCLE[(currentIndex + 1) % SORT_CYCLE.length];
-    setFilters({ sort: nextSort });
-  }, [filters.sort, setFilters]);
-
   const handleClearFilters = useCallback(() => {
     setSearchText('');
     setIsSearching(false);
     setFilters({ topicId: undefined, countryId: undefined, searchQuery: undefined, sort: 'relevant' });
   }, [setFilters]);
 
+  const handleFilterApply = useCallback((applied: { topicId: string | undefined; countryId: string | undefined }) => {
+    setFilters({ topicId: applied.topicId, countryId: applied.countryId });
+  }, [setFilters]);
+
   // Reset divider tracking when threads change
   useEffect(() => {
     dividerShownRef.current = false;
   }, [displayThreads]);
+
+  const filterCount = (filters.topicId ? 1 : 0) + (filters.countryId ? 1 : 0);
 
   const renderThread = useCallback(
     ({ item, index }: { item: ThreadWithAuthor; index: number }) => {
@@ -756,7 +414,6 @@ export default function DiscussionsScreen() {
             thread={item}
             onPress={() => router.push(`/(tabs)/discussions/thread/${item.id}`)}
             onVote={handleVote}
-            router={router}
           />
         </View>
       );
@@ -764,64 +421,83 @@ export default function DiscussionsScreen() {
     [router, handleVote, lastVisitTimestamp],
   );
 
-  const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId);
+  // Header search bar (inline, expands from header)
+  const SearchHeader = isSearching ? (
+    <View style={styles.searchBar}>
+      <Feather name="search" size={16} color={colors.textMuted} />
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search discussions..."
+        placeholderTextColor={colors.textMuted}
+        value={searchText}
+        onChangeText={setSearchText}
+        onSubmitEditing={handleSearch}
+        returnKeyType="search"
+        autoFocus
+      />
+      <Pressable
+        onPress={() => {
+          setIsSearching(false);
+          setSearchText('');
+          setFilters({ searchQuery: undefined });
+        }}
+        hitSlop={8}
+      >
+        <Feather name="x" size={16} color={colors.textMuted} />
+      </Pressable>
+    </View>
+  ) : null;
 
-  const travellingCityName =
-    mode === 'travelling' && activeTripInfo ? activeTripInfo.city.name : undefined;
+  const isFiltered = !!(filters.topicId || filters.searchQuery || filters.countryId);
 
   const ListHeader = (
     <View>
-      {/* 1. Reddit-style compose card */}
-      <ComposeCard
+      {/* Compose bar */}
+      <ComposeBar
         avatarUrl={userProfile?.avatarUrl ?? null}
         firstName={userProfile?.firstName ?? ''}
         onPress={() => router.push('/(tabs)/discussions/new')}
       />
 
-      {/* 2. FilterBar — collapsed bar with expandable panel */}
-      <FilterBar
-        topics={topics}
-        activeTopicId={filters.topicId}
-        onTopicSelect={(id) => setFilters({ topicId: id })}
-        countries={countries}
-        activeCountryId={filters.countryId}
-        onCountrySelect={(id) => setFilters({ countryId: id })}
-        sort={(filters.sort ?? 'relevant') as SortKey}
-        onSortCycle={handleSortCycle}
-        isSearchExpanded={isSearching}
-        searchText={searchText}
-        onSearchTextChange={setSearchText}
-        onSearchSubmit={handleSearch}
-        onSearchOpen={() => setIsSearching(true)}
-        onSearchClose={() => {
-          setIsSearching(false);
-          setSearchText('');
-          setFilters({ searchQuery: undefined });
-        }}
-        filterCount={
-          (filters.topicId ? 1 : 0) + (filters.countryId ? 1 : 0)
-        }
-      />
+      {/* First-time intro banner */}
+      {showIntroBanner && <IntroBanner onDismiss={dismissIntro} />}
 
-      {/* 4. Section label — filter-aware */}
+      {/* Sort + Filter row */}
+      <View style={styles.sortFilterRow}>
+        <SegmentedSort
+          activeSort={(filters.sort ?? 'relevant') as SortKey}
+          onSelect={(sort) => setFilters({ sort })}
+        />
+        <Pressable
+          onPress={() => setFilterSheetVisible(true)}
+          style={styles.filterIconButton}
+          hitSlop={6}
+        >
+          <Feather name="sliders" size={18} color={filterCount > 0 ? colors.orange : colors.textSecondary} />
+          {filterCount > 0 && <View style={styles.filterDot} />}
+        </Pressable>
+      </View>
+
+      {/* Filter summary (only when filters active) */}
       <FilterSummaryLabel
         filters={filters}
         topics={topics}
-        countries={countries}
-        travellingCityName={travellingCityName}
         onClear={handleClearFilters}
       />
+    </View>
+  );
 
-      {/* 5. First-time intro banner */}
-      {showIntroBanner && <IntroBanner onDismiss={dismissIntro} />}
-
-      {/* 6. Featured hero card — only when no filters active */}
-      {featuredThread && !isFiltered && (
-        <FeaturedHeroCard
-          thread={featuredThread}
-          onPress={() => router.push(`/(tabs)/discussions/thread/${featuredThread.id}`)}
-        />
-      )}
+  // Header right actions: search icon + avatar/hamburger
+  const headerRight = (
+    <View style={styles.headerRight}>
+      <Pressable
+        onPress={() => setIsSearching(true)}
+        hitSlop={8}
+        style={styles.headerIconButton}
+      >
+        <Feather name="search" size={20} color={colors.textPrimary} />
+      </Pressable>
+      <HamburgerButton />
     </View>
   );
 
@@ -829,8 +505,11 @@ export default function DiscussionsScreen() {
     <AppScreen>
       <NavigationHeader
         title="Discussions"
-        rightActions={<HamburgerButton />}
+        rightActions={headerRight}
       />
+
+      {/* Inline search bar */}
+      {SearchHeader}
 
       <FlatList
         data={displayThreads}
@@ -855,7 +534,11 @@ export default function DiscussionsScreen() {
           ) : (
             <View style={styles.emptyState}>
               <Feather name="message-circle" size={40} color={colors.textMuted} />
-              <Text style={styles.emptyText}>No conversations yet</Text>
+              <Text style={styles.emptyTitle}>No conversations yet</Text>
+              <Text style={styles.emptyText}>Be the first to ask a question</Text>
+              <Pressable onPress={() => router.push('/(tabs)/discussions/new')}>
+                <Text style={styles.emptyAction}>Ask a question</Text>
+              </Pressable>
             </View>
           )
         }
@@ -867,25 +550,27 @@ export default function DiscussionsScreen() {
         contentContainerStyle={styles.feedContent}
         showsVerticalScrollIndicator={false}
       />
+
+      {/* Filter bottom sheet */}
+      <FilterSheet
+        visible={filterSheetVisible}
+        onClose={() => setFilterSheetVisible(false)}
+        topics={topics}
+        activeTopicId={filters.topicId}
+        activeCountryId={filters.countryId}
+        onApply={handleFilterApply}
+        onClear={handleClearFilters}
+      />
     </AppScreen>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Constants
-// ---------------------------------------------------------------------------
-
-const HERO_HEIGHT = 200;
-const THUMBNAIL_SIZE = 56;
 
 // ---------------------------------------------------------------------------
 // Styles
 // ---------------------------------------------------------------------------
 
 const styles = StyleSheet.create({
-  // ---------------------------------------------------------------------------
   // Layout
-  // ---------------------------------------------------------------------------
   feedContent: {
     paddingBottom: spacing.md,
   },
@@ -897,242 +582,217 @@ const styles = StyleSheet.create({
     marginTop: 60,
   },
 
-  // ---------------------------------------------------------------------------
-  // Featured Hero Card
-  // ---------------------------------------------------------------------------
-  heroCard: {
-    height: HERO_HEIGHT,
-    borderRadius: radius.card,
-    overflow: 'hidden',
-    backgroundColor: colors.neutralFill,
-    justifyContent: 'flex-end',
-    marginBottom: spacing.lg,
-  },
-  heroCardPlaceholder: {
-    backgroundColor: colors.neutralFill,
-  },
-  heroTypeLabel: {
-    position: 'absolute',
-    top: spacing.md,
-    left: spacing.md,
-    zIndex: 1,
-    backgroundColor: colors.overlaySoft,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-  },
-  heroTypeLabelText: {
-    fontFamily: fonts.medium,
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: 0.8,
-  },
-  heroContent: {
-    padding: spacing.lg,
-  },
-  heroPlacePill: {
+  // Header
+  headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    alignSelf: 'flex-start',
-    marginBottom: spacing.xs,
-  },
-  heroPlaceText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.85)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  heroTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 20,
-    color: '#FFFFFF',
-    lineHeight: 26,
-  },
-  heroMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: spacing.sm,
-  },
-  heroMetaText: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.7)',
-  },
-  heroMetaDot: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.5)',
-  },
-
-  // ---------------------------------------------------------------------------
-  // FilterBar — collapsed bar + expandable panel
-  // ---------------------------------------------------------------------------
-  filterBarContainer: {
-    marginBottom: spacing.sm,
-  },
-  filterBar: {
-    flexDirection: 'row',
-    gap: spacing.sm,
-    alignItems: 'center',
-  },
-  chip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.md,
-    height: 36,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-  },
-  chipSm: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    paddingHorizontal: spacing.sm,
-    height: 32,
-    borderRadius: radius.pill,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    backgroundColor: colors.background,
-  },
-  chipActive: {
-    backgroundColor: colors.orangeFill,
-    borderColor: colors.orange,
-  },
-  chipText: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  chipTextActive: {
-    color: colors.orange,
-  },
-  filterPanel: {
-    marginTop: spacing.md,
     gap: spacing.md,
   },
-  filterPanelSection: {
-    gap: spacing.sm,
-  },
-  filterPanelLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.8,
-  },
-  filterPanelChips: {
-    gap: spacing.sm,
+  headerIconButton: {
+    width: 36,
+    height: 36,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  filterSearchRow: {
+
+  // Search bar (inline below header)
+  searchBar: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.neutralFill,
-    borderRadius: radius.full,
+    borderRadius: radius.input,
     paddingHorizontal: spacing.lg,
+    marginHorizontal: spacing.screenX,
     height: 44,
     gap: spacing.sm,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
-  filterSearchInput: {
+  searchInput: {
     flex: 1,
     fontFamily: fonts.regular,
     fontSize: 14,
     color: colors.textPrimary,
   },
 
-  // ---------------------------------------------------------------------------
-  // Section Label + Clear
-  // ---------------------------------------------------------------------------
-  sectionLabelRow: {
+  // Compose bar
+  composeBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginTop: spacing.md,
-    marginBottom: spacing.md,
+    marginBottom: spacing.lg,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.input,
+    gap: spacing.sm,
   },
-  sectionLabel: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textMuted,
-    letterSpacing: 0.8,
+  composeBarPressed: {
+    opacity: 0.7,
   },
-  clearButton: {
-    fontFamily: fonts.medium,
-    fontSize: 13,
-    color: colors.orange,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Thread Separator
-  // ---------------------------------------------------------------------------
-  threadSeparator: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.borderSubtle,
-  },
-
-  // ---------------------------------------------------------------------------
-  // Thread Card
-  // ---------------------------------------------------------------------------
-  threadCard: {
-    paddingVertical: spacing.lg,
-  },
-  threadCardInner: {
-    flexDirection: 'row',
-    gap: spacing.lg,
-  },
-  threadCardLeft: {
-    flex: 1,
-  },
-  authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  authorPressable: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-  },
-  avatar: {
-    width: 22,
-    height: 22,
+  composeAvatar: {
+    width: 28,
+    height: 28,
     borderRadius: radius.full,
     backgroundColor: colors.neutralFill,
   },
-  avatarSystem: {
-    backgroundColor: colors.orange,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarSystemText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    color: '#FFFFFF',
-  },
-  avatarFallback: {
-    alignItems: 'center',
-    justifyContent: 'center',
+  composeAvatarFallback: {
     backgroundColor: colors.orangeFill,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  avatarFallbackText: {
+  composeAvatarText: {
     fontFamily: fonts.semiBold,
-    fontSize: 10,
+    fontSize: 12,
     color: colors.orange,
   },
-  authorName: {
+  composeText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+  },
+  composePostButton: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.orange,
+    borderRadius: radius.full,
+  },
+  composePostText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: '#FFFFFF',
+  },
+
+  // Sort + Filter row
+  sortFilterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+
+  // Segmented sort
+  segmentedContainer: {
+    flexDirection: 'row',
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.full,
+    padding: 3,
+  },
+  segmentedItem: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+  },
+  segmentedItemActive: {
+    backgroundColor: colors.orange,
+  },
+  segmentedText: {
     fontFamily: fonts.medium,
     fontSize: 13,
-    color: colors.textPrimary,
+    color: colors.textSecondary,
   },
-  authorFlag: {
+  segmentedTextActive: {
+    color: '#FFFFFF',
+  },
+
+  // Filter icon button
+  filterIconButton: {
+    width: 40,
+    height: 40,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.borderDefault,
+  },
+  filterDot: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.orange,
+  },
+
+  // Filter summary
+  filterSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  filterSummaryText: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.textSecondary,
+    flex: 1,
+  },
+  filterSummaryClear: {
+    fontFamily: fonts.medium,
+    fontSize: 13,
+    color: colors.orange,
+    marginLeft: spacing.md,
+  },
+
+  // Thread separator
+  threadSeparator: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: colors.borderSubtle,
+    marginHorizontal: spacing.screenX,
+  },
+
+  // Thread Card — Reddit-clean
+  threadCard: {
+    flexDirection: 'row',
+    paddingVertical: spacing.lg,
+    gap: spacing.md,
+  },
+  voteColumn: {
+    alignItems: 'center',
+    width: 36,
+    paddingTop: 2,
+  },
+  voteCount: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.textMuted,
+    marginVertical: 1,
+  },
+  voteCountActive: {
+    color: colors.orange,
+  },
+  threadContent: {
+    flex: 1,
+  },
+  threadTitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+    color: colors.textPrimary,
+    lineHeight: 22,
+    marginBottom: spacing.xs,
+  },
+  threadMeta: {
+    fontFamily: fonts.regular,
+    fontSize: 13,
+    color: colors.textSecondary,
+    lineHeight: 18,
+    marginBottom: spacing.xs,
+  },
+  threadAuthorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  threadAuthor: {
+    fontFamily: fonts.regular,
     fontSize: 12,
+    color: colors.textMuted,
+  },
+  threadTime: {
+    fontFamily: fonts.regular,
+    fontSize: 12,
+    color: colors.textMuted,
   },
   teamBadge: {
     backgroundColor: colors.orangeFill,
@@ -1146,80 +806,8 @@ const styles = StyleSheet.create({
     color: colors.orange,
     letterSpacing: 0.5,
   },
-  authorTime: {
-    fontFamily: fonts.regular,
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  threadTitle: {
-    fontFamily: fonts.semiBold,
-    fontSize: 17,
-    color: colors.textPrimary,
-    lineHeight: 23,
-    marginBottom: spacing.xs,
-  },
-  threadSubtitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.md,
-    flexWrap: 'wrap',
-  },
-  threadSubtitle: {
-    fontFamily: fonts.regular,
-    fontSize: 13,
-    color: colors.textSecondary,
-    flexShrink: 1,
-  },
-  postTypePill: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-    backgroundColor: colors.neutralFill,
-  },
-  postTypePillText: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  safetyAlertPill: {
-    backgroundColor: colors.warningFill,
-  },
-  safetyAlertPillText: {
-    color: colors.warning,
-  },
-  threadThumbnail: {
-    width: THUMBNAIL_SIZE,
-    height: THUMBNAIL_SIZE,
-    borderRadius: radius.sm,
-    backgroundColor: colors.neutralFill,
-  },
-  threadFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xl,
-  },
-  helpfulButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    padding: 2,
-  },
-  footerText: {
-    fontFamily: fonts.medium,
-    fontSize: 12,
-  },
-  replyStatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
 
-  // ---------------------------------------------------------------------------
   // Intro Banner
-  // ---------------------------------------------------------------------------
   introBanner: {
     flexDirection: 'row',
     alignItems: 'flex-start',
@@ -1252,62 +840,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // ---------------------------------------------------------------------------
-  // Compose Card (Reddit-style)
-  // ---------------------------------------------------------------------------
-  composeCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: spacing.md,
-    marginBottom: spacing.lg,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.lg,
-    backgroundColor: colors.background,
-    borderRadius: radius.card,
-    borderWidth: 1,
-    borderColor: colors.borderDefault,
-    gap: spacing.sm,
-  },
-  composeCardPressed: {
-    opacity: 0.7,
-  },
-  composeAvatar: {
-    width: 28,
-    height: 28,
-    borderRadius: radius.full,
-    backgroundColor: colors.neutralFill,
-  },
-  composeAvatarFallback: {
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  composeAvatarText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 12,
-    color: colors.orange,
-  },
-  composeText: {
-    flex: 1,
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
-  },
-  composePostButton: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    backgroundColor: colors.orange,
-    borderRadius: radius.full,
-  },
-  composePostText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 13,
-    color: '#FFFFFF',
-  },
-
-  // ---------------------------------------------------------------------------
   // New Activity Divider
-  // ---------------------------------------------------------------------------
   newActivityDivider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1327,9 +860,7 @@ const styles = StyleSheet.create({
     textTransform: 'uppercase',
   },
 
-  // ---------------------------------------------------------------------------
   // Empty States
-  // ---------------------------------------------------------------------------
   emptyState: {
     alignItems: 'center',
     paddingTop: 80,

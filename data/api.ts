@@ -928,6 +928,7 @@ export async function getPopularPlacesWithCity(
     .from('places')
     .select('*, cities!inner(name, country_id, countries!inner(name)), place_media!inner(url)')
     .eq('is_active', true)
+    .not('place_type', 'in', '(hotel,hostel,homestay)')
     .order('curation_score', { ascending: false, nullsFirst: false })
     .limit(limit);
   if (error) throw error;

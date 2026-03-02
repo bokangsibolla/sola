@@ -5,9 +5,11 @@ import { useAuth } from '@/state/AuthContext';
 import {
   getPopularPlacesWithCity,
   getPlacesByCategoryWithCity,
+  getPopularCitiesWithCountry,
 } from '@/data/api';
 import { fetchCommunityHighlightsVisual } from '@/data/home/homeApi';
 import type { PlaceWithCity } from '@/data/types';
+import type { CityWithCountry } from '@/data/explore/types';
 import type { CommunityHighlightThreadVisual } from '@/data/home/types';
 
 const FEATURE_SEEN_KEY = 'home_feature_seen';
@@ -24,10 +26,7 @@ const DEFAULT_FEATURE_SEEN: FeatureSeenState = {
   community_visited: false,
 };
 
-// Category groups for horizontal rows
-const STAY_TYPES = ['hostel', 'hotel', 'homestay'];
-const CAFE_TYPES = ['cafe', 'coworking', 'restaurant'];
-const NIGHTLIFE_TYPES = ['bar', 'club', 'rooftop'];
+// Category groups — never show accommodations
 const EXPERIENCE_TYPES = ['tour', 'activity', 'landmark'];
 
 export function useNewUserFeed() {
@@ -47,7 +46,7 @@ export function useNewUserFeed() {
     });
   }, []);
 
-  // Hero places (popular, with images)
+  // Hero places (popular activities/landmarks, never accommodations)
   const {
     data: heroPlaces,
     loading: heroLoading,
@@ -57,42 +56,24 @@ export function useNewUserFeed() {
     ['new-user-hero-places'],
   );
 
-  // Row 1: Where to stay
-  const {
-    data: stayPlaces,
-    loading: stayLoading,
-    refetch: refetchStay,
-  } = useData<PlaceWithCity[]>(
-    () => getPlacesByCategoryWithCity(STAY_TYPES, 5),
-    ['new-user-stay-places'],
-  );
-
-  // Row 2: Cafes & coworking
-  const {
-    data: cafePlaces,
-    loading: cafeLoading,
-    refetch: refetchCafe,
-  } = useData<PlaceWithCity[]>(
-    () => getPlacesByCategoryWithCity(CAFE_TYPES, 5),
-    ['new-user-cafe-places'],
-  );
-
-  // Replacement row: Nightlife (replaces buddies feature card)
-  const {
-    data: nightlifePlaces,
-    refetch: refetchNightlife,
-  } = useData<PlaceWithCity[]>(
-    () => featureSeen.buddies_seen ? getPlacesByCategoryWithCity(NIGHTLIFE_TYPES, 5) : Promise.resolve([]),
-    ['new-user-nightlife-places', featureSeen.buddies_seen],
-  );
-
-  // Replacement row: Experiences (replaces trip feature card)
+  // Experiences & activities (tours, landmarks, activities)
   const {
     data: experiencePlaces,
+    loading: experienceLoading,
     refetch: refetchExperience,
   } = useData<PlaceWithCity[]>(
-    () => featureSeen.trip_created ? getPlacesByCategoryWithCity(EXPERIENCE_TYPES, 5) : Promise.resolve([]),
-    ['new-user-experience-places', featureSeen.trip_created],
+    () => getPlacesByCategoryWithCity(EXPERIENCE_TYPES, 5),
+    ['new-user-experience-places'],
+  );
+
+  // Trending destinations (popular cities)
+  const {
+    data: trendingCities,
+    loading: citiesLoading,
+    refetch: refetchCities,
+  } = useData<CityWithCountry[]>(
+    () => getPopularCitiesWithCountry(6),
+    ['new-user-trending-cities'],
   );
 
   // Community thread
@@ -107,16 +88,14 @@ export function useNewUserFeed() {
     ['new-user-community', userId ?? ''],
   );
 
-  const loading = heroLoading || stayLoading || cafeLoading;
+  const loading = heroLoading || experienceLoading || citiesLoading;
 
   const refetch = useCallback(() => {
     refetchHero();
-    refetchStay();
-    refetchCafe();
-    refetchNightlife();
     refetchExperience();
+    refetchCities();
     refetchCommunity();
-  }, [refetchHero, refetchStay, refetchCafe, refetchNightlife, refetchExperience, refetchCommunity]);
+  }, [refetchHero, refetchExperience, refetchCities, refetchCommunity]);
 
   // Pick 2-3 hero places from different cities
   const heroes = useMemo(() => {
@@ -131,11 +110,8 @@ export function useNewUserFeed() {
 
   return {
     heroes,
-    stayPlaces: stayPlaces ?? [],
-    cafePlaces: cafePlaces ?? [],
-    nightlifePlaces: nightlifePlaces ?? [],
     experiencePlaces: experiencePlaces ?? [],
-    communityThread,
+    trendingCities: trendingCities ?? [],
     featureSeen,
     loading,
     refetch,
