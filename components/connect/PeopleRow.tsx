@@ -114,6 +114,8 @@ export const PeopleRow: React.FC<PeopleRowProps> = ({
         keyExtractor={keyExtractor}
         horizontal
         showsHorizontalScrollIndicator={false}
+        snapToInterval={CARD_WIDTH + spacing.sm}
+        decelerationRate="fast"
         contentContainerStyle={styles.listContent}
         ListFooterComponent={
           overflowCount > 0
