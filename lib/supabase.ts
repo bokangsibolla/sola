@@ -140,55 +140,30 @@ function xhrFetch(
   });
 }
 
-// ── Resilient Android fetch ──────────────────────────────────────────────
-// Try native fetch first (works in EAS production builds). If native fetch
-// fails (TurboModule header bug on some devices), fall back to XHR which
-// uses the bridge networking path.
-
-const _nativeFetch = globalThis.fetch;
-let _useXhr = false;
+// ── Android fetch ────────────────────────────────────────────────────────
+// Always use XHR on Android. Native fetch in production builds can silently
+// drop custom headers (apikey, Authorization) due to TurboModule networking
+// bugs. When headers are dropped, Supabase returns 401/empty data but native
+// fetch doesn't throw — so a try-native-then-fallback strategy doesn't work.
+// XHR uses the bridge-based networking path which reliably sends all headers.
 
 function androidFetch(
   input: URL | RequestInfo,
   init?: RequestInit,
 ): Promise<Response> {
   const url = typeof input === 'string' ? input : (input as Request).url ?? String(input);
-  const method = init?.method ?? 'GET';
 
   if (SOLA_DEBUG_NETWORK) {
+    const method = init?.method ?? 'GET';
     const urlPath = url.replace(supabaseUrl, '').split('?')[0];
-    console.log(
-      `[Sola Fetch] ${method} ${urlPath.substring(0, 60)} | ` +
-      `transport=${_useXhr ? 'XHR' : 'NATIVE'}`,
-    );
+    console.log(`[Sola Fetch] ${method} ${urlPath.substring(0, 60)} | transport=XHR`);
   }
 
-  if (_useXhr) {
-    return xhrFetch(url, init);
-  }
-
-  return _nativeFetch(url, init)
-    .catch((nativeErr) => {
-      console.warn(
-        `[Sola] Native fetch failed for ${url.substring(0, 60)}: ${(nativeErr as Error).message} — trying XHR`,
-      );
-      return xhrFetch(url, init)
-        .then((r) => {
-          // XHR worked where native didn't — switch permanently
-          _useXhr = true;
-          console.log('[Sola] XHR succeeded — switching to XHR for all future requests');
-          return r;
-        })
-        .catch(() => {
-          // Both failed — throw native error (more useful)
-          throw nativeErr;
-        });
-    });
+  return xhrFetch(url, init);
 }
 
 // ── Supabase client ─────────────────────────────────────────────────────
-// On Android, use resilient fetch: native fetch first (works in EAS builds),
-// XHR fallback (works on devices with TurboModule header bug).
+// On Android, always use XHR-based fetch to ensure headers are sent reliably.
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
@@ -344,7 +319,7 @@ export async function runHealthCheck(): Promise<void> {
   console.log(`${tag} Supabase URL domain: ${supabaseUrl.replace('https://', '').split('.')[0]}`);
   console.log(`${tag} Anon key exists: ${!!supabaseAnonKey && supabaseAnonKey.length > 10}`);
   console.log(`${tag} Anon key preview: ${supabaseAnonKey.slice(0, 12)}…${supabaseAnonKey.slice(-6)}`);
-  console.log(`${tag} Android fetch transport: ${_useXhr ? 'XHR (native failed earlier!)' : 'NATIVE (primary)'}`);
+  console.log(`${tag} Android fetch transport: XHR (always)`);
 
   // 1. Check session
   try {
@@ -374,6 +349,6 @@ export async function runHealthCheck(): Promise<void> {
   }
 
   // 3. Check fetch transport state after queries
-  console.log(`${tag} Post-query transport: ${_useXhr ? 'XHR (switched!)' : 'NATIVE (still primary)'}`);
+  console.log(`${tag} Post-query transport: XHR (always)`);
   console.log(`${tag} ─── Health check complete ───`);
 }
