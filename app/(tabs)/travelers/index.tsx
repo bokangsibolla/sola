@@ -18,6 +18,7 @@ import { PeopleRow } from '@/components/connect/PeopleRow';
 import { QuickPostSheet } from '@/components/connect/QuickPostSheet';
 import { CityPicker } from '@/components/connect/CityPicker';
 import { CheckInPrompt } from '@/components/connect/CheckInPrompt';
+import { CityChangeBanner } from '@/components/connect/CityChangeBanner';
 import { ConnectEmptyState } from '@/components/connect/ConnectEmptyState';
 import { useCheckIn } from '@/hooks/useCheckIn';
 import { useConnectFeed } from '@/data/connect/useConnectFeed';
@@ -291,20 +292,6 @@ const styles = StyleSheet.create({
   },
   activityCardWrapper: {
     paddingHorizontal: spacing.screenX,
-  },
-
-  // Empty state (simple placeholder — Task 12 will enhance)
-  emptyContainer: {
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.xxxl,
-    alignItems: 'center',
-  },
-  emptyText: {
-    fontFamily: fonts.regular,
-    fontSize: 15,
-    color: colors.textMuted,
-    textAlign: 'center',
-    lineHeight: 22,
   },
 
   // FAB
