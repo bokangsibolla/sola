@@ -58,6 +58,7 @@ export default function ConnectScreen() {
     gpsLoading,
     detectCity,
     checkIn,
+    checkOut,
     restoring,
   } = useCheckIn();
 
@@ -270,6 +271,10 @@ export default function ConnectScreen() {
         tripCities={tripCities}
         onCitySelect={async (cityId, cityName, countryName) => {
           await checkIn(cityId, cityName, countryName);
+          setShowCityPicker(false);
+        }}
+        onCheckOut={async () => {
+          await checkOut();
           setShowCityPicker(false);
         }}
       />

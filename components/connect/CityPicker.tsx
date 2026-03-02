@@ -25,6 +25,7 @@ interface CityPickerProps {
   visible: boolean;
   onClose: () => void;
   onCitySelect: (cityId: string, cityName: string, countryName: string | null) => void;
+  onCheckOut?: () => void;
   currentCityName?: string | null;
   tripCities?: Array<{ cityId: string; cityName: string; countryName: string | null }>;
 }
@@ -37,6 +38,7 @@ export function CityPicker({
   visible,
   onClose,
   onCitySelect,
+  onCheckOut,
   currentCityName,
   tripCities,
 }: CityPickerProps) {
@@ -200,6 +202,20 @@ export function CityPicker({
           {!loading && query.trim().length > 0 && results.length === 0 && (
             <Text style={styles.emptyText}>No cities found</Text>
           )}
+
+          {/* Check out option */}
+          {onCheckOut && currentCityName && (
+            <Pressable
+              style={({ pressed }) => [styles.checkOutRow, pressed && styles.resultRowPressed]}
+              onPress={() => {
+                onCheckOut();
+                onClose();
+              }}
+            >
+              <Ionicons name="log-out-outline" size={18} color={colors.textMuted} />
+              <Text style={styles.checkOutText}>Clear location</Text>
+            </Pressable>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>
@@ -332,5 +348,19 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xl,
+  },
+  checkOutRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+  },
+  checkOutText: {
+    fontFamily: fonts.medium,
+    fontSize: 15,
+    color: colors.textMuted,
   },
 });
