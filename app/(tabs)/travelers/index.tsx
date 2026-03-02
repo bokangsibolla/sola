@@ -16,7 +16,9 @@ import NavigationHeader from '@/components/NavigationHeader';
 import { ActivityCard } from '@/components/connect/ActivityCard';
 import { PeopleRow } from '@/components/connect/PeopleRow';
 import { QuickPostSheet } from '@/components/connect/QuickPostSheet';
+import { CityPicker } from '@/components/connect/CityPicker';
 import { CheckInPrompt } from '@/components/connect/CheckInPrompt';
+import { ConnectEmptyState } from '@/components/connect/ConnectEmptyState';
 import { useCheckIn } from '@/hooks/useCheckIn';
 import { useConnectFeed } from '@/data/connect/useConnectFeed';
 import type { ConnectFeedItem } from '@/data/connect/useConnectFeed';
@@ -45,6 +47,7 @@ const LocationPill: React.FC<{ cityName: string; onPress: () => void }> = ({
 export default function ConnectScreen() {
   const router = useRouter();
   const [showPostSheet, setShowPostSheet] = useState(false);
+  const [showCityPicker, setShowCityPicker] = useState(false);
 
   // Check-in state
   const {
@@ -180,9 +183,7 @@ export default function ConnectScreen() {
 
       <LocationPill
         cityName={currentCheckIn.cityName}
-        onPress={() => {
-          // CityPicker integration is Task 11
-        }}
+        onPress={() => setShowCityPicker(true)}
       />
 
       {isLoading ? (
@@ -204,12 +205,10 @@ export default function ConnectScreen() {
           }
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>
-                No activity yet in {currentCheckIn.cityName}. Be the first to
-                post something.
-              </Text>
-            </View>
+            <ConnectEmptyState
+              cityName={currentCheckIn.cityName}
+              onPost={() => setShowPostSheet(true)}
+            />
           }
         />
       )}
@@ -235,6 +234,18 @@ export default function ConnectScreen() {
         onPostCreated={() => {
           setShowPostSheet(false);
           refresh();
+        }}
+      />
+
+      {/* City picker */}
+      <CityPicker
+        visible={showCityPicker}
+        onClose={() => setShowCityPicker(false)}
+        currentCityName={currentCheckIn.cityName}
+        tripCities={tripCities}
+        onCitySelect={async (cityId, cityName, countryName) => {
+          await checkIn(cityId, cityName, countryName);
+          setShowCityPicker(false);
         }}
       />
     </AppScreen>
