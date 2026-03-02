@@ -46,13 +46,15 @@ class MainApplication : Application(), ReactApplication {
     } catch (e: IllegalArgumentException) {
       ReleaseLevel.STABLE
     }
-    loadReactNative(this)
-        // Fix Android 15 TLS: ensure GmsCore security provider is ready before RN boots
+    // Fix Android TLS: ensure GmsCore security provider is ready BEFORE RN boots.
+    // Must run before loadReactNative() — otherwise JS starts making network
+    // requests (auth, Supabase) before TLS is initialized, causing failures.
     try {
       ProviderInstaller.installIfNeeded(this)
     } catch (e: Exception) {
       android.util.Log.w("SolaApp", "ProviderInstaller failed: ${e.message}")
     }
+    loadReactNative(this)
     ApplicationLifecycleDispatcher.onApplicationCreate(this)
   }
 

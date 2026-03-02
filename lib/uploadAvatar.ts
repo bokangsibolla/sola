@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { supabase } from './supabase';
 
 const BUCKET = 'avatars';
@@ -30,7 +31,10 @@ export async function uploadAvatar(
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw new Error('No auth session');
 
-  // Upload via REST API with FormData — most reliable on React Native
+  // Upload via REST API with FormData — most reliable on React Native.
+  // On Android, use XMLHttpRequest (bridge-based) to avoid TurboModule fetch
+  // bug where custom headers are dropped. Raw fetch() bypasses the supabase
+  // client's androidFetch wrapper and breaks on some Android devices.
   const formData = new FormData();
   formData.append('', {
     uri: localUri,
@@ -39,21 +43,41 @@ export async function uploadAvatar(
   } as any);
 
   const supabaseUrl = 'https://bfyewxgdfkmkviajmfzp.supabase.co';
-  const uploadResponse = await fetch(
-    `${supabaseUrl}/storage/v1/object/${BUCKET}/${filePath}`,
-    {
+  const uploadUrl = `${supabaseUrl}/storage/v1/object/${BUCKET}/${filePath}`;
+
+  if (Platform.OS === 'android') {
+    // XHR upload — avoids TurboModule native fetch header bug on Android
+    await new Promise<void>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', uploadUrl);
+      xhr.timeout = 60_000;
+      xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
+      xhr.setRequestHeader('x-upsert', 'true');
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Storage upload failed (${xhr.status}): ${xhr.responseText}`));
+        }
+      };
+      xhr.onerror = () => reject(new TypeError('Network request failed during avatar upload'));
+      xhr.ontimeout = () => reject(new TypeError('Avatar upload timed out (60s)'));
+      xhr.send(formData);
+    });
+  } else {
+    const uploadResponse = await fetch(uploadUrl, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${session.access_token}`,
         'x-upsert': 'true',
       },
       body: formData,
-    },
-  );
+    });
 
-  if (!uploadResponse.ok) {
-    const body = await uploadResponse.text();
-    throw new Error(`Storage upload failed (${uploadResponse.status}): ${body}`);
+    if (!uploadResponse.ok) {
+      const body = await uploadResponse.text();
+      throw new Error(`Storage upload failed (${uploadResponse.status}): ${body}`);
+    }
   }
 
   const { data } = supabase.storage.from(BUCKET).getPublicUrl(filePath);
