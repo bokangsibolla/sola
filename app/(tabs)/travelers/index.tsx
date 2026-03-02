@@ -25,6 +25,7 @@ import { useConnectFeed } from '@/data/connect/useConnectFeed';
 import type { ConnectFeedItem } from '@/data/connect/useConnectFeed';
 import { useTrips } from '@/data/trips/useTrips';
 import { FLOATING_TAB_BAR_HEIGHT } from '@/components/TabBar';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 
 // ---------------------------------------------------------------------------
 // Location Pill (inline sub-component)
@@ -38,6 +39,28 @@ const LocationPill: React.FC<{ cityName: string; onPress: () => void }> = ({
     <Ionicons name="location" size={14} color={colors.orange} />
     <Text style={styles.locationText}>{cityName}</Text>
     <Text style={styles.locationChange}>Change</Text>
+  </Pressable>
+);
+
+// ---------------------------------------------------------------------------
+// Compose Prompt (inline sub-component)
+// ---------------------------------------------------------------------------
+
+const ComposePrompt: React.FC<{ onPress: () => void }> = ({ onPress }) => (
+  <Pressable
+    style={({ pressed }) => [
+      styles.composeCard,
+      pressed && styles.composeCardPressed,
+    ]}
+    onPress={onPress}
+  >
+    <View style={styles.composeAvatarPlaceholder}>
+      <Ionicons name="person" size={16} color={colors.textMuted} />
+    </View>
+    <Text style={styles.composeText}>What are you up to?</Text>
+    <View style={styles.composeAction}>
+      <Text style={styles.composeActionText}>Post</Text>
+    </View>
   </Pressable>
 );
 
@@ -162,7 +185,7 @@ export default function ConnectScreen() {
   if (restoring) {
     return (
       <AppScreen>
-        <NavigationHeader title="Connect" showLogo />
+        <NavigationHeader title="Connect" rightActions={<HamburgerButton />} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={colors.orange} />
         </View>
@@ -176,7 +199,7 @@ export default function ConnectScreen() {
   if (!currentCheckIn) {
     return (
       <AppScreen>
-        <NavigationHeader title="Connect" showLogo />
+        <NavigationHeader title="Connect" rightActions={<HamburgerButton />} />
         <CheckInPrompt
           gpsSuggestion={gpsSuggestion}
           gpsLoading={gpsLoading}
@@ -194,7 +217,14 @@ export default function ConnectScreen() {
   // ---------------------------------------------------------------------------
   return (
     <AppScreen>
-      <NavigationHeader title="Connect" showLogo />
+      <NavigationHeader
+        title={currentCheckIn.cityName}
+        parentTitle="Connect"
+        onBack={async () => {
+          await checkOut();
+        }}
+        rightActions={<HamburgerButton />}
+      />
 
       <LocationPill
         cityName={currentCheckIn.cityName}
@@ -230,6 +260,9 @@ export default function ConnectScreen() {
             />
           }
           showsVerticalScrollIndicator={false}
+          ListHeaderComponent={
+            <ComposePrompt onPress={() => setShowPostSheet(true)} />
+          }
           ListEmptyComponent={
             <ConnectEmptyState
               cityName={currentCheckIn.cityName}
@@ -238,18 +271,6 @@ export default function ConnectScreen() {
           }
         />
       )}
-
-      {/* FAB */}
-      <Pressable
-        style={({ pressed }) => [
-          styles.fab,
-          { bottom: FLOATING_TAB_BAR_HEIGHT + spacing.lg },
-          pressed && styles.fabPressed,
-        ]}
-        onPress={() => setShowPostSheet(true)}
-      >
-        <Ionicons name="add" size={28} color={colors.background} />
-      </Pressable>
 
       {/* Quick post sheet */}
       <QuickPostSheet
@@ -323,24 +344,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.screenX,
   },
 
-  // FAB
-  fab: {
-    position: 'absolute',
-    right: spacing.screenX,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.orange,
+  // Compose prompt
+  composeCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.neutralFill,
+    borderRadius: radius.card,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginHorizontal: spacing.screenX,
+    marginBottom: spacing.sm,
+  },
+  composeCardPressed: {
+    opacity: 0.7,
+  },
+  composeAvatarPlaceholder: {
+    width: 32,
+    height: 32,
+    borderRadius: radius.full,
+    backgroundColor: colors.borderDefault,
     alignItems: 'center',
     justifyContent: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
   },
-  fabPressed: {
-    opacity: 0.9,
-    transform: [{ scale: 0.95 }],
+  composeText: {
+    flex: 1,
+    fontFamily: fonts.regular,
+    fontSize: 15,
+    color: colors.textMuted,
+  },
+  composeAction: {
+    backgroundColor: colors.orangeFill,
+    borderRadius: radius.full,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  composeActionText: {
+    fontFamily: fonts.semiBold,
+    fontSize: 13,
+    color: colors.orange,
   },
 });

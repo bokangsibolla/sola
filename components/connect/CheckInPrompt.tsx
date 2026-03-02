@@ -22,7 +22,7 @@ import {
 import { searchDestinations, type DestinationResult } from '@/data/api';
 
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const heroImage = require('@/assets/images/pexels-driving.jpg');
+const heroImage = require('@/assets/images/pexels-women-travelers-sunny.jpg');
 
 // ---------------------------------------------------------------------------
 // Types
@@ -174,9 +174,9 @@ export const CheckInPrompt: React.FC<CheckInPromptProps> = ({
       </View>
 
       {/* Heading */}
-      <Text style={styles.heading}>Where are you right now?</Text>
+      <Text style={styles.heading}>Set your location</Text>
       <Text style={styles.subheading}>
-        Find women nearby, join activities, and make your trip less solo.
+        Show women nearby what city or area you're in.
       </Text>
 
       {/* GPS loading state */}
@@ -266,10 +266,9 @@ export const CheckInPrompt: React.FC<CheckInPromptProps> = ({
         ))}
       </View>
 
-      {/* Reassurance text */}
+      {/* Setting note */}
       <Text style={styles.reassurance}>
-        This helps other women find you for activities and meetups. You can
-        change it anytime.
+        Only your city is shared. You can change or clear this anytime.
       </Text>
     </ScrollView>
   );
