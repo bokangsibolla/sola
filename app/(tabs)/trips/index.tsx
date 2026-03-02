@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { useFocusEffect } from '@react-navigation/native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import AvatarButton from '@/components/AvatarButton';
+import { HamburgerButton } from '@/components/home/HamburgerButton';
 import TripListCard from '@/components/trips/TripListCard';
 import { TripsEmptyStateV2 } from '@/components/trips/TripsEmptyStateV2';
 import { useTrips } from '@/data/trips/useTrips';
@@ -58,7 +58,7 @@ export default function TripsScreen() {
 
   return (
     <AppScreen>
-      <NavigationHeader title="Trips" rightActions={<AvatarButton />} />
+      <NavigationHeader title="Trips" rightActions={<HamburgerButton />} />
       {!hasTrips && !loading ? (
         <TripsEmptyStateV2 onCreateTrip={handleCreateTrip} />
       ) : (
