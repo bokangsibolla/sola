@@ -12,7 +12,7 @@ import {
   getActivityWithDetails,
   isPlaceSaved,
 } from '@/data/api';
-import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
+import { AddToTripSheet } from '@/components/trips/AddToTripSheet';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useNavContext } from '@/hooks/useNavContext';
@@ -207,15 +207,14 @@ export default function ActivityDetailScreen() {
         <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
 
-      {/* Save to trip / collection sheet */}
-      {userId && activity?.id && (
-        <SaveSheet
+      {/* Add to trip sheet */}
+      {activity?.id && (
+        <AddToTripSheet
           visible={showSaveSheet}
           onClose={() => setShowSaveSheet(false)}
-          entityType="place"
-          entityId={activity.id}
-          entityName={activity.name}
-          userId={userId}
+          placeId={activity.id}
+          placeName={activity.name}
+          placeType={activity.placeType ?? 'activity'}
         />
       )}
     </SafeAreaView>

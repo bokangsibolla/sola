@@ -13,7 +13,7 @@ import {
   getAccommodationWithDetails,
   isPlaceSaved,
 } from '@/data/api';
-import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
+import { AddToTripSheet } from '@/components/trips/AddToTripSheet';
 import ErrorScreen from '@/components/ErrorScreen';
 import NavigationHeader from '@/components/NavigationHeader';
 import { useNavContext } from '@/hooks/useNavContext';
@@ -245,15 +245,14 @@ export default function AccommodationDetailScreen() {
         <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
 
-      {/* Save to trip / collection sheet */}
-      {userId && accommodation?.id && (
-        <SaveSheet
+      {/* Add to trip sheet */}
+      {accommodation?.id && (
+        <AddToTripSheet
           visible={showSaveSheet}
           onClose={() => setShowSaveSheet(false)}
-          entityType="place"
-          entityId={accommodation.id}
-          entityName={accommodation.name}
-          userId={userId}
+          placeId={accommodation.id}
+          placeName={accommodation.name}
+          placeType={accommodation.placeType ?? 'hotel'}
         />
       )}
     </SafeAreaView>

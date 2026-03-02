@@ -1,60 +1,109 @@
-import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useCallback } from 'react';
+import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import AppScreen from '@/components/AppScreen';
 import NavigationHeader from '@/components/NavigationHeader';
-import { HamburgerButton } from '@/components/home/HamburgerButton';
+import AvatarButton from '@/components/AvatarButton';
+import TripListCard from '@/components/trips/TripListCard';
+import { TripsEmptyStateV2 } from '@/components/trips/TripsEmptyStateV2';
+import { useTrips } from '@/data/trips/useTrips';
+import { deleteTrip } from '@/data/trips/tripApi';
 import { colors, fonts, spacing } from '@/constants/design';
+import type { TripWithStops } from '@/data/trips/types';
+
+type SectionItem =
+  | { type: 'section-header'; key: string; title: string }
+  | { type: 'trip-card'; key: string; trip: TripWithStops };
 
 export default function TripsScreen() {
+  const router = useRouter();
+  const { trips, loading, refetch } = useTrips();
+
+  useFocusEffect(useCallback(() => { refetch(); }, [refetch]));
+
+  const hasTrips = !!(trips.current || trips.upcoming.length > 0 || trips.past.length > 0);
+
+  const handleCreateTrip = () => router.push('/(tabs)/trips/new');
+
+  const handleDeleteTrip = async (tripId: string) => {
+    await deleteTrip(tripId);
+    refetch();
+  };
+
+  const items: SectionItem[] = [];
+  if (trips.current) {
+    items.push({ type: 'section-header', key: 'h-current', title: 'Current trip' });
+    items.push({ type: 'trip-card', key: trips.current.id, trip: trips.current });
+  }
+  if (trips.upcoming.length > 0) {
+    items.push({ type: 'section-header', key: 'h-upcoming', title: 'Upcoming' });
+    for (const t of trips.upcoming) {
+      items.push({ type: 'trip-card', key: t.id, trip: t });
+    }
+  }
+  if (trips.past.length > 0) {
+    items.push({ type: 'section-header', key: 'h-past', title: 'Past' });
+    for (const t of trips.past) {
+      items.push({ type: 'trip-card', key: t.id, trip: t });
+    }
+  }
+
+  const renderItem = ({ item }: { item: SectionItem }) => {
+    if (item.type === 'section-header') {
+      return <Text style={styles.sectionTitle}>{item.title}</Text>;
+    }
+    return <TripListCard trip={item.trip} onDelete={handleDeleteTrip} />;
+  };
+
   return (
     <AppScreen>
-      <NavigationHeader
-        title="Trips"
-        rightActions={<HamburgerButton />}
-      />
-      <View style={styles.container}>
-        <View style={styles.iconCircle}>
-          <Ionicons name="airplane-outline" size={32} color={colors.orange} />
-        </View>
-        <Text style={styles.title}>Trip planning is coming soon</Text>
-        <Text style={styles.subtitle}>
-          We're building something thoughtful for how you plan and organise your travels. Stay tuned.
-        </Text>
-      </View>
+      <NavigationHeader title="Trips" rightActions={<AvatarButton />} />
+      {!hasTrips && !loading ? (
+        <TripsEmptyStateV2 onCreateTrip={handleCreateTrip} />
+      ) : (
+        <FlatList
+          data={items}
+          keyExtractor={(item) => item.key}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+          ListFooterComponent={
+            hasTrips ? (
+              <Pressable
+                style={({ pressed }) => [styles.newTripRow, pressed && { opacity: 0.7 }]}
+                onPress={handleCreateTrip}
+              >
+                <Text style={styles.newTripText}>Plan a new trip</Text>
+              </Pressable>
+            ) : null
+          }
+        />
+      )}
     </AppScreen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: spacing.screenX * 2,
-    paddingBottom: 80,
+  listContent: {
+    paddingHorizontal: spacing.screenX,
+    paddingTop: spacing.md,
+    paddingBottom: 120,
   },
-  iconCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.orangeFill,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.lg,
-  },
-  title: {
+  sectionTitle: {
     fontFamily: fonts.semiBold,
-    fontSize: 20,
+    fontSize: 18,
     color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
+    marginTop: spacing.xl,
+    marginBottom: spacing.md,
   },
-  subtitle: {
-    fontFamily: fonts.regular,
+  newTripRow: {
+    paddingVertical: spacing.lg,
+    alignItems: 'center',
+  },
+  newTripText: {
+    fontFamily: fonts.medium,
     fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    lineHeight: 22,
+    color: colors.orange,
   },
 });

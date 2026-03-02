@@ -28,9 +28,8 @@ import {
   getCategory,
   getCityById,
   getProfileById,
-  isPlaceSaved,
 } from '@/data/api';
-import { SaveSheet } from '@/components/trips/SaveSheet/SaveSheet';
+import { AddToTripSheet } from '@/components/trips/AddToTripSheet';
 import { MapPreview } from '@/components/explore/activity/MapPreview';
 import { useAuth } from '@/state/AuthContext';
 import type { Place, Tag } from '@/data/types';
@@ -452,17 +451,8 @@ export default function PlaceDetailScreen() {
     () => userId ? getProfileById(userId) : Promise.resolve(null),
     ['profile', userId],
   );
-  const { data: isSaved } = useData(
-    () => (userId && id) ? isPlaceSaved(userId, id) : Promise.resolve(false),
-    ['placeSaved', userId, id],
-  );
-  const [saved, setSaved] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [showSaveSheet, setShowSaveSheet] = useState(false);
-
-  useEffect(() => {
-    if (isSaved !== null) setSaved(isSaved);
-  }, [isSaved]);
 
   const canSave = Boolean(userId && id);
 
@@ -575,9 +565,9 @@ export default function PlaceDetailScreen() {
         rightActions={
           <Pressable onPress={handleSave} hitSlop={12} disabled={!canSave}>
             <Ionicons
-              name={saved ? 'bookmark' : 'bookmark-outline'}
+              name="add-circle-outline"
               size={24}
-              color={saved ? colors.orange : canSave ? colors.textPrimary : colors.textMuted}
+              color={canSave ? colors.textPrimary : colors.textMuted}
             />
           </Pressable>
         }
@@ -784,17 +774,16 @@ export default function PlaceDetailScreen() {
             style={[
               styles.actionBtn,
               styles.saveBtn,
-              saved && styles.saveBtnSaved,
               !canSave && styles.actionBtnDisabled,
             ]}
           >
             <Ionicons
-              name={saved ? 'checkmark-circle' : 'add-circle-outline'}
+              name="add-circle-outline"
               size={20}
               color={colors.background}
             />
             <Text style={styles.actionBtnText}>
-              {!canSave ? 'Sign in to save' : saved ? 'Saved' : 'Add to Trip'}
+              {canSave ? 'Add to Trip' : 'Sign in to save'}
             </Text>
           </Pressable>
         </View>
@@ -803,15 +792,14 @@ export default function PlaceDetailScreen() {
         <View style={{ height: spacing.xxxxl }} />
       </ScrollView>
 
-      {/* Save to trip / collection sheet */}
-      {userId && id && place && (
-        <SaveSheet
+      {/* Add to trip sheet */}
+      {id && place && (
+        <AddToTripSheet
           visible={showSaveSheet}
           onClose={() => setShowSaveSheet(false)}
-          entityType="place"
-          entityId={id}
-          entityName={place.name}
-          userId={userId}
+          placeId={id}
+          placeName={place.name}
+          placeType={place.placeType}
         />
       )}
     </SafeAreaView>
@@ -1123,9 +1111,6 @@ const styles = StyleSheet.create({
   },
   saveBtn: {
     backgroundColor: colors.orange,
-  },
-  saveBtnSaved: {
-    backgroundColor: colors.greenSoft,
   },
   actionBtnDisabled: {
     backgroundColor: colors.textMuted,
