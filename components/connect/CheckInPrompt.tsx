@@ -8,7 +8,9 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import {
   colors,
   fonts,
@@ -18,6 +20,9 @@ import {
   pressedState,
 } from '@/constants/design';
 import { searchDestinations, type DestinationResult } from '@/data/api';
+
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const heroImage = require('@/assets/images/pexels-driving.jpg');
 
 // ---------------------------------------------------------------------------
 // Types
@@ -158,8 +163,21 @@ export const CheckInPrompt: React.FC<CheckInPromptProps> = ({
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
     >
+      {/* Hero image */}
+      <View style={styles.heroContainer}>
+        <Image source={heroImage} style={styles.heroImage} contentFit="cover" />
+        <LinearGradient
+          colors={['transparent', 'rgba(255,255,255,0.6)', colors.background]}
+          locations={[0.3, 0.7, 1]}
+          style={styles.heroGradient}
+        />
+      </View>
+
       {/* Heading */}
       <Text style={styles.heading}>Where are you right now?</Text>
+      <Text style={styles.subheading}>
+        Find women nearby, join activities, and make your trip less solo.
+      </Text>
 
       {/* GPS loading state */}
       {gpsLoading && (
@@ -267,16 +285,40 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    paddingHorizontal: spacing.screenX,
-    paddingTop: spacing.xxxl,
     paddingBottom: spacing.xxxxl,
     gap: spacing.md,
+  },
+
+  // Hero
+  heroContainer: {
+    height: 220,
+    marginBottom: spacing.sm,
+  },
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 120,
   },
 
   // Heading
   heading: {
     ...typography.h2,
     color: colors.textPrimary,
+    paddingHorizontal: spacing.screenX,
+    marginBottom: spacing.xs,
+  },
+  subheading: {
+    fontFamily: fonts.regular,
+    fontSize: 16,
+    lineHeight: 22,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.screenX,
     marginBottom: spacing.lg,
   },
 
@@ -302,6 +344,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     borderRadius: radius.card,
     padding: spacing.lg,
+    marginHorizontal: spacing.screenX,
   },
   pressed: {
     opacity: pressedState.opacity,
@@ -327,6 +370,7 @@ const styles = StyleSheet.create({
   // Search
   searchContainer: {
     gap: 0,
+    paddingHorizontal: spacing.screenX,
   },
   searchInputRow: {
     flexDirection: 'row',
@@ -370,5 +414,6 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     textAlign: 'center',
     marginTop: spacing.xl,
+    paddingHorizontal: spacing.screenX,
   },
 });
