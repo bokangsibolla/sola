@@ -3,7 +3,6 @@ import { Image } from 'expo-image';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { colors, fonts, pressedState, radius, spacing } from '@/constants/design';
-import { BookmarkButton } from '@/components/ui/BookmarkButton';
 import type { Tag } from '@/data/types';
 import type { PlaceWithImage } from '@/data/city/types';
 
@@ -73,13 +72,6 @@ export function CompactPlaceCard({ place, tags }: CompactPlaceCardProps) {
             <Ionicons name="image-outline" size={24} color={colors.textMuted} />
           </View>
         )}
-
-        {/* Bookmark */}
-        <BookmarkButton
-          entityType="place"
-          entityId={place.id}
-          style={styles.bookmark}
-        />
 
         {/* Badges overlay */}
         <View style={styles.badgeOverlay}>
@@ -172,13 +164,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.neutralFill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-
-  bookmark: {
-    position: 'absolute',
-    top: spacing.sm,
-    right: spacing.sm,
-    zIndex: 1,
   },
 
   // Overlay badges (top-left)

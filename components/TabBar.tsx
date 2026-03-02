@@ -17,7 +17,7 @@ import { getAdminPendingCounts } from '@/data/admin/adminApi';
 const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
   home: 'home-outline',
   discover: 'search-outline',
-  discussions: 'newspaper-outline',
+  discussions: 'chatbubbles-outline',
   travelers: 'people-outline',
   trips: 'airplane-outline',
   admin: 'shield-outline',
@@ -26,7 +26,7 @@ const TAB_ICONS: Record<string, keyof typeof Ionicons.glyphMap> = {
 const TAB_ICONS_ACTIVE: Record<string, keyof typeof Ionicons.glyphMap> = {
   home: 'home',
   discover: 'search',
-  discussions: 'newspaper',
+  discussions: 'chatbubbles',
   travelers: 'people',
   trips: 'airplane',
   admin: 'shield',
