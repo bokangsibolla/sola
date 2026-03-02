@@ -49,6 +49,7 @@ export default function ConnectScreen() {
   const router = useRouter();
   const [showPostSheet, setShowPostSheet] = useState(false);
   const [showCityPicker, setShowCityPicker] = useState(false);
+  const [bannerDismissed, setBannerDismissed] = useState(false);
 
   // Check-in state
   const {
@@ -91,12 +92,24 @@ export default function ConnectScreen() {
     return cities;
   }, [trips]);
 
-  // Detect GPS on mount if not checked in
+  // Detect GPS on mount (whether checked in or not, so we can suggest changes)
   useEffect(() => {
-    if (!currentCheckIn && !restoring) {
+    if (!restoring) {
       detectCity();
     }
-  }, [currentCheckIn, restoring, detectCity]);
+  }, [restoring, detectCity]);
+
+  // Reset banner dismissed state when the check-in city changes
+  useEffect(() => {
+    setBannerDismissed(false);
+  }, [currentCheckIn?.cityId]);
+
+  // Determine whether to show the city change banner
+  const showCityBanner =
+    gpsSuggestion &&
+    currentCheckIn &&
+    gpsSuggestion.cityName.toLowerCase() !== currentCheckIn.cityName.toLowerCase() &&
+    !bannerDismissed;
 
   // Feed data (only fetched when checked in)
   const { items, isLoading, refresh } = useConnectFeed(
@@ -186,6 +199,17 @@ export default function ConnectScreen() {
         cityName={currentCheckIn.cityName}
         onPress={() => setShowCityPicker(true)}
       />
+
+      {showCityBanner && (
+        <CityChangeBanner
+          suggestedCity={gpsSuggestion!.cityName}
+          onUpdate={() => {
+            setShowCityPicker(true);
+            setBannerDismissed(true);
+          }}
+          onDismiss={() => setBannerDismissed(true)}
+        />
+      )}
 
       {isLoading ? (
         <View style={styles.loadingContainer}>
