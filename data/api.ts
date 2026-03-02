@@ -3379,6 +3379,51 @@ export async function updateUserLocation(
   if (error) throw error;
 }
 
+// ---------------------------------------------------------------------------
+// City Check-In
+// ---------------------------------------------------------------------------
+
+/** Check into a city. Sets checkin_city_id + checked_in_at on the profile. */
+export async function checkIntoCity(userId: string, cityId: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ checkin_city_id: cityId, checked_in_at: new Date().toISOString() })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/** Clear check-in (go invisible). */
+export async function clearCheckIn(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ checkin_city_id: null, checked_in_at: null })
+    .eq('id', userId);
+  if (error) throw error;
+}
+
+/** Get travelers checked into a specific city. */
+export async function getTravelersInCityByCheckIn(
+  cityId: string,
+  currentUserId: string,
+  blockedIds: string[],
+  limit = 30,
+): Promise<Profile[]> {
+  const excludeIds = [currentUserId]
+    .concat(Array.isArray(blockedIds) ? blockedIds : [])
+    .filter(Boolean);
+  if (excludeIds.length === 0) return [];
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('checkin_city_id', cityId)
+    .eq('is_discoverable', true)
+    .not('id', 'in', `(${excludeIds.join(',')})`)
+    .order('checked_in_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return rowsToCamel<Profile>(data ?? []);
+}
+
 /**
  * Only create/open a conversation between connected users.
  * Throws if users are not mutually connected.

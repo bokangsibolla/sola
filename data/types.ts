@@ -395,6 +395,8 @@ export interface Profile {
   emergencyContactName: string | null;
   emergencyContactPhone: string | null;
   emergencyContactRelationship: string | null;
+  checkinCityId: string | null;
+  checkedInAt: string | null;
   createdAt: string;
   updatedAt: string;
 }
