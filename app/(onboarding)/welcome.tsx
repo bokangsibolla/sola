@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Platform,
   Pressable,
   StyleSheet,
@@ -18,8 +17,6 @@ import { signInWithGoogle } from '@/lib/oauth';
 import { onboardingStore } from '@/state/onboardingStore';
 import { supabase } from '@/lib/supabase';
 import { colors, fonts, spacing } from '@/constants/design';
-
-const { height: SCREEN_H } = Dimensions.get('window');
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -45,18 +42,13 @@ export default function WelcomeScreen() {
 
       posthog.capture('auth_success', { provider: 'google', is_new_user: result.isNewUser });
       if (result.isNewUser) {
-        // Pre-populate onboarding store with Google metadata
         if (result.userMetadata?.firstName) {
           onboardingStore.set('firstName', result.userMetadata.firstName);
         }
         setLoading(false);
         router.push('/(onboarding)/profile' as any);
       } else {
-        // Set the flag — AuthGate will detect we're on the welcome screen
-        // with a valid session and redirect to tabs. This prevents a race
-        // condition where both this handler and AuthGate navigate simultaneously.
         onboardingStore.set('onboardingCompleted', true);
-        // Keep loading=true so the spinner stays visible until AuthGate navigates
       }
     } catch (e: any) {
       setLoading(false);
@@ -67,8 +59,6 @@ export default function WelcomeScreen() {
   };
 
   const navigateTo = (screen: string) => {
-    // Use setTimeout to ensure navigation happens after current render cycle —
-    // workaround for Expo Router Android bug with group-prefixed paths
     setTimeout(() => {
       router.push(screen as any);
     }, 0);
@@ -76,14 +66,14 @@ export default function WelcomeScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Hero image — top ~65% */}
-      <View style={[styles.imageSection, { height: SCREEN_H * 0.74 }]}>
+      {/* Hero image — fills top, card overlaps */}
+      <View style={styles.imageSection}>
         <Image
           source={require('@/assets/images/welcome-hero.jpg')}
           style={StyleSheet.absoluteFillObject}
           contentFit="cover"
         />
-        <View style={styles.overlay} />
+        <View style={styles.tint} />
 
         <View style={styles.logoBlock}>
           <Image
@@ -95,8 +85,8 @@ export default function WelcomeScreen() {
         </View>
       </View>
 
-      {/* Bottom white card */}
-      <View style={[styles.card, { paddingBottom: insets.bottom || 8 }]}>
+      {/* Bottom white card — compact */}
+      <View style={[styles.card, { paddingBottom: Math.max(insets.bottom, 20) + 8 }]}>
         {/* Orange CTA */}
         <Pressable
           style={({ pressed }) => [styles.ctaButton, pressed && styles.ctaPressed]}
@@ -145,7 +135,7 @@ export default function WelcomeScreen() {
             {loading ? (
               <ActivityIndicator size="small" color={colors.textPrimary} />
             ) : (
-              <Text style={styles.googleG}>G</Text>
+              <Ionicons name="logo-google" size={18} color={colors.textPrimary} />
             )}
           </Pressable>
         </View>
@@ -160,9 +150,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   imageSection: {
+    flex: 1,
     overflow: 'hidden',
   },
-  overlay: {
+  tint: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'rgba(0,0,0,0.2)',
   },
@@ -187,10 +178,10 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     marginTop: -28,
-    paddingTop: 20,
+    paddingTop: 28,
     paddingHorizontal: spacing.screenX,
     alignItems: 'center',
-    gap: 10,
+    gap: 16,
   },
   ctaButton: {
     backgroundColor: colors.orange,
@@ -231,7 +222,7 @@ const styles = StyleSheet.create({
   },
   dividerLine: {
     flex: 1,
-    height: 1,
+    height: StyleSheet.hairlineWidth,
     backgroundColor: colors.borderDefault,
   },
   dividerLabel: {
@@ -269,12 +260,5 @@ const styles = StyleSheet.create({
   socialPressed: {
     opacity: 0.7,
     transform: [{ scale: 0.95 }],
-  },
-  googleG: {
-    fontFamily: fonts.semiBold,
-    fontSize: 18,
-    lineHeight: 24,
-    color: '#4285F4',
-    ...(Platform.OS === 'android' && { includeFontPadding: false }),
   },
 });
